@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://avp86fr-jpg.github.io/sitemap.xml
