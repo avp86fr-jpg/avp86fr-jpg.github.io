@@ -225,6 +225,13 @@ a{color:var(--cyan)}a:hover{color:#fff}
 .nf{min-height:100svh;display:grid;place-items:center;text-align:center;padding:20px}
 .nf h1{font-size:clamp(70px,16vw,160px);margin-bottom:16px}.nf p{color:var(--mute)}
 
+/* keyboard focus and touch-target refinements */
+.skip--content{top:52px}
+.nav__toggle{min-width:44px;min-height:44px}
+.chip{min-height:44px}
+.game-clear{min-height:44px}
+@media (forced-colors:active){.chip.is-on,.btn--gold,.btn--play{border:2px solid ButtonText}.grad{background:none;color:inherit}}
+
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation:none!important;transition:none!important}
@@ -245,6 +252,7 @@ a{color:var(--cyan)}a:hover{color:#fff}
 </head>
 <body>
 <a class="skip" href="#games">Skip to games</a>
+<a class="skip skip--content" href="#top">Skip to main content</a>
 <header class="nav" id="nav">
   <div class="nav__in">
     <a class="brand" href="#top"><span class="brand__mark" aria-hidden="true">14</span><span class="brand__txt">AVPNFT1<em>GAMES</em></span></a>
