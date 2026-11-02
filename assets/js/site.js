@@ -16,26 +16,6 @@
     d.addEventListener('click',function(e){if(!menu.contains(e.target)&&!menuButton.contains(e.target))closeMenu()});
     addEventListener('resize',function(){if(innerWidth>=860)closeMenu()});
   }
-  // accessible mobile navigation
-  var menuButton=d.querySelector('.nav__toggle');
-  var menuLinks=d.getElementById('primary-links');
-  if(menuButton&&menuLinks){
-    function closeMenu(){
-      menuButton.setAttribute('aria-expanded','false');
-      menuButton.setAttribute('aria-label','Open navigation');
-      menuLinks.classList.remove('is-open');
-    }
-    menuButton.addEventListener('click',function(){
-      var open=menuButton.getAttribute('aria-expanded')!=='true';
-      menuButton.setAttribute('aria-expanded',String(open));
-      menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');
-      menuLinks.classList.toggle('is-open',open);
-    });
-    menuLinks.addEventListener('click',function(e){if(e.target.closest('a'))closeMenu()});
-    d.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu()});
-    addEventListener('resize',function(){if(matchMedia('(min-width: 860px)').matches)closeMenu()});
-    d.addEventListener('click',function(e){if(!menuButton.contains(e.target)&&!menuLinks.contains(e.target))closeMenu()});
-  }
   // reveal
   var els=d.querySelectorAll('.reveal,.card');
   if('IntersectionObserver' in window&&!rm){
