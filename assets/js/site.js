@@ -6,6 +6,16 @@
   var nav=d.getElementById('nav');
   function onScroll(){nav.classList.toggle('is-solid',scrollY>40)}
   onScroll();addEventListener('scroll',onScroll,{passive:true});
+  // accessible mobile navigation
+  var menuButton=d.querySelector('.nav__toggle'),menu=d.getElementById('primary-links');
+  function closeMenu(){if(!menuButton||!menu)return;menuButton.setAttribute('aria-expanded','false');menuButton.setAttribute('aria-label','Open navigation');menu.classList.remove('is-open')}
+  if(menuButton&&menu){
+    menuButton.addEventListener('click',function(){var open=menuButton.getAttribute('aria-expanded')!=='true';menuButton.setAttribute('aria-expanded',String(open));menuButton.setAttribute('aria-label',open?'Close navigation':'Open navigation');menu.classList.toggle('is-open',open)});
+    menu.querySelectorAll('a').forEach(function(link){link.addEventListener('click',closeMenu)});
+    d.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu()});
+    d.addEventListener('click',function(e){if(!menu.contains(e.target)&&!menuButton.contains(e.target))closeMenu()});
+    addEventListener('resize',function(){if(innerWidth>=860)closeMenu()});
+  }
   // reveal
   var els=d.querySelectorAll('.reveal,.card');
   if('IntersectionObserver' in window&&!rm){
