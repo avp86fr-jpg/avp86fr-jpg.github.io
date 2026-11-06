@@ -18,5 +18,7 @@ For a project repo (for example `https://avp86fr-jpg.github.io/games/`) instead 
 Push the contents of this folder to the root of the `avp86fr-jpg.github.io` repo, then open Settings → Pages → Deploy from branch `main`, folder `/ (root)`. You can delete `shots/` (QA screenshots and Lighthouse reports) before pushing. `tools/` does no harm if you leave it in.
 
 ## Notes
-- Every "Play free" button opens the game's itch.io page in a new tab. "Watch the trailer" opens the HIT THE FUTURE itch page, which hosts the trailer. No MP4 is embedded.
+- METAWINNERS FLIP is playable at `games/metawinners-flip/` (the game itself). Its cover and hero banner are the local files in `assets/img/metawinners-flip/`.
+- METAWINNERS SKATE keeps its published itch.io build. The site links to `https://avpnft1.itch.io/metawinners-skate` and does not host a second copy.
+- Other "Play free" buttons open that game's itch.io page in a new tab. The 2-minute trailer stays the existing 14-game YouTube video.
 - TOURNAMENT links use `rel="sponsored"` and carry the referral disclosure.
