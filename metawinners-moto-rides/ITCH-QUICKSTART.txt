@@ -1,0 +1,33 @@
+METAWINNERS / MOTO RIDES — ITCH.IO UPLOAD
+
+UPLOAD THIS FILE
+metawinners-moto-itch-html5.zip
+
+1. Create or edit your itch.io project. Choose HTML Game.
+2. Upload this ZIP and select This file will be played in the browser.
+3. Recommended launch: Click to launch in fullscreen. Keep Click to Play on.
+4. Alternatively use a 1280 x 720 embed with Fullscreen Button enabled.
+5. Check your draft on desktop and your target phones. Enable Mobile Friendly
+   after confirming touch controls and audio in the itch preview. Landscape
+   gives the best view. Tap a game control to enable audio.
+6. Copy the included store text and use artwork from the marketing package.
+
+The archive has index.html at its root and all runtime assets included. Upload
+the ZIP directly: do not wrap it in another folder or upload the marketing ZIP.
+No wallet, build step, API key or runtime CDN is needed.
+
+THIS BUILD
+V6.2 / final mobile and graphics polish. Includes floating thumb steering,
+vertical garage scrolling, a mobile race bar, stable rider selection, clearer
+strike/nitro feedback, wider portrait framing and circuit-specific reflections.
+Rendering pauses for an offscreen studio and adapts to sustained frame load.
+Keep all asset credits and licenses in the ZIP.
+
+VALIDATION
+ZIP integrity, root entry point, source asset references, limits and UI/mobile
+source and native regression checks passed. Live itch iframe and physical-device testing are pending.
+This package does not create or publish an itch.io listing.
+
+OFFICIAL GUIDES
+https://itch.io/docs/creators/html5
+https://itch.io/docs/creators/design

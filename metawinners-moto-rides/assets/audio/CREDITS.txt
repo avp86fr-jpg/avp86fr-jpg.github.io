@@ -1,0 +1,34 @@
+METAWINNERS MOTO RIDES — AUDIO CREDITS
+
+RACE MUSIC
+“Fight Them Until We Can’t” by Zander Noriega.
+Source: https://opengameart.org/content/fight-them-until-we-cant
+License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+https://creativecommons.org/licenses/by/3.0/
+The original MP3 is redistributed unchanged. Playback volume and mode transitions
+are controlled by the game. This credit does not imply the artist endorses it.
+
+MENU MUSIC
+“Once More [Metal]” by nene.
+Source: https://opengameart.org/content/once-more-metal
+License: Creative Commons CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+Converted from the creator's stereo WAV to a 192 kbit/s MP3.
+
+MOTORCYCLE RECORDINGS
+“Engines — Startup, Idle & Rev” by dklon.
+Source: https://opengameart.org/content/engines-startup-idle-rev
+License: Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+https://creativecommons.org/licenses/by-sa/3.0/
+Adapted recordings retain that same CC BY-SA 3.0 license:
+- engine-idle.wav: excerpt of 090912-000.mp3, mono conversion, filtering,
+  level normalization and a seamless loop crossfade.
+- engine-load.wav: excerpt of 090912-022.mp3, mono conversion, filtering,
+  level normalization and a seamless loop crossfade.
+- metal-clack.wav: excerpt of kickstand_on_concrete_01.mp3, mono conversion,
+  filtering, level normalization and fades.
+Reproduction script: prepare-audio-v4.py in the game's source repository.
+
+Additional tire/wind/impact/weapon/UI effects are original procedural sound
+design synthesized by the game's audio.js. No audio is from Road Rash, Road
+Rage, or a commercial artist's unlicensed recording.

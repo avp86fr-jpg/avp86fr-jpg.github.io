@@ -1,0 +1,113 @@
+[
+  {
+    "asset": "asphalt_02",
+    "source": "https://polyhaven.com/a/asphalt_02",
+    "license": "CC0-1.0",
+    "license_url": "https://polyhaven.com/license",
+    "retrieved": "2026-11-09",
+    "maps": {
+      "albedo": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_diff_1k.jpg",
+        "local": "asphalt_02-albedo.jpg",
+        "size": 513645,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "normal": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_nor_gl_1k.jpg",
+        "local": "asphalt_02-normal.jpg",
+        "size": 480807,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "roughness": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_rough_1k.jpg",
+        "local": "asphalt_02-roughness.jpg",
+        "size": 422778,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      }
+    },
+    "modifications": "Original 1K maps repackaged as quality90 JPEG; shader tint/repeat varies by circuit."
+  },
+  {
+    "asset": "concrete_floor_worn_001",
+    "source": "https://polyhaven.com/a/concrete_floor_worn_001",
+    "license": "CC0-1.0",
+    "license_url": "https://polyhaven.com/license",
+    "retrieved": "2026-11-09",
+    "maps": {
+      "albedo": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_worn_001/concrete_floor_worn_001_diff_1k.jpg",
+        "local": "concrete_floor_worn_001-albedo.jpg",
+        "size": 130480,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "normal": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_worn_001/concrete_floor_worn_001_nor_gl_1k.jpg",
+        "local": "concrete_floor_worn_001-normal.jpg",
+        "size": 112956,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "roughness": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_worn_001/concrete_floor_worn_001_rough_1k.jpg",
+        "local": "concrete_floor_worn_001-roughness.jpg",
+        "size": 204536,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      }
+    },
+    "modifications": "Original 1K maps repackaged as quality90 JPEG; shader tint/repeat varies by circuit."
+  },
+  {
+    "asset": "brown_mud_rocks_01",
+    "source": "https://polyhaven.com/a/brown_mud_rocks_01",
+    "license": "CC0-1.0",
+    "license_url": "https://polyhaven.com/license",
+    "retrieved": "2026-11-09",
+    "maps": {
+      "albedo": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_rocks_01/brown_mud_rocks_01_diff_1k.jpg",
+        "local": "brown_mud_rocks_01-albedo.jpg",
+        "size": 549597,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "normal": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_rocks_01/brown_mud_rocks_01_nor_gl_1k.jpg",
+        "local": "brown_mud_rocks_01-normal.jpg",
+        "size": 605534,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      },
+      "roughness": {
+        "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud_rocks_01/brown_mud_rocks_01_rough_1k.jpg",
+        "local": "brown_mud_rocks_01-roughness.jpg",
+        "size": 582684,
+        "dimensions": [
+          1024,
+          1024
+        ]
+      }
+    },
+    "modifications": "Original 1K maps repackaged as quality90 JPEG; shader tint/repeat varies by circuit."
+  }
+]
