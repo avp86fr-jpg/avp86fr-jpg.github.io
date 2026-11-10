@@ -1,0 +1,14 @@
+METAWINNERS — MOTO RIDES
+Portable HTML5 publishing package / V6.2
+
+Upload this ZIP as an HTML Game on itch.io, or extract it into an HTTPS static
+web root. index.html belongs at the root. All game libraries, artwork, models,
+fonts, sounds and music are local; no build step, wallet or backend is required.
+Preserve relative paths, filename case and all credits/license notices.
+
+See ITCH-QUICKSTART.txt for upload settings and ITCH-STORE-COPY.txt for listing
+copy and attribution. Test the draft on your target devices before release.
+
+The 25 riders are custom stylized adaptations of original MetaWinners portraits.
+Native regression and source geometry checks do not establish browser/device
+frame rates. Browser/itch iframe and physical-device verification remain pending.

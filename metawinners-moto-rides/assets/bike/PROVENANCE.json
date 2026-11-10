@@ -1,0 +1,174 @@
+{
+  "asset": "Race-replica superbike, fully faired",
+  "creator": "Innerscene",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "source_page": "https://www.innerscene.com/tools/library/3d-parts/race-replica-superbike-fully-faired-badbd83b",
+  "source_file": "https://files.innerscene.com/library/race-replica-superbike-fully-faired-badbd83b/9ce443dc7d0c14f443e9/race-replica-superbike-fully-faired.glb",
+  "retrieved": "2026-11-08",
+  "modifications": "Separated wheel/steering/swingarm rigs, converted to minus-Z forward, normalized wheelbase to 1.45m, high/low polygon LODs, original albedo maps retained with JPEG packaging, custom material liveries and aerodynamic trim. Original unbranded design. Texture budgets: fairings and tyres 1024px, mechanical parts 512px, JPEG quality91; shared maps across all rider instances. V4: physical clearcoat fairings, collection-token factory liveries, surface-aligned running lights, rim tape, brake-light response and per-rig material batching.",
+  "loader": "Three.js r170 GLTFLoader and BufferGeometryUtils, MIT license; see ../../vendor/THREE-LICENSE.txt",
+  "texture_memory_mib_including_mipmaps": 42.7,
+  "texture_resolutions": [
+    {
+      "material": "Cast aluminium",
+      "image": "m8_cast_alu",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Amber indicator lens",
+      "image": "e1970b9f8c862e94",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Tyre rubber",
+      "image": "m8_rubber",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "material": "Blank number plate",
+      "image": "m8_plate",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Brushed steel",
+      "image": "m8_steel",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Clear lamp lens (alpha-blended)",
+      "image": "1c260b0f66371887",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Dark steel (chain, fasteners)",
+      "image": "m8_dark_steel",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Engine castings, black",
+      "image": "m8_engine_black",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Fairing paint, gloss black",
+      "image": "m8_fair_black",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "material": "Fairing paint, red",
+      "image": "m8_fair_red",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "material": "Fairing paint, white",
+      "image": "m8_fair_white",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "material": "Lamp reflector",
+      "image": "e48c2a2ab82d3efc",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Radiator core",
+      "image": "m8_radiator",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Red tail lamp lens",
+      "image": "66463446200a8bde",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Satin black",
+      "image": "m8_frame_black",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Seat, black vinyl",
+      "image": "m8_seat",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Windscreen, smoked (alpha-blended)",
+      "image": "e324436827fd2ff9",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Gold anodised / TiN coating",
+      "image": "5e963ff53dfe3648",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Brake disc steel",
+      "image": "m8_disc",
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "material": "Wheel paint, dark grey",
+      "image": "dabd2a92ebadbedb",
+      "size": [
+        512,
+        512
+      ]
+    }
+  ]
+}

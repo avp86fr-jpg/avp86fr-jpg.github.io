@@ -1,0 +1,62 @@
+{
+  "retrieved": "2026-11-09",
+  "music": [
+    {
+      "title": "Fight Them Until We Can’t",
+      "artist": "Zander Noriega",
+      "source": "https://opengameart.org/content/fight-them-until-we-cant",
+      "source_file": "https://opengameart.org/sites/default/files/zander_noriega-fight_them_until_we_cant.zip",
+      "file": "fight-them-until-we-cant.mp3",
+      "license": "CC-BY-3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "changes": "Original MP3 redistributed unchanged; real-time mix volume only."
+    },
+    {
+      "title": "Once More [Metal]",
+      "artist": "nene",
+      "source": "https://opengameart.org/content/once-more-metal",
+      "source_file": "https://opengameart.org/sites/default/files/once_more_metal.wav",
+      "file": "once-more-metal.mp3",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "changes": "Stereo WAV converted to 192 kbit/s MP3."
+    }
+  ],
+  "engine": {
+    "title": "Engines — Startup, Idle & Rev",
+    "artist": "dklon",
+    "source": "https://opengameart.org/content/engines-startup-idle-rev",
+    "source_file": "https://opengameart.org/sites/default/files/Startup%2C%20Idle%20%26%20Rev.zip",
+    "files": [
+      "engine-idle.wav",
+      "engine-load.wav",
+      "metal-clack.wav"
+    ],
+    "license": "CC-BY-SA-3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "changes": "Selected excerpts, mono conversion, high/low-pass filtering, peak normalization, loop crossfade/fades. Adapted files retain CC-BY-SA-3.0. Reproduction in prepare-audio-v4.py."
+  },
+  "procedural": "Original wind, tire, debris, impact, weapon and UI synthesis in audio.js.",
+  "files": {
+    "fight-them-until-we-cant.mp3": {
+      "bytes": 6646513,
+      "sha256": "dc87558e382425e2b6751b448579f32caeeafc9f6159b8cc92ff7550bc237ac2"
+    },
+    "engine-idle.wav": {
+      "bytes": 259352,
+      "sha256": "447221d4ac7fd3fd97d9dfc5a2513af0ce26f34d938ecf709cc13a59d1a75549"
+    },
+    "engine-load.wav": {
+      "bytes": 100592,
+      "sha256": "521e2b2eaaea0e1dc925b02c55acacf07a1b54cfebf379d96e3d24678e472261"
+    },
+    "once-more-metal.mp3": {
+      "bytes": 1025714,
+      "sha256": "024479097b2a08feeb2e7b5c94e9a8a3a107b351c612b2ad9d7ced5a4b6e5acc"
+    },
+    "metal-clack.wav": {
+      "bytes": 75014,
+      "sha256": "571c099dc1a9cf3fcc067ca8420f2a9cff05f5a6b08c5059566cd9b303b7c5de"
+    }
+  }
+}

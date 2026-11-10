@@ -1,0 +1,58 @@
+METAWINNERS / MOTO RIDES — ITCH.IO STORE COPY
+
+TITLE
+MetaWinners — Moto Rides
+
+SHORT DESCRIPTION
+25 riders. Four circuits. Full-contact motorcycle racing with heavy metal, weapons, and Overdrive. No wallet required.
+
+DESCRIPTION
+Ride. Strike. Rule.
+
+Pick your MetaWinner and take a matching bike onto the Vegas Strip, Casino City, Miami, or the Desert. Thread traffic, lean through corners, and fight for the opening with a bat, chain, or wrench.
+
+Clean passes, near misses, and strikes build Flow. Fill the meter and hold Nitro for five seconds of Overdrive. Race seven rivals, hunt takedowns in Elimination, or beat the clock in Time Attack.
+
+25 distinct riders and motorcycle liveries. Four circuits across twelve districts. Three race modes. Keyboard and touch controls. Heavy metal music. Local best scores. No wallet connection.
+
+CONTROLS
+A/D or Left/Right: steer. S/Down: brake. Space: strike. Q/E: strike left/right.
+Shift: Nitro / ready Overdrive. C: camera. Escape/P: pause.
+Touch: touch the pad, slide to lean, release to straighten. Brake, Hit, Nitro.
+Acceleration is automatic. In the garage, swipe horizontally to orbit and
+vertically to scroll. Use the +/− buttons to zoom.
+
+BROWSER NOTES
+Requires a current WebGL2 browser with hardware acceleration. Landscape is
+recommended on phones; Performance graphics reduces rendering load. Tap to
+start audio. Scores stay in the current browser when local storage is available.
+Single-player; no online multiplayer or gamepad support is claimed.
+
+MODEL AND MEDIA NOTE
+The game uses custom stylized 3D adaptations of the MetaWinners portraits.
+Promotional trailer footage is cinematic rendering from the game assets.
+
+SUGGESTED METADATA
+Classification: Game. Kind: HTML Game. Genre: Racing.
+Tags: 3D, arcade, racing, motorcycles, singleplayer, action, combat.
+Inputs: Keyboard, Touchscreen. Suggested development status: In development.
+Price, visibility and launch date: choose in your itch.io project settings.
+
+THEME
+Background #080b0e; panels #111619; text #f7efdc; links/buttons #d2b370.
+Header font: Barlow Condensed. Body: Barlow.
+The trailer field takes a supported hosted video URL; upload the supplied
+40-second MP4 to your video host and use its public URL when available.
+
+CREDITS
+Race music: Fight Them Until We Can't — Zander Noriega, CC BY 3.0.
+https://opengameart.org/content/fight-them-until-we-cant
+Menu music: Once More [Metal] — nene, CC0.
+https://opengameart.org/content/once-more-metal
+Engine recordings: Engines — Startup, Idle & Rev — dklon, CC BY-SA 3.0;
+adapted with filtering, normalization, and loop/fade treatment.
+https://opengameart.org/content/engines-startup-idle-rev
+Motorcycle geometry: adapted Innerscene CC0 race-replica superbike.
+World textures: Poly Haven CC0. Three.js: MIT. Barlow fonts: SIL OFL 1.1.
+Full author links and provenance are included in the game assets' credit files.
+Collection reference: https://opensea.io/collection/metawinners-1
