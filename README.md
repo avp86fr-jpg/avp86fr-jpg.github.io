@@ -1,24 +1,17 @@
-# avpnft1 games: landing page (GitHub Pages)
+# AVPNFT1 games — GitHub Pages
 
-Static site. Nothing to build for hosting: plain HTML with inlined CSS, ~2.5 KB vanilla JS, self-hosted fonts and WebP images.
+Static catalogue at https://avp86fr-jpg.github.io/. The site uses HTML, inlined CSS, local fonts and WebP images. No build or package installation is required.
 
-## Change the site URL (canonical, og:url, og:image, JSON-LD, sitemap, robots)
-1. Edit `SITE = "https://avp86fr-jpg.github.io/"` at the top of `tools/build.py`.
-2. Run `python3 tools/build.py`. It regenerates `index.html`, `sitemap.xml`, `robots.txt` and `404.html`.
-   No Python? Find and replace `https://avp86fr-jpg.github.io/` in those four files.
+## Edit the homepage
 
-For a project repo (for example `https://avp86fr-jpg.github.io/games/`) instead of the user site repo `avp86fr-jpg.github.io`, also change the `/assets/...` and `/favicon.ico` paths in `tools/404.tpl.html`.
+The current homepage is maintained directly in `index.html`. Update the relevant game card and its `VideoGame` entry in the JSON-LD together. The former `tools/build.py` and template files are not present in this repository. `assets/css/site.css` also supplies styles for other pages; the homepage has its own inlined styles.
 
-## Edit content
-- Games (title, short description, genres, card label): the `GAMES` list in `tools/build.py`.
-- Layout and copy: `tools/index.tpl.html`. Styles: `assets/css/site.css` (inlined into index.html by the build; 404.html links it).
-- Covers: `assets/img/<itch-slug>-420.webp` and `-630.webp` (the itch 630x500 covers).
+Crown City links to the separately published `/crown-city/` game and `/crown-city/about/` page. Its homepage card uses the original After Hours cover exported at 960 and 1672 pixels, with HTML lettering above it. Updating the Crown City repository alone does not update this card. Preserve the cover's single-car composition.
 
-## Deploy
-Push the contents of this folder to the root of the `avp86fr-jpg.github.io` repo, then open Settings → Pages → Deploy from branch `main`, folder `/ (root)`. You can delete `shots/` (QA screenshots and Lighthouse reports) before pushing. `tools/` does no harm if you leave it in.
+When adding or removing games, update visible counts, category counts and JSON-LD. The catalogue currently contains 22 games. The existing two-minute arcade trailer is an earlier collection highlight reel.
 
-## Notes
-- METAWINNERS FLIP is playable at `games/metawinners-flip/` (the game itself). Its cover and hero banner are the local files in `assets/img/metawinners-flip/`.
-- METAWINNERS SKATE keeps its published itch.io build. The site links to `https://avpnft1.itch.io/metawinners-skate` and does not host a second copy.
-- Other "Play free" buttons open that game's itch.io page in a new tab. The 2-minute trailer stays the existing 14-game YouTube video.
-- TOURNAMENT links use `rel="sponsored"` and carry the referral disclosure.
+## Preview and publish
+
+Run `python3 -m http.server 8012` from this directory. Check the homepage on a narrow phone and a desktop, including category filters and the changed card's Play/About links. Production game links target their published locations.
+
+GitHub Pages publishes the root of `main`. Keep the canonical URL, metadata, `sitemap.xml`, `robots.txt` and `404.html` consistent if the site address changes. TOURNAMENT referral links retain their sponsorship attributes and disclosure.
