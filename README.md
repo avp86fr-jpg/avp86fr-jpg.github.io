@@ -16,6 +16,14 @@ Run `python3 -m http.server 8012` from this directory. Check the homepage on a n
 
 GitHub Pages publishes the root of `main`. Keep the canonical URL, metadata, `sitemap.xml`, `robots.txt` and `404.html` consistent if the site address changes. TOURNAMENT referral links retain their sponsorship attributes and disclosure.
 
+## Browser regression checks
+
+With the preview server running on port 8012, run `node tests/site-smoke.cjs` with Playwright available (`npm install --no-save --package-lock=false playwright`, then `npx playwright install chromium` if needed). Set `BROWSER_EXECUTABLE_PATH` to use an existing Chromium installation, or `SITE_URL` to test another preview URL.
+
+The checks cover every catalogue page at 320, 390 and 1280 pixels, JavaScript errors while scrolling, images, clipped headings and controls, every category filter, and fullscreen first-gesture/keyboard/fallback behavior. Legacy redirects stay inside the preview during tests. The separately published games still need live startup checks; their absence from this checkout is expected.
+
+The nine standalone games using `fs-toggle.js` carry identical copies so they remain portable. Apply changes to all copies. Vault Crush sets `data-orientation="portrait"`; the other games default to landscape. Keep `data-no-f="1"` on games that reserve F for gameplay.
+
 
 ## MetaWinners Tennis Club
 

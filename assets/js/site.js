@@ -5,7 +5,7 @@
   // sticky nav
   var nav=d.getElementById('nav');
   function onScroll(){nav.classList.toggle('is-solid',scrollY>40)}
-  onScroll();addEventListener('scroll',onScroll,{passive:true});
+  if(nav){onScroll();addEventListener('scroll',onScroll,{passive:true})}
   // reveal
   var els=d.querySelectorAll('.reveal,.card');
   if('IntersectionObserver' in window&&!rm){
@@ -13,8 +13,9 @@
     els.forEach(function(el,i){if(el.classList.contains('card'))el.style.transitionDelay=(i%3)*70+'ms';io.observe(el)});
   }else els.forEach(function(el){el.classList.add('is-in')});
   // parallax (hero only)
-  if(fine&&!rm){
-    var par=d.querySelectorAll('[data-par]'),ticking=false,hero=d.querySelector('.hero');
+  var hero=d.querySelector('.hero'),par=d.querySelectorAll('[data-par]');
+  if(fine&&!rm&&hero&&par.length){
+    var ticking=false;
     function px(){ticking=false;var y=scrollY;if(y>hero.offsetHeight*1.2)return;
       par.forEach(function(el){el.style.transform='translate3d(0,'+(y*parseFloat(el.dataset.par)).toFixed(1)+'px,0)'})}
     addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(px)}},{passive:true});
@@ -28,18 +29,20 @@
     });
   }
   // filters
-  var chips=d.querySelectorAll('.chip'),cards=d.querySelectorAll('.card'),count=d.getElementById('count');
+  var chips=d.querySelectorAll('.chip'),cards=d.querySelectorAll('#games .card[data-genres]:not(.card--more)'),count=d.getElementById('count');
+  function announce(n){if(count)count.textContent=n+' game'+(n===1?'':'s')+' shown'}
+  if(chips.length)announce(cards.length);
   chips.forEach(function(c){c.addEventListener('click',function(){
     var f=c.dataset.f,n=0;
     chips.forEach(function(x){var on=x===c;x.classList.toggle('is-on',on);x.setAttribute('aria-pressed',on)});
-    cards.forEach(function(k){var show=f==='all'||k.dataset.genres==='all'||k.dataset.genres.split(' ').indexOf(f)>-1;k.classList.toggle('is-hidden',!show);if(show){n++;k.classList.add('is-in')}});
-    count.textContent=(n-1)+' games shown';
+    cards.forEach(function(k){var show=f==='all'||k.dataset.genres.split(' ').indexOf(f)>-1;k.classList.toggle('is-hidden',!show);if(show){n++;k.classList.add('is-in')}});
+    announce(n);
   })});
   // YouTube lite facade
   d.querySelectorAll('.yt[data-yt]').forEach(function(a){a.addEventListener('click',function(e){
     e.preventDefault();var f=d.createElement('iframe');
     f.src='https://www.youtube-nocookie.com/embed/'+a.dataset.yt+'?autoplay=1&rel=0&playsinline=1';
-    f.title='14 Free Browser Games in 2 Minutes';f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    f.title='AVPNFT1 arcade collection highlight reel';f.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
     f.allowFullscreen=true;f.referrerPolicy='strict-origin-when-cross-origin';a.parentNode.replaceChild(f,a);f.focus();
   })});
 })();
