@@ -1077,5 +1077,5 @@ const startQ=Q.get('level');if(startQ!=null){SAVE.seenStory=true;startLevel(+sta
 addEventListener('keydown',e=>{if(e.repeat||!(e.key==='Enter'||e.key===' '))return;const a=document.activeElement;if(a&&/^(BUTTON|A|INPUT)$/.test(a.tagName))return;const b=[...document.querySelectorAll('.screen .btn:not(.alt)')].find(x=>x.offsetParent);if(b&&b.offsetParent){e.preventDefault();b.click();}});
 
 </script>
-<script src="./fs-toggle.js" data-corner="tr"></script>
+<script src="./fs-toggle.js" data-corner="tr" data-orientation="portrait"></script>
 </body></html>

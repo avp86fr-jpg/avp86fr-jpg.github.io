@@ -1,6 +1,7 @@
 /* Unobtrusive fullscreen toggle for GitHub Pages builds.
    data-corner: tl|tr|bl|br (default tr)
    data-no-f="1" skips the F keyboard shortcut
+   data-orientation="portrait" keeps portrait games upright (default landscape)
    Visit with ?fs=1 to enter fullscreen on the first tap/click. */
 (function () {
   if (window.__mwFsToggle) return;
@@ -9,6 +10,7 @@
   var script = document.currentScript;
   var corner = ((script && script.getAttribute("data-corner")) || "tr").toLowerCase();
   var noF = script && script.getAttribute("data-no-f") === "1";
+  var orientation = (script && script.getAttribute("data-orientation")) || "landscape";
   var nudgeY = parseInt((script && script.getAttribute("data-nudge-y")) || "0", 10) || 0;
   var wantAuto = false;
   try {
@@ -17,7 +19,7 @@
 
   var css = [
     "#mw-fs-btn{position:fixed;z-index:2147483000;display:inline-flex;align-items:center;gap:.4em;",
-    "margin:0;padding:.42em .62em .42em .5em;border:1px solid rgba(255,255,255,.28);",
+    "margin:0;min-width:44px;min-height:44px;justify-content:center;padding:.42em .62em .42em .5em;border:1px solid rgba(255,255,255,.28);",
     "border-radius:999px;background:rgba(8,6,14,.72);color:#f4f0e6;",
     "font:600 11px/1.1 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;",
     "letter-spacing:.08em;text-transform:uppercase;cursor:pointer;",
@@ -57,11 +59,6 @@
     '<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>' +
     "<span>Full screen</span>";
 
-  function isIOS() {
-    var ua = navigator.userAgent || "";
-    return /iP(hone|od|ad)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  }
-
   function nativeEl() {
     return document.fullscreenElement || document.webkitFullscreenElement || null;
   }
@@ -70,10 +67,10 @@
     return !!nativeEl() || document.documentElement.classList.contains("mw-fs-fallback");
   }
 
-  function lockLandscape() {
+  function lockOrientation() {
     try {
       var o = screen.orientation || screen.mozOrientation;
-      if (o && o.lock) o.lock("landscape").catch(function () {});
+      if (o && o.lock) o.lock(orientation).catch(function () {});
     } catch (e) {}
   }
 
@@ -121,7 +118,7 @@
     var on = isOn();
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.setAttribute("aria-label", on ? "Exit full screen" : "Enter full screen");
-    btn.title = on ? "Exit full screen" : "Enter full screen (F)";
+    btn.title = on ? "Exit full screen" : "Enter full screen" + (noF ? "" : " (F)");
     var label = btn.querySelector("span");
     if (label) label.textContent = on ? "Exit" : "Full screen";
     btn.querySelector("svg").innerHTML = on
@@ -131,11 +128,10 @@
 
   function enter() {
     return enterNative()
-      .then(function () { lockLandscape(); })
+      .then(function () { lockOrientation(); })
       .catch(function () {
         enterFallback();
-        if (isIOS()) lockLandscape();
-        else lockLandscape();
+        lockOrientation();
       })
       .then(sync);
   }
@@ -151,6 +147,7 @@
   }
 
   function toggle(ev) {
+    disarmAuto();
     if (ev) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -165,8 +162,15 @@
     sync();
   }
 
-  document.addEventListener("fullscreenchange", sync);
-  document.addEventListener("webkitfullscreenchange", sync);
+  function fullscreenChanged() {
+    if (!nativeEl()) unlockOrientation();
+    sync();
+  }
+  document.addEventListener("fullscreenchange", fullscreenChanged);
+  document.addEventListener("webkitfullscreenchange", fullscreenChanged);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.documentElement.classList.contains("mw-fs-fallback")) exit();
+  });
 
   if (!noF) {
     document.addEventListener("keydown", function (e) {
@@ -179,17 +183,24 @@
     });
   }
 
-  if (wantAuto) {
-    var armed = true;
-    var once = function (e) {
-      if (!armed) return;
+  var armed = wantAuto;
+  function disarmAuto() {
+    armed = false;
+    document.removeEventListener("pointerdown", once, true);
+    document.removeEventListener("click", once, true);
+    document.removeEventListener("keydown", once, true);
+  }
+  function once(e) {
+      if (!armed || e.defaultPrevented) return;
       if (e && e.target && (e.target === btn || (btn.contains && btn.contains(e.target)))) return;
-      armed = false;
-      document.removeEventListener("pointerdown", once, true);
-      document.removeEventListener("click", once, true);
-      document.removeEventListener("keydown", once, true);
+      if (e.target && e.target.closest && e.target.closest('a,input,textarea,select,[contenteditable="true"]')) return;
+      if (e.type === "keydown" && (e.repeat || e.altKey || e.ctrlKey || e.metaKey || /^(Tab|Shift|Control|Alt|Meta|Escape)$/.test(e.key))) return;
+      // Let the explicit shortcut consume its gesture just once.
+      if (e.type === "keydown" && !noF && (e.code === "KeyF" || String(e.key).toLowerCase() === "f")) return;
+      disarmAuto();
       enter();
-    };
+  }
+  if (wantAuto) {
     document.addEventListener("pointerdown", once, true);
     document.addEventListener("click", once, true);
     document.addEventListener("keydown", once, true);
