@@ -13,7 +13,7 @@
     els.forEach(function(el,i){if(el.classList.contains('card'))el.style.transitionDelay=(i%3)*70+'ms';io.observe(el)});
   }else els.forEach(function(el){el.classList.add('is-in')});
   // parallax (hero only)
-  if(!rm){
+  if(fine&&!rm){
     var par=d.querySelectorAll('[data-par]'),ticking=false,hero=d.querySelector('.hero');
     function px(){ticking=false;var y=scrollY;if(y>hero.offsetHeight*1.2)return;
       par.forEach(function(el){el.style.transform='translate3d(0,'+(y*parseFloat(el.dataset.par)).toFixed(1)+'px,0)'})}
@@ -43,3 +43,4 @@
     f.allowFullscreen=true;f.referrerPolicy='strict-origin-when-cross-origin';a.parentNode.replaceChild(f,a);f.focus();
   })});
 })();
+
