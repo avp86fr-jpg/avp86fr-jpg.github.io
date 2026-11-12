@@ -1,7 +1,7 @@
-import {COURTS,CHARACTERS,clamp,advanceBall} from './engine.js?v=10';
-import {gameLayout} from './input.js?v=10';
-import {PlayerAnimation,ATLAS} from './animation.js?v=10';
-import {PLAYER_PROFILES,STEP_DISTANCE,strokeMotion,smoothstep} from './player-motion.js?v=10';
+import {COURTS,CHARACTERS,clamp,advanceBall} from './engine.js?v=11';
+import {gameLayout} from './input.js?v=11';
+import {PlayerAnimation,ATLAS} from './animation.js?v=11';
+import {PLAYER_PROFILES,STEP_DISTANCE,strokeMotion,smoothstep} from './player-motion.js?v=11';
 const TAU=Math.PI*2;
 export class CourtRenderer{
  constructor(canvas,assets,spriteMeta){
@@ -94,8 +94,12 @@ export class CourtRenderer{
   const c=this.ctx,v=COURTS[m.court],w=this.w,h=this.h;
   c.save();this.quad(-6.15,-13.2,6.15,13.2);c.fillStyle=m.court===4?'#a24e37ed':m.court===0?'#346f6940':m.court===1?'#392b5090':m.court===2?'#16446377':'#17557488';c.fill();
   this.quad(-5.485,-11.885,5.485,11.885);const g=c.createLinearGradient(0,h*.25,w*.3,h*.9);g.addColorStop(0,v.surface[0]);g.addColorStop(.5,v.surface[1]);g.addColorStop(1,v.surface[2]);c.fillStyle=g;c.fill();c.save();c.clip();
-  const material=this.surfaceMaterial(m.court);if(material){c.globalAlpha=m.court===4?.56:.82;c.drawImage(material,0,0);c.globalAlpha=1;}else if(this.texture){c.fillStyle=c.createPattern(this.texture,'repeat');c.globalAlpha=.22;c.fillRect(0,0,w,h);c.globalAlpha=1;}
+  const material=this.surfaceMaterial(m.court);if(material){c.globalAlpha=m.court===4?.56:m.court===2||m.court===3?.70:.78;c.drawImage(material,0,0);c.globalAlpha=1;}else if(this.texture){c.fillStyle=c.createPattern(this.texture,'repeat');c.globalAlpha=.22;c.fillRect(0,0,w,h);c.globalAlpha=1;}
   this.quad(-4.115,-11.885,4.115,11.885);c.fillStyle='#061c2b13';c.fill();
+  const far=this.project(0,-11.885),near=this.project(0,11.885),depth=c.createLinearGradient(0,far.y,0,near.y);depth.addColorStop(0,v.surface[1]+'32');depth.addColorStop(.6,v.surface[1]+'08');depth.addColorStop(1,'#00162009');c.fillStyle=depth;c.fillRect(0,0,w,h);
+  // Subtle baseline wear is part of the cached material, never a particle layer.
+  for(const y of [-10.65,10.65])for(const x of [-2.8,0,2.8]){const p=this.project(x,y),radius=this.worldUnit*p.scale*.92;c.save();c.translate(p.x,p.y);c.scale(1,.24);const wear=c.createRadialGradient(0,0,0,0,0,radius);wear.addColorStop(0,m.court===4?'#eec49b22':'#d2dfcf0e');wear.addColorStop(1,'#e2ddbf00');c.fillStyle=wear;c.fillRect(-radius,-radius,radius*2,radius*2);c.restore();}
+
   const light=c.createLinearGradient(0,0,w,h);light.addColorStop(0,'#f8eedb18');light.addColorStop(.42,'#ffffff00');light.addColorStop(1,'#02152325');c.fillStyle=light;c.fillRect(0,0,w,h);c.restore();
   if(v.surfaceType==='clay'){for(let y=-11.5;y<11.9;y+=.24)this.line([[-5.45,y],[5.45,y+.05]],.6,'#edaf7025');for(let i=0;i<70;i++){const x=Math.sin(i*11.71)*5.3,y=Math.cos(i*4.31)*11.7;this.line([[x,y],[x+.03,y+.02]],1,'#4d26181c');}}
   if(v.surfaceType==='carpet'){for(let y=-11.5;y<11.8;y+=1.5){this.quad(-5.45,y,5.45,y+.75);c.fillStyle='#ffffff04';c.fill();}}
@@ -103,12 +107,17 @@ export class CourtRenderer{
   this.line([[-5.485,11.93],[5.485,11.93]],3,'#001b2945');
   for(let x=-5.7;x<5.7;x+=.22)this.line([[x,.18],[x+.22,.85]],.6,'#031e2730');
   this.line([[-5.7,.85],[5.7,.85]],2.2,'#031e2730');
-  const lineWidth=this.layout.portrait?2.7:2.1;
-  this.line([[-5.485,-11.885],[5.485,-11.885],[5.485,11.885],[-5.485,11.885],[-5.485,-11.885]],lineWidth+1);
-  for(const x of[-4.115,4.115])this.line([[x,-11.885],[x,11.885]],lineWidth);
-  for(const y of[-6.4,6.4])this.line([[-4.115,y],[4.115,y]],lineWidth);
-  this.line([[0,-6.4],[0,6.4]],lineWidth);this.line([[0,-11.885],[0,-11.5]],lineWidth);this.line([[0,11.885],[0,11.5]],lineWidth+1);
+  for(const y of [-11.885,11.885])this.courtMark([-5.485,y],[5.485,y],.075);
+  for(const x of [-5.485,-4.115,4.115,5.485])this.courtMark([x,-11.885],[x,11.885],.045);
+  for(const y of [-6.4,6.4])this.courtMark([-4.115,y],[4.115,y],.045);
+  this.courtMark([0,-6.4],[0,6.4],.045);this.courtMark([0,-11.885],[0,-11.5],.05);this.courtMark([0,11.885],[0,11.5],.05);
   const p=this.project(0,13.6);c.translate(p.x,p.y);c.scale(1,.52);c.font=`700 ${this.layout.portrait?16:18}px Barlow,Arial`;c.textAlign='center';c.fillStyle='#e5f5da91';c.fillText('M E T A W I N N E R S',0,0);c.restore();
+ }
+ courtMark(from,to,width=.05,color='#f1f4e4'){
+  // Paint a physical strip on the ground plane, with a small display minimum.
+  const dx=to[0]-from[0],dy=to[1]-from[1],length=Math.hypot(dx,dy),nx=-dy/length*width/2,ny=dx/length*width/2,c=this.ctx;
+  this.path([[from[0]+nx,from[1]+ny],[to[0]+nx,to[1]+ny],[to[0]-nx,to[1]-ny],[from[0]-nx,from[1]-ny]]);c.closePath();c.fillStyle=color;c.fill();
+  this.line([from,to],(this.layout.touch?.78:.9)/this.scale,color);
  }
  actorSize(q,key){return (PLAYER_PROFILES[key]?.height||1.85)*this.worldUnit*q.scale;}
  courtDetails(m){
@@ -142,7 +151,7 @@ export class CourtRenderer{
   }c.restore();
  }
  positioningGuide(m){
-  if(!m.positionGuide||m.phase!=='rally')return;
+  if(!m.positionGuide||m.phase!=='rally'||m.player.planted)return;
   const receiving=m.ball.last===1&&(!m.doubles||m.teamChaser[0]==='player'),target=receiving?m.receiveTarget:m.recoveryTarget;
   if(!target)return;const c=this.ctx,p=this.project(target.x,target.y),player=this.project(m.player.x,m.player.y),gap=Math.hypot(target.x-m.player.x,target.y-m.player.y),color=this.highContrast?'#ffffff':receiving?(target.reachable?'#8df1e6':'#ffd493'):'#cce5bb';
   const r=Math.max(17*p.scale,8/this.scale);c.save();c.globalAlpha=receiving?.82:.40;c.strokeStyle=color;c.fillStyle=color+'15';c.lineWidth=receiving?2:1.2;c.setLineDash(receiving?[]:[4,5]);c.beginPath();c.ellipse(p.x,p.y,r,r*.34,0,0,TAU);c.fill();c.stroke();
@@ -150,35 +159,38 @@ export class CourtRenderer{
   c.globalAlpha=receiving?.95:.6;c.setLineDash([]);c.fillStyle=color;c.font=`600 ${Math.max(12,7/this.scale)}px DM,Arial`;c.textAlign='center';c.shadowColor='#0a262c';c.shadowBlur=4;c.fillText(receiving?(target.reachable?'RETURN':'REACH'):'RECOVER',p.x,p.y+r*.34+Math.max(14,9/this.scale));c.restore();
  }
  shadow(p,isPlayer,m,index=isPlayer?m.character:m.opponent,controlled=isPlayer){
-  const c=this.ctx,q=this.project(p.x,p.y),key=CHARACTERS[index].id,size=this.actorSize(q,key);c.save();
-  c.save();c.translate(q.x,q.y);c.transform(1,0,m.court===0?-.55:-.20,-.24,0,0);c.globalAlpha=m.court===0?.25:.17;c.scale(PLAYER_PROFILES[key].width,1);this.animation.shadow(c,key,!isPlayer,size);c.restore();
-  c.fillStyle='#06192540';c.shadowColor='#00101840';c.shadowBlur=7*q.scale;c.beginPath();c.ellipse(q.x+size*.06,q.y+2,size*.25,size*.065,0,0,TAU);c.fill();c.shadowBlur=0;
-  c.fillStyle='#00152120';c.beginPath();c.ellipse(q.x+size*.15,q.y+size*.055,size*.29,size*.07,.14,0,TAU);c.fill();
-  if(isPlayer||m.doubles){c.strokeStyle=controlled?(m.canHit(0)?'#efffbf':'#d8f674bb'):isPlayer?'#73e8ddbb':'#ffa4a599';c.lineWidth=controlled?2.2:1.5;c.beginPath();c.ellipse(q.x,q.y+1,size*.23,size*.06,0,0,TAU);c.stroke();}c.restore();
+  const c=this.ctx,q=this.project(p.x,p.y),key=CHARACTERS[index].id,size=this.actorSize(q,key),lift=!this.reduceMotion&&!p.planted&&p.split>0?Math.sin(p.split/.22*Math.PI):0;c.save();
+  c.save();c.translate(q.x,q.y);c.transform(1,0,m.court===0?-.55:-.20,-.22,0,0);c.globalAlpha=m.court===0?.13:.075;c.scale(PLAYER_PROFILES[key].width,1);this.animation.shadow(c,key,!isPlayer,size);c.restore();
+  c.fillStyle=`rgba(3,19,24,${.24-lift*.07})`;c.shadowColor='#00101824';c.shadowBlur=5*q.scale;c.beginPath();c.ellipse(q.x,q.y+1,size*.21,size*.043,0,0,TAU);c.fill();c.shadowBlur=0;
+  if(isPlayer||m.doubles){c.strokeStyle=controlled?(p.planted?'#f5dfa4':m.canHit(0)?'#efffbf':'#d8f674bb'):isPlayer?'#73e8ddbb':'#ffa4a599';c.lineWidth=controlled?2.2:1.5;c.beginPath();c.ellipse(q.x,q.y+1,size*.23,size*.06,0,0,TAU);c.stroke();if(controlled&&p.planted){c.lineWidth=2;for(const side of [-1,1]){c.beginPath();c.moveTo(q.x+side*size*.29,q.y-3);c.lineTo(q.x+side*size*.29,q.y+4);c.lineTo(q.x+side*size*.23,q.y+4);c.stroke();}}}c.restore();
  }
  drawActor(a,index,isPlayer,dt,m,charging,slot=isPlayer?'player':'ai'){
   const c=this.ctx,q=this.project(a.x,a.y),key=CHARACTERS[index].id;if(!this.assets[key+'Sheet']||!this.spriteMeta[key])return;
-  const speed=Math.hypot(a.vx,a.vy),moving=['rally','serve'].includes(m.phase)&&speed>.28,toss=m.phase==='toss'&&m.servingSlot===slot;
+  const speed=Math.hypot(a.vx,a.vy),moving=!a.planted&&['rally','serve','toss'].includes(m.phase)&&speed>.28,toss=m.phase==='toss'&&m.servingSlot===slot;
   const base=isPlayer?0:3;let frame=base;
   if(isPlayer&&(a.servePose>0||toss))frame=5;
   else if(a.swing>0&&a.shotAge<a.shotDuration)frame=isPlayer?(a.stroke==='backhand'?2:1):4;
   const size=this.actorSize(q,key),motion=this.reduceMotion?0:1,stroke=strokeMotion(a.shotAge,a.shotDuration,toss?m.timer:null);
   const celebration=a.celebrate>.1?Math.max(0,Math.sin((1.65-a.celebrate)*5.5))*size*.021*motion:0;
-  const hop=celebration+(a.split>0?Math.sin(a.split/.22*Math.PI)*size*.009*motion:0);
+  const hop=celebration+(!a.planted&&a.split>0?Math.sin(a.split/.22*Math.PI)*size*.009*motion:0);
   if(moving&&!m.paused&&!this.reduceMotion&&m.court===4){const step=Math.floor(a.foot/STEP_DISTANCE);if(this.stepFrames.get(slot)!==step){this.stepFrames.set(slot,step);if(this.dust.length<60)this.dust.push({x:a.x,y:a.y,z:.025,vx:-a.vx*.10,vy:-a.vy*.10,vz:.06,life:.22,max:.22,color:'#d79a6a'});}}
   if(a.slide>0&&!m.paused&&m.court===4&&!this.reduceMotion&&this.clayMarks.length<40){const last=this.clayMarks.at(-1);if(!last||Math.hypot(last.x-a.x,last.y-a.y)>.12)this.clayMarks.push({x:a.x,y:a.y,angle:Math.atan2(a.vy,a.vx),life:12});}
-  const lean=(clamp(a.vx/6,-1,1)*(.024+(a.slide>0?.012:0))+(charging&&m.ball.last===1?-.008:0))*motion;
-  const squash=motion*((charging&&m.ball.last===1?.010:0)+(a.split>0?.007:0)+(toss?.014*(1-smoothstep(m.timer/.6)):0));
+  const desiredLean=(a.planted?0:clamp(a.vx/6,-1,1)*(.024+(a.slide>0?.012:0))+clamp((a.ax||0)/40,-1,1)*.008)*motion;
+  const previous=this.actorMotion.get(slot),elapsed=previous?clamp(m.time-(previous.lastTime??m.time),0,.1):0,lean=previous?(previous.lean??0)+(desiredLean-(previous.lean??0))*(1-Math.exp(-elapsed/.07)):desiredLean;
+  const squash=motion*((a.planted?.010:charging&&m.ball.last===1?.007:0)+(a.split>0?.007:0)+(toss?.014*(1-smoothstep(m.timer/.6)):0));
+  // Use one authoritative racket pose during recovery. Whole-body crossfades
+  // between a swing and ready stance visibly duplicate the arm and racket.
+  if(frame!==base&&!toss&&(stroke.settle>.5||moving&&a.shotAge>.19))frame=base;
   const options={front:!isPlayer,direction:a.facing||1,size,run:a.run*1.25,moving:moving&&!this.reduceMotion,frame,actionPhase:stroke.phase,breath:Math.sin(m.time*2.6+index)*motion,lean,squash,hop,mirror:frame===5&&key==='phantom'};
-  const stateKey=frame+':'+(options.moving?'run':'ready')+':'+(options.moving?options.direction:0),previous=this.actorMotion.get(slot);
+  const stateKey=frame+':'+(a.planted?'plant':options.moving?'run':'ready')+':'+(options.moving?options.direction:0);
   let state=previous;
   if(!state||state.key!==key||m.time<state.time)state={key,stateKey,time:m.time,options};
-  else if(state.stateKey!==stateKey){state={key,stateKey,time:m.time,options,from:state.options.frame!==base&&frame===base?{...state.options,frame:base,mirror:false,moving:false}:state.options,contact:frame!==base};}
-  const blend=this.reduceMotion?1:smoothstep((m.time-state.time)/.085),settle=frame!==base&&!toss?stroke.settle:0;
+  else if(state.stateKey!==stateKey){state={key,stateKey,time:m.time,options,from:a.planted||frame!==base||state.options.frame!==base?null:state.options};}
+  const blend=this.reduceMotion?1:smoothstep((m.time-state.time)/.04);
   c.save();c.translate(q.x,q.y);c.scale(PLAYER_PROFILES[key].width,1);
-  const incoming=state.from&&blend<1?(state.contact?.72+.28*blend:blend):1;
+  const incoming=state.from&&blend<1?blend:1;
   const poses=[];if(state.from&&incoming<1)poses.push([state.from,1-incoming]);
-  poses.push([options,incoming*(1-settle)]);if(settle>0)poses.push([{...options,frame:base,mirror:false},incoming*settle]);
+  poses.push([options,incoming]);
   if(poses.filter(([,weight])=>weight>.001).length>1){
    // Blend into a tiny reusable surface so overlapping body pixels stay opaque.
    // Drawing two translucent people directly onto the court creates a ghost.
@@ -186,9 +198,9 @@ export class CourtRenderer{
    const context=layer.getContext('2d');context.clearRect(0,0,layer.width,layer.height);context.save();context.translate(ATLAS.center,ATLAS.floor);context.globalCompositeOperation='lighter';
    for(const [pose,weight]of poses){if(weight<.001)continue;context.globalAlpha=weight;this.animation.draw(context,key,{...pose,size:ATLAS.body,hop:pose.hop*ATLAS.body/size});}
    context.restore();const scale=size/ATLAS.body;c.drawImage(layer,-ATLAS.center*scale,-ATLAS.floor*scale,ATLAS.width*scale,ATLAS.height*scale);
-  }else this.animation.draw(c,key,poses.find(([,weight])=>weight>.001)[0]);
-  c.restore();state.options=options;if(blend===1)state.from=null;this.actorMotion.set(slot,state);
-  if(isPlayer&&(!this.layout.touch||m.doubles)){c.save();c.font=`600 ${Math.max(12,7/this.scale)}px DM,Arial`;c.textAlign='center';c.fillStyle=slot==='player'?'#efffcf':'#a4f5ed';c.shadowColor='#001209';c.shadowBlur=4;c.fillText(slot==='partner'?'PARTNER':m.canHit(0)?'READY':'YOU',q.x,q.y+Math.max(15*q.scale,10/this.scale));c.restore();}
+  }else this.animation.draw(c,key,{...poses.find(([,weight])=>weight>.001)[0],size});
+  c.restore();state.options=options;state.lean=lean;state.lastTime=m.time;if(blend===1)state.from=null;this.actorMotion.set(slot,state);
+  if(isPlayer&&(!this.layout.touch||m.doubles)){c.save();c.font=`600 ${Math.max(12,7/this.scale)}px DM,Arial`;c.textAlign='center';c.fillStyle=slot==='player'?'#efffcf':'#a4f5ed';c.shadowColor='#001209';c.shadowBlur=4;c.fillText(slot==='partner'?'PARTNER':a.planted?'FEET SET':m.canHit(0)?'READY':'YOU',q.x,q.y+Math.max(15*q.scale,10/this.scale));c.restore();}
  }
  net(m){
   if(this.netPulse>.005){this.paintNet(m);return;}
@@ -242,7 +254,7 @@ export class CourtRenderer{
   const layer=document.createElement('canvas');layer.width=this.canvas.width;layer.height=this.canvas.height;
   const original=this.ctx;this.ctx=layer.getContext('2d',{alpha:false});const c=this.ctx;
   c.setTransform(this.dpr,0,0,this.dpr,0,0);this.background(m);c.save();c.translate(this.ox,this.oy);c.scale(this.scale,this.scale);
-  this.surface(m);if(m.doubles){this.line([[-5.485,-11.885],[-5.485,11.885]],3,'#f0ffbd');this.line([[5.485,-11.885],[5.485,11.885]],3,'#f0ffbd');}this.courtDetails(m);c.restore();this.ctx=original;this.sceneCache=layer;this.sceneCourt=m.court;this.sceneDoubles=m.doubles;
+  this.surface(m);if(m.doubles){this.courtMark([-5.485,-11.885],[-5.485,11.885],.055,'#eff7cf');this.courtMark([5.485,-11.885],[5.485,11.885],.055,'#eff7cf');}this.courtDetails(m);c.restore();this.ctx=original;this.sceneCache=layer;this.sceneCourt=m.court;this.sceneDoubles=m.doubles;
  }
  draw(m,dt,{aim=0,charging=false,depth=0,shot='flat',aimTarget=m.aimTarget,power=.7}={}){
   const c=this.ctx;this.prepareScene(m);c.setTransform(1,0,0,1,0,0);c.drawImage(this.sceneCache,0,0);c.setTransform(this.dpr,0,0,this.dpr,0,0);

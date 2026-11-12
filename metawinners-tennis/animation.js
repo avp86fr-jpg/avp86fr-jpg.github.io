@@ -1,4 +1,4 @@
-import {proportionHeight} from './player-motion.js?v=10';
+import {proportionHeight} from './player-motion.js?v=11';
 import animationMeta from './animation-meta.js?v=7';
 // Animation sheets are prepared offline. Gameplay only samples existing frames.
 export const ATLAS={width:352,height:304,body:236,center:176,floor:288,columns:8,frames:128};

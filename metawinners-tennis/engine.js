@@ -1,3 +1,4 @@
+import {steerVelocity} from './locomotion.js?v=11';
 export const CONTRACT = '0x74f70713b0515e9f520d6c764352e45e227839b7';
 export const CHARACTERS = [
  {id:'joker',name:'CHAOS',token:2,style:'THE WILD CARD',class:'Spin specialist',line:'Unpredictable. Unmissable.',power:8,speed:9,control:7,color:'#be8cff'},
@@ -54,7 +55,7 @@ export function shotFlight(start,target,{kind='flat',power=.7,spin=.15,curve=0,s
  return{...velocity,T,spin,curve,z:origin.z};
 }
 export class TennisMatch{
- constructor({character=0,opponent=4,court=0,difficulty='club',practice=false,assist=false,mobile=false,doubles=false,positionAssist=false,positionGuide=true,partnerCharacter=null,rivalCharacter=null,random=Math.random,onEvent=()=>{}}={}){Object.assign(this,{character,opponent,court,difficulty,practice,assist,mobile,doubles,positionAssist,positionGuide,random,onEvent});this.setDifficulty(difficulty);const remaining=CHARACTERS.map((_,i)=>i).filter(i=>i!==character&&i!==opponent);this.partnerCharacter=remaining.includes(partnerCharacter)?partnerCharacter:remaining[0];this.rivalCharacter=remaining.includes(rivalCharacter)&&rivalCharacter!==this.partnerCharacter?rivalCharacter:remaining.find(i=>i!==this.partnerCharacter);this.lineup=[{slot:'player',team:0,index:character},{slot:'ai',team:1,index:opponent},...(doubles?[{slot:'partner',team:0,index:this.partnerCharacter},{slot:'rival',team:1,index:this.rivalCharacter}]:[])];this.stateNames=[...this.lineup.map(e=>e.slot),'ball'];this.serviceTurn=0;this.points=[0,0];this.games=[0,0];this.server=0;this.totalPoints=0;this.rally=0;this.bestRally=0;this.perfects=0;this.winners=0;this.elapsed=0;this.paused=false;this.time=0;this.accumulator=0;this.pointNumber=0;this.serveAttempt=1;this.lastSpeed=0;this.longestPoint=0;this.pointWinner=null;this.hitStop=0;this.resetPoint();this.capturePrevious();}
+ constructor({character=0,opponent=4,court=0,difficulty='club',practice=false,assist=false,mobile=false,doubles=false,positionAssist=false,positionGuide=true,shotLock='ready',partnerCharacter=null,rivalCharacter=null,random=Math.random,onEvent=()=>{}}={}){Object.assign(this,{character,opponent,court,difficulty,practice,assist,mobile,doubles,positionAssist,positionGuide,random,onEvent});this.shotLock=['ready','hold','off'].includes(shotLock)?shotLock:'ready';this.setDifficulty(difficulty);const remaining=CHARACTERS.map((_,i)=>i).filter(i=>i!==character&&i!==opponent);this.partnerCharacter=remaining.includes(partnerCharacter)?partnerCharacter:remaining[0];this.rivalCharacter=remaining.includes(rivalCharacter)&&rivalCharacter!==this.partnerCharacter?rivalCharacter:remaining.find(i=>i!==this.partnerCharacter);this.lineup=[{slot:'player',team:0,index:character},{slot:'ai',team:1,index:opponent},...(doubles?[{slot:'partner',team:0,index:this.partnerCharacter},{slot:'rival',team:1,index:this.rivalCharacter}]:[])];this.stateNames=[...this.lineup.map(e=>e.slot),'ball'];this.serviceTurn=0;this.points=[0,0];this.games=[0,0];this.server=0;this.totalPoints=0;this.rally=0;this.bestRally=0;this.perfects=0;this.winners=0;this.elapsed=0;this.paused=false;this.time=0;this.accumulator=0;this.pointNumber=0;this.serveAttempt=1;this.lastSpeed=0;this.longestPoint=0;this.pointWinner=null;this.hitStop=0;this.resetPoint();this.capturePrevious();}
  emit(type,detail={}){this.onEvent({type,...detail});}
  get halfWidth(){return this.doubles?5.485:PHYSICS.halfWidth;}
  get servingSlot(){return this.server===0?(this.doubles&&this.serviceTurn>=2?'partner':'player'):(this.doubles&&this.serviceTurn>=2?'rival':'ai');}
@@ -86,7 +87,7 @@ export class TennisMatch{
   return{...start,...shotFlight(start,this.aimTarget,{kind,power,spin,curve,serve:serving,mobile:this.mobile,court:COURTS[this.court],flightScale:1-(CHARACTERS[this.character].power-8)*.014,volley:!serving&&this.canHit(0)&&this.ball.bounces===0,smash:!serving&&this.canHit(0)&&this.ball.z>1.85&&Math.abs(this.player.y)<7&&power>.7}),bounces:0};
  }
  resetPoint(retry=false){
-  this.returnPlanTime=0;this.recoveryTarget=null;this.positioning=false;this.pointNumber++;this.rally=0;this.pointWinner=null;this.receiveTarget=null;this.phase='serve';this.timer=0;if(!retry)this.serveAttempt=1;
+  this.shotHeld=false;this.shotAnchor=null;this.returnPlanTime=0;this.recoveryTarget=null;this.positioning=false;this.pointNumber++;this.rally=0;this.pointWinner=null;this.receiveTarget=null;this.phase='serve';this.timer=0;if(!retry)this.serveAttempt=1;
   const side=(this.points[0]+this.points[1])%2===0?1:-1;this.serveSide=side;
   this.player=this.actor(this.server===0?side*1.15:0,this.server===0?12.25:10.3);this.ai=this.actor(this.server===1?-side*1.15:0,this.server===1?-12.25:-10.2);
   if(this.doubles){
@@ -101,26 +102,39 @@ export class TennisMatch{
   this.target=null;this.pendingShot=null;this.aiTarget={x:0,y:-10};this.aiReaction=0;this.aiPlans={};this.teamChaser=['player','ai'];this.teamReaction=[0,0];
   this.aimTarget=this.servingSlot==='player'?{x:-side*2,y:-5.25}:{x:0,y:-9.2};this.emit('ready',{server:this.server,serverSlot:this.servingSlot,attempt:this.serveAttempt});
  }
- actor(x,y){return{x,y,vx:0,vy:0,facing:1,slide:0,split:0,swing:0,run:0,pose:'ready',stroke:'forehand',servePose:0,foot:0,shotAge:1,shotDuration:.42,celebrate:0,stepAge:0};}
- serve(power=.65,aim=0,target=null){if(this.phase!=='serve'||this.paused)return;this.phase='toss';this.timer=0;this.serveOptions={power,aim,target:target?{...target}:null,slot:this.servingSlot};const p=this[this.servingSlot];p.servePose=1;p.pose='serve';p.vx=p.vy=0;this.ball.x=p.x+.4;this.ball.y=p.y;this.ball.z=1.3;this.ball.vz=5.0;this.emit('toss',{who:this.server});}
+ actor(x,y){return{x,y,vx:0,vy:0,facing:1,slide:0,split:0,swing:0,run:0,pose:'ready',stroke:'forehand',servePose:0,foot:0,shotAge:1,shotDuration:.42,celebrate:0,stepAge:0,planted:false,contactHold:0,ax:0,ay:0};}
+ serve(power=.65,aim=0,target=null){if(this.phase!=='serve'||this.paused)return;this.phase='toss';this.timer=0;this.serveOptions={power,aim,target:target?{...target}:null,slot:this.servingSlot};this.shotHeld=false;this.shotAnchor=null;const p=this[this.servingSlot];p.planted=true;p.servePose=1;p.pose='serve';p.vx=p.vy=0;this.ball.x=p.x+.4;this.ball.y=p.y;this.ball.z=1.3;this.ball.vz=5.0;this.emit('toss',{who:this.server});}
  queueShot(kind='flat',power=.6,aim=0,depth=0,target=null,{buffered=false}={}){
-  if(this.paused||!['serve','toss','rally'].includes(this.phase))return false;
+  this.shotHeld=false;
+  if(this.paused||!['serve','toss','rally'].includes(this.phase)){this.cancelShot();return false;}
   if(this.phase==='serve'&&this.servingSlot==='player'){this.serve(power,aim,target);return true;}
   // A prepared return belongs to one opportunity, never to a repeating hold.
   // Preparing while an AI serves must not make the human serve out of turn.
-  if(!buffered&&(this.phase!=='rally'||this.ball.last===0))return false;
-  if(buffered&&this.phase==='toss'&&this.servingSlot==='player')return false;
+  if(!buffered&&(this.phase!=='rally'||this.ball.last===0)){this.cancelShot();return false;}
+  if(buffered&&this.phase==='toss'&&this.servingSlot==='player'){this.cancelShot();return false;}
   this.pendingShot={kind,power,aim,target:target?{...target}:null,depth:clamp(depth,-1,1),buffered,waiting:buffered&&(this.phase!=='rally'||this.ball.last===0),ttl:buffered?6:this.mobile?(this.assist?1.8:.70):.30,age:0};
   if(!buffered){this.player.swing=.38;this.player.stroke=this.ball.x<this.player.x?'backhand':'forehand';}
   return true;
  }
- cancelShot(){this.pendingShot=null;}
+ setShotLock(value){this.shotLock=['ready','hold','off'].includes(value)?value:'ready';this.cancelShot();}
+ prepareShot(){if(this.paused||!['serve','toss','rally'].includes(this.phase))return false;this.shotHeld=true;this.updateShotPlant();return true;}
+ cancelShot(){this.pendingShot=null;this.shotHeld=false;this.shotAnchor=null;if(this.player){this.player.planted=false;this.player.contactHold=0;}}
+ updateShotPlant(){
+  const p=this.player,intent=this.shotHeld||!!this.pendingShot,live=['serve','toss','rally'].includes(this.phase);
+  const ownServe=this.phase==='serve'&&this.servingSlot==='player';
+  const lock=live&&intent&&this.shotLock!=='off'&&(this.shotLock==='hold'||ownServe||this.phase==='rally'&&this.canHit(0));
+  if(lock){this.shotAnchor||={x:p.x,y:p.y};p.x=this.shotAnchor.x;p.y=this.shotAnchor.y;}
+  else this.shotAnchor=null;
+  p.planted=lock||p.contactHold>0;
+  if(p.planted){p.vx=p.vy=p.ax=p.ay=0;p.pose='plant';}
+ }
+
  canHit(who,slot=who===0?'player':'ai'){const p=this[slot],b=this.ball;if(!p||this.doubles&&b.isServe&&slot!==this.receiverSlot)return false;if(b.last===who||b.z<.13||b.z>2.8||b.isServe&&b.bounces===0)return false;if(who===0?b.y<.12:b.y>-.12)return false;const control=CHARACTERS[this.lineup.find(e=>e.slot===slot)?.index??this.character].control,reach=(slot==='player'&&this.assist?1.34:1.12)+(control-8)*.018;const dy=(p.y-b.y)/(slot==='player'&&this.assist?1.28:1.10),dx=(p.x-b.x)/reach;return dx*dx+dy*dy<1.30;}
  hit(who,{kind='flat',power=.6,aim=0,depth=0,serve=false,target:chosenTarget=null,slot=who===0?'player':'ai'}={}){const b=this.ball,p=this[slot],dir=who===0?-1:1,c=CHARACTERS[this.roster().find(e=>e.slot===slot).index],court=COURTS[this.court];power=clamp(power,.18,1.2);const clean=power>=.62&&power<=.88,footwork=Math.hypot(p.vx,p.vy),placement=(this.random()-.5)*(.06+(10-c.control)*.025),reach=Math.hypot(p.x-b.x,p.y-b.y);let spin=kind==='topspin'?1.5:kind==='slice'?-.75:kind==='lob'?.25:.15;let curve=kind==='slice'?clamp(aim,-1,1)*.65:kind==='topspin'?clamp(aim,-1,1)*.45:0;const volley=!serve&&b.bounces===0;const smash=!serve&&b.z>1.85&&Math.abs(p.y)<7&&power>.7;let target;
   if(serve){const boxSign=who===0?-this.serveSide:this.serveSide;target={x:boxSign*(2+clamp(aim,-1,1)*1.25),y:dir*(4.5+clamp(power,0,1)*1.1)};if(chosenTarget)target={x:boxSign*clamp(chosenTarget.x*boxSign,.45,3.70),y:dir*clamp(Math.abs(chosenTarget.y),1.4,5.95)};spin=.25;}
   else{const over=Math.max(0,power-.94),baseDepth=kind==='slice'?5.5+power*1.9:kind==='lob'?9.8:7.8+power*1.6+over*16;target={x:clamp(aim,-1,1)*(3.55+over*1.5)+placement,y:dir*(clamp(baseDepth+clamp(depth,-1,1)*2.1,3.2,11.25)+over*12)};if(chosenTarget)target={x:clamp(chosenTarget.x,-this.halfWidth+.28,this.halfWidth-.28),y:dir*clamp(Math.abs(chosenTarget.y),1.45,11.40)};}
   const flight=shotFlight(b,target,{kind,power,spin,curve,serve,smash,volley,mobile:this.mobile,court,explicit:!!chosenTarget,flightScale:(who===1?this.profile.flight:1)*(1-(c.power-8)*.014)});const {T:flightTime,...velocity}=flight;
-  Object.assign(b,velocity,{kind,spin,curve,bounces:0,last:who,lastActor:slot,isServe:serve});this.target={...target};this.rally++;this.bestRally=Math.max(this.bestRally,this.rally);p.swing=.42;p.shotAge=0;p.shotDuration=.42;p.stroke=serve||smash?'serve':b.x<p.x?'backhand':'forehand';p.servePose=serve||smash?.45:0;
+  Object.assign(b,velocity,{kind,spin,curve,bounces:0,last:who,lastActor:slot,isServe:serve});this.target={...target};this.rally++;this.bestRally=Math.max(this.bestRally,this.rally);p.swing=.42;p.shotAge=0;p.shotDuration=.42;p.stroke=serve||smash?'serve':b.x<p.x?'backhand':'forehand';p.servePose=serve||smash?.45:0;p.contactHold=slot==='player'?(this.shotLock==='off'?0:.10):.08;p.planted=p.contactHold>0;if(p.contactHold>0){p.vx=p.vy=p.ax=p.ay=0;p.planted=true;}if(who===0){this.shotHeld=false;this.shotAnchor=null;if(slot!=='player')this.player.planted=this.player.contactHold>0;}
   if(who===1&&this.pendingShot?.buffered){this.pendingShot.waiting=false;this.pendingShot.ttl=6;this.pendingShot.age=0;}else this.pendingShot=null;
   this.lastSpeed=Math.round(Math.hypot(b.vx,b.vy,b.vz)*3.6);const perfect=clean&&reach<1.0&&b.z>.55&&b.z<2.1&&!serve;if(slot==='player'&&perfect)this.perfects++;
   for(const e of this.lineup)if(e.team!==who)this[e.slot].split=.22;if(slot==='player')this.recoveryTarget=this.recoveryPosition();
@@ -198,24 +212,31 @@ export class TennisMatch{
   this.hit(1,{kind,power:clamp(profile.power+(this.random()-.5)*.12,.42,.90),aim:side*profile.width,target:{x:x+(this.random()-.5)*profile.error,y}});
  }
  aiSpeed(slot='ai'){const speed=slot==='partner'?DIFFICULTIES.club.speed:this.profile.speed,index=this.lineup.find(e=>e.slot===slot)?.index??this.opponent;return speed*(this.mobile?.82:1)*(1+(CHARACTERS[index].speed-8)*.025);}
- score(winner,reason='WINNER'){if(this.phase!=='rally'&&this.phase!=='toss')return;this.phase='point';this.pointWinner=winner;for(const e of this.roster().filter(e=>e.team===winner))this[e.slot].celebrate=1.65;this.timer=0;this.totalPoints++;this.pendingShot=null;if(winner===0)this.winners++;if(!this.practice){this.points[winner]++;if(this.points[winner]>=4&&this.points[winner]-this.points[1-winner]>=2){this.games[winner]++;this.points=[0,0];this.server=1-this.server;this.serviceTurn=(this.serviceTurn+1)%4;reason='GAME';if(this.games[winner]>=3){this.phase='finished';this.emit('finished',{winner});return;}}}this.emit('point',{winner,reason});}
+ score(winner,reason='WINNER'){if(this.phase!=='rally'&&this.phase!=='toss')return;this.phase='point';this.pointWinner=winner;for(const e of this.roster().filter(e=>e.team===winner))this[e.slot].celebrate=1.65;this.timer=0;this.totalPoints++;this.cancelShot();if(winner===0)this.winners++;if(!this.practice){this.points[winner]++;if(this.points[winner]>=4&&this.points[winner]-this.points[1-winner]>=2){this.games[winner]++;this.points=[0,0];this.server=1-this.server;this.serviceTurn=(this.serviceTurn+1)%4;reason='GAME';if(this.games[winner]>=3){this.phase='finished';this.emit('finished',{winner});return;}}}this.emit('point',{winner,reason});}
  fault(reason){this.cancelShot();if(this.serveAttempt===1&&!this.practice){this.serveAttempt=2;this.phase='fault';this.timer=0;this.emit('fault',{reason,attempt:2});}else this.score(1-this.ball.last,'DOUBLE FAULT');}
- moveActor(p,ix,iy,speed,dt,gentle=false){const length=Math.hypot(ix,iy);if(length>1){ix/=length;iy/=length;}if(length<(gentle?.002:.10))ix=iy=0;const tx=ix*speed,ty=iy*speed;const brake=ix===0&&iy===0?90:Math.sign(tx)!==Math.sign(p.vx)||Math.sign(ty)!==Math.sign(p.vy)?(gentle?28:66):(gentle?20:48);const traction=COURTS[this.court].traction||1;if(traction<.9&&Math.abs(p.vx)>2.6&&tx*p.vx<0)p.slide=.20;const acceleration=(ix===0&&iy===0)?brake:brake*traction;p.vx=approach(p.vx,tx,acceleration*dt);p.vy=approach(p.vy,ty,acceleration*dt);if(Math.abs(p.vx)>.55)p.facing=p.vx<0?-1:1;p.x+=p.vx*dt;p.y+=p.vy*dt;const moved=Math.hypot(p.vx,p.vy)*dt;p.run+=moved*2.8;p.foot+=moved;p.stepAge+=moved;p.pose=Math.hypot(p.vx,p.vy)>.35?'run':'ready';}
+ moveActor(p,ix,iy,speed,dt,gentle=false){
+  if(p.planted){p.vx=p.vy=p.ax=p.ay=0;p.pose='plant';return;}
+  const traction=COURTS[this.court].traction||1,oldX=p.vx,oldY=p.vy;
+  if(traction<.9&&Math.abs(p.vx)>2.6&&ix*p.vx<0)p.slide=.20;
+  const next=steerVelocity(p.vx,p.vy,ix,iy,speed,dt,{gentle,traction});p.vx=next.vx;p.vy=next.vy;p.ax=(p.vx-oldX)/dt;p.ay=(p.vy-oldY)/dt;
+  if(Math.abs(p.vx)>.55)p.facing=p.vx<0?-1:1;
+  p.x+=p.vx*dt;p.y+=p.vy*dt;const moved=Math.hypot(p.vx,p.vy)*dt;p.run+=moved*2.8;p.foot+=moved;p.stepAge+=moved;p.pose=Math.hypot(p.vx,p.vy)>.35?'run':'ready';
+ }
  capturePrevious(){
   if(!this.previous)this.previous={player:{},ai:{},ball:{}};
-  for(const name of this.stateNames){const source=this[name],target=this.previous[name]||(this.previous[name]={});for(const key of ['x','y','z','run'])target[key]=source[key]||0;}
+  for(const name of this.stateNames){const source=this[name],target=this.previous[name]||(this.previous[name]={});for(const key of ['x','y','z','run','vx','vy'])target[key]=source[key]||0;}
  }
  renderState(){
   if(!this.view){this.view=Object.create(this);this.view.player={};this.view.ai={};this.view.ball={};}
   const alpha=this.paused||this.phase==='finished'?1:clamp(this.accumulator/PHYSICS.step,0,1);
-  for(const name of this.stateNames){const source=this[name],target=Object.hasOwn(this.view,name)?this.view[name]:(this.view[name]={}),old=this.previous?.[name]||source;Object.assign(target,source);for(const key of ['x','y','z','run'])if(key in source)target[key]=old[key]+(source[key]-old[key])*alpha;}
+  for(const name of this.stateNames){const source=this[name],target=Object.hasOwn(this.view,name)?this.view[name]:(this.view[name]={}),old=this.previous?.[name]||source;Object.assign(target,source);for(const key of ['x','y','z','run','vx','vy'])if(key in source)target[key]=old[key]+(source[key]-old[key])*alpha;}
   return this.view;
  }
  update(dt,input={x:0,y:0}){if(this.paused||this.phase==='finished')return;this.accumulator+=clamp(dt,0,.1);while(this.accumulator+1e-10>=PHYSICS.step){this.accumulator-=PHYSICS.step;this.capturePrevious();const phase=this.phase,last=this.ball.last;this.step(PHYSICS.step,input);if(phase!==this.phase||last!==this.ball.last)this.capturePrevious();if(this.phase==='finished')break;}}
- step(dt,input){this.elapsed+=dt;this.time+=dt;this.timer+=dt;const p=this.player,a=this.ai,b=this.ball;for(const entry of this.lineup){const actor=this[entry.slot];actor.slide=Math.max(0,actor.slide-dt);actor.split=Math.max(0,actor.split-dt);actor.swing=Math.max(0,actor.swing-dt);actor.servePose=Math.max(0,actor.servePose-dt);actor.shotAge+=dt;actor.celebrate=Math.max(0,actor.celebrate-dt);}
+ step(dt,input){this.elapsed+=dt;this.time+=dt;this.timer+=dt;const p=this.player,a=this.ai,b=this.ball;for(const entry of this.lineup){const actor=this[entry.slot];actor.slide=Math.max(0,actor.slide-dt);actor.split=Math.max(0,actor.split-dt);actor.swing=Math.max(0,actor.swing-dt);actor.servePose=Math.max(0,actor.servePose-dt);actor.shotAge+=dt;actor.celebrate=Math.max(0,actor.celebrate-dt);actor.contactHold=Math.max(0,actor.contactHold-dt);if(entry.slot!=='player')actor.planted=actor.contactHold>0;}
   if(this.phase==='point'||this.phase==='fault'){advanceBall(b,dt);if(b.z<PHYSICS.radius){b.z=PHYSICS.radius;b.vz=Math.abs(b.vz)*.35;b.vx*=.85;b.vy*=.85;}if(this.timer>1.65)this.resetPoint(this.phase==='fault');return;}
-  if(this.phase==='toss'){b.z=1.3+5.0*this.timer-4.905*this.timer*this.timer;if(this.timer>.6){this.phase='rally';this.hit(this.server,{...this.serveOptions,serve:true});this.emit('serve',{who:this.server});}return;}
-  if(this.phase==='rally'&&b.last===1&&this.time>=this.returnPlanTime)this.planReceive();const movement=this.positioningInput(input),playerSpeed=this.playerSpeed();this.moveActor(p,movement.x,movement.y*(this.mobile?.78:1),playerSpeed*(input.precise?.43:1),dt,this.mobile);p.x=clamp(p.x,-6,6);p.y=clamp(p.y,.7,13.4);
+  if(this.phase==='toss'){if(this.servingSlot!=='player'){this.updateShotPlant();const move=p.planted?{x:0,y:0}:this.positioningInput(input);this.moveActor(p,move.x,move.y*(this.mobile?.78:1),this.playerSpeed()*(input.precise?.43:1),dt,this.mobile);p.x=clamp(p.x,-6,6);p.y=clamp(p.y,.7,13.4);}b.z=1.3+5.0*this.timer-4.905*this.timer*this.timer;if(this.timer>.6){this.phase='rally';this.hit(this.server,{...this.serveOptions,serve:true});this.emit('serve',{who:this.server});}return;}
+  if(this.phase==='rally'&&b.last===1&&this.time>=this.returnPlanTime)this.planReceive();this.updateShotPlant();const movement=p.planted?{x:0,y:0}:this.positioningInput(input),playerSpeed=this.playerSpeed();if(p.planted)this.positioning=false;this.moveActor(p,movement.x,movement.y*(this.mobile?.78:1),playerSpeed*(input.precise?.43:1),dt,this.mobile);p.x=clamp(p.x,-6,6);p.y=clamp(p.y,.7,13.4);
   if(this.phase==='serve'){const actor=this[this.servingSlot];if(this.servingSlot==='player'){p.y=clamp(p.y,12.08,13.25);p.x=clamp(p.x,this.serveSide>0?.35:-3.8,this.serveSide>0?3.8:-.35);}b.x=actor.x+.42;b.y=actor.y;b.z=1.15+Math.sin(this.time*3)*.05;if(this.servingSlot!=='player'&&this.timer>this.profile.serveDelay)this.serve(this.profile.power,(this.random()-.5)*1.3);return;}
   if(this.doubles)this.updateDoubles(dt);else{
   this.aiReaction=Math.max(0,this.aiReaction-dt);const tx=b.last===0&&this.aiReaction<=0?this.aiTarget.x:clamp(-p.x*.22,-1.1,1.1),ty=b.last===0&&this.aiReaction<=0?this.aiTarget.y:(b.last===1&&p.y>8&&a.y>-6?-4.5:-9.8),dx=tx-a.x,dy=ty-a.y,dist=Math.hypot(dx,dy);const aispeed=this.aiSpeed();const factor=Math.min(1,dist/.5);this.moveActor(a,dist>.035?dx/dist*factor:0,dist>.035?dy/dist*factor:0,aispeed,dt);a.x=clamp(a.x,-6,6);a.y=clamp(a.y,-13.4,-.7);
@@ -223,7 +244,7 @@ export class TennisMatch{
   let groundRemainder=0;const old={...b};advanceBall(b,dt);if(b.z<=PHYSICS.radius&&old.z>PHYSICS.radius){const t=groundContact(old,dt),contact={...old};advanceBall(contact,t);Object.assign(b,contact);groundRemainder=dt-t;}
   if(old.y*b.y<0){const frac=-old.y/(b.y-old.y),crossZ=old.z+(b.z-old.z)*frac,crossX=old.x+(b.x-old.x)*frac,netHeight=.914+.156*Math.pow(Math.min(Math.abs(crossX)/5.7,1),2);if(crossZ<netHeight+PHYSICS.radius&&Math.abs(crossX)<5.8){b.y=Math.sign(old.y)*.035;b.vy*=-.15;b.vx*=.2;b.vz=-.7;if(b.isServe)this.fault('NET');else this.score(1-b.last,'INTO THE NET');return;}}
   if(b.z<=PHYSICS.radius){const first=b.bounces===0;if(first){const out=Math.abs(b.x)>(b.isServe?PHYSICS.halfWidth:this.halfWidth)+PHYSICS.radius||Math.abs(b.y)>PHYSICS.halfLength+PHYSICS.radius||(b.last===0?b.y>=0:b.y<=0);if(b.isServe){const correctX=b.last===0?-this.serveSide:this.serveSide;if(out||Math.abs(b.y)>PHYSICS.service||Math.sign(b.x)!==correctX){this.fault('SERVICE FAULT');return;}}else if(out){this.score(1-b.last,'OUT');return;}}if(b.bounces>=1){this.score(b.last,'DOUBLE BOUNCE');return;}bounceBall(b,COURTS[this.court]);this.emit('bounce',{x:b.x,y:b.y,speed:Math.hypot(b.vx,b.vy),spin:b.spin,surface:COURTS[this.court].surfaceType});if(groundRemainder>0)advanceBall(b,groundRemainder);}
-  if(this.pendingShot&&!this.pendingShot.waiting){this.pendingShot.age+=dt;if(this.canHit(0)){const shot=this.pendingShot;this.hit(0,shot);}else{this.pendingShot.ttl-=dt;if(this.pendingShot.ttl<=0){this.pendingShot=null;this.emit('miss',{who:0,reason:Math.abs(p.x-b.x)>1.5?'MOVE TO THE BALL':b.y<0?'WAIT FOR YOUR RETURN':'SWING A LITTLE LATER'});}}}
+  if(this.pendingShot&&!this.pendingShot.waiting){this.pendingShot.age+=dt;if(this.canHit(0)){const shot=this.pendingShot;this.hit(0,shot);}else{this.pendingShot.ttl-=dt;if(this.pendingShot.ttl<=0){this.cancelShot();this.emit('miss',{who:0,reason:Math.abs(p.x-b.x)>1.5?'MOVE TO THE BALL':b.y<0?'WAIT FOR YOUR RETURN':'SWING A LITTLE LATER'});}}}
   if(!this.doubles&&this.phase==='rally'&&b.last===0&&this.aiReaction<=0&&this.canHit(1))this.singlesReturn();
   if(this.doubles&&this.phase==='rally'){
    const receiving=1-b.last,preferred=this.teamChaser[receiving];

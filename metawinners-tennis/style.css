@@ -79,3 +79,7 @@
 @media(max-height:440px) and (orientation:landscape){#audioDialog{max-width:680px}.audio-mixer{grid-template-columns:repeat(3,1fr);gap:20px}.audio-enable{margin:12px 0}.audio-note{margin:12px 0!important}#audioDialog h2{font-size:30px}.game-bottom{display:none}.shot-timing-option{margin-top:12px}}
 
 #gameScreen .touch-shots button#touchHit,#gameScreen .touch-shots button#touchTopspin,#gameScreen .touch-shots button#touchSlice,#gameScreen .touch-shots button#touchLob{display:flex!important}
+
+/* v11: a clear planted stance while aiming, without blocking the target pad. */
+.move-label{position:absolute;left:0;right:0;bottom:11px;text-align:center;font:600 8px DM;letter-spacing:1.4px;color:#d4e3c6;pointer-events:none}
+.joystick.planted{border-color:#efdb9e;background:#493e2466;box-shadow:inset 0 0 0 3px #f3e1ac20}.joystick.planted .move-label{color:#ffe5a6;letter-spacing:.6px}.joystick.planted #joystickKnob{background:#ead89e45;border-color:#f1deb091}.shot-status.planted{color:#f7e0a2}
