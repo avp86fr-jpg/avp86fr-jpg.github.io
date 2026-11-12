@@ -1,3 +1,4 @@
+import {proportionHeight} from './player-motion.js?v=10';
 import animationMeta from './animation-meta.js?v=7';
 // Animation sheets are prepared offline. Gameplay only samples existing frames.
 export const ATLAS={width:352,height:304,body:236,center:176,floor:288,columns:8,frames:128};
@@ -24,16 +25,23 @@ export class PlayerAnimation{
  }
  shadow(ctx,key,front,size){
   const name=key+':shadow:'+front;if(!this.cache.has(name)){const source=this.pose(key,front?3:0),layer=document.createElement('canvas');layer.width=source.width;layer.height=source.height;const c=layer.getContext('2d');c.drawImage(source,0,0);c.globalCompositeOperation='source-in';c.fillStyle='#001820';c.fillRect(0,0,layer.width,layer.height);this.cache.set(name,layer);}
-  const s=size/ATLAS.body;ctx.drawImage(this.cache.get(name),-ATLAS.center*s,-ATLAS.floor*s,ATLAS.width*s,ATLAS.height*s);
+  const s=size/ATLAS.body;this.drawProportioned(ctx,key,this.cache.get(name),0,0,ATLAS.width,ATLAS.height,-ATLAS.center,-ATLAS.floor,s);
  }
- draw(ctx,key,{front=false,direction=1,size,run=0,moving=false,frame=front?3:0,actionPhase=0,breath=0,lean=0,squash=0,hop=0}){
+ drawProportioned(ctx,key,image,sx,sy,sw,sh,x,y,scale,rx=1,ry=1){
+  // A few contiguous strips: no extra textures or per-frame pixel processing.
+  const bottom=y+sh,cuts=[y,...[-ATLAS.body,-ATLAS.body*.76,-ATLAS.body*.48,0].filter(v=>v>y&&v<bottom),bottom];
+  for(let i=1;i<cuts.length;i++){
+   const top=cuts[i-1],end=cuts[i],dy=-proportionHeight(-top/ATLAS.body,key)*ATLAS.body,db=-proportionHeight(-end/ATLAS.body,key)*ATLAS.body;
+   ctx.drawImage(image,sx*rx,(sy+top-y)*ry,sw*rx,(end-top)*ry,x*scale,dy*scale,sw*scale,(db-dy)*scale);
+  }
+ }
+ draw(ctx,key,{front=false,direction=1,size,run=0,moving=false,frame=front?3:0,actionPhase=0,breath=0,lean=0,squash=0,hop=0,mirror=false}){
   const anim=this.assets[key+'Animation'],s=size/ATLAS.body;let cell=null;
   if(moving&&frame===(front?3:0))cell=(front?48:0)+(direction<0?0:24)+Math.floor(((run%TAU)+TAU)%TAU/TAU*24);
   else if([1,2,4,5].includes(frame))cell=({1:96,2:104,4:112,5:120})[frame]+Math.min(7,Math.max(0,Math.floor(actionPhase*8)));
-  ctx.save();ctx.translate(0,-hop);ctx.rotate(lean);ctx.scale(1+breath*.0015,1+breath*.003-squash);
-  const x=-ATLAS.center*s,y=-ATLAS.floor*s,w=ATLAS.width*s,h=ATLAS.height*s;
-  if(anim&&cell!==null){const f=animationMeta[key].frames[cell],rx=anim.spriteScaleX||1,ry=anim.spriteScaleY||1;ctx.drawImage(anim,f.sx*rx,f.sy*ry,f.sw*rx,f.sh*ry,-f.ax*s,-f.ay*s,f.sw*s,f.sh*s);}
-  else ctx.drawImage(this.pose(key,frame),x,y,w,h);
+  ctx.save();ctx.translate(0,-hop);ctx.rotate(lean);ctx.scale((mirror?-1:1)*(1+breath*.0015),1+breath*.003-squash);
+  if(anim&&cell!==null){const f=animationMeta[key].frames[cell],rx=anim.spriteScaleX||1,ry=anim.spriteScaleY||1;this.drawProportioned(ctx,key,anim,f.sx,f.sy,f.sw,f.sh,-f.ax,-f.ay,s,rx,ry);}
+  else this.drawProportioned(ctx,key,this.pose(key,frame),0,0,ATLAS.width,ATLAS.height,-ATLAS.center,-ATLAS.floor,s);
   ctx.restore();
  }
 }
