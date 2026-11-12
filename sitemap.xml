@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://avp86fr-jpg.github.io/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://avp86fr-jpg.github.io/</loc><lastmod>2026-11-12</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://avp86fr-jpg.github.io/metawinners-skate/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://avp86fr-jpg.github.io/games/metawinners-skate/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://avp86fr-jpg.github.io/metawinners-flip/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
@@ -45,4 +45,6 @@
   <url><loc>https://avp86fr-jpg.github.io/games/tournament-takedown/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://avp86fr-jpg.github.io/tournament-trivia/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://avp86fr-jpg.github.io/games/tournament-trivia/</loc><lastmod>2026-11-10</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://avp86fr-jpg.github.io/metawinners-tennis/</loc><lastmod>2026-11-12</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://avp86fr-jpg.github.io/metawinners-tennis/about/</loc><lastmod>2026-11-12</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>
