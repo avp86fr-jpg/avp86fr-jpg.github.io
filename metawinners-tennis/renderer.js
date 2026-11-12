@@ -1,6 +1,6 @@
-import {COURTS,CHARACTERS,clamp,advanceBall} from './engine.js?v=8';
-import {gameLayout} from './input.js?v=8';
-import {PlayerAnimation} from './animation.js?v=8';
+import {COURTS,CHARACTERS,clamp,advanceBall} from './engine.js?v=9';
+import {gameLayout} from './input.js?v=9';
+import {PlayerAnimation} from './animation.js?v=9';
 const TAU=Math.PI*2;
 export class CourtRenderer{
  constructor(canvas,assets,spriteMeta){
