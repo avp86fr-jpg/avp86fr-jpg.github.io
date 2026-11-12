@@ -42,6 +42,7 @@ export function stickVector(clientX,clientY,rect,origin=null,sensitivity=.85){
  const visual=Math.min(d/travel,1)*rect.width*.34;
  return {x:d?dx/d*magnitude:0,y:d?dy/d*magnitude:0,knobX:d?dx/d*visual:0,knobY:d?dy/d*visual:0};
 }
+export function rallyAim(delta){const d=Math.max(0,Math.abs(delta)-8);return Math.sign(delta)*Math.min(1,(d/155)**1.25);}
 export function touchAim(delta){const amount=Math.max(0,Math.abs(delta)-18)/95;return Math.sign(delta)*Math.pow(Math.min(1,amount),1.4);}
 
 function capture(element,pointerId){try{element.setPointerCapture?.(pointerId);}catch{}}
@@ -74,8 +75,8 @@ export class TouchControls{
   this.listen(stick,'pointermove',e=>{if(e.pointerId===this.movePointer)this.move(e);});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])this.listen(stick,type,e=>{if(e.pointerId===this.movePointer)this.resetMove();});
   for(const [kind,button]of Object.entries(buttons)){
-   this.listen(button,'pointerdown',e=>{if(this.shotPointer!==null||e.button>0)return;e.preventDefault();if(this.onCharge(kind,e)===false)return;this.shotPointer=e.pointerId;this.shotButton=button;this.kind=kind;this.startX=e.clientX;this.startY=e.clientY;capture(button,e.pointerId);button.classList.add('pressed');});
-   this.listen(button,'pointermove',e=>{if(e.pointerId!==this.shotPointer)return;e.preventDefault();this.onAim(touchAim(e.clientX-this.startX),touchAim((this.startY-e.clientY)*.8));});
+   this.listen(button,'pointerdown',e=>{if(this.shotPointer!==null||e.button>0)return;e.preventDefault();if(this.onCharge(kind,e)===false)return;this.shotPointer=e.pointerId;this.shotButton=button;this.kind=kind;this.shotTouch=['touch','pen'].includes(e.pointerType);this.startX=e.clientX;this.startY=e.clientY;capture(button,e.pointerId);button.classList.add('pressed');});
+   this.listen(button,'pointermove',e=>{if(e.pointerId!==this.shotPointer)return;e.preventDefault();const aim=this.mode==='rally'&&this.shotTouch?rallyAim:touchAim;this.onAim(aim(e.clientX-this.startX),aim((this.startY-e.clientY)*.8));});
    this.listen(button,'pointerup',e=>{if(e.pointerId!==this.shotPointer)return;e.preventDefault();const kind=this.kind;this.clearShot();this.onRelease(kind);});
    for(const type of ['pointercancel','lostpointercapture'])this.listen(button,type,e=>{if(e.pointerId===this.shotPointer){this.clearShot();this.onCancel();}});
   }

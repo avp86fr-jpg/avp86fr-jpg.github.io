@@ -1,7 +1,8 @@
-import {COURTS,CHARACTERS,clamp,advanceBall} from './engine.js?v=11';
-import {gameLayout} from './input.js?v=11';
-import {PlayerAnimation,ATLAS} from './animation.js?v=11';
-import {PLAYER_PROFILES,STEP_DISTANCE,strokeMotion,smoothstep} from './player-motion.js?v=11';
+import {serviceCall} from './service.js?v=12';
+import {COURTS,CHARACTERS,clamp,advanceBall,netCrossing} from './engine.js?v=12';
+import {gameLayout} from './input.js?v=12';
+import {PlayerAnimation,ATLAS} from './animation.js?v=12';
+import {PLAYER_PROFILES,STEP_DISTANCE,strokeMotion,smoothstep} from './player-motion.js?v=12';
 const TAU=Math.PI*2;
 export class CourtRenderer{
  constructor(canvas,assets,spriteMeta){
@@ -26,7 +27,7 @@ export class CourtRenderer{
   if(e.type==='point'||e.type==='finished')this.cheer=2.2;
   if(e.type==='hit'){this.ripples.push({x:e.x,y:e.y,life:.30,color:{topspin:'#7ef2df',slice:'#ffc49d',lob:'#d7b7ff'}[e.kind]||'#e5ff9f'});this.trail=[];this.shake=this.layout?.touch?0:e.perfect?.8:.2;}
   if(e.type==='bounce'){this.ripples.push({x:e.x,y:e.y,life:.42,color:e.surface==='clay'?'#f4c294':e.surface==='carpet'?'#e4c5ff':'#effad3'});if(e.surface==='clay'&&!this.reduceMotion)for(let i=0;i<6&&this.dust.length<60;i++)this.dust.push({x:e.x,y:e.y,z:.04,vx:(Math.random()-.5)*1.3,vy:(Math.random()-.5)*1.3,vz:.4,life:.32,max:.32,color:'#dc9a65'});}
-  if(e.type==='point'&&e.reason==='INTO THE NET'||e.type==='fault'&&e.reason==='NET')this.netPulse=1;
+  if(e.type==='netcord'||e.type==='point'&&e.reason==='INTO THE NET'||e.type==='fault'&&e.reason==='NET')this.netPulse=1;
   if(e.type==='ready')this.trail=[];
  }
  path(points){const c=this.ctx;c.beginPath();points.forEach(([x,y,z=0],i)=>{const p=this.project(x,y,z);i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y);});}
@@ -226,19 +227,21 @@ export class CourtRenderer{
   const c=this.ctx;
   this.positioningGuide(m);
   if(!aimTarget||!['serve','toss','rally'].includes(m.phase))return;
-  const p=this.project(aimTarget.x,aimTarget.y),color=this.highContrast?'#ffffff':{flat:'#e2ff85',topspin:'#78ece0',slice:'#ffb693',lob:'#d6baff'}[shot]||'#e2ff85';
+  const serving=['serve','toss'].includes(m.phase),humanServe=serving&&m.servingSlot==='player',out=humanServe&&serviceCall(aimTarget.x,aimTarget.y,0,m.serveSide);
+  if(serving){const sign=m.server===0?-1:1;c.save();this.quad(0,0,sign*m.serveSide*4.115,sign*6.4);c.fillStyle=this.highContrast?'#ffffff18':'#ddf69b16';c.fill();c.strokeStyle=this.highContrast?'#ffffff':'#def3aa';c.lineWidth=Math.max(1/this.scale,1.4);c.setLineDash([6,8]);c.stroke();c.restore();}
+  const p=this.project(aimTarget.x,aimTarget.y),color=out?'#ffbc83':this.highContrast?'#ffffff':{flat:'#e2ff85',topspin:'#78ece0',slice:'#ffb693',lob:'#d6baff'}[shot]||'#e2ff85';
   const r=Math.max(21*p.scale,9/this.scale),rh=r*.34;c.save();
   if(charging){
-   const key=[shot,Math.round(power*20),Math.round(m.player.x*5),Math.round(m.player.y*5),Math.round(aimTarget.x*10),Math.round(aimTarget.y*10)].join(':');
+   const key=[m.phase,m.mobile,m.court,m.serveSide,shot,Math.round(power*20),Math.round(m.player.x*5),Math.round(m.player.y*5),Math.round(aimTarget.x*10),Math.round(aimTarget.y*10)].join(':');
    if(!this.preview||this.preview.key!==key||m.time-this.preview.time>.12)this.preview={key,time:m.time,flight:m.previewShot(shot,power)};
-   const flight=this.preview.flight;c.strokeStyle=color+'70';c.lineWidth=this.highContrast?2:1.5;c.setLineDash([5,8]);c.beginPath();
-   for(let i=0;i<=28;i++){const b={...flight};advanceBall(b,flight.T*i/28);const q=this.project(b.x,b.y,b.z);i?c.lineTo(q.x,q.y):c.moveTo(q.x,q.y);}c.stroke();c.setLineDash([]);
+   const flight=this.preview.flight,cross=humanServe?netCrossing(flight):null,end=cross&&cross.clearance<=.034?cross.t:flight.T;c.strokeStyle=color+'70';c.lineWidth=this.highContrast?2:1.5;c.setLineDash([5,8]);c.beginPath();
+   for(let i=0;i<=28;i++){const b={...flight};advanceBall(b,end*i/28);const q=this.project(b.x,b.y,b.z);i?c.lineTo(q.x,q.y):c.moveTo(q.x,q.y);}c.stroke();c.setLineDash([]);
   }
 
   c.fillStyle=color+'24';c.strokeStyle=color;c.lineWidth=2.1;c.beginPath();c.ellipse(p.x,p.y,r,rh,0,0,TAU);c.fill();c.stroke();
   c.beginPath();c.moveTo(p.x-r-10,p.y);c.lineTo(p.x-r+3,p.y);c.moveTo(p.x+r-3,p.y);c.lineTo(p.x+r+10,p.y);c.moveTo(p.x,p.y-rh-7);c.lineTo(p.x,p.y-rh+2);c.stroke();
   c.fillStyle=color;c.beginPath();c.ellipse(p.x,p.y,2.8,1.8,0,0,TAU);c.fill();
-  c.font=`600 ${Math.max(11,6/this.scale)}px DM,Arial`;c.textAlign='center';c.shadowColor='#001614';c.shadowBlur=4;c.fillText(m.phase==='serve'&&m.servingSlot==='player'?'SERVE TARGET':'TARGET',p.x,p.y-rh-13);c.restore();
+  c.font=`600 ${Math.max(11,6/this.scale)}px DM,Arial`;c.textAlign='center';c.shadowColor='#001614';c.shadowBlur=4;c.fillText(out?'OUT TARGET':humanServe?'SERVE TARGET':'TARGET',p.x,p.y-rh-13);c.restore();
  }
  effects(dt,paused){
   const c=this.ctx;if(!paused)this.netPulse=Math.max(0,this.netPulse-dt*2);
@@ -256,11 +259,11 @@ export class CourtRenderer{
   c.setTransform(this.dpr,0,0,this.dpr,0,0);this.background(m);c.save();c.translate(this.ox,this.oy);c.scale(this.scale,this.scale);
   this.surface(m);if(m.doubles){this.courtMark([-5.485,-11.885],[-5.485,11.885],.055,'#eff7cf');this.courtMark([5.485,-11.885],[5.485,11.885],.055,'#eff7cf');}this.courtDetails(m);c.restore();this.ctx=original;this.sceneCache=layer;this.sceneCourt=m.court;this.sceneDoubles=m.doubles;
  }
- draw(m,dt,{aim=0,charging=false,depth=0,shot='flat',aimTarget=m.aimTarget,power=.7}={}){
+ draw(m,dt,{aim=0,charging=false,depth=0,shot='flat',aimTarget=m.aimTarget,power=.7,moveTarget=null}={}){
   const c=this.ctx;this.prepareScene(m);c.setTransform(1,0,0,1,0,0);c.drawImage(this.sceneCache,0,0);c.setTransform(this.dpr,0,0,this.dpr,0,0);
   c.save();c.translate(this.ox,this.oy);c.scale(this.scale,this.scale);c.beginPath();c.rect(0,0,this.w,this.h);c.clip();
   if(this.shake>.1&&!m.paused&&!this.reduceMotion){c.translate(Math.sin(m.time*75)*this.shake*.5,Math.cos(m.time*61)*this.shake*.5);this.shake*=.75;}
-  this.atmosphere(m);this.courtLife(m,dt);this.groundEffects(m,dt);this.indicators(m,aim,charging,depth,shot,aimTarget,power);
+  this.atmosphere(m);this.courtLife(m,dt);this.groundEffects(m,dt);this.indicators(m,aim,charging,depth,shot,aimTarget,power);if(moveTarget){const q=this.project(moveTarget.x,moveTarget.y);c.save();c.strokeStyle='#9ce9e2';c.lineWidth=1.5/this.scale;c.setLineDash([4,3]);c.beginPath();c.ellipse(q.x,q.y,11/this.scale,4/this.scale,0,0,TAU);c.stroke();c.setLineDash([]);c.font=`600 ${7/this.scale}px DM`;c.textAlign='center';c.fillStyle='#c0fff5';c.fillText('MOVE',q.x,q.y-9/this.scale);c.restore();}
   const actors=m.roster().map(e=>({...e,actor:m[e.slot]})).sort((a,b)=>a.actor.y-b.actor.y);
   for(const e of actors)this.shadow(e.actor,e.team===0,m,e.index,e.slot==='player');
   for(const e of actors.filter(e=>e.team===1))this.drawActor(e.actor,e.index,false,dt,m,false,e.slot);

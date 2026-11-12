@@ -205,6 +205,8 @@ export class ClubAudio{
     break;
    case 'toss':this._noise({at,duration:.07,level:.025,cutoff:1000,filter:'bandpass',q:.5,pan});break;
    case 'miss':if(this._allowed('miss',.35))this._noise({at,duration:.12,level:.025,attack:.025,cutoff:2300,filter:'bandpass',q:.6,pan});break;
+   case 'netcord':if(this._allowed('netcord',.15))this._net(at);break;
+   case 'let':this._sting([62,62],at+.08,.028,.13);break;
    case 'fault':
     if(e.reason==='NET')this._net(at);this._sting([47,43],at+.1,.034,.11);break;
    case 'point':
