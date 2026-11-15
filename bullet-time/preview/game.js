@@ -24,7 +24,7 @@ fetch('assets/sprites.json').then(r=>r.json()).then(j=>{SPR=j;for(const k in j)j
 function fr(key,i){const l=SPR[key];if(!l)return null;const f=l[Math.min(i,l.length-1)];return {im:IMG[f.f],w:f.w,h:f.h};}
 // ---------- audio ----------
 let AC=null,MASTER=null,MUSG=null,SFXG=null,LP=null;
-function audioInitBase(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+function audioInitBase(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)(window.__MOB?{latencyHint:'playback'}:{});}catch(e){return;}
  MASTER=AC.createGain();MASTER.gain.value=0.8;LP=AC.createBiquadFilter();LP.type='lowpass';LP.frequency.value=18000;
  MUSG=AC.createGain();MUSG.gain.value=0.42;SFXG=AC.createGain();SFXG.gain.value=0.9;
  MUSG.connect(LP);LP.connect(MASTER);SFXG.connect(MASTER);MASTER.connect(AC.destination);
@@ -1109,11 +1109,11 @@ function drawInv(dt){const v=IV;invUpdate(dt);const im=IMG['inv_'+v.id+'.webp'];
 function afterStage(){const i=S.idx;const id=S.def.id;if(G.mode==='story'&&INV[id]&&!S.daily){startInv(id,()=>afterStageBase());return;}afterStageBase();}
 // ===================== mouse + mobile UX, mechanics polish =====================
 const TOUCH=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window);
-window.__MOB=TOUCH||/[?&]mob=1/.test(location.search);if(window.__MOB){window.__RS=1/Math.min(devicePixelRatio||1,1.75);try{resize();}catch(e){}}
-let SET={off:TOUCH?40:0,shake:1,lefty:0};try{Object.assign(SET,JSON.parse(localStorage.getItem('bt.set')||'{}'));}catch(e){}
+window.__MOB=TOUCH||/[?&]mob=1/.test(location.search);if(window.__MOB){window.__RS=0.8/Math.min(devicePixelRatio||1,1.75);try{resize();}catch(e){}}
+let SET={off:TOUCH?40:0,shake:1,lefty:0,haptic:0};try{Object.assign(SET,JSON.parse(localStorage.getItem('bt.set')||'{}'));}catch(e){}
 function saveSet(){try{localStorage.setItem('bt.set',JSON.stringify(SET));}catch(e){}applyHand();}
 function applyHand(){BTN.cover.x=SET.lefty?108:1172;BTN.bt.x=SET.lefty?1172:104;}applyHand();
-function vib(ms){try{if(navigator.vibrate&&TOUCH)navigator.vibrate(ms);}catch(e){}}
+function vib(ms){try{if(SET.haptic&&navigator.vibrate&&TOUCH)navigator.vibrate(ms);}catch(e){}}
 cv.style.cursor='none';
 // aim assist: slight snap toward the nearest enemy body/head (never fires by itself)
 function aimAssist(x,y,touch){if(!S||SCR!=='play')return {x,y};const R=touch?44:16,k=touch?0.55:0.35;let best=null,bd=R;
@@ -1166,13 +1166,13 @@ function mixUp(){if(!AC||MIX)return;audioPlus();MIX={};
  const lim=AC.createDynamicsCompressor();lim.threshold.value=-2;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0.001;lim.release.value=0.08;
  const an=AC.createAnalyser();an.fftSize=1024;MASTER.disconnect();MASTER.connect(c1);c1.connect(lim);lim.connect(AC.destination);lim.connect(an);MIX.an=an;MIX.buf=new Float32Array(1024);
  const duck=AC.createGain();MUSG.disconnect();MUSG.connect(duck);duck.connect(LP);MIX.duck=duck;
- const send=AC.createGain();send.gain.value=0.14;SFXG.connect(send);send.connect(REV);
+ if(window.__MOB){try{REV.disconnect();}catch(e){}}else{const send=AC.createGain();send.gain.value=0.14;SFXG.connect(send);send.connect(REV);}
 }
-function duck(a,hold){if(!MIX)return;const g=MIX.duck.gain,t=AC.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(1-a,t,0.004);g.setTargetAtTime(1,t+(hold||0.05),0.16);}
+function duck(a,hold){if(!MIX)return;a=Math.min(0.7,Math.max(0,+a||0));const g=MIX.duck.gain,t=AC.currentTime;g.cancelScheduledValues(t);g.setTargetAtTime(1-a,t,0.004);g.setTargetAtTime(1,t+(hold||0.05),0.16);}
 async function stemLoad(n){if(STB[n])return STB[n];STB[n]=Promise.all(['a','b','c'].map(k=>fetch('assets/music/'+n+'_'+k+'.mp3').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(b=>new Promise((ok,no)=>AC.decodeAudioData(b,ok,no)))));
  try{return await STB[n];}catch(e){alog('load:'+n+':'+(e&&e.name||e));STB[n]=null;return null;}}
 function lead(b){const d=b.getChannelData(0);const lim=Math.min(d.length,b.sampleRate*0.12);for(let i=0;i<lim;i++)if(Math.abs(d[i])>0.01)return i/b.sampleRate;return 0;}
-function musicPlay(name){if(!AC)return;mixUp();const n=MBPM[name]?name:'title';if(STEM&&STEM.n===n)return;musicStop();mus.on=false;const tok={n,dead:false};STEM=tok;
+function musicPlay(name){if(!AC)return;mixUp();const n=MBPM[name]?name:'title';if(window.__MOB)for(const k in STB)if(k!==n)delete STB[k];if(STEM&&STEM.n===n)return;musicStop();mus.on=false;const tok={n,dead:false};STEM=tok;
  if(AFB){fbPlay(n);return;}stemLoad(n).then(bufs=>{if(tok.dead)return;if(!bufs){fbOn('decode');AFB={dec:1};return;mus.cfg=ERAMUS[name]||ERAMUS.title;mus.step=0;mus.next=AC.currentTime+0.05;mus.on=true;return;}
   const L=32*60/MBPM[n],t0=AC.currentTime+0.06;tok.src=[];tok.g=[];
   bufs.forEach((b,i)=>{const s=AC.createBufferSource();s.buffer=b;s.loop=true;const o=lead(b);s.loopStart=o;s.loopEnd=Math.min(b.duration,o+L);const g=AC.createGain();g.gain.value=0.0001;s.connect(g);g.connect(MUSG);s.start(t0,o);tok.src.push(s);tok.g.push(g);});
@@ -1193,13 +1193,13 @@ function musicTick(){musicTickLook();if(!AC||!MIX)return;if(AC.state!=='running'
 // ---- layered SFX ----
 const GUN={west:[2600,110,0.55,1],chicago:[3400,150,0.25,1],japan:[2200,95,0.6,1],rome:[1800,80,0.5,0],pirate:[1500,70,0.8,0],garage:[3800,140,0.3,1],london:[2400,105,0.6,1],egypt:[2000,90,0.5,0],miami:[3600,130,0.4,1],future:[5200,180,0.35,0],end:[3000,100,0.6,1],lab:[3000,120,0.4,1]};
 function era(){return S&&S.def?S.def.bg:'title';}
-function shell(t){for(let i=0;i<3;i++){const tt=t+0.32+i*0.07+Math.random()*0.03;tone(5200+Math.random()*2500,0.05,'triangle',0.05/(i+1),null,tt);tone(3100+Math.random()*900,0.07,'sine',0.03/(i+1),null,tt);}}
+function shellSnd(t){for(let i=0;i<3;i++){const tt=t+0.32+i*0.07+Math.random()*0.03;tone(5200+Math.random()*2500,0.05,'triangle',0.05/(i+1),null,tt);tone(3100+Math.random()*900,0.07,'sine',0.03/(i+1),null,tt);}}
 Object.assign(SFX,{
  shot(){const g=GUN[era()]||GUN.lab,t=AC.currentTime;duck(0.5,0.07);
   tone(1900,0.012,'square',0.12,null,t);noise(0.06,0.9,'highpass',g[0],null,t);noise(0.16,0.85,'bandpass',g[0]*0.45,null,t,0.8);
-  tone(g[1]*1.6,0.18,'sine',0.75,null,t,g[1]*0.4);noise(g[2],0.22,'lowpass',700,null,t+0.01);noise(g[2]*1.6,0.06,'lowpass',260,null,t+0.05);
+  tone(g[1]*1.6,0.18,'sine',0.75,null,t,g[1]*0.4);noise(g[2],0.22,'lowpass',700,null,t+0.01);if(!window.__MOB)noise(g[2]*1.6,0.06,'lowpass',260,null,t+0.05);
   if(era()==='future'){tone(1800,0.14,'sawtooth',0.08,null,t,300);}
-  if(g[3])shell(t);},
+  if(g[3])shellSnd(t);},
  eshot(){const t=AC.currentTime;noise(0.1,0.35,'bandpass',1400,null,t,1);tone(140,0.12,'sine',0.25,null,t,50);noise(0.4,0.08,'lowpass',500,null,t+0.03);},
  hit(){const t=AC.currentTime;noise(0.09,0.55,'bandpass',900,null,t,1.2);tone(190,0.12,'sine',0.45,null,t,60);noise(0.04,0.25,'highpass',3000,null,t);},
  head(){const t=AC.currentTime;SFX.hit();tone(2400,0.12,'triangle',0.12,null,t+0.01,1500);noise(0.12,0.3,'bandpass',2200,null,t+0.015,3);},
@@ -1252,6 +1252,23 @@ function drawDebug(){if(!DBG)return;const l=['ctx '+(AC?AC.state:'none')+' sr '+
 Object.assign(window.__BT||{},{afb:()=>AFB,alog:()=>ALOG});
 
 function testBeep(){try{audioInit();if(!AC)return;kick('test');const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=880;g.gain.setValueAtTime(0.3,AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.4);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+0.45);alog('beep ctx '+AC.state);}catch(e){alog('beep:'+e.message);}}
+
+// ---- guarded synth voices: finite params, voice cap, auto-disconnect ----
+let VOICES=0;const VCAP=window.__MOB?24:80;
+function fin(v,d){return Number.isFinite(v)?v:d;}
+function tone(f,dur,type,vol,dest,t0,slide){if(!AC||VOICES>=VCAP)return;f=fin(f,440);dur=Math.max(0.005,fin(dur,0.1));vol=Math.max(0.0002,Math.min(1,fin(vol,0.2)));t0=Math.max(AC.currentTime,fin(t0,0)||AC.currentTime);if(t0>AC.currentTime+5)return;
+ const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(Math.max(1,Math.min(20000,f)),t0);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,Math.min(20000,fin(slide,20))),t0+dur);
+ g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vol,t0+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(dest||SFXG);VOICES++;o.onended=()=>{VOICES--;try{g.disconnect();}catch(e){}};o.start(t0);o.stop(t0+dur+0.05);}
+function noise(dur,vol,fType,fFreq,dest,t0,q){if(!AC||!NOISE||VOICES>=VCAP)return;dur=Math.max(0.005,fin(dur,0.1));vol=Math.max(0.0002,Math.min(1.5,fin(vol,0.2)));t0=Math.max(AC.currentTime,fin(t0,0)||AC.currentTime);if(t0>AC.currentTime+5)return;
+ const s=AC.createBufferSource();s.buffer=NOISE;const f=AC.createBiquadFilter();f.type=fType||'lowpass';f.frequency.value=Math.max(20,Math.min(AC.sampleRate/2-100,fin(fFreq,3000)));if(q)f.Q.value=Math.max(0.0001,Math.min(30,fin(q,1)));const g=AC.createGain();
+ g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);s.connect(f);f.connect(g);g.connect(dest||SFXG);VOICES++;s.onended=()=>{VOICES--;try{g.disconnect();f.disconnect();}catch(e){}};s.start(t0,Math.random()*0.5);s.stop(t0+dur+0.02);}
+// ---- master watchdog: NaN or dead output while sounds should play -> rebuild output stage ----
+let MWD={z:0};
+function outRebuild(why){try{alog('rebuild:'+why);MASTER.disconnect();const c1=AC.createDynamicsCompressor();c1.threshold.value=-12;c1.ratio.value=3;const lim=AC.createDynamicsCompressor();lim.threshold.value=-2;lim.ratio.value=20;lim.attack.value=0.001;lim.release.value=0.08;MASTER.connect(c1);c1.connect(lim);lim.connect(AC.destination);lim.connect(MIX.an);if(MIX.duck){MIX.duck.gain.cancelScheduledValues(AC.currentTime);MIX.duck.gain.setValueAtTime(1,AC.currentTime);}if(LP){LP.frequency.cancelScheduledValues(AC.currentTime);LP.frequency.setValueAtTime(S&&S.btOn>0?700:18000,AC.currentTime);}applyMute();}catch(e){alog('rebuild fail '+e.message);}}
+function masterWatch(){if(!AC||!MIX||AC.state!=='running'||MUTED)return;MIX.an.getFloatTimeDomainData(MIX.buf);let nan=false,s=0;for(const v of MIX.buf){if(!Number.isFinite(v)){nan=true;break;}s+=v*v;}
+ if(nan){outRebuild('nan');return;}const r=Math.sqrt(s/MIX.buf.length);if(STEM&&STEM.live&&r<1e-5){if(++MWD.z>3){MWD.z=0;outRebuild('silent');}}else MWD.z=0;}
+setInterval(masterWatch,1000);
+Object.assign(window.__BT||{},{voices:()=>VOICES,tone:(...a)=>tone(...a),noise:(...a)=>noise(...a)});
 // ===================== boss signatures, BT economy, menus, perf =====================
 const SIG={west:['QUICK-DRAW FAN',3,0.32,'bullet','fan'],chicago:['TOMMY SWEEP',5,0.2,'bullet','line'],japan:['SHURIKEN CROSS',4,0.38,'bullet','cross'],rome:['JAVELIN VOLLEY',3,0,'bullet','volley'],
  pirate:['BROADSIDE',3,0.45,'ball','line'],london:['CLOCKWORK BURST',4,0.5,'bullet','clock'],egypt:["PHARAOH'S CURSE",2,0.9,'orb','fan'],miami:['DRIVE-BY',4,0.24,'bullet','diag'],future:['DRONE LATTICE',3,0.42,'orb','cross'],end:['TIME COLLAPSE',4,0.4,'bullet','clock']};
@@ -1267,8 +1284,8 @@ function bossSig(b,ph){const id=S.def.bg,sg=SIG[id]||SIG.end;let n=sg[1];if(G.D.
 function startBT(){const was=S&&S.btOn>0;const ex=was?0:btCost()-100;if(S&&!was&&S.charge<100+ex){if(S.charge>=100)S.pops.push({x:104,y:520,t:0,txt:'NEED '+(100+ex),col:'#9fe8ff',small:1});return;}startBTBase();if(S&&!was&&S.btOn>0){S.st.btN=(S.st.btN||0)+1;S.charge=Math.max(0,S.charge-ex);}}
 // pause menu with settings
 let PSET=0;
-function setRows(back){const rows=[['SOUND '+Math.round(VOL*100)+'%',()=>setVol(VOL>=0.8?0.5:VOL>=0.5?0.25:VOL>0?0:0.8)],['TOUCH AIM OFFSET '+SET.off+'PX',()=>{SET.off=SET.off===0?40:SET.off===40?70:0;saveSet();}],['SCREEN SHAKE '+(SET.shake?'ON':'OFF'),()=>{SET.shake=SET.shake?0:1;saveSet();}],['LEFT-HANDED '+(SET.lefty?'ON':'OFF'),()=>{SET.lefty=SET.lefty?0:1;saveSet();}],['TEST SOUND',testBeep]];
- rows.forEach((r,i)=>button(400,140+i*74,480,62,r[0],r[1],{size:24}));button(540,520,200,60,'BACK',back,{size:26});}
+function setRows(back){const rows=[['SOUND '+Math.round(VOL*100)+'%',()=>setVol(VOL>=0.8?0.5:VOL>=0.5?0.25:VOL>0?0:0.8)],['TOUCH AIM OFFSET '+SET.off+'PX',()=>{SET.off=SET.off===0?40:SET.off===40?70:0;saveSet();}],['SCREEN SHAKE '+(SET.shake?'ON':'OFF'),()=>{SET.shake=SET.shake?0:1;saveSet();}],['LEFT-HANDED '+(SET.lefty?'ON':'OFF'),()=>{SET.lefty=SET.lefty?0:1;saveSet();}],['HAPTICS '+(SET.haptic?'ON':'OFF'),()=>{SET.haptic=SET.haptic?0:1;saveSet();}],['TEST SOUND',testBeep]];
+ rows.forEach((r,i)=>button(400,120+i*64,480,56,r[0],r[1],{size:22}));button(540,520+40,200,56,'BACK',back,{size:24});}
 function drawSet(){drawBG('end',0,0,1.1);cx.fillStyle='rgba(5,4,12,0.82)';cx.fillRect(0,0,W,H);chromaTxt('SETTINGS',640,100,60,'center');setRows(()=>go(SETBACK||'title'));}
 function drawPause(){if(PSET){cx.fillStyle='rgba(0,0,0,0.8)';cx.fillRect(0,0,W,H);chromaTxt('SETTINGS',640,100,60,'center');setRows(()=>{PSET=0;});return;}drawPauseBase();button(490,480,300,60,'SETTINGS',()=>{PSET=1;},{size:24});}
 // final: restart
@@ -1305,7 +1322,7 @@ function btCost(){return 100+30*((S&&S.st&&S.st.btN)||0);}
 // adaptive performance: drop render scale + post FX when the frame rate sags (low-end phones / CPU throttle)
 let LOWP=window.__MOB?1:0,LOWT=0;
 function drawPost(){if(!LOWP)drawPostBase();}
-function perfStep(dt){if(SCR!=='play')return;if(fpsA<38){LOWT+=dt;if(LOWT>2.5){LOWT=0;if(!LOWP){LOWP=1;}else if((window.__RS||1)>0.6){window.__RS=(window.__RS||1)*0.8;resize();}}}else LOWT=Math.max(0,LOWT-dt*0.5);}
+function perfStep(dt){if(SCR!=='play')return;if(fpsA<38){LOWT+=dt;if(LOWT>2.5){LOWT=0;if(!LOWP){LOWP=1;}else if((window.__RS||1)>(window.__MOB?0.4:0.6)){window.__RS=(window.__RS||1)*0.85;resize();}}}else LOWT=Math.max(0,LOWT-dt*0.5);}
 Object.assign(window.__BT||{},{perf:()=>({LOWP,RS:window.__RS||1})});
 // pre-scaled background cache: one 1:1 blit per frame instead of scaling a 1920x1080 image
 const BGC={};let BGCN=[];
