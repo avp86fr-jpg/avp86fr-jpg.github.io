@@ -919,8 +919,8 @@ function drawCross(){const x=AIM.x,y=AIM.y;let over=false;const play=SCR==='play
  cx.beginPath();for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){cx.moveTo(x+a*(r-10),y+b*(r-10));cx.lineTo(x+a*(r+10),y+b*(r+10));}cx.stroke();cx.fillStyle=col;cx.fillRect(x-2,y-2,4,4);
  if(xk>0){cx.strokeStyle='rgba(255,60,80,'+xk+')';cx.lineWidth=4;cx.beginPath();cx.moveTo(x-14,y-14);cx.lineTo(x+14,y+14);cx.moveTo(x+14,y-14);cx.lineTo(x-14,y+14);cx.stroke();}}
 // ---------- screens ----------
-let VOL=+(localStorage.getItem('bt.vol')||0.8);
-function setVol(v){VOL=v;try{localStorage.setItem('bt.vol',String(v));}catch(e){}if(MASTER)MASTER.gain.value=VOL;}
+let VOL=+(localStorage.getItem('bt.vol')||0.8);if(!(VOL>=0&&VOL<=1))VOL=0.8;
+function setVol(v){VOL=v;try{localStorage.setItem('bt.vol',String(v));}catch(e){}if(MASTER)applyMute();}
 function drawTitle(){drawBG('end',Math.sin(T*0.1)*14,0,1.12);eraFX('end',T);cx.fillStyle='rgba(5,4,12,0.58)';cx.fillRect(0,0,W,H);
  const h=fr('hero2',1),c=fr('boss_end',0);if(h&&h.im.complete){cx.drawImage(h.im,-20,H-560,h.w*560/h.h,560);}if(c&&c.im.complete){cx.globalAlpha=0.85;const ch=600;cx.drawImage(c.im,0,0,c.w,c.h*0.8,W-c.w*ch/(c.h*0.8)+10,H-ch,c.w*ch/(c.h*0.8),ch);}cx.globalAlpha=1;
  drawLogo(640,190,0.9);
@@ -953,7 +953,7 @@ function drawBrand(){cx.fillStyle=BR.noir;cx.fillRect(0,0,W,H);drawLogo(400,200,
  drawPanel({bg:'lab',f:0.5,z:0.6,caps:['Caption style: cream box, ink border, Bangers lettering.'],ch:[H1,'r'],say:'Speech bubble.'},[80,550,1120,160],1);}
 // ---------- audio: richer original score ----------
 let REV=null,AMB=null,BTA=null;
-function audioPlus(){if(!AC||REV)return;MASTER.gain.value=VOL;REV=AC.createConvolver();const len=AC.sampleRate*2.4;const ir=AC.createBuffer(2,len,AC.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);}REV.buffer=ir;const rg=AC.createGain();rg.gain.value=0.28;MUSG.connect(REV);REV.connect(rg);rg.connect(MASTER);
+function audioPlus(){if(!AC||REV)return;applyMute();REV=AC.createConvolver();const len=AC.sampleRate*2.4;const ir=AC.createBuffer(2,len,AC.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);}REV.buffer=ir;const rg=AC.createGain();rg.gain.value=0.28;MUSG.connect(REV);REV.connect(rg);rg.connect(MASTER);
  const comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;SFXG.disconnect();SFXG.connect(comp);comp.connect(MASTER);}
 function voice(f,t,dur,type,vol,cut,det,dest){const o=AC.createOscillator(),o2=det?AC.createOscillator():null,fl=AC.createBiquadFilter(),g=AC.createGain();o.type=type;o.frequency.value=f;if(o2){o2.type=type;o2.frequency.value=f;o2.detune.value=det;}
  fl.type='lowpass';fl.frequency.setValueAtTime(cut*2,t);fl.frequency.exponentialRampToValueAtTime(Math.max(80,cut*0.5),t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+Math.min(0.03,dur*0.2));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
@@ -1160,7 +1160,7 @@ function drawBoss(b){TINTON=1;try{drawBossBase(b);}finally{TINTON=0;}}
 // ===================== AUDIO 2: stems, mix bus, layered SFX =====================
 const MBPM={title:104,west:108,chicago:126,japan:96,rome:100,pirate:116,garage:132,london:112,egypt:102,miami:110,future:124,end:100,};
 let MIX=null;const STB={};let STEM=null;let PEAK=0;
-function audioInit(){audioInitLook();mixUp();}
+function audioInit(){try{audioInitLook();mixUp();}catch(e){alog('init:'+(e&&e.message));}}
 function mixUp(){if(!AC||MIX)return;audioPlus();MIX={};
  const c1=AC.createDynamicsCompressor();c1.threshold.value=-12;c1.ratio.value=3;c1.knee.value=8;c1.attack.value=0.004;c1.release.value=0.22;
  const lim=AC.createDynamicsCompressor();lim.threshold.value=-2;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0.001;lim.release.value=0.08;
@@ -1173,13 +1173,13 @@ async function stemLoad(n){if(STB[n])return STB[n];STB[n]=Promise.all(['a','b','
  try{return await STB[n];}catch(e){alog('load:'+n+':'+(e&&e.name||e));STB[n]=null;return null;}}
 function lead(b){const d=b.getChannelData(0);const lim=Math.min(d.length,b.sampleRate*0.12);for(let i=0;i<lim;i++)if(Math.abs(d[i])>0.01)return i/b.sampleRate;return 0;}
 function musicPlay(name){if(!AC)return;mixUp();const n=MBPM[name]?name:'title';if(STEM&&STEM.n===n)return;musicStop();mus.on=false;const tok={n,dead:false};STEM=tok;
- if(AFB){fbPlay(n);return;}stemLoad(n).then(bufs=>{if(tok.dead)return;if(!bufs){fbOn('decode');return;mus.cfg=ERAMUS[name]||ERAMUS.title;mus.step=0;mus.next=AC.currentTime+0.05;mus.on=true;return;}
+ if(AFB){fbPlay(n);return;}stemLoad(n).then(bufs=>{if(tok.dead)return;if(!bufs){fbOn('decode');AFB={dec:1};return;mus.cfg=ERAMUS[name]||ERAMUS.title;mus.step=0;mus.next=AC.currentTime+0.05;mus.on=true;return;}
   const L=32*60/MBPM[n],t0=AC.currentTime+0.06;tok.src=[];tok.g=[];
   bufs.forEach((b,i)=>{const s=AC.createBufferSource();s.buffer=b;s.loop=true;const o=lead(b);s.loopStart=o;s.loopEnd=Math.min(b.duration,o+L);const g=AC.createGain();g.gain.value=0.0001;s.connect(g);g.connect(MUSG);s.start(t0,o);tok.src.push(s);tok.g.push(g);});
   tok.live=true;});}
 function musicStop(){mus.on=false;if(AEL&&AFB&&SCR!=='play')AEL.pause();if(STEM){const s=STEM;s.dead=true;if(s.src){const t=AC.currentTime;s.g.forEach(g=>{g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(0.0001,t,0.18);});setTimeout(()=>s.src.forEach(x=>{try{x.stop();}catch(e){}}),1200);}STEM=null;}}
 let BTW=0,HBT=0;
-function musicTick(){musicTickLook();if(!AC||!MIX)return;
+function musicTick(){musicTickLook();if(!AC||!MIX)return;if(AC.state!=='running'&&T-(musicTick.k||0)>1){musicTick.k=T;if(navigator.userActivation?navigator.userActivation.hasBeenActive:unlockAudio.done)kick('watchdog');}
  // layer targets
  if(STEM&&STEM.live){const play=SCR==='play'&&S;const menu=!play;let a=0.9,b=0.25,c=0;
   if(play){const m=S.mult||1,en=(S.ents||[]).filter(e=>e.kind==='e'&&e.st!=='dead').length;b=Math.min(1,0.2+(m-1)*0.22+en*0.07);if(S.boss){c=0.95;b=Math.max(b,0.55);}if(S.phase==='done'||S.phase==='clear'){b=0.15;c=0;}}
@@ -1227,11 +1227,13 @@ function executeMarks(){const n=S&&S.marks?S.marks.length:0;if(n)sfx('exec');ret
 Object.assign(window.__BT||{},{peak:()=>PEAK,stem:()=>STEM&&STEM.live?STEM.n:null});
 // ---- mobile audio unlock: Chrome/Android only grant activation on pointerup/touchend/click/keydown ----
 let MUTED=0;try{MUTED=+localStorage.getItem('bt.mute')||0;}catch(e){}
-function unlockAudio(){try{audioInit();if(!AC){fbOn('noctx');fbPlay('title');return;}if(AC.state!=='running'){const r=AC.resume();if(r&&r.catch)r.catch(e=>alog('resume:'+e.name));setTimeout(()=>{if(AC.state!=='running')fbOn('suspended');},1200);}if(AFB&&AEL&&AEL.paused)fbPlay(SCR==='play'&&S&&S.def?S.def.id:'title');if(!unlockAudio.done){const b=AC.createBuffer(1,1,22050),s=AC.createBufferSource();s.buffer=b;s.connect(AC.destination);s.start(0);unlockAudio.done=1;}
+function unlockAudio(){try{if(AC&&unlockAudio.done){kick('tap');if(AFB&&AEL&&AEL.paused)fbPlay(SCR==='play'&&S&&S.def?S.def.id:'title');return;}audioInit();if(!AC){fbOn('noctx');fbPlay('title');return;}if(AC.state!=='running'){const r=AC.resume();if(r&&r.catch)r.catch(e=>alog('resume:'+e.name));setTimeout(()=>{if(AC.state!=='running')fbOn('suspended');},3000);}if(AFB&&AEL&&AEL.paused)fbPlay(SCR==='play'&&S&&S.def?S.def.id:'title');if(!unlockAudio.done){const b=AC.createBuffer(1,1,22050),s=AC.createBufferSource();s.buffer=b;s.connect(AC.destination);s.start(0);unlockAudio.done=1;}
  applyMute();if(!STEM&&!mus.on)musicPlay(SCR==='play'&&S&&S.def?S.def.id:SCR==='inv'&&IV?IV.id:'title');}catch(e){}}
 ['pointerup','touchend','click','keydown'].forEach(ev=>addEventListener(ev,unlockAudio,{capture:true,passive:true}));
-document.addEventListener('visibilitychange',()=>{if(AC){if(document.hidden)AC.suspend();else if(unlockAudio.done)AC.resume();}});
-function applyMute(){if(MASTER&&AC)MASTER.gain.setTargetAtTime(MUTED?0:VOL,AC.currentTime,0.02);}
+// never suspend ourselves (Android may fire visibility/fullscreen changes during play); just resume whenever possible
+function kick(why){if(!AC)return;if(AC.state!=='running'){alog('resume@'+why+' was '+AC.state);const r=AC.resume();if(r&&r.catch)r.catch(e=>alog('resume fail '+e.name));}if(!MUTED&&MASTER&&MASTER.gain.value<0.01)applyMute();if(AC.state==='running'&&AFB&&!AFB.dec){AFB=0;alog('webaudio back');if(AEL)AEL.pause();STEM=null;musicPlay(SCR==='play'&&S&&S.def?S.def.id:SCR==='inv'&&IV?IV.id:'title');}}
+['visibilitychange','fullscreenchange','webkitfullscreenchange','orientationchange','focus','pageshow'].forEach(ev=>(ev==='visibilitychange'||ev.endsWith('fullscreenchange')?document:window).addEventListener(ev,()=>{if(!document.hidden)kick(ev);}));
+function applyMute(){if(!(VOL>=0&&VOL<=1))VOL=0.8;if(MASTER&&AC){MASTER.gain.cancelScheduledValues(AC.currentTime);MASTER.gain.setValueAtTime(MUTED?0:VOL,AC.currentTime);}}
 BTN.mute={x:1124,y:40,r:26};
 addEventListener('pointerdown',e=>{const p=toLogical(e);if(Math.hypot(p.x-BTN.mute.x,p.y-BTN.mute.y)<BTN.mute.r+8){e.stopPropagation();e.preventDefault();MUTED=MUTED?0:1;try{localStorage.setItem('bt.mute',MUTED);}catch(x){}unlockAudio();applyMute();if(AEL)AEL.muted=!!MUTED;if(AC&&AC.state!=='running')AC.resume();}},true);
 function drawMuteBtn(){const b=BTN.mute;bezel(b.x,b.y,b.r);cx.save();cx.fillStyle=BR.ivory;cx.strokeStyle=BR.ivory;cx.lineWidth=2.5;cx.beginPath();cx.moveTo(b.x-11,b.y-5);cx.lineTo(b.x-5,b.y-5);cx.lineTo(b.x+2,b.y-11);cx.lineTo(b.x+2,b.y+11);cx.lineTo(b.x-5,b.y+5);cx.lineTo(b.x-11,b.y+5);cx.closePath();cx.fill();
@@ -1245,9 +1247,11 @@ function fbOn(why){if(AFB)return;AFB=1;alog('fallback:'+why);musicStop();fbPlay(
 function fbPlay(n){if(!AFB)return;n=MBPM[n]?n:'title';if(!AEL){AEL=new Audio();AEL.loop=true;AEL.preload='auto';}const src='assets/music/'+n+'_a.mp3';if(!AEL.src.endsWith(src)){AEL.src=src;}AEL.muted=!!MUTED;AEL.volume=Math.min(1,VOL*0.8);const pr=AEL.play();if(pr&&pr.catch)pr.catch(e=>alog('el:'+e.name));}
 
 const DBG=/[?&]debug=1/.test(location.search);
-function drawDebug(){if(!DBG)return;const l=['ctx '+(AC?AC.state:'none')+' sr '+(AC?AC.sampleRate:0),'stems '+Object.keys(STB).filter(k=>STB[k]).join(','),'rms '+rms().toFixed(3)+' muted '+MUTED+' vol '+VOL,'fallback '+AFB+(AEL?' el '+(AEL.paused?'paused':'playing')+' '+AEL.readyState:''),'fps '+(fpsA|0)+' RS '+(window.__RS||1).toFixed(2)+' LOWP '+LOWP+' mob '+(window.__MOB?1:0)].concat(ALOG);
- cx.save();cx.fillStyle='rgba(0,0,0,0.7)';cx.fillRect(8,180,520,l.length*20+10);cx.font='15px monospace';cx.fillStyle='#7f7';l.forEach((t,i)=>cx.fillText(t,16,198+i*20));cx.restore();}
+function drawDebug(){if(!DBG)return;const l=['ctx '+(AC?AC.state:'none')+' sr '+(AC?AC.sampleRate:0),'stems '+Object.keys(STB).filter(k=>STB[k]).join(','),'rms '+rms().toFixed(3)+' muted '+MUTED+' vol '+VOL,'fallback '+AFB+(AEL?' el '+(AEL.paused?'paused':'playing')+' '+AEL.readyState:''),'master '+(MASTER?MASTER.gain.value.toFixed(2):'-')+' saved '+JSON.stringify(localStorage.getItem('bt.vol'))+' mute '+JSON.stringify(localStorage.getItem('bt.mute'))+' scr '+SCR,'fps '+(fpsA|0)+' RS '+(window.__RS||1).toFixed(2)+' LOWP '+LOWP+' mob '+(window.__MOB?1:0)].concat(ALOG);
+ cx.save();cx.fillStyle='rgba(0,0,0,0.7)';cx.fillRect(300,150,680,l.length*22+12);cx.font='17px monospace';cx.fillStyle='#7f7';l.forEach((t,i)=>cx.fillText(t,310,170+i*22));cx.restore();}
 Object.assign(window.__BT||{},{afb:()=>AFB,alog:()=>ALOG});
+
+function testBeep(){try{audioInit();if(!AC)return;kick('test');const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=880;g.gain.setValueAtTime(0.3,AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.4);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+0.45);alog('beep ctx '+AC.state);}catch(e){alog('beep:'+e.message);}}
 // ===================== boss signatures, BT economy, menus, perf =====================
 const SIG={west:['QUICK-DRAW FAN',3,0.32,'bullet','fan'],chicago:['TOMMY SWEEP',5,0.2,'bullet','line'],japan:['SHURIKEN CROSS',4,0.38,'bullet','cross'],rome:['JAVELIN VOLLEY',3,0,'bullet','volley'],
  pirate:['BROADSIDE',3,0.45,'ball','line'],london:['CLOCKWORK BURST',4,0.5,'bullet','clock'],egypt:["PHARAOH'S CURSE",2,0.9,'orb','fan'],miami:['DRIVE-BY',4,0.24,'bullet','diag'],future:['DRONE LATTICE',3,0.42,'orb','cross'],end:['TIME COLLAPSE',4,0.4,'bullet','clock']};
@@ -1263,8 +1267,8 @@ function bossSig(b,ph){const id=S.def.bg,sg=SIG[id]||SIG.end;let n=sg[1];if(G.D.
 function startBT(){const was=S&&S.btOn>0;const ex=was?0:btCost()-100;if(S&&!was&&S.charge<100+ex){if(S.charge>=100)S.pops.push({x:104,y:520,t:0,txt:'NEED '+(100+ex),col:'#9fe8ff',small:1});return;}startBTBase();if(S&&!was&&S.btOn>0){S.st.btN=(S.st.btN||0)+1;S.charge=Math.max(0,S.charge-ex);}}
 // pause menu with settings
 let PSET=0;
-function setRows(back){const rows=[['SOUND '+Math.round(VOL*100)+'%',()=>setVol(VOL>=0.8?0.5:VOL>=0.5?0.25:VOL>0?0:0.8)],['TOUCH AIM OFFSET '+SET.off+'PX',()=>{SET.off=SET.off===0?40:SET.off===40?70:0;saveSet();}],['SCREEN SHAKE '+(SET.shake?'ON':'OFF'),()=>{SET.shake=SET.shake?0:1;saveSet();}],['LEFT-HANDED '+(SET.lefty?'ON':'OFF'),()=>{SET.lefty=SET.lefty?0:1;saveSet();}]];
- rows.forEach((r,i)=>button(400,150+i*86,480,70,r[0],r[1],{size:26}));button(540,510,200,64,'BACK',back,{size:26});}
+function setRows(back){const rows=[['SOUND '+Math.round(VOL*100)+'%',()=>setVol(VOL>=0.8?0.5:VOL>=0.5?0.25:VOL>0?0:0.8)],['TOUCH AIM OFFSET '+SET.off+'PX',()=>{SET.off=SET.off===0?40:SET.off===40?70:0;saveSet();}],['SCREEN SHAKE '+(SET.shake?'ON':'OFF'),()=>{SET.shake=SET.shake?0:1;saveSet();}],['LEFT-HANDED '+(SET.lefty?'ON':'OFF'),()=>{SET.lefty=SET.lefty?0:1;saveSet();}],['TEST SOUND',testBeep]];
+ rows.forEach((r,i)=>button(400,140+i*74,480,62,r[0],r[1],{size:24}));button(540,520,200,60,'BACK',back,{size:26});}
 function drawSet(){drawBG('end',0,0,1.1);cx.fillStyle='rgba(5,4,12,0.82)';cx.fillRect(0,0,W,H);chromaTxt('SETTINGS',640,100,60,'center');setRows(()=>go(SETBACK||'title'));}
 function drawPause(){if(PSET){cx.fillStyle='rgba(0,0,0,0.8)';cx.fillRect(0,0,W,H);chromaTxt('SETTINGS',640,100,60,'center');setRows(()=>{PSET=0;});return;}drawPauseBase();button(490,480,300,60,'SETTINGS',()=>{PSET=1;},{size:24});}
 // final: restart
