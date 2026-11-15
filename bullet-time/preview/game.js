@@ -1329,4 +1329,42 @@ const BGC={};let BGCN=[];
 function drawBG(name,ox,oy,zoom){const im=IMG['bg_'+name+'.webp'];if(!im||!im.complete||!im.width)return;const z=zoom||1.08;const w=W*z,h=H*z;
  const k=name+'|'+z+'|'+SC.toFixed(3);let c=BGC[k];if(!c){c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*SC));c.height=Math.max(1,Math.round(h*SC));c.getContext('2d').drawImage(im,0,0,c.width,c.height);BGC[k]=c;BGCN.push(k);if(BGCN.length>3)delete BGC[BGCN.shift()];}
  cx.drawImage(c,(W-w)/2+ox,(H-h)/2+oy,w,h);}
+
+// ---- short-landscape text sheets: reserved bands so rows never run into stats/totals/buttons ----
+function sheetBands(){
+  const btnH=58, btnY=H-18-btnH, totH=40, totY=btnY-12-totH, statH=28, statY=totY-8-statH;
+  const subY=118, tableY=136, tableB=statY-12;
+  return {btnH,btnY,totH,totY,statH,statY,subY,tableY,tableB};
+}
+function drawSheetRows(rows,x0,xVal,y0,y1,opt){
+  opt=opt||{};const n=Math.max(1,rows.length);const rh=Math.min(opt.maxRh||40,(y1-y0)/n);
+  const fs=opt.size||Math.max(16,Math.min(22,rh-6));
+  rows.forEach((r,i)=>{const y=y0+rh*i+rh*0.72;if(typeof r==='function'){r(y,fs,rh);return;}
+    txt(r[0],x0,y,fs,'#e8f2ff','left',FONT_T);txt(String(Math.round(r[1])),xVal,y,fs+1,r[1]<0?'#ff6b6b':'#fff','right',FONT_T);});
+  return rh;
+}
+function drawSResBase(){const st=G.stages[G.stages.length-1];drawBG(S.def.bg,0,0,1.1);cx.fillStyle='rgba(5,4,12,0.78)';cx.fillRect(0,0,W,H);
+  const L=sheetBands();chromaTxt(st.bonus?'BONUS CLEAR':'ERA CLEAR',640,78,56,'center');txt(st.name+' \u00b7 '+S.def.year,640,L.subY,22,'#ffd166','center',FONT_T);
+  const rows=catRows([st]);const k=clamp(SCRT*1.5,0,1);const shown=rows.map(r=>[r[0],r[1]*k]);
+  const rail=1000,cols=2,n=Math.ceil(shown.length/cols),colW=(rail-70)/cols,rh=Math.min(52,(L.tableB-L.tableY-12)/n);
+  shown.forEach((r,i)=>{const c=i<n?0:1,j=i%n,x=70+c*colW,y=L.tableY+rh*j+rh*0.7;
+    txt(r[0],x,y,20,'#e8f2ff','left',FONT_T);txt(String(Math.round(r[1])),x+colW-16,y,22,r[1]<0?'#ff6b6b':'#fff','right',FONT_T);});
+  if(SCRT>0.8){const rsz=Math.min(140,L.tableB-L.tableY-86);const mid=L.tableY+(L.tableB-L.tableY)*0.52;txt('RANK',1140,mid-rsz*0.62,20,'#cde','center',FONT_T);
+    chromaTxt(st.rank,1140,mid,rsz,'center');txt('+1 HEART',1140,mid+rsz*0.46,20,'#ff6b8b','center',FONT_T);}
+  txt('ACCURACY '+(st.acc*100).toFixed(1)+'%   MAX COMBO x'+st.maxMult+'   DAMAGE '+st.dmg,80,L.statY+L.statH-4,20,'#9fe8ff','left',FONT_T);
+  txt('STAGE TOTAL '+Math.round(st.total),80,L.totY+L.totH-6,28,'#ffd166','left',FONT_T);
+  txt('RUN '+Math.round(G.score),980,L.totY+L.totH-6,28,'#fff','right',FONT_T);}
+function drawSRes(){drawSResBase();if(SCRT>1){const L=sheetBands();if(G.pre&&!S.daily)button(80,L.btnY,210,L.btnH,'RETRY ERA',retryStage,{size:22});
+  button(990,L.btnY,210,L.btnH,S&&S.idx<STAGES.length-1&&!S.daily?'NEXT \u25B6':'CONTINUE',()=>afterStage());}}
+function drawFinal(){drawBG(G.mode==='daily'?'end':'future',0,0,1.1);cx.fillStyle='rgba(5,4,12,0.82)';cx.fillRect(0,0,W,H);
+  const L=sheetBands();chromaTxt(G.over?'CASE COLD':G.mode==='daily'?'DAILY COMPLETE':'CASE CLOSED',640,70,50,'center');
+  txt((G.mode==='daily'?'DAILY '+dailyKey():'STORY')+' \u00b7 '+G.D.n+' x'+G.D.m,640,L.subY-4,20,'#ffd166','center',FONT_T);
+  const rows=catRows(G.stages);const n=Math.max(rows.length,G.stages.length||1);const rh=Math.min(30,(L.tableB-L.tableY)/n);
+  rows.forEach((r,i)=>{const y=L.tableY+rh*i+rh*0.72;txt(r[0],56,y,17,'#e8f2ff','left',FONT_T);txt(String(Math.round(r[1])),640,y,18,r[1]<0?'#ff6b6b':'#fff','right',FONT_T);});
+  G.stages.forEach((s,i)=>{const y=L.tableY+rh*i+rh*0.72;txt(s.name+(s.invRank?' \u00b7 CLUES '+s.invRank:''),700,y,16,'#e8f2ff','left',FONT_T);txt(String(Math.round(s.total||0)),1120,y,17,'#fff','right',FONT_T);txt(s.rank,1184,y,20,rankCol(s.rank),'center',FONT_T,3);});
+  const acc=G.totalHits/Math.max(1,G.totalShots);txt('ACCURACY '+(acc*100).toFixed(1)+'%  \u00b7  BEST COMBO x'+Math.max(1,...G.stages.map(s=>s.maxMult||1)),56,L.statY+L.statH-4,18,'#9fe8ff','left',FONT_T);
+  txt('FINAL SCORE',56,L.totY+L.totH-8,22,'#cde','left',FONT_T);txt(String(Math.round(G.score)),640,L.totY+L.totH-4,34,'#ffd166','right',FONT_T,4);
+  if(SCRT>1)button(80,L.btnY,200,L.btnH,'RESTART',()=>{if(G.mode==='daily')startDaily();else startStory(G.diff);},{size:22});
+  if(SCRT>0.8)button(430,L.btnY,280,L.btnH,'CONTINUE',()=>{if(lbQualifies(G.mode,G.score)){NAME={l:[10,0,13],i:0};go('name');}else{BOARD=G.mode;LASTPOS=-1;go('board');}});
+  txt('RUN GRADE',1120,L.btnY+16,16,'#cde','center',FONT_T);chromaTxt(G.grade||'-',1120,L.btnY+L.btnH-2,50,'center');}
 })();
