@@ -616,7 +616,7 @@ function newRun(mode,team){const k=(R()*0x7fffffff)|0;RUN={mode,team,diff:cfg.di
 function hsLoad(){try{const o=JSON.parse(localStorage.getItem('mc94_hs')||'[]');return o.filter(e=>e.g===h53([e.n,e.s,e.t,e.d,e.m,e.ts].join('|')+SALT)).sort((a,b)=>b.s-a.s).slice(0,10);}catch(e){return[];}}
 function hsSave(n,s){if(TEST&&!/[?&]hs=1/.test(location.search))return;const l=hsLoad();const e={n,s,t:RUN.team.id,d:RUN.diff,m:RUN.mode,ts:Date.now()};e.g=h53([e.n,e.s,e.t,e.d,e.m,e.ts].join('|')+SALT);l.push(e);l.sort((a,b)=>b.s-a.s);try{localStorage.setItem('mc94_hs',JSON.stringify(l.slice(0,10)));}catch(_){}}
 function finishRun(){RUN.over=true;const s=runTotal();const detail={game:'mullet-cup-94',score:s,mode:RUN.mode,difficulty:DIFF[RUN.diff].n,team:RUN.team.n,matches:RUN.log.length,log:RUN.log.slice(),valid:!RUN.bad,sig:h53(s+'|'+RUN.log.join('|')+SALT)};
- if(!RUN.bad){try{if(typeof window.submitScore==='function')window.submitScore(s,detail);}catch(e){}try{window.dispatchEvent(new CustomEvent('gamescore',{detail}));}catch(e){}try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'game-score',...detail},'*');}catch(e){}}
+ if(!RUN.bad&&!TEST){try{if(typeof window.submitScore==='function')window.submitScore(s,detail);}catch(e){}try{window.dispatchEvent(new CustomEvent('gamescore',{detail}));}catch(e){}try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'game-score',...detail},'*');}catch(e){}}
  window.__lastScore=TEST?detail:undefined;
  const l=hsLoad();if(!RUN.bad&&s>0&&(l.length<10||s>l[l.length-1].s)){ini={c:[0,0,0],i:0};go('initials');}else go('scores');}
 /* ---------- screens ---------- */
