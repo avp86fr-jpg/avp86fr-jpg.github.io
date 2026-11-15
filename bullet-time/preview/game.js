@@ -436,7 +436,7 @@ const COMICS={
  epilogue:[[{bg:'end',f:0.5,z:0.6,caps:['The Core shattered. Time snapped back like a rubber band.'],ch:[CM2,'l']},
             {bg:'future',f:0.5,z:0.6,tint:'rgba(20,40,90,0.3)',caps:['2049. The same rainy night. One second after I left.'],ch:[H3,'r'],say:'Clockmaker\u2019s off the clock. Case closed.'}]],
 };
-const LAY={1:[[24,24,1232,672]],2:[[24,24,610,672],[646,24,610,672]],3:[[24,24,610,330],[646,24,610,330],[24,366,1232,330]]};
+const LAY={1:[[24,68,1232,628]],2:[[24,68,610,628],[646,68,610,628]],3:[[24,68,610,310],[646,68,610,310],[24,390,1232,306]]};
 let COM=null; // {key,page,shown,t,next}
 let HALF=null;function halftone(){const c=document.createElement('canvas');c.width=c.height=8;const g=c.getContext('2d');g.fillStyle='rgba(0,0,0,0.22)';g.beginPath();g.arc(4,4,1.4,0,6.28);g.fill();HALF=cx.createPattern(c,'repeat');}
 function panelLayout(p,r){const [x,y,w,h]=r;const capW=p.say?w/2-36:w-40;let lines=[];p.caps.forEach(c=>lines=lines.concat(wrap(c,capW-28,26)));lines=lines.slice(0,8);
@@ -495,7 +495,7 @@ function drawHow(){drawBG('garage',0,0,1.1);cx.fillStyle='rgba(5,4,12,0.8)';cx.f
  button(540,668,200,44,'BACK',()=>go('title'),{size:20});}
 function drawCard(){const d=CARD.i<0?STAGES[G.dailyOrder[0]]:STAGES[CARD.i];drawBG(d.bg,-SCRT*20,0,1.12);cx.fillStyle='rgba(0,0,0,'+(0.55-Math.min(0.3,SCRT*0.1))+')';cx.fillRect(0,0,W,H);
  const a=clamp(SCRT*2,0,1);if(CARD.i<0){chromaTxt('DAILY CHALLENGE',640,320,96,'center',FONT_T,a);txt(new Date().toDateString().toUpperCase()+' \u00b7 90 SECONDS',640,380,30,'#ffd166','center',FONT_T,4);}
- else{txt((d.bonus?'BONUS \u00b7 ':'ERA '+(CARD.i<4?CARD.i+1:CARD.i)+' \u00b7 ')+d.region,640,270,26,d.pal[1],'center',FONT_T,4);chromaTxt(d.place,640,370,d.place.length>16?78:104,'center',FONT_T,a);chromaTxt(d.year,640,470,90,'center',FONT_T,a);
+ else{txt((d.bonus?'BONUS \u00b7 ':'ERA '+(CARD.i<=4?CARD.i+1:CARD.i)+' \u00b7 ')+d.region,640,270,26,d.pal[1],'center',FONT_T,4);chromaTxt(d.place,640,370,d.place.length>16?78:104,'center',FONT_T,a);chromaTxt(d.year,640,470,90,'center',FONT_T,a);
   if(d.bonus)txt('DESTROY THE HYPERCAR IN 30 SECONDS',640,540,26,'#fff','center',FONT_T,4);}
  if(SCRT>2.6)beginPlay();}
 function catRows(list){const sum=k=>list.reduce((a,s)=>a+(s[k]||0),0);return [['KILLS ('+sum('kills')+', '+sum('heads')+' HEADSHOTS)',sum('killPts')],['BULLETS PARRIED ('+sum('parries')+')',sum('parryPts')],['BOSS WEAK POINTS + SPEED',sum('bossPts')],['HYPERCAR PARTS + WRECK',sum('carPts')],['ACCURACY BONUS',sum('accBonus')],['TIME BONUS',sum('timeBonus')],['NO-DAMAGE BONUS',sum('ndBonus')],['CIVILIANS SHOT ('+sum('civ')+')',sum('civPts')]];}
@@ -545,7 +545,7 @@ function advance(){if(SCR==='inv'){invTap(AIM.x,AIM.y);return;}if(SCR==='comic')
 addEventListener('keydown',e=>{audioInit();if(e.repeat)return;const k=e.code;
  if(SCR==='play'){if(k==='Space'||k==='ShiftLeft'||k==='ShiftRight'){setCover(true);e.preventDefault();}else if(k==='KeyR'){quickReload();}else if(k==='KeyF')startBT();else if(k==='KeyP'||k==='Escape')paused=!paused;else if(k==='Enter'&&!paused)shoot(AIM.x,AIM.y);return;}
  if(SCR==='name'){if(/^Key[A-Z]$/.test(k)){NAME.l[NAME.i]=k.charCodeAt(3)-65;NAME.i=Math.min(2,NAME.i+1);}else if(k==='Backspace')NAME.i=Math.max(0,NAME.i-1);else if(k==='Enter')saveName();return;}
- if(k==='Enter'||k==='Space'){if(SCR==='title')go('diff');else if(SCR==='sres'&&SCRT>1)afterStage();else if(SCR==='final'&&SCRT>0.8)UI.length&&UI[UI.length-1].fn();else if(SCR==='gameover'&&SCRT>1.2)go('final');else advance();}});
+ if(k==='Enter'||k==='Space'){if(SCR==='title')go('diff');else if(SCR==='sres'&&SCRT>1)afterStage();else if(SCR==='final'&&SCRT>0.8)UI.length&&UI[UI.length-1].fn();else if(SCR==='gameover'&&SCRT>1.2){if(G.D.cont&&!G.over&&!G.daily)continueRun();else go('final');}else advance();}});
 addEventListener('keyup',e=>{if(SCR==='play'&&(e.code==='Space'||e.code==='ShiftLeft'||e.code==='ShiftRight')&&coverPtr==null)setCover(false);});
 // ---------- bot (test autoplay) ----------
 let botCd=0,botCov=0;
@@ -580,7 +580,7 @@ window.__BT={get diffInfo(){return {L:typeof LV==='function'?LV():0}},get scr(){
 // ===================== EXTENSION PASS: difficulty, bullet time 2.0, variants, VFX, brand, audio =====================
 const MODES=[{n:'ROOKIE',m:1,hp:6,cont:1,aim:[1.6,1.0],bul:[0.8,0.6],max:[3,4],civ:[0.2,0.4],fair:1,bossHp:1},
  {n:'DETECTIVE',m:1.5,hp:5,cont:1,aim:[1.25,0.8],bul:[0.66,0.5],max:[3,5],civ:[0.25,0.5],fair:1,bossHp:1.15},
- {n:'HARD-BOILED',m:2.25,hp:6,cont:0,aim:[1.08,0.68],bul:[0.64,0.49],max:[3,4],civ:[0.3,0.55],fair:1,bossHp:1.2}];
+ {n:'HARD-BOILED',m:2.25,hp:4,cont:0,aim:[1.08,0.68],bul:[0.64,0.49],max:[3,4],civ:[0.3,0.55],fair:1,bossHp:1.2}];
 DIFFS.length=0;MODES.forEach(m=>DIFFS.push(m));
 const COMBAT=STAGES.map((s,i)=>i).filter(i=>!STAGES[i].bonus&&!STAGES[i].final);
 function LV(){if(!S)return 0;if(S.daily)return 4;const k=COMBAT.indexOf(S.idx);return k<0?9:k;}
@@ -619,7 +619,7 @@ function stageInit(idx,daily){G.pre={score:G.score,n:G.stages.length,hp:G.hp};st
 function variantKey(){const d=S.def;if(d.mixed){const ks=['west','chicago','japan','rome','pirate','london','egypt','miami','future'];const id=ks[Math.floor(S.R()*ks.length)];return S.R()<0.5?['sp_'+id,'gun']:['v_'+id,STAGES.find(s=>s.id===id).vtype];}
  if(S.R()<0.3+LV()*0.02&&SPR['v_'+d.id])return ['v_'+d.id,d.vtype];return [d.enemy,'gun'];}
 function spawnEnemy(opts){const R=S.R;let [key,typ]=opts&&opts.key?[opts.key,'gun']:variantKey();let z,x,mode;
- const usable=S.props.filter(p=>p.z>0.3&&!p.xb&&!p.gone);
+ const usable=S.props.filter(p=>p.z>0.3&&!p.xb&&!p.gone&&propRect(p).h>=160);
  if(usable.length&&R()<0.4&&!(opts&&opts.noPop)){const p=usable[Math.floor(R()*usable.length)];z=p.z-0.03;x=p.x+(R()-0.5)*30;mode='pop';}
  else{z=0.08+R()*0.85;x=spawnX(z,R());mode=typ==='heavy'||R()<0.18?'dash':R()<0.5?'slide':'warp';}
  // keep clear of other cover so nobody stands inside a prop
@@ -894,7 +894,7 @@ function drawHUD(){const st=S.st;
  // combo dial (watch face)
  const m=S.mult,dx=640,dy=62;bezel(dx,dy,50);for(let i=0;i<8;i++){const an=-Math.PI/2+i*Math.PI/4;cx.strokeStyle=i<m?(m>=8?'#ff3fa4':BR.cyan):'rgba(243,234,215,0.25)';cx.lineWidth=4;cx.beginPath();cx.moveTo(dx+Math.cos(an)*34,dy+Math.sin(an)*34);cx.lineTo(dx+Math.cos(an)*42,dy+Math.sin(an)*42);cx.stroke();}
  const an=-Math.PI/2+(m-1+(S.chain%3)/3)*Math.PI/4;cx.strokeStyle=BR.brass;cx.lineWidth=3;cx.beginPath();cx.moveTo(dx,dy);cx.lineTo(dx+Math.cos(an)*30,dy+Math.sin(an)*30);cx.stroke();txt('x'+m,dx,dy+14,m>=8?36:32,m>=6?'#ff3fa4':m>=3?'#ffd166':BR.ivory,'center',FONT_T,4);txt('COMBO',dx,dy+66,13,BR.brass,'center',FONT_T);
- if(S.daily)txt(Math.max(0,90-S.t).toFixed(1),790,72,40,BR.ivory,'center',FONT_T,5);else if(S.def.bonus)txt(Math.max(0,30-S.t).toFixed(1),790,72,40,'#ffd166','center',FONT_T,5);else txt(Math.floor(S.t)+'s',780,70,24,'#cde','center',FONT_T,4);
+ if(S.daily)txt(Math.max(0,90-S.t).toFixed(1),790,72,40,BR.ivory,'center',FONT_T,5);else if(S.def.bonus)txt(Math.max(0,30-S.t).toFixed(1),790,72,40,'#ffd166','center',FONT_T,5);else {const sec=Math.max(0,Math.floor(S.t));txt(Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'),780,70,24,'#cde','center',FONT_T,4);}
  if(S.boss&&!S.boss.dead){const k=S.boss.hp/S.boss.max;cx.fillStyle='rgba(7,6,13,0.7)';rrect(340,128,600,26,6);cx.fill();cx.strokeStyle=brassGrad(340,128,940,154);cx.lineWidth=2;cx.stroke();const gr=cx.createLinearGradient(340,0,940,0);gr.addColorStop(0,'#ff3fa4');gr.addColorStop(1,'#ffd166');cx.fillStyle=gr;cx.fillRect(346,134,588*k,14);
   for(const q of [1/3,2/3]){cx.fillStyle=BR.noir;cx.fillRect(346+588*q-1,132,3,18);}txt(S.boss.key.indexOf('end')>=0?S.def.bossName:S.def.bossName,640,176,20,BR.ivory,'center',FONT_T,4);txt('SPEED x'+clamp(2-S.bossT/45,0.5,2).toFixed(2),940,176,15,'#ffd166','right',FONT_T,3);}
  // chrono-cuff gauge
@@ -1064,7 +1064,7 @@ const INV={
  egypt:{place:'THE BURIAL CHAMBER',sp:[[412,525],[188,325],[700,525],[1025,456],[588,650],[1075,625]],i:'A king sleeps here. Something else woke up.',o:'Three thousand years of silence, and one ticking sound.'},
  miami:{place:"THE KINGPIN'S PENTHOUSE",sp:[[562,525],[288,312],[700,587],[1062,375],[1225,525],[500,400]],i:'Neon, glass and money. The kingpin had taste. Bad taste.',o:'Everything here was for sale. Even time.'},
  future:{place:'THE HACKER DEN',sp:[[350,562],[312,462],[700,450],[1000,500],[1225,550],[862,375]],i:'A den full of screens. All of them are watching me.',o:"The last clue. The Clockmaker's waiting at the end of time."}};
-function invTimer(){return [75,60,45][G.diff]||60;}
+function invTimer(){return [75,60,45][(G&&G.diff)||1]||60;}
 function startInv(id,next){const d=INV[id];const R=rng(hstr('inv-'+id));const pool=[0,1,2,3,5,6,7];for(let i=pool.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
  const kinds=[4].concat(pool.slice(0,5));const sp=d.sp.slice();const clues=kinds.map((k,i)=>({k,x:sp[i][0],y:sp[i][1],rot:(R()-0.5)*0.8,s:0.2+R()*0.05,found:false,ft:0}));
  IV={id,d,clues,t:0,max:invTimer(),pts:0,wrong:0,wpen:0,cd:0,streak:0,lastF:-9,hint:null,hints:0,cap:'',capT:0,done:false,doneT:0,next};IV.cap=d.i;IV.capT=4;go('inv');musicPlay(id);}
