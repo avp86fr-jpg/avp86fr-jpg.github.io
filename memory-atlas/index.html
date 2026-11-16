@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Play The Memory Atlas Free in Your Browser | avpnft1</title>
+<meta name="description" content="A point-and-click mystery at Greyhaven Academy. Play as Elias Vane, follow Mira Thorne, and hunt a thief who steals memories. Three chapters, inventory puzzles and Memory Vision. Free in the browser.">
+<link rel="canonical" href="https://avp86fr-jpg.github.io/memory-atlas/">
+<meta name="theme-color" content="#0b0919">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="avpnft1 games">
+<meta property="og:title" content="Play The Memory Atlas Free in Your Browser | avpnft1">
+<meta property="og:description" content="A point-and-click mystery at Greyhaven Academy. Three chapters, inventory puzzles and Memory Vision. Free in the browser.">
+<meta property="og:url" content="https://avp86fr-jpg.github.io/memory-atlas/">
+<meta property="og:image" content="https://avp86fr-jpg.github.io/memory-atlas/assets/img/og_1200x630.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Memory Atlas key art: Elias Vane and Mira Thorne in gold-trimmed purple cloaks stand before a lantern-headed figure in a moonlit library, with the title in an ornate gold compass emblem.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@avp86frfr">
+<meta name="twitter:title" content="Play The Memory Atlas Free in Your Browser | avpnft1">
+<meta name="twitter:description" content="A point-and-click mystery at Greyhaven Academy. Three chapters, puzzles and Memory Vision. Free in the browser.">
+<meta name="twitter:image" content="https://avp86fr-jpg.github.io/memory-atlas/assets/img/og_1200x630.jpg">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face{font-family:Bangers;src:url(assets/fonts/bangers.woff2) format("woff2");font-display:swap}
+@font-face{font-family:Bangers;src:url(assets/fonts/bangers-ext.woff2) format("woff2");font-display:swap;unicode-range:U+0100-02BA}
+@font-face{font-family:'Chakra Petch';src:url(assets/fonts/chakra-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:'Chakra Petch';src:url(assets/fonts/chakra-700.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--bg:#0b0919;--ivory:#f6f0ff;--y:#e2b964;--p:#8a4ad4;--c:#8fe0ff;--ink:#140e24}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ivory);font-family:'Chakra Petch',system-ui,sans-serif;line-height:1.5}
+img{max-width:100%;height:auto;display:block}a{color:var(--c)}
+.skip{position:absolute;left:-999px;top:0}.skip:focus{left:16px;top:16px;background:#000;padding:8px 12px;z-index:9}
+.wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
+.nav{position:sticky;top:0;z-index:8;background:rgba(11,9,25,.88);backdrop-filter:blur(10px);border-bottom:1px solid rgba(226,185,100,.25)}
+.nav__in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;width:min(1120px,calc(100% - 40px));margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ivory);letter-spacing:.08em;font-family:Bangers,Impact,sans-serif}
+.brand em{color:var(--y);font-style:normal}
+.hero{position:relative;min-height:min(86vh,820px);display:grid;align-items:end;overflow:hidden;background:#000}
+.hero img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,9,25,.12) 18%,rgba(11,9,25,.55) 58%,#0b0919 100%)}
+.hero__copy{position:relative;z-index:1;padding:0 0 56px;width:min(1120px,calc(100% - 40px));margin:0 auto}
+.eyebrow{display:flex;align-items:center;gap:8px;color:var(--y);letter-spacing:.18em;text-transform:uppercase;font-size:14px;font-weight:700;margin:0 0 8px}
+.eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+h1{font-family:Bangers,Impact,sans-serif;font-size:clamp(52px,9vw,108px);letter-spacing:.03em;margin:0 0 6px;line-height:.86;color:var(--y);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:.06em .06em 0 var(--p),4px 4px 0 var(--ink);transform:rotate(-3deg)}
+.sub{color:#fff;letter-spacing:.16em;font-size:18px;margin:0 0 16px;font-family:Bangers,Impact,sans-serif;transform:rotate(-3deg)}
+.lede{max-width:40rem;font-size:18px;color:#d7deea;margin:0 0 22px;font-weight:600}
+.cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:10px;text-decoration:none;border:3px solid var(--ink);border-radius:0;padding:12px 22px;font:400 20px Bangers,Impact,sans-serif;letter-spacing:.08em;text-transform:uppercase;transform:skewX(-8deg);box-shadow:4px 4px 0 var(--ink)}
+.btn--gold{background:var(--y);color:var(--ink)}
+.btn--gold:hover{filter:brightness(1.06)}
+.btn--ghost{background:rgba(11,9,25,.55);color:var(--ivory);border-color:var(--c);box-shadow:4px 4px 0 var(--c)}
+.btn--cyan{background:var(--c);color:var(--ink)}
+.playico{width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent currentColor}
+.sec{padding:56px 0 8px}h2{font-family:Bangers,Impact,sans-serif;font-size:clamp(32px,5vw,52px);letter-spacing:.04em;margin:0 0 16px;color:var(--y);text-shadow:3px 3px 0 var(--ink)}
+.sec p,.ctrl p{color:#c9d3e0;max-width:46rem;font-weight:600}
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;list-style:none;padding:0;margin:16px 0 0}
+.feats li{background:rgba(255,255,255,.05);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:16px 18px;font-size:16px;font-weight:700;transform:skewX(-3deg)}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:12px}
+.ctrl{background:rgba(255,255,255,.04);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--p);padding:18px 20px}
+.ctrl h3{margin:0 0 8px;color:var(--y);letter-spacing:.08em;font-family:Bangers,Impact,sans-serif}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:16px 0 40px}
+.gallery figure{margin:0;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);overflow:hidden;background:#000}
+.gallery figcaption{font-size:13px;color:#9aa7b8;padding:8px 10px 12px;font-weight:600}
+.foot{border-top:3px solid var(--ink);padding:28px 0 40px;margin-top:32px;color:#9aa7b8;font-size:14px;font-weight:600}
+.foot a{color:var(--ivory)}
+.foot .refs{margin-top:10px;display:flex;flex-wrap:wrap;gap:12px}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"The Memory Atlas","url":"https://avp86fr-jpg.github.io/memory-atlas/","image":"https://avp86fr-jpg.github.io/memory-atlas/assets/img/og_1200x630.jpg","description":"A point-and-click mystery at Greyhaven Academy. Play as Elias Vane, follow Mira Thorne, and hunt a thief who steals memories. Three chapters, inventory puzzles and Memory Vision. Free in the browser.","genre":["Adventure","Puzzle"],"gamePlatform":["Web browser","Mobile browser"],"applicationCategory":"Game","operatingSystem":"Any (web browser)","author":{"@type":"Person","name":"avpnft1"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD","availability":"https://schema.org/InStock","url":"https://avp86fr-jpg.github.io/memory-atlas/play/"}}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="nav__in">
+    <a class="brand" href="https://avp86fr-jpg.github.io/">AVPNFT1<em>GAMES</em></a>
+    <a class="btn btn--gold" href="play/">Play free<span class="playico" aria-hidden="true"></span></a>
+  </div>
+</header>
+<main id="main">
+  <header class="hero">
+    <img class="bg" src="assets/img/keyart_1920x1080.webp" srcset="assets/img/cover_1280x720.jpg 1280w, assets/img/keyart_1920x1080.webp 1920w" sizes="100vw" width="1920" height="1080" alt="The Memory Atlas key art: Elias Vane and Mira Thorne in gold-trimmed purple cloaks stand before a lantern-headed figure in a moonlit library, with the title in an ornate gold compass emblem." fetchpriority="high">
+    <div class="hero__copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span> point-and-click · mystery</p>
+      <h1>THE MEMORY ATLAS</h1>
+      <p class="sub">A POINT-AND-CLICK ADVENTURE</p>
+      <p class="lede">You arrive at Greyhaven Academy on the night its memories begin to vanish. A masked thief is taking them. Follow Mira Thorne through the library, the reliquary and the Underarchives, piece a stolen nocturne back together, and learn to see what objects remember.</p>
+      <div class="cta">
+        <a class="btn btn--gold" href="play/">Play fullscreen<span class="playico" aria-hidden="true"></span></a>
+        <a class="btn btn--ghost" href="#about">About the game</a>
+        <a class="btn btn--cyan" href="https://avp86fr-jpg.github.io/">More games</a>
+      </div>
+    </div>
+  </header>
+  <div class="wrap">
+    <section class="sec" id="about">
+      <h2>About the game</h2>
+      <p>THE MEMORY ATLAS is an original point-and-click adventure for the browser. You play Elias Vane, a young scholar who can, after a first long night at Greyhaven, look at a fountain, a watch or a locked door and see the memory still clinging to it.</p>
+      <p>Three chapters — The Things We Forget, The Lost Collection, and The Underarchives — make up one story. Talk to Mira Thorne, the librarian Wren, Professor Ashcroft and others. Combine scraps of a founders’ nocturne, open a stair beneath the courtyard fountain, and chase the Archivist for the stolen leaves of a book that was meant to hold every memory ever lived. Your progress is saved on your device. A notebook and a hint button keep you on the thread if you wander.</p>
+    </section>
+    <section class="sec" id="features">
+      <h2>Features</h2>
+      <ul class="feats">
+        <li>Three chapters of an original mystery</li>
+        <li>Memory Vision: see what objects remember</li>
+        <li>Inventory puzzles and a satchel of clues</li>
+        <li>Illustrated rooms: courtyard, library, study, reliquary, vault</li>
+        <li>A notebook and a hint if you get stuck</li>
+        <li>Saves on your device, Continue from the title</li>
+        <li>Original Web Audio score, soft and nocturnal</li>
+        <li>Mouse, touch, and a fullscreen button</li>
+      </ul>
+    </section>
+    <section class="sec" id="controls">
+      <h2>Controls</h2>
+      <div class="ctrls">
+        <div class="ctrl">
+          <h3>Explore</h3>
+          <p>Tap a marker to look, talk or take. Drag the scene, or use the side arrows, to look around. Elias walks to whatever you choose. Play in landscape when you can.</p>
+        </div>
+        <div class="ctrl">
+          <h3>Satchel, vision, hints</h3>
+          <p>Tap an item to use it, tap it again to examine it, or combine two things from the satchel. The eye toggles Memory Vision — then tap anything that glows. The book is Elias’s notebook; the question mark is a hint. Fullscreen sits in the top-right corner, or add ?fs=1 to the play address.</p>
+        </div>
+      </div>
+    </section>
+    <section class="sec" id="screenshots">
+      <h2>Screenshots</h2>
+      <div class="gallery">
+        <figure><img src="assets/img/shots/title.webp" width="1280" height="720" alt="The Memory Atlas title screen in a moonlit academy courtyard, with New Game and chapter select." loading="lazy"><figcaption>Title screen</figcaption></figure>
+        <figure><img src="assets/img/shots/courtyard.webp" width="1280" height="720" alt="Elias and Mira in the Greyhaven courtyard at night, beside a griffin fountain and clickable hotspots." loading="lazy"><figcaption>The courtyard at midnight</figcaption></figure>
+        <figure><img src="assets/img/shots/library.webp" width="1280" height="720" alt="The academy library: stained glass, an astrolabe, and librarian Wren standing with Elias." loading="lazy"><figcaption>The library, with Wren</figcaption></figure>
+        <figure><img src="assets/img/shots/study.webp" width="1280" height="720" alt="Professor Ashcroft’s study, a fire in the grate, a moonlit castle in the window, and a half-blank portrait over the mantel." loading="lazy"><figcaption>Ashcroft’s study</figcaption></figure>
+        <figure><img src="assets/img/shots/reliquary.webp" width="1280" height="720" alt="The Reliquary: a smashed glass dome on a marble plinth, a glowing blue doorway, and Elias standing on a compass-rose floor." loading="lazy"><figcaption>The Reliquary</figcaption></figure>
+        <figure><img src="assets/img/shots/memory-vision.webp" width="1280" height="720" alt="Memory Vision in the library: two hotspots glow blue, and the eye button on the toolbar is lit." loading="lazy"><figcaption>Memory Vision</figcaption></figure>
+      </div>
+    </section>
+  </div>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <p><a href="https://avp86fr-jpg.github.io/">avpnft1 games</a> · Original game, playable in your browser.</p>
+    <p class="refs">
+      <a href="https://avp86fr-jpg.github.io/">More games</a>
+      <a href="https://tournament.com/@avpnft1" target="_blank" rel="noopener sponsored">TOURNAMENT (referral)</a>
+    </p>
+    <p>Referral link: the author may earn a commission if a referred player buys a TOURNAMENT membership.</p>
+    <p>© 2026 avpnft1. Original work.</p>
+  </div>
+</footer>
+</body>
+</html>
