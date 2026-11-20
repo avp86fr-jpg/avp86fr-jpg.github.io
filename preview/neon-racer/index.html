@@ -4819,22 +4819,37 @@ float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vnoise(p);p=p*2.03+7
 `,Tv={uniforms:{tDiffuse:{value:null},time:{value:0},speed:{value:0},boost:{value:0},hit:{value:0},aspect:{value:1.78},rainAmt:{value:1},drops:{value:2},steer:{value:0},flash:{value:0},tint:{value:new me(1,0,.8)},emp:{value:0}},vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",fragmentShader:`
  uniform sampler2D tDiffuse;uniform float time,speed,boost,hit,aspect,rainAmt,steer,flash,emp;uniform int drops;uniform vec3 tint;varying vec2 vUv;
  ${Bn}
+ float dSpec,dRim,dDark;
+ // one water drop as a lens: inverted + magnified refraction inside (offset in grid space), bright fresnel edge, soft top-left specular, very faint dark rim
+ vec2 lens(vec2 d,float r,float a,vec2 sc){
+  float L=length(d);float inn=1.-smoothstep(r*.8,r,L);
+  vec2 o=-d*1.1*inn*a;
+  float rim=smoothstep(.6*r,r,L)*(1.-smoothstep(r,r*1.05,L));
+  dRim+=rim*a*(.45+.55*dot(d/max(L,1e-4),vec2(.7,-.7)));
+  dDark+=smoothstep(r,r*1.06,L)*(1.-smoothstep(r*1.06,r*1.22,L))*a;
+  dSpec+=a*((1.-smoothstep(0.,.2*r,length(d-vec2(-.4,.42)*r)))*.95+(1.-smoothstep(0.,.1*r,length(d-vec2(.42,-.38)*r)))*.28)*inn;
+  return o/(sc*vec2(aspect,1.));
+ }
  vec2 dropOff(vec2 uv,float layer){
-  vec2 sc=vec2(5.,2.7)*(1.+layer*1.15);vec2 g=vec2(uv.x*aspect,uv.y)*sc;vec2 id=floor(g);vec2 f=fract(g);vec2 h=h22(id+layer*31.7);float dens=.085+.05*rainAmt;
-  if(h.x>dens*2.2)return vec2(0.);
-  float life=fract(time*(.035+.03*h.y)+h.x*7.);float fade=smoothstep(0.,.08,life)*(1.-smoothstep(.8,1.,life));
-  float sp=clamp(speed,0.,1.4);float slide=pow(life,2.2)*(.55-.7*sp);vec2 c=vec2(.2+.6*h.y+(h.x-.5)*.3*sp*life,.78-slide-.1*h.x);vec2 d=(f-c)*vec2(1.,1.25);float r=.11+.08*h.y;
-  float m=smoothstep(r,r*.35,length(d))*fade;
-  float trail=smoothstep(.045,0.,abs(f.x-c.x))*smoothstep(c.y,c.y+.5,f.y)*step(f.y,.9)*fade*.18*step(.55,life)*smoothstep(.55,.85,life);
-  return -d*m*.55+vec2(0.,trail*.01);
+  vec2 sc=vec2(5.5,3.1)*(1.+layer*1.1);vec2 g=vec2(uv.x*aspect,uv.y)*sc;vec2 id=floor(g);vec2 f=fract(g);vec2 h=h22(id+layer*31.7);vec2 h2=h22(id+layer*17.3+4.1);
+  if(h.x>(.11+.05*rainAmt)*(1.-.35*layer))return vec2(0.);
+  float life=fract(time*(.03+.025*h.y)+h.x*7.);float fade=smoothstep(0.,.1,life)*(1.-smoothstep(.82,1.,life));
+  float sp=clamp(speed,0.,1.4);float slide=pow(life,2.2)*(.5-.65*sp)*(.6+.8*h2.x);
+  float r=(.05+.13*h.y*h.y+.03*h2.y)*(1.-.3*layer);
+  vec2 c=vec2(.22+.56*h.y+(h.x-.5)*.25*sp*life,clamp(.7-slide-.1*h2.y,r+.03,.97-r));
+  vec2 d=(f-c)*vec2(1.,.88);
+  vec2 o=lens(d,r,fade,sc);
+  float sg=slide>=0.?1.:-1.;float ty=(f.y-c.y)*sg,tl=min(abs(slide)*1.1,.42);
+  if(ty>r*.6&&ty<tl+r*.6){float u=(ty-r*.6)/max(tl,.01);float w=.012*(1.-u)+.003;float tr=(1.-smoothstep(0.,w,abs(f.x-c.x)))*(1.-u)*fade*step(.04,abs(slide));dSpec+=tr*.07;dRim+=tr*.05;}
+  return o;
  }
  void main(){
   vec2 uv=vUv;vec2 cen=vec2(.5,.52)-vec2(steer*.01,0.);vec2 dv=uv-cen;float rr=length(dv*vec2(aspect,1.));
-  vec2 off=vec2(0.);
+  vec2 off=vec2(0.);dSpec=0.;dRim=0.;dDark=0.;
   if(drops>0)off+=dropOff(uv,0.)*(rainAmt>.01?1.:0.);
-  if(drops>1)off+=dropOff(uv+.37,1.)*.8*(rainAmt>.01?1.:0.);
-  if(drops>1&&rainAmt>.01){vec2 gb=vec2(uv.x*aspect,uv.y)*vec2(26.,15.);vec2 ib=floor(gb),fb=fract(gb);vec2 hb=h22(ib+7.3);if(hb.x<.16+.08*rainAmt){vec2 db=(fb-(.25+.5*hb.y))*vec2(1.,1.);float rb=.1+.09*hb.x;float mb=1.-smoothstep(rb*.3,rb,length(db));off+=-db*mb*.1;}}
-  uv+=off*.7;
+  if(drops>1)off+=dropOff(uv+.37,1.)*(rainAmt>.01?1.:0.);
+  if(drops>1&&rainAmt>.01){vec2 sb=vec2(22.,12.);vec2 gb=vec2(uv.x*aspect,uv.y)*sb;vec2 ib=floor(gb),fb=fract(gb);vec2 hb=h22(ib+7.3);if(hb.x<.07+.04*rainAmt){vec2 db=fb-(.25+.5*hb.y);off+=lens(db,.06+.07*hb.x,1.,sb);}}
+  uv+=off;
   float sp=clamp(speed,0.,1.4);
   vec3 col=vec3(0.);
   float blur=(.0026*sp*sp+.0034*boost)*(.2+rr);
@@ -4853,6 +4868,7 @@ float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vnoise(p);p=p*2.03+7
    #endif
    col+=s*w;wsum+=w;}
   col/=wsum;
+  col*=1.-.04*min(dDark,1.);col+=vec3(.5,.62,.8)*.014*min(dRim+dSpec,1.);col+=vec3(.75,.88,1.)*min(dRim,1.)*.2+vec3(1.,.97,.92)*min(dSpec,1.)*.5;
   // speed lines
   float ang=atan(dv.y,dv.x*aspect);float lines=0.;
   float a1=floor(ang*70.),a2=floor(ang*130.+3.);
