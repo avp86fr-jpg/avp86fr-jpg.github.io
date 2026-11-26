@@ -345,3 +345,5 @@ body.zoneOn .popups { top: 47%; transition: top .2s; }
 /* pass 13o: while a banner (set piece / mission) is up, popups grow upward from just above it instead of into it */
 .banOn .popups { top: auto; bottom: 67%; flex-direction: column-reverse; }
 body.zoneOn .banOn .popups { top: 47%; bottom: auto; flex-direction: column; }
+/* pass 13s: on short phone screens the comic sound words sit higher and smaller so they never hide the jeep */
+body.touch.short .sfxw { font-size: min(9vw, 13vh, 80px); margin-top: -10vh; }
