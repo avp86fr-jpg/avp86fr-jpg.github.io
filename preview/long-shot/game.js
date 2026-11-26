@@ -40504,7 +40504,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const w = baseWorld({
       haze: "#c9d3e0",
       sunHaze: "#eef2f8",
-      hazeDensity: 26e-5,
+      hazeDensity: 2e-4,
       hazeHeight: 520,
       hazeBase: 0,
       sunEl: 20,
@@ -40522,7 +40522,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const nestY = height4(0, 0);
     w.nest = { pos: new Vector3(0, nestY + 0.45, 0), yaw: -0.35, pitch: -0.08, yawRange: 72 * Math.PI / 180, pitchMin: -0.5, pitchMax: 0.4 };
     w.windCfg = { dir: 290, speed: 3.6, gust: 0.35, shift: 12, alt: 7e-4, local: 0.2, seed: 61, groundY: 0 };
-    w.tint = { lift: [0, 6e-3, 0.016], gain: [1.02, 1.02, 1.06], sat: 1.08, contrast: 1.2, expo: 0.97 };
+    w.tint = { lift: [-0.01, -4e-3, 6e-3], gain: [1, 1.02, 1.06], sat: 1.12, contrast: 1.3, expo: 0.9 };
+    w.rimMul = 0.2;
     w.bloom = 0.25;
     w.bloomTh = 2.2;
     w.rays = 0.2;
@@ -40613,7 +40614,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     box(1600, 0.25, 0.12, 200, RY + 0.95, RZ + 6.2, "#9a9ea3");
     box(9, 3.2, 3, -470, RY + 1.9, RZ - 6, "#e0a020");
     box(3.4, 2.4, 0.4, -475.5, RY + 0.9, RZ - 6, "#c08010");
-    box(8, 4, 6, 380, RY + 2, RZ - 14.5, "#6a4a34");
+    box(8, 4, 6, 380, RY + 2, RZ - 14.5, "#4e3424");
     for (let k = 0; k < 9; k++) {
       box(8.04, 0.06, 6.04, 380, RY + 0.3 + k * 0.42, RZ - 14.5, "#3a2618");
     }
@@ -46826,7 +46827,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         barrelHeat(L.uBH.value);
         {
           const Wd = G.world, sc = view === "scope" && !G.thermal && G.player ? Math.min(1, Math.max(0, (G.player.optics.mag - 6) / 18)) : 0;
-          SCOPE_RIM.uScopeRim.value = sc * (Wd?.night ? 0.35 : 0.5);
+          SCOPE_RIM.uScopeRim.value = sc * (Wd?.night ? 0.35 : 0.5) * (Wd?.rimMul ?? 1);
           if (Wd && SCOPE_RIM._w !== Wd) {
             SCOPE_RIM._w = Wd;
             SCOPE_RIM.uScopeRimC.value.copy(Wd.sun?.color || new Color(1, 1, 1)).lerp(new Color(1, 1, 1), 0.5);
