@@ -10,35 +10,35 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 #ui { position: fixed; inset: 0; pointer-events: none; }
 #ui .screen, #ui button, #ui .clickable, #touch * { pointer-events: auto; }
 /* ---------------- HUD */
-#hud { position: absolute; inset: 0; font-size: calc(var(--s, 1) * 16px); }
-.scroll { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 6px 46px 8px; min-width: 210px; text-align: center; color: var(--ink);
+#hud { position: absolute; top: env(safe-area-inset-top); right: env(safe-area-inset-right); bottom: env(safe-area-inset-bottom); left: env(safe-area-inset-left); font-size: calc(var(--s, 1) * 16px); }
+.scroll { position: absolute; top: calc(var(--s,1) * 14px); left: 50%; transform: translateX(-50%); padding: .38em 2.9em .5em; min-width: 13em; text-align: center; color: var(--ink);
   background: linear-gradient(180deg, #f2e2b8, #d8c08a 70%, #c4a66c); border-radius: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.45), inset 0 0 18px rgba(120,80,30,.35); font-family: 'Oswald'; }
 .scroll::before, .scroll::after { content: ''; position: absolute; top: -5px; bottom: -5px; width: 22px; border-radius: 10px; background: linear-gradient(90deg, #8a5a2a, #d8b070 45%, #6a4220); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
 .scroll::before { left: -10px; } .scroll::after { right: -10px; }
 .scroll .v { font-size: 2em; font-weight: 600; letter-spacing: 1px; line-height: 1.05; } .scroll .l { font-size: .7em; letter-spacing: 3px; opacity: .7; font-family: 'Zilla'; }
-.counters { position: absolute; top: 16px; left: 18px; display: flex; flex-direction: column; gap: 8px; }
-.ctr { display: flex; align-items: center; gap: 10px; padding: 4px 14px 4px 6px; background: linear-gradient(180deg, rgba(60,36,18,.88), rgba(36,22,12,.88)); border: 2px solid var(--brass); border-radius: 30px; font-family: 'Oswald'; font-size: 1.45em; box-shadow: 0 3px 10px rgba(0,0,0,.4); min-width: 120px; }
+.counters { position: absolute; top: calc(var(--s,1) * 14px); left: calc(var(--s,1) * 16px); display: flex; flex-direction: column; gap: 8px; }
+.ctr { display: flex; align-items: center; gap: 10px; padding: 4px 14px 4px 6px; background: linear-gradient(180deg, rgba(60,36,18,.88), rgba(36,22,12,.88)); border: 2px solid var(--brass); border-radius: 30px; font-family: 'Oswald'; font-size: 1.45em; box-shadow: 0 3px 10px rgba(0,0,0,.4); min-width: 7.5em; }
 .ctr i { width: 1.5em; height: 1.5em; border-radius: 50%; display: inline-block; flex: none; }
 .coin { background: radial-gradient(circle at 35% 30%, #fff3b0, #e8b840 45%, #8a5a10); box-shadow: inset 0 0 0 2px #a8781e; }
 .relicI { background: radial-gradient(circle at 40% 30%, #d8fff0, #3fc898 50%, #0f5a40); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0 !important; }
-.scoreBox { position: absolute; top: 14px; right: 18px; text-align: right; }
+.scoreBox { position: absolute; top: calc(var(--s,1) * 12px); right: calc(var(--s,1) * 16px); text-align: right; }
 .scoreBox .v { font-family: 'Oswald'; font-size: 2.2em; font-weight: 600; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
 .mult { display: inline-block; margin-top: 2px; padding: 2px 12px; border-radius: 20px; font-family: 'Oswald'; font-size: 1.3em; color: #2a1606; background: linear-gradient(180deg, #ffe08a, #d89a2a); border: 2px solid #7a4e12; transition: transform .12s; }
 .mult.pop { transform: scale(1.3); }
-.missions { position: absolute; top: 118px; right: 18px; width: 15.5em; display: flex; flex-direction: column; gap: 7px; }
+.missions { position: absolute; top: 7.4em; right: calc(var(--s,1) * 16px); width: 15.5em; display: flex; flex-direction: column; gap: 7px; }
 .mcard { position: relative; padding: 7px 10px 8px 12px; color: var(--ink); background: linear-gradient(170deg, #f1e3bd, #d9c393); border-radius: 3px; box-shadow: 0 3px 8px rgba(0,0,0,.4); font-size: .82em; transform: rotate(-.6deg); }
 .mcard:nth-child(2) { transform: rotate(.5deg); } .mcard .bar { height: 5px; margin-top: 5px; background: rgba(60,40,20,.25); border-radius: 3px; overflow: hidden; } .mcard .bar b { display: block; height: 100%; background: linear-gradient(90deg, #6a8a30, #a8c050); }
 .mcard.done { background: linear-gradient(170deg, #f6e8a0, #e0c060); } .mcard.done::after { content: '✔'; position: absolute; right: 8px; top: 4px; color: #3a6a10; font-size: 1.4em; }
 .mtitle { font-size: .7em; letter-spacing: 3px; text-align: right; opacity: .85; text-shadow: 0 1px 3px #000; }
-.danger { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 34px; height: 46vh; }
+.danger { position: absolute; left: calc(var(--s,1) * 16px); top: 50%; transform: translateY(-50%); width: calc(var(--s,1) * 34px); height: 40vh; }
 .danger .tube { position: absolute; left: 6px; right: 6px; top: 38px; bottom: 0; border-radius: 14px; background: linear-gradient(90deg, #2a1a0e, #4a301a, #2a1a0e); border: 2px solid var(--brass); overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,.5); }
 .danger .fill { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, #6a1a0a, #e84020 70%, #ffb060); transition: height .15s; }
 .danger .idol { position: absolute; top: 0; left: -2px; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f0d080, #a07020 60%, #4a2a08); border: 2px solid #f0c060; display: grid; place-items: center; font-size: 20px; }
 .danger.hot .idol { box-shadow: 0 0 18px 6px rgba(255,60,20,.85); animation: pulse .35s infinite alternate; }
 .danger .lbl { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: 'Oswald'; font-size: .8em; text-shadow: 0 1px 3px #000; }
 @keyframes pulse { to { transform: scale(1.12); } }
-#mini { position: absolute; left: 16px; bottom: 16px; width: calc(var(--s,1) * 170px); height: calc(var(--s,1) * 170px); }
-#speedo { position: absolute; right: 14px; bottom: 12px; width: calc(var(--s,1) * 230px); height: calc(var(--s,1) * 200px); }
+#mini { position: absolute; left: calc(var(--s,1) * 14px); bottom: calc(var(--s,1) * 14px); width: calc(var(--s,1) * 170px); height: calc(var(--s,1) * 170px); }
+#speedo { position: absolute; right: calc(var(--s,1) * 12px); bottom: calc(var(--s,1) * 10px); width: calc(var(--s,1) * 230px); height: calc(var(--s,1) * 200px); }
 .bark { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: min(640px, 70vw); padding: 8px 18px 8px 8px; background: linear-gradient(180deg, rgba(40,24,12,.92), rgba(24,14,8,.92)); border: 2px solid var(--brass); border-radius: 50px; box-shadow: 0 6px 20px rgba(0,0,0,.5); transition: opacity .3s, transform .3s; }
 .bark.off { opacity: 0; transform: translateX(-50%) translateY(14px); }
 .bark canvas { width: 3.6em; height: 3.6em; border-radius: 50%; border: 2px solid var(--gold); flex: none; background: #3a2a1a; }
@@ -97,23 +97,61 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 .row { display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
 .paints { display: flex; gap: 10px; } .paint { width: 44px; height: 44px; border-radius: 50%; border: 3px solid #4a2c18; cursor: pointer; } .paint.on { outline: 3px solid #e8c060; }
 #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #120c06; z-index: 10; font-family: 'Cinzel'; color: #e8c060; letter-spacing: 4px; transition: opacity .6s; }
-/* ---------------- Touch */
-#touch { position: absolute; inset: 0; }
-#tStick { position: absolute; left: 0; bottom: 0; width: 50%; height: 70%; }
-#tBase { position: fixed; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 3px solid rgba(232,192,96,.5); background: rgba(40,24,12,.25); opacity: 0; pointer-events: none; }
-#tBase.on { opacity: 1; } #tKnob { position: absolute; left: 30px; top: 30px; width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffe08a, #b07a20); }
-.tbtn { position: absolute; width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font-family: 'Oswald'; font-size: 15px; font-weight: 600; letter-spacing: 1px; color: #fff; border: 3px solid rgba(255,220,140,.8); background: rgba(40,24,12,.55); text-shadow: 0 1px 2px #000; }
-.tbtn.down { background: rgba(232,160,60,.8); }
-#tNitro { right: 26px; bottom: calc(var(--s,1) * 215px); background: rgba(180,40,20,.6); } #tHB { right: 122px; bottom: calc(var(--s,1) * 170px); } #tBrake { right: 210px; bottom: 40px; width: 70px; height: 70px; font-size: 13px; }
-#pauseBtn { position: absolute; top: 12px; left: 50%; margin-left: 140px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--brass); background: rgba(40,24,12,.7); color: #f4dca0; font-size: 18px; }
+/* ---------------- Screen transitions & press feedback */
+.screen { animation: scrIn .38s cubic-bezier(.2,.8,.2,1) both; }
+.screen .panel { animation: panIn .42s cubic-bezier(.2,.9,.25,1.15) both; }
+@keyframes scrIn { from { opacity: 0; } } @keyframes panIn { from { opacity: 0; transform: translateY(28px) scale(.97); } }
+#title .logo { animation: logoIn .9s cubic-bezier(.2,.9,.3,1.2) both; } #title .menu .btn { animation: panIn .5s both; } #title .menu .btn:nth-child(2) { animation-delay: .08s; } #title .menu .btn:nth-child(3) { animation-delay: .16s; } #title .menu .btn:nth-child(4) { animation-delay: .24s; }
+@keyframes logoIn { from { opacity: 0; transform: translateY(-30px) scale(1.08); filter: blur(4px); } }
+.btn { touch-action: manipulation; } .btn:active, .btn.press { transform: translateY(3px) scale(.97); box-shadow: 0 1px 0 #5a3808, 0 3px 8px rgba(0,0,0,.5); filter: brightness(1.08); }
+.tab:active, .paint:active { transform: scale(.95); }
+.rank { animation: stamp .55s .25s cubic-bezier(.2,1.6,.4,1) both; } @keyframes stamp { from { opacity: 0; transform: scale(2.4) rotate(-12deg); } }
+.controls { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: .95rem; text-align: left; } .controls kbd { font-family: 'Oswald'; background: #4a2c18; color: #f4dca0; border-radius: 4px; padding: 1px 7px; margin-right: 3px; white-space: nowrap; }
+.controls .k { white-space: nowrap; }
+/* ---------------- Touch controls (positions inside the safe area; sizes scale with --t) */
+#touch { position: absolute; top: env(safe-area-inset-top); right: env(safe-area-inset-right); bottom: env(safe-area-inset-bottom); left: env(safe-area-inset-left); }
+:root { --s: 1; --t: 1; }
+#tStick { position: absolute; left: 0; bottom: 0; width: 52%; height: 78%; touch-action: none; }
+#tBase { position: fixed; left: 0; top: 0; width: 124px; height: 124px; margin: -62px 0 0 -62px; border-radius: 50%; border: 3px solid rgba(232,192,96,.55); background: radial-gradient(circle, rgba(40,24,12,.15), rgba(40,24,12,.4)); opacity: 0; pointer-events: none; transition: opacity .12s; will-change: transform; }
+#tBase.on { opacity: 1; } #tKnob { position: absolute; left: 34px; top: 34px; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffe08a, #b07a20); box-shadow: 0 3px 8px rgba(0,0,0,.5); will-change: transform; }
+.tbtn { position: absolute; width: calc(var(--t) * 86px); height: calc(var(--t) * 86px); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Oswald'; font-size: calc(var(--t) * 15px); font-weight: 600; letter-spacing: 1px; color: #fff; border: 3px solid rgba(255,220,140,.85); background: radial-gradient(circle at 45% 35%, rgba(90,58,30,.7), rgba(30,18,8,.7)); text-shadow: 0 1px 2px #000; touch-action: none; transition: transform .06s, background .06s; box-shadow: 0 4px 12px rgba(0,0,0,.45); }
+.tbtn::after { content: ''; position: absolute; inset: -14px; border-radius: 50%; } /* larger hit area than the visual */
+.tbtn i { font-style: normal; font-size: 1.25em; line-height: 1; } .tbtn b { font-weight: 600; } .tbtn small { font-size: .55em; letter-spacing: .5px; opacity: .85; font-weight: 500; }
+.tbtn.down { transform: scale(.9); background: radial-gradient(circle, rgba(255,190,90,.95), rgba(200,120,40,.9)); }
+#tBrake { right: calc(var(--t) * 18px); bottom: calc(var(--t) * 18px); width: calc(var(--t) * 112px); height: calc(var(--t) * 112px); font-size: calc(var(--t) * 19px); background: radial-gradient(circle at 45% 35%, rgba(150,40,26,.78), rgba(70,14,8,.78)); border-color: rgba(255,170,130,.9); }
+#tBrake.down { background: radial-gradient(circle, rgba(255,110,80,.98), rgba(190,40,20,.95)); }
+#tHB { right: calc(var(--t) * 146px); bottom: calc(var(--t) * 22px); }
+#tNitro { right: calc(var(--t) * 30px); bottom: calc(var(--t) * 146px); background: radial-gradient(circle at 45% 35%, rgba(220,110,30,.75), rgba(120,40,10,.75)); }
+.tbtn.tut { animation: tutPulse .7s infinite alternate; } @keyframes tutPulse { to { box-shadow: 0 0 0 10px rgba(255,210,110,.55), 0 0 26px 8px rgba(255,190,80,.6); } }
+#pauseBtn { position: absolute; top: 12px; left: 50%; margin-left: 140px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--brass); background: rgba(40,24,12,.75); color: #f4dca0; font-size: 18px; touch-action: manipulation; }
+#pauseBtn::after { content: ''; position: absolute; inset: -10px; }
+/* touch HUD: speedo bottom-centre (compact), minimap hidden on short screens, missions as a strip, pause beside the scroll */
+body.touch #speedo { right: auto; left: 50%; transform: translateX(-50%); bottom: 4px; width: calc(var(--s,1) * 200px); height: calc(var(--s,1) * 174px); }
+body.touch .bark { bottom: calc(var(--s,1) * 186px); }
+body.touch .missions { top: 7.7em; right: auto; left: 50%; transform: translateX(-50%); width: auto; max-width: 52vw; flex-direction: row; gap: 6px; font-size: .62em; }
+body.touch .missions .mtitle { display: none; } body.touch .mcard { transform: none !important; padding: 3px 7px; }
+body.touch #pauseBtn { top: calc(var(--s,1) * 12px); right: 8px; left: auto; margin: 0; } body.touch .scoreBox { right: calc(var(--s,1) * 14px + 52px); }
+body.touch.short #mini { display: none; }
+body.touch.short .missions { display: none; }
+/* portrait phones (played after the rotate prompt): stacked top bar, controls along the bottom */
+body.portrait .counters { flex-direction: row; gap: 6px; } body.portrait .ctr { min-width: 4.6em; font-size: 1.3em; } body.portrait .scroll { top: 5.4em; }
+body.portrait .missions, body.portrait #mini { display: none; }
+body.portrait.touch #speedo { left: 4px; right: auto; transform: none; bottom: 4px; width: calc(var(--s,1) * 170px); height: calc(var(--s,1) * 148px); }
+body.portrait .danger { height: 20vh; top: 52%; }
+body.portrait .bark { bottom: auto; top: calc(var(--s,1) * 190px); max-width: 92vw; }
+body.portrait #tStick { width: 100%; height: 55%; }
+/* tutorial card + rotate prompt */
+#tut { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); padding: 8px 20px 10px; width: min(460px, 86vw); text-align: center; color: var(--ink); font-family: 'Zilla'; font-size: calc(var(--s,1) * 20px); background: linear-gradient(170deg, #f3e6c4, #d9c393); border: 3px solid #6a4a22; border-radius: 8px; box-shadow: 0 0 0 4px #3a2412, 0 12px 30px rgba(0,0,0,.55); animation: tutIn .35s cubic-bezier(.2,.9,.3,1.3) both; pointer-events: none; }
+#tut .tt { display: block; font-family: 'Cinzel'; font-weight: 900; letter-spacing: 2px; color: #5a2e10; font-size: 1.05em; } #tut .step { font-family: 'Oswald'; font-size: .62em; letter-spacing: 3px; opacity: .65; }
+@keyframes tutIn { from { opacity: 0; transform: translate(-50%, -40%) scale(.9); } }
+#rotate { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(12,8,4,.9); pointer-events: auto; }
+#rotate .rbox { text-align: center; padding: 20px; } #rotate h2 { font-family: 'Cinzel'; color: var(--gold); letter-spacing: 3px; font-size: 1.3rem; } #rotate p { opacity: .8; }
+#rotate .phone { width: 56px; height: 96px; margin: 0 auto 12px; border: 4px solid var(--gold); border-radius: 10px; animation: rot 1.6s infinite ease-in-out; }
+@keyframes rot { 0%, 25% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
 #debug { position: absolute; top: 120px; left: 70px; width: 330px; padding: 10px; font: 12px/1.35 monospace; color: #cfe; background: rgba(0,10,12,.82); border: 1px solid #3a6a6a; pointer-events: auto; max-height: 75vh; overflow: auto; }
 #debug input[type=range] { width: 140px; } #debug button { font: 11px monospace; margin: 2px; }
-@media (max-width: 820px), (max-height: 520px) { #hud { --s: .72; } .missions { top: 96px; width: 12.5em; } .danger { height: 36vh; } .btn { min-width: 200px; padding: 9px 20px; font-size: 1rem; } }
-/* touch layout: keep the right thumb zone clear (missions move to a compact strip under the score) */
-body.touch .missions { top: 92px; right: auto; left: 50%; transform: translateX(-50%); width: auto; max-width: 46vw; flex-direction: row; gap: 6px; font-size: .62em; }
-body.touch .missions .mtitle { display: none; } body.touch .mcard { transform: none !important; padding: 3px 7px; }
-body.touch #pauseBtn { left: auto; right: 14px; margin-left: 0; top: 96px; }
-@media (max-height: 520px) { body.touch .missions { top: 62px; } body.touch #pauseBtn { top: 84px; } }
-/* short landscape phones: keep the touch cluster clear of the score / multiplier and move pause beside the distance scroll */
-@media (max-height: 420px) { body.touch .tbtn { width: 72px; height: 72px; font-size: 14px; } body.touch #tNitro { bottom: 150px; right: 20px; } body.touch #tHB { bottom: 214px; right: 112px; } body.touch #tBrake { width: 62px; height: 62px; right: 186px; bottom: 30px; }
-  body.touch #pauseBtn { top: 10px; right: auto; left: 50%; margin-left: -190px; } }
+@media (prefers-reduced-motion: reduce) { .screen, .screen .panel, #title .logo, .rank, #tut { animation: none !important; } }
+body.portrait .scoreBox { display: flex; align-items: center; gap: 6px; } body.portrait .scoreBox .mult { margin: 0; }
+@media (max-height: 500px) and (orientation: landscape) { .logo { top: 3vh; } .logo .l1 { font-size: min(9vw, 17vh); } .logo .l2 { font-size: min(5vw, 9vh); padding: 2px 18px; margin-top: 2px; } .logo .tag { margin-top: 6px; font-size: .8rem; }
+  #title { padding-bottom: 3vh; } #title .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; } #title .menu .btn { min-width: 0; width: 34vw; max-width: 300px; padding: 8px 12px; font-size: .9rem; } .foot { margin-top: 8px; font-size: .72rem; } }
+.rng { display: inline-flex; align-items: center; gap: 8px; } .rng output { font-family: 'Oswald'; min-width: 2.6em; text-align: right; }
