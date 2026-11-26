@@ -5,6 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0d10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LONG SHOT">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
 <title>LONG SHOT</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -23,6 +29,7 @@
       <button data-go="range">SHOOTING RANGE</button>
       <button data-go="options">OPTIONS</button>
       <button data-go="help">CONTROLS</button>
+      <button data-fs="label" class="fsbtn">FULL SCREEN</button>
     </nav>
     <div id="records" class="records"></div>
   </div>
@@ -88,16 +95,21 @@
   <div id="hKeys" class="hkeys">
     <b>RMB</b> scope · <b>Wheel</b> zoom · <b>LMB</b> fire · <b>Shift</b> hold breath · <b>C</b> fine aim · <b>B</b> binoculars · <b>T</b> tag · <b>R</b> range · <b>Q/E</b> windage · <b>↑/↓</b> elevation · <b>Tab</b> intel · <b>Space</b> fast-forward · <b>Esc</b> pause
   </div>
+  <button class="hfs" data-fs="icon" title="Full screen (F)" aria-label="Full screen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <div class="touchui">
-    <div class="tl-btns"><button data-act="intel">INTEL</button><button data-act="pause">II</button></div>
-    <div class="lt-btns"><button data-act="bino">BINO</button><button data-act="tag">TAG</button><button data-act="range">RANGE</button><button data-hold="ffwd">⏩</button></div>
-    <div class="dial"><button data-act="elevUp">▲</button><div><button data-act="windL">◀</button><button data-act="windR">▶</button></div><button data-act="elevDn">▼</button></div>
-    <div class="rt-btns"><button data-act="zoomIn">＋</button><button data-act="zoomOut">－</button><button data-act="scope">SCOPE</button></div>
+    <div class="tr-btns"><button data-act="scope" class="scopebtn">SCOPE</button><button data-act="intel">INTEL</button><button data-act="pause" aria-label="Pause">II</button><button data-fs="icon" class="fsi" aria-label="Full screen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="lt-btns"><button data-act="bino">BINO</button><button data-act="tag">TAG</button><button data-act="range">RANGE</button><button data-act="dial" class="dialbtn">DIAL</button><button data-hold="ffwd" aria-label="Fast-forward">⏩</button></div>
+    <div class="dialpad"><div id="dialVal" class="dialval">ELEV +0.0 · WIND R 0.0</div><div class="dgrid"><button data-act="windL" aria-label="Windage left">◀</button><button data-act="elevUp" aria-label="Elevation up">▲</button><button data-act="windR" aria-label="Windage right">▶</button><button data-act="zero" class="zero">ZERO</button><button data-act="elevDn" aria-label="Elevation down">▼</button><button data-act="dial" aria-label="Close dial">✕</button></div></div>
+    <div id="zoomRail" class="zoomrail" data-zi="1"><span>12×</span><span>8×</span><span>4×</span><i class="knob"></i></div>
     <button class="fire" data-act="fire">FIRE</button>
     <button class="breath" data-hold="breath">HOLD<br>BREATH</button>
     <button class="fine" data-act="fine">FINE</button>
   </div>
 </div>
+
+<div id="safeProbe" aria-hidden="true"></div>
+<div id="rotate" class="rotate hidden"><div class="rbox"><div class="phone"><i></i></div><h3>Turn your phone sideways</h3><p>LONG SHOT is built for landscape — a bigger scope and both thumbs free.</p><button data-fs="label" class="fsbtn primary">FULL SCREEN</button><button id="rotOk">Play in portrait anyway</button></div></div>
+<div id="a2hs" class="a2hs hidden"><div class="rbox"><h3>Full screen</h3><p></p><button class="primary">GOT IT</button></div></div>
 
 <section id="intel" class="panel hidden">
   <header><h3>INTEL</h3><button id="iClose">✕</button></header>
@@ -110,7 +122,7 @@
 
 <section id="pause" class="panel small hidden">
   <h3>PAUSED</h3>
-  <button id="pResume" class="primary">RESUME</button><button id="pRestart">RESTART</button><button id="pOptions">OPTIONS</button><button id="pQuit">QUIT TO TITLE</button>
+  <button id="pResume" class="primary">RESUME</button><button id="pRestart">RESTART</button><button id="pOptions">OPTIONS</button><button data-fs="label" class="fsbtn">FULL SCREEN</button><button id="pQuit">QUIT TO TITLE</button>
 </section>
 
 <section id="results" class="screen hidden">
@@ -140,14 +152,14 @@
   <header class="shead"><button data-go="title" class="back">‹ BACK</button><h2>CONTROLS</h2></header>
   <div class="help">
     <div><h4>PC</h4><table>
-      <tr><td>Mouse</td><td>Aim</td></tr><tr><td>Right mouse / F</td><td>Scope in / out</td></tr><tr><td>Wheel / 1 2 3 / Z</td><td>Zoom 4× / 8× / 12×</td></tr>
+      <tr><td>Mouse</td><td>Aim</td></tr><tr><td>Right mouse / V</td><td>Scope in / out</td></tr><tr><td>F</td><td>Full screen</td></tr><tr><td>Wheel / 1 2 3 / Z</td><td>Zoom 4× / 8× / 12×</td></tr>
       <tr><td>Left mouse</td><td>Fire</td></tr><tr><td>Shift (hold)</td><td>Hold breath</td></tr><tr><td>B</td><td>Binoculars</td></tr><tr><td>T</td><td>Tag (again: mark suspect)</td></tr>
       <tr><td>R</td><td>Laser range finder</td></tr><tr><td>Q / E</td><td>Windage turret ±0.1 mil</td></tr><tr><td>↑ / ↓</td><td>Elevation turret ±0.1 mil</td></tr><tr><td>X</td><td>Reset turrets</td></tr>
       <tr><td>Tab</td><td>Intel / dope card</td></tr><tr><td>Space (hold)</td><td>Fast-forward time ×4</td></tr><tr><td>Esc / P</td><td>Pause</td></tr><tr><td>Gamepad</td><td>Sticks aim, RT fire, LT scope, LB breath</td></tr>
     </table></div>
     <div><h4>Mobile</h4><table>
-      <tr><td>Drag</td><td>Aim (optional gyro)</td></tr><tr><td>SCOPE · ＋ －</td><td>Scope and zoom</td></tr><tr><td>BREATH (hold)</td><td>Steady the scope</td></tr><tr><td>FIRE</td><td>Fire</td></tr>
-      <tr><td>BINO · TAG · RANGE</td><td>Recon</td></tr><tr><td>▲▼◀▶</td><td>Turrets</td></tr><tr><td>⏩ (hold)</td><td>Fast-forward</td></tr><tr><td>INTEL · II</td><td>Intel, pause</td></tr>
+      <tr><td>Drag</td><td>Aim (optional gyro)</td></tr><tr><td>SCOPE · zoom rail · pinch</td><td>Scope and zoom</td></tr><tr><td>BREATH (hold)</td><td>Steady the scope</td></tr><tr><td>FIRE</td><td>Fire</td></tr>
+      <tr><td>BINO · TAG · RANGE</td><td>Recon</td></tr><tr><td>DIAL ▲▼◀▶</td><td>Turrets</td></tr><tr><td>⛶</td><td>Full screen</td></tr><tr><td>⏩ (hold)</td><td>Fast-forward</td></tr><tr><td>INTEL · II</td><td>Intel, pause</td></tr>
     </table></div>
     <div><h4>The shot</h4><p>Bullets drop and drift. Lase the range, read the dope card for the hold, watch flags and smoke for the wind, then hold your breath and squeeze. Tag people in the binoculars to keep them marked. Civilians are never targets.</p></div>
   </div>

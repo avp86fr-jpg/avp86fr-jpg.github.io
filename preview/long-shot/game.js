@@ -6201,22 +6201,22 @@
             te[6] = be + af * d;
             te[10] = a * c;
           } else if (euler.order === "YXZ") {
-            const ce = c * e, cf = c * f, de = d * e, df = d * f;
+            const ce = c * e, cf = c * f, de2 = d * e, df = d * f;
             te[0] = ce + df * b;
-            te[4] = de * b - cf;
+            te[4] = de2 * b - cf;
             te[8] = a * d;
             te[1] = a * f;
             te[5] = a * e;
             te[9] = -b;
-            te[2] = cf * b - de;
+            te[2] = cf * b - de2;
             te[6] = df + ce * b;
             te[10] = a * c;
           } else if (euler.order === "ZXY") {
-            const ce = c * e, cf = c * f, de = d * e, df = d * f;
+            const ce = c * e, cf = c * f, de2 = d * e, df = d * f;
             te[0] = ce - df * b;
             te[4] = -a * f;
-            te[8] = de + cf * b;
-            te[1] = cf + de * b;
+            te[8] = de2 + cf * b;
+            te[1] = cf + de2 * b;
             te[5] = a * e;
             te[9] = df - ce * b;
             te[2] = -a * d;
@@ -32857,6 +32857,7 @@ void main() {
         W: 1,
         H: 1,
         dpr: 1,
+        hudRects: [],
         time: 0,
         // real seconds since boot
         simTime: 0,
@@ -32925,6 +32926,7 @@ void main() {
         sens: 1,
         touchSens: 1,
         fineMul: 0.35,
+        haptics: true,
         invertY: false,
         master: 0.8,
         music: 0.55,
@@ -33500,11 +33502,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         document.body.classList.add("touch");
         press(b.dataset.act);
         b.classList.add("down");
+        haptic(b.dataset.act === "fire" ? 26 : 8);
       }, { passive: false });
-      b.addEventListener("touchend", (e) => {
+      const up = (e) => {
         e.preventDefault();
         b.classList.remove("down");
-      });
+      };
+      b.addEventListener("touchend", up);
+      b.addEventListener("touchcancel", up);
       b.addEventListener("mousedown", (e) => {
         e.stopPropagation();
         press(b.dataset.act);
@@ -33517,12 +33522,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         e.stopPropagation();
         IN[k] = true;
         b.classList.add("down");
+        haptic(10);
       }, { passive: false });
-      b.addEventListener("touchend", (e) => {
+      const up = (e) => {
         e.preventDefault();
         IN[k] = false;
         b.classList.remove("down");
-      });
+      };
+      b.addEventListener("touchend", up);
+      b.addEventListener("touchcancel", up);
       b.addEventListener("mousedown", (e) => {
         e.stopPropagation();
         IN[k] = true;
@@ -33534,6 +33542,42 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         IN[k] = false;
       });
     });
+    const rail = document.getElementById("zoomRail");
+    if (rail) {
+      let last = -1;
+      const pick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const t = e.touches[0] || e.changedTouches[0];
+        if (!t) return;
+        const r = rail.getBoundingClientRect(), f = Math.max(0, Math.min(0.999, (t.clientY - r.top) / r.height));
+        const zi = 2 - Math.floor(f * 3);
+        if (zi !== last) {
+          last = zi;
+          press("z" + (zi + 1));
+          haptic(6);
+        }
+      };
+      rail.addEventListener("touchstart", (e) => {
+        last = -1;
+        rail.classList.add("down");
+        pick(e);
+      }, { passive: false });
+      rail.addEventListener("touchmove", pick, { passive: false });
+      const up = (e) => {
+        e.preventDefault();
+        rail.classList.remove("down");
+      };
+      rail.addEventListener("touchend", up);
+      rail.addEventListener("touchcancel", up);
+    }
+  }
+  function haptic(ms) {
+    if (G.settings && G.settings.haptics === false) return;
+    try {
+      navigator.vibrate && navigator.vibrate(ms);
+    } catch (e) {
+    }
   }
   function enableGyro() {
     const f = () => window.addEventListener("deviceorientation", (e) => {
@@ -33598,7 +33642,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         locked: false
       };
       press = (a) => IN.pressed.add(a);
-      KEYMAP = { KeyB: "bino", KeyR: "range", KeyT: "tag", KeyQ: "windL", KeyE: "windR", PageUp: "elevUp", PageDown: "elevDn", Tab: "intel", KeyF: "scope", KeyP: "pause", ArrowUp: "elevUp", ArrowDown: "elevDn", ArrowLeft: "windL", ArrowRight: "windR", Escape: "pause", Enter: "confirm", Space: "skip", Backquote: "debug", KeyX: "zero", Digit1: "z1", Digit2: "z2", Digit3: "z3", KeyZ: "zoomCycle" };
+      KEYMAP = { KeyB: "bino", KeyR: "range", KeyT: "tag", KeyQ: "windL", KeyE: "windR", PageUp: "elevUp", PageDown: "elevDn", Tab: "intel", KeyV: "scope", KeyP: "pause", ArrowUp: "elevUp", ArrowDown: "elevDn", ArrowLeft: "windL", ArrowRight: "windR", Escape: "pause", Enter: "confirm", Space: "skip", Backquote: "debug", KeyX: "zero", Digit1: "z1", Digit2: "z2", Digit3: "z3", KeyZ: "zoomCycle" };
       prevBtn = [];
     }
   });
@@ -35164,7 +35208,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const mag = view === "scope" ? P.optics.mag : view === "bino" ? 8 : 1;
     const fov2 = view === "eye" ? EYE_FOV : fovFor(mag);
     const pxPerMil = H / (2 * Math.tan(fov2 * Math.PI / 360)) * 1e-3;
-    const R = H * 0.46, cX = W / 2, cY = H / 2;
+    const R = scopeRadius(W, H), cX = W / 2, cY = H / 2;
+    G.hudRects.length = 0;
     const labels = [];
     for (const o of G.world.taggables || []) {
       if (!o.tagged || !isVisible(o)) continue;
@@ -35297,27 +35342,50 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     cx.moveTo(cX, cY - gap);
     cx.lineTo(cX, cY + gap);
     cx.stroke();
-    for (let i = 1; i <= 10; i++) {
-      const r = Math.max(1.4, Math.min(3.2, mil * 0.12));
-      for (const [dx, dy] of [[i, 0], [-i, 0], [0, i], [0, -i]]) {
+    if (mil >= 6.5) {
+      for (let i = 1; i <= 10; i++) {
+        const r = Math.max(1.4, Math.min(3.2, mil * 0.12));
+        for (const [dx, dy] of [[i, 0], [-i, 0], [0, i], [0, -i]]) {
+          cx.beginPath();
+          cx.arc(cX + dx * mil, cY + dy * mil, r, 0, Math.PI * 2);
+          cx.fill();
+        }
+        const hl = Math.max(3, mil * 0.18);
         cx.beginPath();
-        cx.arc(cX + dx * mil, cY + dy * mil, r, 0, Math.PI * 2);
-        cx.fill();
+        cx.moveTo(cX + (i - 0.5) * mil, cY - hl * 0.6);
+        cx.lineTo(cX + (i - 0.5) * mil, cY + hl * 0.6);
+        cx.moveTo(cX - (i - 0.5) * mil, cY - hl * 0.6);
+        cx.lineTo(cX - (i - 0.5) * mil, cY + hl * 0.6);
+        cx.moveTo(cX - hl * 0.6, cY + (i - 0.5) * mil);
+        cx.lineTo(cX + hl * 0.6, cY + (i - 0.5) * mil);
+        cx.stroke();
+        if (i % 2 === 0 && mil > 9) {
+          cx.font = `700 ${Math.max(8, Math.min(11, mil * 0.3))}px ui-monospace, monospace`;
+          cx.textAlign = "left";
+          cx.textBaseline = "middle";
+          cx.fillText(String(i), cX + mil * 0.35, cY + i * mil);
+        }
       }
-      const hl = Math.max(3, mil * 0.18);
+    } else {
+      cx.lineWidth = 1.2;
       cx.beginPath();
-      cx.moveTo(cX + (i - 0.5) * mil, cY - hl * 0.6);
-      cx.lineTo(cX + (i - 0.5) * mil, cY + hl * 0.6);
-      cx.moveTo(cX - (i - 0.5) * mil, cY - hl * 0.6);
-      cx.lineTo(cX - (i - 0.5) * mil, cY + hl * 0.6);
-      cx.moveTo(cX - hl * 0.6, cY + (i - 0.5) * mil);
-      cx.lineTo(cX + hl * 0.6, cY + (i - 0.5) * mil);
+      for (let i = 1; i <= 10; i++) {
+        const t = i % 5 === 0 ? 6 : i % 2 === 0 ? 3.5 : 2.2;
+        cx.moveTo(cX + i * mil, cY - t);
+        cx.lineTo(cX + i * mil, cY + t);
+        cx.moveTo(cX - i * mil, cY - t);
+        cx.lineTo(cX - i * mil, cY + t);
+        cx.moveTo(cX - t, cY + i * mil);
+        cx.lineTo(cX + t, cY + i * mil);
+        cx.moveTo(cX - t, cY - i * mil);
+        cx.lineTo(cX + t, cY - i * mil);
+      }
       cx.stroke();
-      if (i % 2 === 0 && mil > 9) {
-        cx.font = `700 ${Math.max(8, Math.min(11, mil * 0.3))}px ui-monospace, monospace`;
+      if (mil * 5 > 14) {
+        cx.font = "700 9px ui-monospace, monospace";
         cx.textAlign = "left";
         cx.textBaseline = "middle";
-        cx.fillText(String(i), cX + mil * 0.35, cY + i * mil);
+        for (const i of [5, 10]) cx.fillText(String(i), cX + 8, cY + i * mil);
       }
     }
     cx.fillStyle = G.world.preset.sunEl < 20 ? "#ff2a1a" : "#d01a10";
@@ -35354,42 +35422,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const rr = P.lastRange;
     const rtxt = rr && rr.dist ? Math.round(rr.dist).toLocaleString("en-US") + " m" : "---- m";
     const a0 = Math.PI * 0.72, a1 = Math.PI * 1.28;
-    cx.lineWidth = 5;
+    const ar = touchUI ? R + 5 : R + 12;
+    cx.lineWidth = touchUI ? 4 : 5;
     cx.strokeStyle = "rgba(255,255,255,0.15)";
     cx.beginPath();
-    cx.arc(cX, cY, R + 12, a0, a1);
+    cx.arc(cX, cY, ar, a0, a1);
     cx.stroke();
     cx.strokeStyle = o.exhausted > 0 ? "#ff4030" : o.holding ? "#8fe3ff" : "#e8ecef";
     cx.beginPath();
-    cx.arc(cX, cY, R + 12, a1 - (a1 - a0) * o.breath, a1);
+    cx.arc(cX, cY, ar, a1 - (a1 - a0) * o.breath, a1);
     cx.stroke();
     const steady = o.holding || o.pauseK > 0.6 && o.exhausted <= 0;
-    const strip = (bx2, by2, bw2, labels) => {
-      const ph = o.breathPh || 0;
-      cx.fillStyle = "rgba(255,255,255,0.14)";
-      cx.fillRect(bx2, by2, bw2 * 0.7, 6);
-      cx.fillStyle = o.holding ? "rgba(143,227,255,0.55)" : "rgba(124,240,168,0.6)";
-      cx.fillRect(bx2 + bw2 * 0.72, by2, bw2 * 0.26, 6);
-      cx.fillStyle = "#fff";
-      cx.fillRect(bx2 + bw2 * ph - 1.5, by2 - 3, 3, 12);
-      if (labels) {
-        txt("IN", bx2 + bw2 * 0.17, by2 + 16, { align: "center", font: "600 8px ui-monospace, monospace", color: "#9aa" });
-        txt("OUT", bx2 + bw2 * 0.54, by2 + 16, { align: "center", font: "600 8px ui-monospace, monospace", color: "#9aa" });
-        txt("PAUSE", bx2 + bw2 * 0.85, by2 + 16, { align: "center", font: "700 8px ui-monospace, monospace", color: "#7cf0a8" });
-      }
-    };
-    if (touchUI) {
-      const y0 = cY + R * 0.42;
-      cx.fillStyle = "rgba(6,8,10,0.55)";
-      cx.fillRect(cX - 92, y0 - 11, 184, 52);
-      txt(Math.round(o.magT) + "\xD7  \xB7  " + rtxt, cX, y0, { align: "center", font: "700 12px ui-monospace, monospace", color: rr && G.time - rr.t < 0.4 ? "#ffde70" : "#f2f2f2" });
-      txt("E " + elevS + "  W " + windS + " mil", cX, y0 + 14, { align: "center", font: "600 10px ui-monospace, monospace", color: P.elev || P.windage ? "#ffde70" : "#cfd6da" });
-      strip(cX - 70, y0 + 24, 140, false);
-      txt(o.holding ? "HOLD" : o.exhausted > 0 ? "EXHALE" : Math.round(o.breath * 100) + "%", cX + 80, y0 + 27, { align: "left", font: "600 8px ui-monospace, monospace", color: o.holding ? "#8fe3ff" : "#cfd6da" });
-      if (steady) txt(o.holding ? "STEADY \xB7 HOLD" : "STEADY", cX, y0 - 20, { align: "center", font: "700 11px ui-monospace, monospace", color: o.holding ? "#8fe3ff" : "#7cf0a8" });
-      if (P.fineOn) txt("FINE AIM", cX, cY - R * 0.5, { align: "center", font: "700 11px ui-monospace, monospace", color: "#ffde70" });
-      return;
-    }
+    const strip = (bx2, by2, bw2, labels) => breathStrip(o, bx2, by2, bw2, labels);
+    if (touchUI) return;
     const rx = narrow ? W - 14 : cX + R + 18, al = narrow ? "right" : "left";
     txt(Math.round(o.magT) + "\xD7", rx, cY - R * 0.6, { color: "#f2f2f2", font: "700 20px ui-monospace, monospace", align: al });
     txt("ZOOM", rx, cY - R * 0.6 + 18, { color: "#9aa", font: "600 9px ui-monospace, monospace", align: al });
@@ -35478,63 +35523,151 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       }
     }
   }
+  function breathStrip(o, bx2, by2, bw2, labels) {
+    const ph = o.breathPh || 0;
+    cx.fillStyle = "rgba(255,255,255,0.14)";
+    cx.fillRect(bx2, by2, bw2 * 0.7, 6);
+    cx.fillStyle = o.holding ? "rgba(143,227,255,0.55)" : "rgba(124,240,168,0.6)";
+    cx.fillRect(bx2 + bw2 * 0.72, by2, bw2 * 0.26, 6);
+    cx.fillStyle = "#fff";
+    cx.fillRect(bx2 + bw2 * ph - 1.5, by2 - 3, 3, 12);
+    if (labels) {
+      txt("IN", bx2 + bw2 * 0.17, by2 + 16, { align: "center", font: "600 8px ui-monospace, monospace", color: "#9aa" });
+      txt("OUT", bx2 + bw2 * 0.54, by2 + 16, { align: "center", font: "600 8px ui-monospace, monospace", color: "#9aa" });
+      txt("PAUSE", bx2 + bw2 * 0.85, by2 + 16, { align: "center", font: "700 8px ui-monospace, monospace", color: "#7cf0a8" });
+    }
+  }
+  function scopeRadius(W, H) {
+    return document.body.classList.contains("touch") ? Math.min(W, H) * 0.495 : H * 0.46;
+  }
+  function safeInsets() {
+    if (_safe.w !== G.W || _safe.h !== G.H) {
+      _safe.w = G.W;
+      _safe.h = G.H;
+      const el2 = document.getElementById("safeProbe");
+      if (el2) {
+        const cs = getComputedStyle(el2);
+        _safe.t = Math.max(8, parseFloat(cs.paddingTop) || 0);
+        _safe.r = Math.max(10, parseFloat(cs.paddingRight) || 0);
+        _safe.b = Math.max(10, parseFloat(cs.paddingBottom) || 0);
+        _safe.l = Math.max(10, parseFloat(cs.paddingLeft) || 0);
+      }
+    }
+    return _safe;
+  }
   function drawCommon(P, M2) {
     const W = G.W, H = G.H;
+    const touch = document.body.classList.contains("touch");
+    let w = null, camYaw = G.camera.rotation.y;
     if (G.settings.difficulty !== "ghost") {
-      const camYaw = G.camera.rotation.y;
       const dist = P.lastRange?.dist || 700;
       _wb.set(-Math.sin(camYaw), 0, -Math.cos(camYaw)).multiplyScalar(dist).add(G.camera.position);
       _wb.y = G.camera.position.y - dist * 0.02;
       const wr = M2.wind.average(G.camera.position, _wb, M2.mt, 6);
       _ws.lerp(wr, Math.min(1, (G.dtReal || 0.016) * 3));
-      const w = _ws;
-      const sp = Math.hypot(w.x, w.z);
-      const ang = Math.atan2(w.x, -w.z) + camYaw;
-      const touch = document.body.classList.contains("touch");
-      const small = touch && H < 430;
-      const x = W - (small ? 50 : 62), y = touch ? small ? 132 : 150 : 118, gr = small ? 22 : 28;
-      cx.strokeStyle = "rgba(255,255,255,0.35)";
-      cx.lineWidth = 1;
-      cx.beginPath();
-      cx.arc(x, y, gr, 0, Math.PI * 2);
-      cx.stroke();
-      cx.save();
-      cx.translate(x, y);
-      cx.rotate(ang);
-      if (small) cx.scale(0.8, 0.8);
-      cx.fillStyle = "#9fe8ff";
-      cx.beginPath();
-      cx.moveTo(0, -24);
-      cx.lineTo(7, -6);
-      cx.lineTo(2, -6);
-      cx.lineTo(2, 18);
-      cx.lineTo(-2, 18);
-      cx.lineTo(-2, -6);
-      cx.lineTo(-7, -6);
-      cx.closePath();
-      cx.fill();
-      cx.restore();
-      txt(sp.toFixed(1) + " m/s", x, y + gr + 14, { align: "center", font: "700 12px ui-monospace, monospace" });
-      txt("WIND", x, y - gr - 11, { align: "center", font: "600 9px ui-monospace, monospace", color: "#9aa" });
-      {
-        const cv2 = w.x * Math.cos(camYaw) - w.z * Math.sin(camYaw);
-        txt("CROSS " + Math.abs(cv2).toFixed(1) + (cv2 > 0 ? " \u2192" : " \u2190"), x, y + gr + 28 + (G.settings.difficulty === "recruit" && P.lastRange?.dist ? 14 : 0), { align: "center", font: "600 10px ui-monospace, monospace", color: "#9fe8ff" });
-      }
-      if (G.settings.difficulty === "recruit" && P.lastRange?.dist) {
-        const crossV = w.x * Math.cos(camYaw) - w.z * Math.sin(camYaw);
-        const dope = P.dopeAt(P.lastRange.dist);
-        const mils = crossV * dope.windMil;
-        txt(`HOLD ${dope.dropMil.toFixed(1)}\u2191 ${Math.abs(mils).toFixed(1)}${mils > 0 ? "\u2190" : "\u2192"}`, x, y + gr + 28, { align: "center", font: "700 10px ui-monospace, monospace", color: "#ffde70" });
-      }
+      w = _ws;
     }
-    const tch = document.body.classList.contains("touch");
-    const ax = tch ? W / 2 + 70 : W - 20, ay = tch ? H - 30 : H - 34;
+    if (touch) drawTouchPanel(P, w, camYaw);
+    else {
+      if (w) {
+        const sp = Math.hypot(w.x, w.z), ang = Math.atan2(w.x, -w.z) + camYaw;
+        const x = W - 62, y = 118, gr = 28;
+        windGauge(x, y, gr, ang, 1);
+        txt(sp.toFixed(1) + " m/s", x, y + gr + 14, { align: "center", font: "700 12px ui-monospace, monospace" });
+        txt("WIND", x, y - gr - 11, { align: "center", font: "600 9px ui-monospace, monospace", color: "#9aa" });
+        const rec = G.settings.difficulty === "recruit" && P.lastRange?.dist;
+        const cvv = w.x * Math.cos(camYaw) - w.z * Math.sin(camYaw);
+        txt("CROSS " + Math.abs(cvv).toFixed(1) + (cvv > 0 ? " \u2192" : " \u2190"), x, y + gr + 28 + (rec ? 14 : 0), { align: "center", font: "600 10px ui-monospace, monospace", color: "#9fe8ff" });
+        if (rec) {
+          const dope = P.dopeAt(P.lastRange.dist), mils = cvv * dope.windMil;
+          txt(`HOLD ${dope.dropMil.toFixed(1)}\u2191 ${Math.abs(mils).toFixed(1)}${mils > 0 ? "\u2190" : "\u2192"}`, x, y + gr + 28, { align: "center", font: "700 10px ui-monospace, monospace", color: "#ffde70" });
+        }
+      }
+      const ax = W - 20, ay = H - 34;
+      for (let i = 0; i < P.rifle.mag; i++) {
+        cx.fillStyle = i < P.ammo ? "#d8b25a" : "rgba(255,255,255,0.15)";
+        cx.fillRect(ax - 10 - i * 9, ay - 14, 5, 16);
+      }
+      txt((P.boltReady ? "" : "CYCLING \xB7 ") + "ROOK-7 \xB7 " + P.reserve, ax, ay + 14, { align: "right", font: "600 10px ui-monospace, monospace", color: "#cfd6da" });
+    }
+    if (P.lastHit && G.time - P.lastHit.t < 3.5) txt(P.lastHit.text, W / 2, H * 0.2, { align: "center", font: "700 15px ui-monospace, monospace", color: P.lastHit.ok ? "#ffde70" : "#ff8a70" });
+  }
+  function windGauge(x, y, gr, ang, k) {
+    cx.strokeStyle = "rgba(255,255,255,0.35)";
+    cx.lineWidth = 1;
+    cx.beginPath();
+    cx.arc(x, y, gr, 0, Math.PI * 2);
+    cx.stroke();
+    cx.save();
+    cx.translate(x, y);
+    cx.rotate(ang);
+    if (k !== 1) cx.scale(k, k);
+    cx.fillStyle = "#9fe8ff";
+    cx.beginPath();
+    cx.moveTo(0, -24);
+    cx.lineTo(7, -6);
+    cx.lineTo(2, -6);
+    cx.lineTo(2, 18);
+    cx.lineTo(-2, 18);
+    cx.lineTo(-2, -6);
+    cx.lineTo(-7, -6);
+    cx.closePath();
+    cx.fill();
+    cx.restore();
+  }
+  function drawTouchPanel(P, w, camYaw) {
+    const W = G.W, H = G.H, cX = W / 2, cY = H / 2, view = G.view;
+    const S = safeInsets(), R = scopeRadius(W, H), scope = view === "scope";
+    if (w) G.hudCross = w.x * Math.cos(camYaw) - w.z * Math.sin(camYaw);
+    if (document.body.classList.contains("dialopen")) return;
+    const portrait = H > W * 1.05;
+    const strip = cX - R - S.l - 10;
+    const k = Math.min(W, H) >= 600 ? Math.max(1, Math.min(1.4, portrait ? (cY - R - 80) / 90 : strip / 110)) : 1;
+    const bw = (portrait ? Math.min(340 * k, W - S.l - S.r) : Math.max(92 * k, Math.min(132 * k, strip))) / k;
+    const colW = (w ? 36 : 0) + 18, colS = scope ? 68 : 0;
+    const rows = portrait ? Math.max(colW, colS) + 8 : colW + colS + 8;
+    const yB = portrait ? cY - R - 6 : H - S.b - 56 - 12;
+    G.hudRects.push({ id: "panel", x: S.l, y: yB - rows * k, w: bw * k, h: rows * k });
+    cx.save();
+    cx.translate(S.l, yB - rows * k);
+    if (k !== 1) cx.scale(k, k);
+    const x0 = 0, y0 = 0;
+    cx.fillStyle = "rgba(6,8,10,0.5)";
+    cx.fillRect(x0, y0, bw, rows);
+    const F = (wt, px2) => `${wt} ${px2}px ui-monospace, monospace`;
+    const sw = portrait ? Math.min(150, bw * 0.5) : bw;
+    const xs = x0, ys = y0 + 4, xw = portrait ? x0 + sw + 10 : x0;
+    let yw = portrait ? y0 + 4 : y0 + 4 + colS;
+    if (scope) {
+      const o = P.optics, rr = P.lastRange, y = ys, bw2 = sw;
+      const rtxt = rr && rr.dist ? Math.round(rr.dist).toLocaleString("en-US") + " m" : "---- m";
+      txt(Math.round(o.magT) + "\xD7", xs + 6, y + 8, { font: F(700, 15), color: "#f2f2f2" });
+      txt(rtxt, xs + bw2 - 6, y + 8, { align: "right", font: F(700, 12), color: rr && G.time - rr.t < 0.4 ? "#ffde70" : "#f2f2f2" });
+      txt("ELEV " + (P.elev >= 0 ? "+" : "") + P.elev.toFixed(1), xs + 6, y + 23, { font: F(600, 11), color: P.elev ? "#ffde70" : "#cfd6da" });
+      txt("WIND " + (P.windage >= 0 ? "R " : "L ") + Math.abs(P.windage).toFixed(1), xs + 6, y + 36, { font: F(600, 11), color: P.windage ? "#ffde70" : "#cfd6da" });
+      breathStrip(o, xs + 6, y + 46, bw2 - 12, false);
+      const steady = o.holding || o.pauseK > 0.6 && o.exhausted <= 0;
+      txt(o.holding ? "HOLD" : o.exhausted > 0 ? "EXHALE" : "BREATH " + Math.round(o.breath * 100) + "%", xs + 6, y + 61, { font: F(600, 9), color: o.holding ? "#8fe3ff" : o.exhausted > 0 ? "#ff8a70" : "#cfd6da" });
+      if (steady) txt("STEADY", xs + bw2 - 6, y + 61, { align: "right", font: F(700, 10), color: o.holding ? "#8fe3ff" : "#7cf0a8" });
+      if (P.fineOn) txt("FINE", xs + bw2 - 6, y + 23, { align: "right", font: F(700, 10), color: "#ffde70" });
+    }
+    if (w) {
+      const y = yw, sp = Math.hypot(w.x, w.z), ang = Math.atan2(w.x, -w.z) + camYaw, cvv = G.hudCross;
+      windGauge(xw + 20, y + 16, 14, ang, 0.5);
+      txt(sp.toFixed(1) + " m/s", xw + 40, y + 9, { font: F(700, 12) });
+      txt("X " + Math.abs(cvv).toFixed(1) + (cvv > 0 ? "\u2192" : "\u2190"), xw + 40, y + 23, { font: F(600, 10), color: "#9fe8ff" });
+      if (G.settings.difficulty === "recruit" && P.lastRange?.dist) {
+        const dope = P.dopeAt(P.lastRange.dist), mils = cvv * dope.windMil;
+        txt(`${dope.dropMil.toFixed(1)}\u2191 ${Math.abs(mils).toFixed(1)}${mils > 0 ? "\u2190" : "\u2192"}`, xw + bw - (portrait ? sw + 16 : 6), y + 9, { align: "right", font: F(700, 9), color: "#ffde70" });
+      }
+      yw += 36;
+    }
     for (let i = 0; i < P.rifle.mag; i++) {
       cx.fillStyle = i < P.ammo ? "#d8b25a" : "rgba(255,255,255,0.15)";
-      cx.fillRect(ax - 10 - i * 9, ay - 14, 5, 16);
+      cx.fillRect(xw + 6 + i * 8, yw + 1, 5, 13);
     }
-    txt((P.boltReady ? "" : "CYCLING \xB7 ") + "ROOK-7 \xB7 " + P.reserve, ax, ay + 14, { align: "right", font: "600 10px ui-monospace, monospace", color: "#cfd6da" });
-    if (P.lastHit && G.time - P.lastHit.t < 3.5) txt(P.lastHit.text, W / 2, H * 0.2, { align: "center", font: "700 15px ui-monospace, monospace", color: P.lastHit.ok ? "#ffde70" : "#ff8a70" });
+    txt((P.boltReady ? "" : "CYCLING ") + "+" + P.reserve, xw + 12 + P.rifle.mag * 8, yw + 8, { font: F(600, 10), color: P.boltReady ? "#cfd6da" : "#ffde70" });
+    cx.restore();
   }
   function drawBulletCam(P) {
     const W = G.W, H = G.H;
@@ -35547,7 +35680,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     txt(Math.round(d) + " m  \xB7  " + Math.round(pr.v.length()) + " m/s  \xB7  " + pr.age.toFixed(2) + " s", W / 2, H * 0.965, { align: "center", font: "700 13px ui-monospace, monospace", color: "#ffe3a0" });
     txt("BULLET CAM \xB7 click / space to skip", 16, H * 0.035, { font: "600 10px ui-monospace, monospace", color: "#aaa" });
   }
-  var cv, cx, v2, MONO, _pr, _tp, bObs, _wb, _ws;
+  var cv, cx, v2, MONO, _pr, _tp, _safe, bObs, _wb, _ws;
   var init_hud = __esm({
     "src/ui/hud.js"() {
       init_three_module();
@@ -35558,9 +35691,105 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       MONO = '600 12px ui-monospace, "DejaVu Sans Mono", monospace';
       _pr = { x: 0, y: 0 };
       _tp = new Vector3();
+      _safe = { w: 0, h: 0, t: 8, r: 10, b: 10, l: 10 };
       bObs = { o: void 0 };
       _wb = new Vector3();
       _ws = new Vector3();
+    }
+  });
+
+  // src/ui/fullscreen.js
+  function lockLandscape() {
+    try {
+      const p = screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape");
+      if (p && p.catch) p.catch(() => {
+      });
+    } catch (e) {
+    }
+  }
+  function enterFs() {
+    if (!reqFn) {
+      showInstallHint();
+      return;
+    }
+    try {
+      const p = reqFn.call(de, { navigationUI: "hide" });
+      if (p && p.then) p.then(lockLandscape, () => {
+      });
+      else setTimeout(lockLandscape, 60);
+    } catch (e) {
+    }
+  }
+  function exitFs() {
+    try {
+      const p = exitFn && exitFn.call(D);
+      if (p && p.catch) p.catch(() => {
+      });
+    } catch (e) {
+    }
+    try {
+      screen.orientation?.unlock?.();
+    } catch (e) {
+    }
+  }
+  function toggleFs() {
+    if (isFs()) exitFs();
+    else enterFs();
+  }
+  function showInstallHint() {
+    const el2 = D.getElementById("a2hs");
+    if (!el2) return;
+    el2.querySelector("p").innerHTML = isIOS ? 'Safari can\u2019t go full screen in a page. Tap <b>Share</b> <span class="ico">\u238B</span> then <b>Add to Home Screen</b> \u2014 launched from that icon, LONG SHOT runs full screen.' : "This browser can\u2019t go full screen here. Use the browser menu \u2192 <b>Add to Home screen</b> / <b>Install app</b> to play full screen.";
+    el2.classList.remove("hidden");
+  }
+  function initFullscreen(onChange, before) {
+    const go = () => {
+      before && before();
+      toggleFs();
+    };
+    const sync = () => {
+      const on2 = isFs() || isStandalone();
+      D.body.classList.toggle("fs", on2);
+      D.querySelectorAll("[data-fs]").forEach((b) => {
+        b.classList.toggle("on", on2);
+        if (b.dataset.fs === "label") b.textContent = isFs() ? "EXIT FULL SCREEN" : "FULL SCREEN";
+        b.setAttribute("aria-pressed", on2 ? "true" : "false");
+      });
+      onChange && onChange();
+      setTimeout(() => onChange && onChange(), 250);
+    };
+    if (isStandalone()) D.body.classList.add("standalone");
+    ["fullscreenchange", "webkitfullscreenchange"].forEach((ev) => D.addEventListener(ev, sync));
+    D.querySelectorAll("[data-fs]").forEach((b) => {
+      b.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        go();
+      });
+      b.addEventListener("touchstart", (e) => {
+        e.stopPropagation();
+      }, { passive: true });
+    });
+    addEventListener("keydown", (e) => {
+      if (e.code !== "KeyF" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) return;
+      go();
+    });
+    const hint = D.getElementById("a2hs");
+    if (hint) hint.querySelector("button").addEventListener("click", () => hint.classList.add("hidden"));
+    if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener("change", () => onChange && onChange());
+    sync();
+  }
+  var D, de, reqFn, exitFn, isFs, isStandalone, isIOS;
+  var init_fullscreen = __esm({
+    "src/ui/fullscreen.js"() {
+      D = document;
+      de = D.documentElement;
+      reqFn = de.requestFullscreen || de.webkitRequestFullscreen || de.webkitRequestFullScreen;
+      exitFn = D.exitFullscreen || D.webkitExitFullscreen || D.webkitCancelFullScreen;
+      isFs = () => !!(D.fullscreenElement || D.webkitFullscreenElement || D.webkitCurrentFullScreenElement);
+      isStandalone = () => !!(navigator.standalone || window.matchMedia && (matchMedia("(display-mode: fullscreen)").matches || matchMedia("(display-mode: standalone)").matches));
+      isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
     }
   });
 
@@ -37395,7 +37624,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             { on: "departure", who: "moth", text: "He's heading back to the car. Last chance before he's on the road." }
           ],
           npcs: (W) => {
-            const D = VILLA.DECK, BAL = VILLA.BAL;
+            const D2 = VILLA.DECK, BAL = VILLA.BAL;
             const toCar = [[30, -765], [31, -762.6], [50, -762], [62, -758], [74, -759]];
             const footEscape = [{ type: "goto", path: [[92, -745], [150, -725], [230, -705]], anim: "run" }, { type: "event", name: "escaped" }, { type: "hide" }];
             return [
@@ -38483,23 +38712,23 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }, 30);
   }
   function renderBriefing(def) {
-    const D = def.dossier;
-    $("dzRef").textContent = D.ref;
-    $("dzName").textContent = D.target;
-    $("dzAlias").textContent = D.alias;
-    $("dzDesc").textContent = D.desc;
-    $("dzClues").innerHTML = D.clues.map((c, i) => `<li style="--i:${i}"><mark>${esc(c)}</mark></li>`).join("");
+    const D2 = def.dossier;
+    $("dzRef").textContent = D2.ref;
+    $("dzName").textContent = D2.target;
+    $("dzAlias").textContent = D2.alias;
+    $("dzDesc").textContent = D2.desc;
+    $("dzClues").innerHTML = D2.clues.map((c, i) => `<li style="--i:${i}"><mark>${esc(c)}</mark></li>`).join("");
     const dz = document.querySelector("#briefing .dossier");
     dz.classList.remove("anim");
     void dz.offsetWidth;
     dz.classList.add("anim");
-    $("dzNotes").textContent = D.notes;
-    $("dzWarn").textContent = D.warn;
-    const F = D.field || {}, R = F.range || 800;
+    $("dzNotes").textContent = D2.notes;
+    $("dzWarn").textContent = D2.warn;
+    const F = D2.field || {}, R = F.range || 800;
     const dope = dopeTable(RIFLES.rook7, [500, 600, 700, 800, 900, 1e3]);
     const at = dopeTable(RIFLES.rook7, [R])[0];
     $("dzField").innerHTML = [["Range (slant)", "\u2248 " + R + " m"], ["Hold at range", at.dropMil.toFixed(1) + " mil up \xB7 TOF " + at.tof.toFixed(2) + " s"], ["Wind", F.wind || "\u2014"], ["Light", F.light || "\u2014"], ["Temp", F.temp || "\u2014"]].map(([k, v3]) => `<tr><td>${esc(k)}</td><td>${esc(v3)}</td></tr>`).join("");
-    $("dzTraits").innerHTML = (D.traits || []).map(([l]) => `<span>${esc(l)}</span>`).join("") + (D.noTarget ? `<span class="no">${esc(D.noTarget)}</span>` : "");
+    $("dzTraits").innerHTML = (D2.traits || []).map(([l]) => `<span>${esc(l)}</span>`).join("") + (D2.noTarget ? `<span class="no">${esc(D2.noTarget)}</span>` : "");
     $("dzDope").innerHTML = "<tr><th>RANGE</th><th>DROP</th><th>WIND /1 m/s</th><th>TOF</th><th>VEL</th></tr>" + dope.map((d) => `<tr class="${Math.abs(d.range - R) < 50 ? "hl" : ""}"><td>${d.range} m</td><td>${d.dropMil.toFixed(2)}</td><td>${d.windMil.toFixed(3)}</td><td>${d.tof.toFixed(2)} s</td><td>${Math.round(d.vel)}</td></tr>`).join("");
     $("bNum").textContent = "CONTRACT " + String(def.num).padStart(2, "0");
     $("bTitle").textContent = def.title;
@@ -38639,6 +38868,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         ["fineMul", "Fine-aim strength (scope)", "range", [0.15, 0.7, 0.05]],
         ["invertY", "Invert Y", "bool"],
         ["gyro", "Gyro aim (mobile)", "bool"],
+        ["haptics", "Vibration (mobile)", "bool"],
         ["sway", "Scope sway", "range", [0.3, 1.5, 0.05]],
         ["steadyHands", "Steady hands (accessibility)", "bool"],
         ["bulletCam", "Bullet cam", "bool"],
@@ -40388,6 +40618,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             const n = res.killed;
             const zone = h.zone === "head" ? "HEADSHOT" : h.zone === "torso" ? "TORSO" : "HIT";
             this.lastHit = { text: `${zone} \xB7 ${n.role === "target" ? "TARGET" : n.role === "civilian" ? "CIVILIAN" : n.name.toUpperCase()} \xB7 ${R} m \xB7 ${pr.age.toFixed(2)} s`, t: G.time, ok: n.role !== "civilian" };
+            if (IN.touch) haptic(n.role === "civilian" ? [60, 40, 60] : [18, 30, 24]);
             if (dist > G.save.records.longest && n.role !== "civilian") G.save.records.longest = Math.round(dist);
           } else if (res.text) {
             this.lastHit = { text: res.text, t: G.time, ok: !!res.ok };
@@ -40550,6 +40781,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_materials();
       init_input();
       init_hud();
+      init_fullscreen();
       init_screens();
       init_audio();
       init_missions();
@@ -40604,8 +40836,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const gl = G.renderer.getContext();
         if (!G.renderer.extensions.has("EXT_color_buffer_half_float") && !G.renderer.extensions.has("EXT_color_buffer_float")) G.quality.hdr = false;
         if (!G.quality.hdr) G.lens.u.uHdr.value = 0;
+        const onLayout = () => {
+          resize();
+          checkRotate();
+        };
         resize();
-        addEventListener("resize", resize);
+        addEventListener("resize", onLayout);
+        initFullscreen(onLayout, () => {
+          if (document.pointerLockElement) G.suppressPause = true;
+        });
+        initRotatePrompt();
         setHeightGetter(() => G.H * G.dpr);
         initInput(canvas);
         initHud();
@@ -40670,6 +40910,30 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         disposeScene(titleWorld.scene);
         clearMatCache();
         titleWorld = null;
+      }
+      var PORTRAIT_KEY = "longshot.portraitOk";
+      var portraitOk = false;
+      function initRotatePrompt() {
+        try {
+          portraitOk = localStorage.getItem(PORTRAIT_KEY) === "1";
+        } catch (e) {
+        }
+        $2("rotOk").addEventListener("click", () => {
+          portraitOk = true;
+          try {
+            localStorage.setItem(PORTRAIT_KEY, "1");
+          } catch (e) {
+          }
+          checkRotate();
+        });
+      }
+      function checkRotate() {
+        const ok = portraitOk;
+        const show2 = document.body.classList.contains("touch") && G.mode === "play" && innerHeight > innerWidth * 1.05 && !ok;
+        const el2 = $2("rotate");
+        if (el2.classList.contains("hidden") === show2) el2.classList.toggle("hidden", !show2);
+        const pt = innerHeight > innerWidth * 1.05;
+        if (document.body.classList.contains("portrait") !== pt) document.body.classList.toggle("portrait", pt);
       }
       function goTitle() {
         G.mode = "title";
@@ -41134,6 +41398,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           else setPaused(!paused);
         }
         if (consume("intel")) toggleIntel();
+        if (consume("dial")) document.body.classList.toggle("dialopen");
         if (consume("confirm") && M2.primaryDone && !M2.ended) M2.complete();
         if (paused || M2.ended && !P.bc.active) {
           if (M2.ended) {
@@ -41223,6 +41488,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (hudDomT > 0) return;
         hudDomT = 0.1;
         $2("hClock").textContent = M2.clockString();
+        checkRotate();
+        if (document.body.classList.contains("dialopen")) {
+          const dv = $2("dialVal"), xc = G.hudCross, t = "ELEV " + (P.elev >= 0 ? "+" : "") + P.elev.toFixed(1) + " \xB7 WIND " + (P.windage >= 0 ? "R " : "L ") + Math.abs(P.windage).toFixed(1) + (xc != null && G.settings.difficulty !== "ghost" ? "\nCROSS " + Math.abs(xc).toFixed(1) + " m/s " + (xc > 0 ? "\u2192" : "\u2190") : "");
+          if (dv.textContent !== t) dv.textContent = t;
+        }
+        if (document.body.classList.contains("touch")) {
+          const zr = $2("zoomRail"), zi = String(P.optics.zi);
+          if (zr.dataset.zi !== zi) {
+            zr.dataset.zi = zi;
+            zr.style.setProperty("--zi", zi);
+          }
+        }
         const a = $2("hAlarm");
         a.className = "alarm " + M2.alarm;
         a.textContent = M2.kind === "range" ? `STAGE ${Math.min(M2.si + 1, M2.stages.length)}/${M2.stages.length} \xB7 ${M2.score} PTS` : M2.alarm.toUpperCase();
@@ -41254,7 +41531,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       var _sun = new Vector3();
       function render(dt) {
         const r = G.renderer, w = G.world;
-        if (!w) return;
+        if (!w) {
+          drawHud(null, null);
+          return;
+        }
         r.info.autoReset = false;
         r.info.reset();
         const L = G.lens.u, cam = G.camera;
@@ -41288,7 +41568,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uMode.value = { eye: 0, scope: 1, bino: 2, bulletcam: 3 }[view];
         L.uTime.value = G.time;
         L.uZoom.value = view === "scope" ? player.optics.mag : view === "bino" ? 8 : 1;
-        L.uScopeR.value = 0.46;
+        L.uScopeR.value = scopeRadius(G.W, G.H) / G.H;
         const tint = w.tint || {};
         L.uLift.value.set(...tint.lift || [0, 0, 0]);
         L.uGain.value.set(...tint.gain || [1, 1, 1]);
