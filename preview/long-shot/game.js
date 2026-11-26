@@ -15372,7 +15372,7 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           let numberOfVertices = 0;
           let groupStart = 0;
           buildPlane("z", "y", "x", -1, -1, depth, height8, width, depthSegments, heightSegments, 0);
@@ -15384,7 +15384,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
           function buildPlane(u, v3, w, udir, vdir, width2, height9, depth2, gridX, gridY, materialIndex) {
             const segmentWidth = width2 / gridX;
             const segmentHeight = height9 / gridY;
@@ -15408,8 +15408,8 @@
                 vector[v3] = 0;
                 vector[w] = depth2 > 0 ? 1 : -1;
                 normals.push(vector.x, vector.y, vector.z);
-                uvs.push(ix / gridX);
-                uvs.push(1 - iy / gridY);
+                uvs2.push(ix / gridX);
+                uvs2.push(1 - iy / gridY);
                 vertexCounter += 1;
               }
             }
@@ -15472,7 +15472,7 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           const halfHeight = height8 / 2;
           const capArcLength = Math.PI / 2 * radius;
           const cylinderPartLength = height8;
@@ -15530,7 +15530,7 @@
               );
               normal.normalize();
               normals.push(normal.x, normal.y, normal.z);
-              uvs.push(u + uOffset, v3);
+              uvs2.push(u + uOffset, v3);
             }
             if (iy > 0) {
               const prevIndexRow = (iy - 1) * verticesPerRow;
@@ -15547,7 +15547,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
         }
         copy(source) {
           super.copy(source);
@@ -15588,12 +15588,12 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           const vertex2 = new Vector3();
           const uv = new Vector2();
           vertices.push(0, 0, 0);
           normals.push(0, 0, 1);
-          uvs.push(0.5, 0.5);
+          uvs2.push(0.5, 0.5);
           for (let s = 0, i = 3; s <= segments; s++, i += 3) {
             const segment = thetaStart + s / segments * thetaLength;
             vertex2.x = radius * Math.cos(segment);
@@ -15602,7 +15602,7 @@
             normals.push(0, 0, 1);
             uv.x = (vertices[i] / radius + 1) / 2;
             uv.y = (vertices[i + 1] / radius + 1) / 2;
-            uvs.push(uv.x, uv.y);
+            uvs2.push(uv.x, uv.y);
           }
           for (let i = 1; i <= segments; i++) {
             indices.push(i, i + 1, 0);
@@ -15610,7 +15610,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
         }
         copy(source) {
           super.copy(source);
@@ -15661,7 +15661,7 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           let index = 0;
           const indexArray = [];
           const halfHeight = height8 / 2;
@@ -15674,7 +15674,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
           function generateTorso() {
             const normal = new Vector3();
             const vertex2 = new Vector3();
@@ -15695,7 +15695,7 @@
                 vertices.push(vertex2.x, vertex2.y, vertex2.z);
                 normal.set(sinTheta, slope, cosTheta).normalize();
                 normals.push(normal.x, normal.y, normal.z);
-                uvs.push(u, 1 - v3);
+                uvs2.push(u, 1 - v3);
                 indexRow.push(index++);
               }
               indexArray.push(indexRow);
@@ -15729,7 +15729,7 @@
             for (let x = 1; x <= radialSegments; x++) {
               vertices.push(0, halfHeight * sign2, 0);
               normals.push(0, sign2, 0);
-              uvs.push(0.5, 0.5);
+              uvs2.push(0.5, 0.5);
               index++;
             }
             const centerIndexEnd = index;
@@ -15745,7 +15745,7 @@
               normals.push(0, sign2, 0);
               uv.x = cosTheta * 0.5 + 0.5;
               uv.y = sinTheta * 0.5 * sign2 + 0.5;
-              uvs.push(uv.x, uv.y);
+              uvs2.push(uv.x, uv.y);
               index++;
             }
             for (let x = 0; x < radialSegments; x++) {
@@ -17763,10 +17763,10 @@
               addVertex(b);
               addVertex(c);
               const nextIndex = verticesArray.length / 3;
-              const uvs = uvgen.generateTopUV(scope, verticesArray, nextIndex - 3, nextIndex - 2, nextIndex - 1);
-              addUV(uvs[0]);
-              addUV(uvs[1]);
-              addUV(uvs[2]);
+              const uvs2 = uvgen.generateTopUV(scope, verticesArray, nextIndex - 3, nextIndex - 2, nextIndex - 1);
+              addUV(uvs2[0]);
+              addUV(uvs2[1]);
+              addUV(uvs2[2]);
             }
             function f4(a, b, c, d) {
               addVertex(a);
@@ -17776,13 +17776,13 @@
               addVertex(c);
               addVertex(d);
               const nextIndex = verticesArray.length / 3;
-              const uvs = uvgen.generateSideWallUV(scope, verticesArray, nextIndex - 6, nextIndex - 3, nextIndex - 2, nextIndex - 1);
-              addUV(uvs[0]);
-              addUV(uvs[1]);
-              addUV(uvs[3]);
-              addUV(uvs[1]);
-              addUV(uvs[2]);
-              addUV(uvs[3]);
+              const uvs2 = uvgen.generateSideWallUV(scope, verticesArray, nextIndex - 6, nextIndex - 3, nextIndex - 2, nextIndex - 1);
+              addUV(uvs2[0]);
+              addUV(uvs2[1]);
+              addUV(uvs2[3]);
+              addUV(uvs2[1]);
+              addUV(uvs2[2]);
+              addUV(uvs2[3]);
             }
             function addVertex(index) {
               verticesArray.push(placeholder[index * 3 + 0]);
@@ -18022,7 +18022,7 @@
           phiLength = clamp(phiLength, 0, Math.PI * 2);
           const indices = [];
           const vertices = [];
-          const uvs = [];
+          const uvs2 = [];
           const initNormals = [];
           const normals = [];
           const inverseSegments = 1 / segments;
@@ -18075,7 +18075,7 @@
               vertices.push(vertex2.x, vertex2.y, vertex2.z);
               uv.x = i / segments;
               uv.y = j / (points.length - 1);
-              uvs.push(uv.x, uv.y);
+              uvs2.push(uv.x, uv.y);
               const x = initNormals[3 * j + 0] * sin;
               const y2 = initNormals[3 * j + 1];
               const z = initNormals[3 * j + 0] * cos;
@@ -18095,7 +18095,7 @@
           }
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
         }
         copy(source) {
@@ -18143,15 +18143,15 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           for (let iy = 0; iy < gridY1; iy++) {
             const y2 = iy * segment_height - height_half;
             for (let ix = 0; ix < gridX1; ix++) {
               const x = ix * segment_width - width_half;
               vertices.push(x, -y2, 0);
               normals.push(0, 0, 1);
-              uvs.push(ix / gridX);
-              uvs.push(1 - iy / gridY);
+              uvs2.push(ix / gridX);
+              uvs2.push(1 - iy / gridY);
             }
           }
           for (let iy = 0; iy < gridY; iy++) {
@@ -18167,7 +18167,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
         }
         copy(source) {
           super.copy(source);
@@ -18212,7 +18212,7 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           let radius = innerRadius;
           const radiusStep = (outerRadius - innerRadius) / phiSegments;
           const vertex2 = new Vector3();
@@ -18226,7 +18226,7 @@
               normals.push(0, 0, 1);
               uv.x = (vertex2.x / outerRadius + 1) / 2;
               uv.y = (vertex2.y / outerRadius + 1) / 2;
-              uvs.push(uv.x, uv.y);
+              uvs2.push(uv.x, uv.y);
             }
             radius += radiusStep;
           }
@@ -18245,7 +18245,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
         }
         copy(source) {
           super.copy(source);
@@ -18297,7 +18297,7 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           for (let iy = 0; iy <= heightSegments; iy++) {
             const verticesRow = [];
             const v3 = iy / heightSegments;
@@ -18319,7 +18319,7 @@
               vertices.push(vertex2.x, vertex2.y, vertex2.z);
               normal.copy(vertex2).normalize();
               normals.push(normal.x, normal.y, normal.z);
-              uvs.push(u + uOffset, 1 - v3);
+              uvs2.push(u + uOffset, 1 - v3);
               verticesRow.push(index++);
             }
             grid.push(verticesRow);
@@ -18337,7 +18337,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
         }
         copy(source) {
           super.copy(source);
@@ -18384,7 +18384,7 @@
           const indices = [];
           const vertices = [];
           const normals = [];
-          const uvs = [];
+          const uvs2 = [];
           const center = new Vector3();
           const vertex2 = new Vector3();
           const normal = new Vector3();
@@ -18400,8 +18400,8 @@
               center.y = radius * Math.sin(u);
               normal.subVectors(vertex2, center).normalize();
               normals.push(normal.x, normal.y, normal.z);
-              uvs.push(i / tubularSegments);
-              uvs.push(j / radialSegments);
+              uvs2.push(i / tubularSegments);
+              uvs2.push(j / radialSegments);
             }
           }
           for (let j = 1; j <= radialSegments; j++) {
@@ -18417,7 +18417,7 @@
           this.setIndex(indices);
           this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
           this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs2, 2));
         }
         copy(source) {
           super.copy(source);
@@ -33289,6 +33289,8 @@ void main() {
       uOffset: { value: new Vector2(0, 0) },
       uHeat: { value: 0 },
       uZoom: { value: 1 },
+      uWindX: { value: 0 },
+      uMir: { value: 0 },
       uAA: { value: 1 },
       uLift: { value: new Vector3() },
       uGain: { value: new Vector3(1, 1, 1) },
@@ -33324,7 +33326,7 @@ void main() {
         /* glsl */
         `
       precision highp float;
-      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold, uTherm, uThermMode; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
+      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold, uTherm, uThermMode; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uWindX, uMir; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
       uniform vec2 uOffset; uniform vec3 uBH; uniform vec3 uLift, uGain, uSun, uDustCol;
       varying vec2 vUv;
       float hh(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
@@ -33383,6 +33385,9 @@ void main() {
           vec2 q = uv * vec2(18.0, 46.0) + vec2(0.0, uTime * 2.3);
           uv += hz * vec2(nn(q) - 0.5, nn(q + 17.0) - 0.5) * (0.6 + 0.4 * sin(uTime * 3.0 + uv.y * 40.0));
         }
+        // mirage in the scope: the boil runs with the crosswind (lean = wind, straight up = calm) \u2014 read it at high power
+        if (uMode == 1 && uMir > 0.0) { vec2 q2 = uv * vec2(26.0, 70.0) + vec2(-uTime * uWindX * 0.09, uTime * (0.35 + 0.12 * (3.0 - min(abs(uWindX), 3.0))));
+          uv += uMir * 0.0009 * clamp((uZoom - 4.0) / 8.0, 0.0, 1.0) * vec2(nn(q2) - 0.5, (nn(q2 + 9.0) - 0.5) * 0.5); }
         if (uCold > 0.0 && uMode == 1) { float w = sin(uv.y * 160.0 + uTime * 5.0) * 0.5 + 0.5 * sin(uv.y * 97.0 - uTime * 3.1); uv.x += w * 0.00035 * uCold * min(uZoom, 8.0) / 8.0 * 0.7; }
         if (uMode == 1) { // scope
           vec2 c = p - uOffset;
@@ -33661,6 +33666,7 @@ void main() {
       if (opts.rim) {
         sh.uniforms.uRimColor = opts.rim.color;
         sh.uniforms.uRimAmt = opts.rim.amount;
+        Object.assign(sh.uniforms, SCOPE_RIM);
       }
       sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vHzWorld;\nuniform float uTime;\nuniform vec3 uWind;\n" + NOISE_GLSL).replace("#include <begin_vertex>", `#include <begin_vertex>
       ${opts.sway ? `{ vec4 wp0 = modelMatrix * vec4(0.0,0.0,0.0,1.0);
@@ -33686,7 +33692,7 @@ void main() {
         varying vec3 vHzWorld;
         uniform vec3 uHazeColor; uniform vec3 uSunHazeColor; uniform vec3 uSunDir;
         uniform float uHazeDensity; uniform float uHazeHeight; uniform float uHazeBase; uniform float uHazeMax; uniform float uTime;
-        ${opts.rim ? "uniform vec3 uRimColor; uniform float uRimAmt;" : ""}
+        ${opts.rim ? "uniform vec3 uRimColor; uniform float uRimAmt; uniform vec3 uScopeRimC; uniform float uScopeRim;" : ""}
         ${NOISE_GLSL}`).replace("#include <color_fragment>", `#include <color_fragment>
         ${opts.detail ? `{ vec2 q = vHzWorld.xz * ${opts.detail.toFixed(4)};
           float n = hzFbm(q) * 0.65 + hzNoise(q*7.3) * 0.35;
@@ -33702,7 +33708,8 @@ void main() {
           float fogAmt = 1.0 - exp(-uHazeDensity * exp(-h0 * k) * hzD * integ);
           float sunAmt = pow(max(dot(hzDir, uSunDir), 0.0), 5.0);
           vec3 hzCol = mix(uHazeColor, uSunHazeColor, sunAmt);
-          gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, clamp(fogAmt, 0.0, 1.0) * uHazeMax); }
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, hzCol, clamp(fogAmt${opts.rim ? " * (1.0 - 0.5 * uScopeRim)" : ""}, 0.0, 1.0) * uHazeMax); }
+        ${opts.rim ? `{ vec3 vdir2 = normalize(vViewPosition); float fr2 = pow(1.0 - abs(dot(normalize(normal), vdir2)), 2.5); gl_FragColor.rgb += uScopeRimC * uScopeRim * fr2; }` : ""}
         #include <dithering_fragment>`);
     };
     return mat2;
@@ -33739,11 +33746,12 @@ void main() {
   function clearMatCache() {
     cache.clear();
   }
-  var HAZE, NOISE_GLSL, cache;
+  var SCOPE_RIM, HAZE, NOISE_GLSL, cache;
   var init_materials = __esm({
     "src/render/materials.js"() {
       init_three_module();
       init_state();
+      SCOPE_RIM = { uScopeRim: { value: 0 }, uScopeRimC: { value: new Color(1, 0.95, 0.85) } };
       HAZE = {
         uHazeColor: { value: new Color(0.6, 0.65, 0.75) },
         uSunHazeColor: { value: new Color(1, 0.7, 0.4) },
@@ -35453,7 +35461,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return 2 * Math.atan(Math.tan(EYE_FOV * Math.PI / 360) / mag) * 180 / Math.PI;
   }
   function screenMagK() {
-    if (!isTouch()) return 1;
+    if (!isTouch()) return clamp2(1e3 / Math.max(300, G.H || 1e3), 1, 1.4);
     return clamp2(1500 / Math.max(200, Math.min(G.W, G.H)), 1, 3.6);
   }
   function opticFov(mag, bino = false) {
@@ -35468,7 +35476,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_audio();
       EYE_FOV = 60;
       BINO_ZOOM = 8;
-      ZOOMS_DESK = [4, 8, 16, 28];
+      ZOOMS_DESK = [4, 8, 16, 28, 36];
       ZOOMS_TOUCH = [5, 10, 20, 30];
       isTouch = () => typeof document !== "undefined" && document.body.classList.contains("touch");
       Optics = class {
@@ -36893,7 +36901,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const box = new Vector3(width, height8, depth).divideScalar(2).subScalar(radius);
           const positions = this.attributes.position.array;
           const normals = this.attributes.normal.array;
-          const uvs = this.attributes.uv.array;
+          const uvs2 = this.attributes.uv.array;
           const faceTris = positions.length / 6;
           const faceDirVector = new Vector3();
           const halfSegmentSize = 0.5 / totalSegments;
@@ -36914,33 +36922,33 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             switch (side) {
               case 0:
                 faceDirVector.set(1, 0, 0);
-                uvs[j + 0] = getUv(faceDirVector, normal, "z", "y", radius, depth);
-                uvs[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
+                uvs2[j + 0] = getUv(faceDirVector, normal, "z", "y", radius, depth);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
                 break;
               case 1:
                 faceDirVector.set(-1, 0, 0);
-                uvs[j + 0] = 1 - getUv(faceDirVector, normal, "z", "y", radius, depth);
-                uvs[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "z", "y", radius, depth);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
                 break;
               case 2:
                 faceDirVector.set(0, 1, 0);
-                uvs[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
-                uvs[j + 1] = getUv(faceDirVector, normal, "z", "x", radius, depth);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
+                uvs2[j + 1] = getUv(faceDirVector, normal, "z", "x", radius, depth);
                 break;
               case 3:
                 faceDirVector.set(0, -1, 0);
-                uvs[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
-                uvs[j + 1] = 1 - getUv(faceDirVector, normal, "z", "x", radius, depth);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "z", "x", radius, depth);
                 break;
               case 4:
                 faceDirVector.set(0, 0, 1);
-                uvs[j + 0] = 1 - getUv(faceDirVector, normal, "x", "y", radius, width);
-                uvs[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "y", radius, width);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
                 break;
               case 5:
                 faceDirVector.set(0, 0, -1);
-                uvs[j + 0] = getUv(faceDirVector, normal, "x", "y", radius, width);
-                uvs[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
+                uvs2[j + 0] = getUv(faceDirVector, normal, "x", "y", radius, width);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
                 break;
             }
           }
@@ -37156,7 +37164,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/scene/rifle.js
-  function prep(g, key, uvs = 1) {
+  function prep(g, key, uvs2 = 1) {
     if (g.index) g = g.toNonIndexed();
     for (const k of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(k)) g.deleteAttribute(k);
     if (!g.attributes.normal) g.computeVertexNormals();
@@ -37190,9 +37198,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     g.setAttribute("color", new BufferAttribute(col, 3));
     g.setAttribute("pbr", new BufferAttribute(pbr, 2));
     if (!g.attributes.uv) g.setAttribute("uv", new BufferAttribute(new Float32Array(n * 2), 2));
-    if (uvs !== 1) {
+    if (uvs2 !== 1) {
       const uv = g.attributes.uv;
-      for (let i = 0; i < n; i++) uv.setXY(i, uv.getX(i) * uvs, uv.getY(i) * uvs);
+      for (let i = 0; i < n; i++) uv.setXY(i, uv.getX(i) * uvs2, uv.getY(i) * uvs2);
     }
     return g;
   }
@@ -37274,8 +37282,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function buildRifle(opts = {}) {
     const q = opts.q ?? QSEG(), S2 = (n) => Math.max(8, Math.round(n * q));
     const L = { blk: [], alu: [], steel: [], bright: [], hole: [], paint: [], fde: [], fdeD: [], poly: [], rub: [], red: [], glass: [], knurl: [], brake: [], can: [] };
-    const add = (key, g, uvs) => {
-      L[key].push(prep(g, key === "knurl" ? "blk" : key === "brake" || key === "can" ? "blk" : key === "glass" ? "hole" : key, uvs));
+    const add = (key, g, uvs2) => {
+      L[key].push(prep(g, key === "knurl" ? "blk" : key === "brake" || key === "can" ? "blk" : key === "glass" ? "hole" : key, uvs2));
     };
     {
       const pr = [[0, 0], [0.0165, 0], [0.0165, 0.05]];
@@ -39144,7 +39152,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     C2.push(boxCollider(-70, height(-70, -808) + 2.5, -808, 5, 3, 4, { name: "cabin" }));
     setupShadow(w, new Vector3(30, PAD_Y, -775), 150, tier);
     w.titleCam = { pos: new Vector3(-1.2, nestY + 1.9, 3.8), look: new Vector3(150, 420, -1500) };
-    w.mapInfo = { center: [30, -770], size: 260, label: "VILLA RAVEL \u2014 Col de Sarne", roads: ROAD };
+    w.mapInfo = { center: [30, -770], size: 260, label: "VILLA RAVEL \u2014 Sarne Saddle", roads: ROAD };
     return w;
   }
   var PAD_Y, DECK, SUN, SHADOW_C, RIM_C, VILLA, PROF, ROAD, PADS, roadY, NEST0;
@@ -40606,6 +40614,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     box(9, 3.2, 3, -470, RY + 1.9, RZ - 6, "#e0a020");
     box(3.4, 2.4, 0.4, -475.5, RY + 0.9, RZ - 6, "#c08010");
     box(8, 4, 6, 380, RY + 2, RZ - 14.5, "#6a4a34");
+    for (let k = 0; k < 9; k++) {
+      box(8.04, 0.06, 6.04, 380, RY + 0.3 + k * 0.42, RZ - 14.5, "#3a2618");
+    }
+    for (const cx2 of [376, 384]) box(0.25, 4, 6.1, cx2, RY + 2, RZ - 14.5, "#4a3020");
     box(1.1, 2.1, 0.1, 381.5, RY + 1.05, RZ - 11.45, "#2a1c14");
     box(1.2, 0.9, 0.08, 377.5, RY + 2, RZ - 11.45, "#4a3a28");
     box(1.2, 0.9, 0.08, 384.5, RY + 2, RZ - 11.45, "#4a3a28");
@@ -41149,6 +41161,42 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const tx = 45, tz = -615;
       tower(tx, tz, 52, 34, TY, "#1c1e26", 0.35);
       box(46, 6, 12, tx, TY + 3, -628 - 6 + 1, "#0e1620");
+      {
+        const PG = [];
+        for (let i = 0; i < 6; i++) PG.push([tf(new BoxGeometry(6.8, 4.6, 0.06), tx - 19 + i * 7.6, TY + 2.6, -626.95), "#ffffff"]);
+        const pm = mergedMesh(PG, {});
+        pm.material = mat("#ffffff", { emissive: "#ffffff", ei: 0.55, unique: true });
+        {
+          const c = document.createElement("canvas");
+          c.width = 128;
+          c.height = 64;
+          const g = c.getContext("2d");
+          const gr = g.createLinearGradient(0, 0, 0, 64);
+          gr.addColorStop(0, "#6a3c1c");
+          gr.addColorStop(0.12, "#c88440");
+          gr.addColorStop(0.2, "#3a2414");
+          gr.addColorStop(1, "#0c0806");
+          g.fillStyle = gr;
+          g.fillRect(0, 0, 128, 64);
+          g.fillStyle = "rgba(0,0,0,0.45)";
+          for (let x = 0; x < 128; x += 6) g.fillRect(x, 10, 2, 54);
+          g.fillStyle = "#ffd8a0";
+          for (const x of [20, 64, 108]) g.fillRect(x - 9, 3, 18, 2);
+          g.fillStyle = "#050403";
+          g.fillRect(14, 40, 30, 24);
+          g.fillRect(80, 46, 36, 18);
+          g.fillRect(52, 30, 6, 34);
+          const t = new CanvasTexture(c);
+          t.colorSpace = SRGBColorSpace;
+          pm.material.map = t;
+          pm.material.emissiveMap = t;
+          pm.material.color.set("#202020");
+          pm.material.needsUpdate = true;
+        }
+        pm.castShadow = false;
+        S2.add(pm);
+        for (let i = 0; i <= 6; i++) box(0.18, 5.6, 0.12, tx - 22.8 + i * 7.6, TY + 2.9, -626.9, "#1a1c20");
+      }
       pts.push(...Array.from({ length: 10 }, (_, i) => [tx - 20 + i * 4.4, TY + 4.6, -626.9, 1.5, "#ffd6a0"]));
       box(46, 0.08, 26, tx, TY + 0.04, -615, "#3a3028");
       box(46, 0.07, 0.1, tx, TY + 1.05, -601.8, "#8a96a4");
@@ -41481,6 +41529,37 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/scene/dam/index.js
+  function concreteTex() {
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const g = c.getContext("2d"), r = mulberry32(77);
+    g.fillStyle = "#b4b6b6";
+    g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 900; i++) {
+      const v3 = 150 + r() * 70 | 0;
+      g.fillStyle = `rgba(${v3},${v3},${v3 - 4},0.25)`;
+      g.fillRect(r() * 256, r() * 256, 2 + r() * 6, 2 + r() * 6);
+    }
+    for (let i = 0; i < 22; i++) {
+      const x = r() * 256, w = 2 + r() * 7, l = 60 + r() * 180;
+      const gr = g.createLinearGradient(0, 0, 0, l);
+      gr.addColorStop(0, "rgba(60,58,52,0.45)");
+      gr.addColorStop(1, "rgba(60,58,52,0)");
+      g.fillStyle = gr;
+      g.fillRect(x, 0, w, l);
+    }
+    g.fillStyle = "rgba(40,40,40,0.75)";
+    for (let y2 = 0; y2 < 256; y2 += 64) g.fillRect(0, y2, 256, 2);
+    g.fillRect(0, 0, 2, 256);
+    g.fillRect(128, 0, 2, 256);
+    g.fillStyle = "rgba(255,255,255,0.25)";
+    for (let y2 = 2; y2 < 256; y2 += 64) g.fillRect(0, y2, 256, 1);
+    const t = new CanvasTexture(c);
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.colorSpace = SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }
   function raw(x, z) {
     const d = -z, ax = Math.abs(x);
     let h = d < 0 ? 104 + -d * 0.15 : d < 380 ? 104 - 92 * Math.pow(d / 380, 0.8) : 12;
@@ -41493,15 +41572,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function buildDam(tier) {
     const mob = !!tier.mobile, low = mob && tier.name === "low";
     const w = baseWorld({
-      haze: "#bcc4cc",
-      sunHaze: "#ffd8a8",
-      hazeDensity: 6e-4,
+      haze: "#b4c0cc",
+      sunHaze: "#f8dcc0",
+      hazeDensity: 45e-5,
       hazeHeight: 70,
       hazeBase: 0,
       sunEl: 9,
       sunAz: 140,
-      sunColor: "#ffc890",
-      sunI: 2.4,
+      sunColor: "#ffe4c8",
+      sunI: 2.3,
       hemiSky: "#a8b4c8",
       hemiGround: "#6a645a",
       hemiI: 1.1,
@@ -41520,7 +41599,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.cold = 0.3;
     w.focusDist = 650;
     w.roadAt = (x, z) => (Math.abs(z - DZ) < 5 && Math.abs(x) < 175 ? CY : height6(x, z)) + 0.05;
-    const fog0 = 6e-4;
+    const fog0 = 45e-5;
     w.updaters.push(() => {
       const t = G_mt();
       HAZE.uHazeDensity.value = fog0 * (1 - 0.6 * smoothstep2(0, 240, t));
@@ -41549,11 +41628,20 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     S2.add(water);
     const P = [], E = [], lights = [];
     const box = (sx, sy, sz, x, y2, z, col, rx = 0) => P.push([tf(new BoxGeometry(sx, sy, sz), x, y2, z, rx), col]);
+    const CT = [], ctex = concreteTex();
     for (let i = 0; i < 6; i++) {
       const y0 = 8 + i * 11, dep = 46 - i * 7.2;
-      box(340, 11.2, dep, 0, y0 + 5.6, DZ - 4 + dep / 2 - 4 - (46 - dep) * 0, i % 2 ? "#9c9e9e" : "#7e8082");
+      CT.push([tf(uvs(new BoxGeometry(340, 11.2, dep), 340 / 16, 11.2 / 16), 0, y0 + 5.6, DZ - 8 + dep / 2), i % 2 ? "#d8d8d6" : "#b8b8b6"]);
     }
-    box(350, 2, 10, 0, CY - 1, DZ, "#86888a");
+    CT.push([tf(uvs(new BoxGeometry(350, 2, 10), 350 / 16, 1), 0, CY - 1, DZ), "#c8c8c6"]);
+    for (let i = -2; i <= 2; i++) CT.push([tf(uvs(new BoxGeometry(1.6, 12, 4), 0.2, 0.75), i * 20 + 8, CY - 4, DZ + 4), "#e0e0de"]);
+    {
+      const cm = mergedMesh(CT, { rough: 0.9 });
+      cm.material = mat("#ffffff", { vc: true, unique: true, rough: 0.9 });
+      cm.material.map = ctex;
+      cm.material.needsUpdate = true;
+      S2.add(cm);
+    }
     box(350, 0.1, 6, 0, CY + 0.03, DZ, "#4a4a4c");
     for (const s of [-1, 1]) box(350, 1.1, 0.35, 0, CY + 0.55, DZ + s * 4.8, "#9a9c9c");
     for (let x = -160; x <= 160; x += 32) {
@@ -41561,14 +41649,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       lights.push([x, CY + 6, DZ + 4.4, 1.6, "#ffe0b0"]);
     }
     for (let i = -2; i <= 2; i++) {
-      box(14, 9, 3, i * 20, CY - 6, DZ + 4, "#5a5e64");
-      box(1.6, 12, 4, i * 20 + 8, CY - 4, DZ + 4, "#9c988e");
+      box(14, 9, 3, i * 20, CY - 6, DZ + 4, "#3a4048");
+      for (let k = 0; k < 4; k++) box(14.2, 0.25, 3.1, i * 20, CY - 9.5 + k * 2.4, DZ + 4, "#22262c");
     }
     const HX = 40;
     box(12, 6, 7, HX, CY + 3, DZ - 1, "#c8c0b0");
     box(13, 0.6, 8, HX, CY + 6.3, DZ - 1, "#5a3a2a");
     box(1.4, 2.3, 0.1, HX - 3, CY + 1.15, DZ + 2.55, "#2a2420");
     E.push([tf(new BoxGeometry(2.4, 1.2, 0.1), HX + 2.5, CY + 3.4, DZ + 2.55), "#ffd9a0"]);
+    box(12.2, 0.3, 7.2, HX, CY + 0.15, DZ - 1, "#6a6a6a");
+    box(1.8, 2.7, 0.12, HX - 3, CY + 1.35, DZ + 2.5, "#e8e4dc");
+    box(2.8, 1.6, 0.12, HX + 2.5, CY + 3.4, DZ + 2.5, "#2a2c30");
     w.colliders.push(boxCollider(0, CY - 1, DZ, 175, 1, 5, { name: "dam crest" }), boxCollider(HX, CY + 3, DZ - 1, 6, 3, 3.5, { name: "control house" }), boxCollider(0, 36, DZ + 18, 170, 36, 22, { name: "dam wall" }));
     for (const [x, z] of [[-420, -380], [-260, -560]]) {
       const y2 = height6(x, z);
@@ -41579,7 +41670,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let i = 0; i < (low ? 26 : 44); i++) {
       const a = rr() * 6.28, r = 4 + rr() * 60, x = HIDE[0] + Math.cos(a) * r, z = HIDE[1] + Math.sin(a) * r * 0.7, s = 1.2 + rr() * 2.8;
       if (Math.hypot(x - HIDE[0], z - HIDE[1]) < 3.2 || r < 24 && Math.sin(a) > -0.3) continue;
-      RK.push([tf(rockGeometry(60 + i, 1, {}), x, height6(x, z) - s * 0.2, z, rr(), rr() * 6, 0, s * 1.3, s * 0.8, s), "#7a766e"]);
+      RK.push([tf(rockGeometry(60 + i, 1, {}), x, height6(x, z) - s * 0.2, z, rr(), rr() * 6, 0, s * 1.3, s * 0.8, s), "#77777a"]);
     }
     RK.push([tf(rockGeometry(9, 1, {}), HIDE[0] - 2.6, HY + 0.1, HIDE[1] - 0.6, 0, 1, 0, 1.6, 1, 1.5), "#6e6a62"], [tf(rockGeometry(10, 1, {}), HIDE[0] + 2.4, HY, HIDE[1] - 0.4, 0, 2, 0, 1.5, 0.9, 1.4), "#757168"], [tf(rockGeometry(11, 1, {}), HIDE[0], HY + 0.3, HIDE[1] - 3.5, 0, 3, 0, 3.5, 2.2, 2.5), "#6a665e"]);
     S2.add(mergedMesh(RK, { rough: 0.95 }));
@@ -41604,6 +41695,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (d > 20 && d < 700 && blocksLOF(x, z, h + 12.8 * s * sy, 2.8 * s, eye, LOFT)) return null;
       return { x, y: h, z, r: R() * 6.28, s, sy };
     }, { cast: false, sway: 0.15, impTint: "#b0b8b0", isNear: mob ? (p) => -p.z < 90 || Math.hypot(p.x - HIDE[0], p.z - HIDE[1]) < 90 : (p) => -p.z < 300 || Math.hypot(p.x - HIDE[0], p.z - HIDE[1]) < 160 }));
+    addWindMarkers(S2, w, height6, [[-120, -260], [-210, -420], [60, -480]], { color: "#e8a020", color2: "#f2f2f2", pole: 5, drift: false });
     const flag = makeFlag(2.4, 1.5, "#8a2a22", { amp: 1 });
     flag.position.set(HX + 5, CY + 10, DZ - 1);
     S2.add(flag);
@@ -41626,7 +41718,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.mapInfo = { center: [-100, -500], size: 1100, label: "SARNE RESERVOIR \xB7 DAM" };
     return w;
   }
-  var CY, DZ, HIDE, N0, height6, G_mt;
+  var uvs, CY, DZ, HIDE, N0, height6, G_mt;
   var init_dam = __esm({
     "src/scene/dam/index.js"() {
       init_three_module();
@@ -41636,6 +41728,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_materials();
       init_rng();
       init_common();
+      uvs = (geo, su, sv) => {
+        const a = geo.attributes.uv;
+        for (let i = 0; i < a.count; i++) a.setXY(i, a.getX(i) * su, a.getY(i) * sv);
+        return geo;
+      };
       CY = 72;
       DZ = -650;
       HIDE = [-300, -470];
@@ -41885,7 +41982,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           id: "villa",
           num: 1,
           title: "MOUNTAIN VILLA",
-          place: "Col de Sarne, high alps",
+          place: "Sarne Saddle, high alps",
           time: "Sunset \xB7 \u22126\xB0C \xB7 gusting valley wind",
           build: buildVilla,
           ambience: "mountain",
@@ -45615,8 +45712,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const kind = res.kind;
           const fxPos = h.point.clone();
           if (kind === "body") {
-            if (G.settings.impactStyle !== "none") spawnFX("flash", fxPos, { scale: 0.5 });
-            spawnFX(this.world.snow ? "snow" : "dust", fxPos, { scale: 0.6 });
+            if (G.settings.impactStyle !== "none") spawnFX("flash", fxPos, { scale: pr.bulletCam ? 0.1 : 0.5 });
+            spawnFX(this.world.snow ? "snow" : "dust", fxPos, { scale: pr.bulletCam ? 0.35 : 0.6 });
           } else if (kind === "metal" || kind === "plate") {
             spawnFX("spark", fxPos);
             spawnFX("dust", fxPos, { scale: 0.4, color: "#9a9590" });
@@ -45625,7 +45722,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const R = Math.round(dist);
           if (res.killed) {
             const n = res.killed;
-            const zone = h.zone === "head" ? "HEADSHOT" : h.zone === "torso" ? "TORSO" : "HIT";
+            const zone = h.zone === "head" ? "HEADSHOT" : h.zone === "torso" ? "TORSO" : h.zone === "limb" ? "LIMB" : "HIT";
             this.lastHit = { text: `${zone} \xB7 ${n.role === "target" ? "TARGET" : n.role === "civilian" ? "CIVILIAN" : n.name.toUpperCase()} \xB7 ${R} m \xB7 ${pr.age.toFixed(2)} s`, t: G.time, ok: n.role !== "civilian" };
             if (IN.touch) haptic(n.role === "civilian" ? [60, 40, 60] : [18, 30, 24]);
             if (dist > G.save.records.longest && n.role !== "civilian") G.save.records.longest = Math.round(dist);
@@ -46116,6 +46213,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         range: () => IN.touch ? "Tap <kbd>RANGE</kbd> on the terrace" : "Press <kbd>R</kbd> to lase the range",
         intel: () => IN.touch ? "Tap <kbd>DIAL</kbd> \u2192 <kbd>DOPE</kbd> to dial the hold-over" : "<kbd>Tab</kbd> intel & dope card \xB7 <kbd>RMB</kbd> scope \xB7 wheel zoom",
         wind: () => IN.touch ? "Wind: watch flags & smoke \xB7 <kbd>DIAL</kbd> \u25C0 \u25B6 windage or hold into the wind" : "Wind: watch flags & smoke \xB7 <kbd>Q</kbd>/<kbd>E</kbd> dial windage or hold into the wind",
+        spot: () => IN.touch ? "Tap <kbd>SPOT</kbd>: Moth marks every gun in your view" : "Press <kbd>G</kbd>: Moth marks every gun in your view",
+        detect: () => IN.touch ? "DETECTION fills while you are on the glass \xB7 tap <kbd>SCOPE</kbd> to drop off it" : "DETECTION fills while scoped \xB7 <kbd>RMB</kbd> off the glass to lose him \xB7 watch for the glint",
         breath: () => IN.touch ? "Hold <kbd>BREATH</kbd>, then <kbd>FIRE</kbd>" : "Hold <kbd>Shift</kbd> to steady \xB7 <kbd>LMB</kbd> fire"
       };
       function showHint(k) {
@@ -46261,7 +46360,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (M2.kind !== "range" && G.player) {
           const fd = M2.world.focusDist || 700;
           if (IN.touch) G.player.autoZoom(fd);
-          else G.player.optics.zi = fd > 560 ? 3 : fd > 350 ? 2 : 1;
+          else G.player.optics.zi = fd > 600 ? 4 : fd > 520 ? 3 : fd > 350 ? 2 : 1;
+        }
+        {
+          const so = document.getElementById("story");
+          if (so) so.remove();
         }
         G.thermal = false;
         document.body.classList.toggle("has-therm", !!M2.world.night);
@@ -46513,12 +46616,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         const intro = G.intro ? introFrame(dt, M2) : false;
         const ff = !intro && (IN.keys.has("Space") || IN.ffwd) && !P.bc.active && M2.kind !== "range";
-        let speed = ff ? 4 : 1;
+        G._ffHeld = ff ? (G._ffHeld || 0) + dt : 0;
+        let speed = ff ? G._ffHeld > 2 && M2.alarm === "calm" ? 8 : 4 : 1;
         if (G.fastForwardTo != null) {
           speed = 30;
           if (M2.mt >= G.fastForwardTo) G.fastForwardTo = null;
         }
         $2("hFF").classList.toggle("hidden", speed === 1);
+        if (speed > 1 && speed < 30) {
+          const nx = (M2.def?.timeline || []).find((e) => e.t > M2.mt + 0.5), ts = nx ? Math.max(0, nx.t - M2.mt) : 0;
+          const t = "\u23E9 \xD7" + speed + (nx ? " \xB7 " + nx.name + " in " + Math.floor(ts / 60) + ":" + String(Math.floor(ts % 60)).padStart(2, "0") : "");
+          if ($2("hFF").textContent !== t) $2("hFF").textContent = t;
+        }
         if (!intro) P.update(dt);
         acc += dt;
         let steps = 0;
@@ -46715,6 +46824,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uScopeR.value = scopeRadius(G.W, G.H) / G.H;
         L.uFull.value = document.body.classList.contains("touch") ? 1 : 0;
         barrelHeat(L.uBH.value);
+        {
+          const Wd = G.world, sc = view === "scope" && !G.thermal && G.player ? Math.min(1, Math.max(0, (G.player.optics.mag - 6) / 18)) : 0;
+          SCOPE_RIM.uScopeRim.value = sc * (Wd?.night ? 0.35 : 0.5);
+          if (Wd && SCOPE_RIM._w !== Wd) {
+            SCOPE_RIM._w = Wd;
+            SCOPE_RIM.uScopeRimC.value.copy(Wd.sun?.color || new Color(1, 1, 1)).lerp(new Color(1, 1, 1), 0.5);
+          }
+        }
         const tint = w.tint || {};
         L.uLift.value.set(...tint.lift || [0, 0, 0]);
         L.uGain.value.set(...tint.gain || [1, 1, 1]);
@@ -46722,6 +46839,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uContrast.value = tint.contrast ?? 1;
         L.uExpo.value = (tint.expo ?? 1) * (G.quality.hdr ? 1 : 1.25);
         L.uHeat.value = (w.heat || 0) * (1 - (G.mission?.storm || 0));
+        L.uWindX.value = G.hudCross || 0;
+        L.uMir.value = w.night || w.rain || w.snow ? 0.4 : 1;
         L.uDust.value = (G.mission?.storm || 0) * (view === "scope" ? 0.1 : 0.32);
         L.uOffset.value.set(view === "scope" && player ? player.optics.swayX * 10 : 0, view === "scope" && player ? player.optics.swayY * 10 : 0);
         L.uBlur.value = view === "bulletcam" ? 1 : 0;
