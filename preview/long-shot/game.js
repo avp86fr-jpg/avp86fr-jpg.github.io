@@ -33213,7 +33213,7 @@ void main() {
     return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform);
   }
   function pickTier(setting) {
-    if (setting && setting !== "auto" && TIERS[setting]) return TIERS[setting];
+    if (setting && setting !== "auto" && TIERS[setting]) return isMobile() && MOBILE[setting] ? MOBILE[setting] : TIERS[setting];
     if (isMobile()) return Math.min(screen.width, screen.height) * (devicePixelRatio || 1) > 1e3 && (navigator.hardwareConcurrency || 4) >= 8 ? MOBILE.medium : MOBILE.low;
     return TIERS.high;
   }
@@ -33230,11 +33230,12 @@ void main() {
     }
     if (lowTime > 3) {
       lowTime = 0;
-      if (G.quality.dynPr > 0.6) {
-        G.quality.dynPr = Math.max(0.6, G.quality.dynPr - 0.15);
+      const floor = G.quality.mobile ? 0.8 : 0.6;
+      if (G.quality.dynPr > floor) {
+        G.quality.dynPr = Math.max(floor, G.quality.dynPr - 0.1);
         onChange("pr");
       }
-    } else if (highTime > 8 && G.quality.dynPr < 1) {
+    } else if (highTime > 6 && G.quality.dynPr < 1) {
       highTime = 0;
       G.quality.dynPr = Math.min(1, G.quality.dynPr + 0.1);
       onChange("pr");
@@ -33271,6 +33272,7 @@ void main() {
       uOffset: { value: new Vector2(0, 0) },
       uHeat: { value: 0 },
       uZoom: { value: 1 },
+      uAA: { value: 1 },
       uLift: { value: new Vector3() },
       uGain: { value: new Vector3(1, 1, 1) },
       uSat: { value: 1 },
@@ -33303,13 +33305,47 @@ void main() {
         /* glsl */
         `
       precision highp float;
-      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uBloom, uRays, uFocus, uCold; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
+      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
       uniform vec2 uOffset; uniform vec3 uBH; uniform vec3 uLift, uGain, uSun, uDustCol;
       varying vec2 vUv;
       float hh(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
       float nn(vec2 p){ vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f); return mix(mix(hh(i),hh(i+vec2(1,0)),u.x), mix(hh(i+vec2(0,1)),hh(i+vec2(1,1)),u.x), u.y); }
       vec3 aces(vec3 x){ const float a=2.51, b=0.03, c=2.43, d=0.59, e=0.14; return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0); }
       vec3 sampleC(vec2 uv){ return texture2D(tScene, clamp(uv, vec2(0.001), vec2(0.999))).rgb; }
+      float lumaA(vec3 c){ float l = dot(c, vec3(0.299, 0.587, 0.114)); return l / (1.0 + l); }
+      // FXAA (3.11 "quality-lite"): finds the local edge from a 3x3 luma neighbourhood and blends along it. Cheap on phones, used when there's no MSAA.
+      vec3 fxaa(vec2 uv){
+        vec3 cM = sampleC(uv); if (uAA < 0.5) return cM;
+        vec2 px = 1.0 / uRes;
+        float lM = lumaA(cM), lN = lumaA(sampleC(uv + vec2(0.0, px.y))), lS = lumaA(sampleC(uv - vec2(0.0, px.y))), lE = lumaA(sampleC(uv + vec2(px.x, 0.0))), lW = lumaA(sampleC(uv - vec2(px.x, 0.0)));
+        float mn = min(lM, min(min(lN, lS), min(lE, lW))), mx = max(lM, max(max(lN, lS), max(lE, lW))), rng = mx - mn;
+        if (rng < max(0.04, mx * 0.12)) return cM;
+        float lNE = lumaA(sampleC(uv + px)), lNW = lumaA(sampleC(uv + vec2(-px.x, px.y))), lSE = lumaA(sampleC(uv + vec2(px.x, -px.y))), lSW = lumaA(sampleC(uv - px));
+        float eH = abs(lNW + lNE - 2.0 * lN) + 2.0 * abs(lW + lE - 2.0 * lM) + abs(lSW + lSE - 2.0 * lS);
+        float eV = abs(lNW + lSW - 2.0 * lW) + 2.0 * abs(lN + lS - 2.0 * lM) + abs(lNE + lSE - 2.0 * lE);
+        bool hor = eH >= eV;
+        float l1 = hor ? lS : lW, l2 = hor ? lN : lE;
+        float g1 = abs(l1 - lM), g2 = abs(l2 - lM);
+        float stepL = hor ? px.y : px.x; if (g1 >= g2) stepL = -stepL;
+        float lAvg = 0.5 * ((g1 >= g2 ? l1 : l2) + lM);
+        vec2 e = hor ? vec2(px.x, 0.0) : vec2(0.0, px.y);
+        vec2 b = uv + (hor ? vec2(0.0, stepL * 0.5) : vec2(stepL * 0.5, 0.0));
+        vec2 u1 = b - e, u2 = b + e; float d1 = 0.0, d2 = 0.0; bool r1 = false, r2 = false;
+        float gs = max(g1, g2) * 0.25;
+        for (int i = 0; i < 6; i++) {
+          if (!r1) { d1 = lumaA(sampleC(u1)) - lAvg; r1 = abs(d1) >= gs; if (!r1) u1 -= e * (i < 3 ? 1.0 : 2.0); }
+          if (!r2) { d2 = lumaA(sampleC(u2)) - lAvg; r2 = abs(d2) >= gs; if (!r2) u2 += e * (i < 3 ? 1.0 : 2.0); }
+        }
+        float dist1 = hor ? uv.x - u1.x : uv.y - u1.y, dist2 = hor ? u2.x - uv.x : u2.y - uv.y;
+        bool near1 = dist1 < dist2; float dmin = min(dist1, dist2), len = dist1 + dist2;
+        bool good = ((near1 ? d1 : d2) < 0.0) != (lM - lAvg < 0.0);
+        float off = good ? -dmin / len + 0.5 : 0.0;
+        float lL = (2.0 * (lN + lS + lE + lW) + lNE + lNW + lSE + lSW) / 12.0;
+        float sub = clamp(abs(lL - lM) / rng, 0.0, 1.0); sub = (-2.0 * sub + 3.0) * sub * sub; sub = sub * sub * 0.75;
+        off = max(off, sub);
+        vec2 fu = uv + (hor ? vec2(0.0, off * stepL) : vec2(off * stepL, 0.0));
+        return sampleC(fu);
+      }
       void main(){
         vec2 uv = vUv;
         float asp = uRes.x / uRes.y;
@@ -33337,10 +33373,9 @@ void main() {
           vec2 duv = uv + (uv - 0.5) * k * 0.18;
           float ca = 0.0022 * r * r;
           vec2 dir = normalize(c + 1e-5);
-          vec3 sc;
-          sc.r = sampleC(duv + dir * ca * vec2(1.0/asp,1.0)).r;
-          sc.g = sampleC(duv).g;
-          sc.b = sampleC(duv - dir * ca * vec2(1.0/asp,1.0)).b;
+          vec3 sc = fxaa(duv);
+          float caW = smoothstep(0.35, 0.95, r); // chromatic fringing only toward the rim, the centre stays antialiased
+          if (caW > 0.0) { sc.r = mix(sc.r, sampleC(duv + dir * ca * vec2(1.0/asp,1.0)).r, caW); sc.b = mix(sc.b, sampleC(duv - dir * ca * vec2(1.0/asp,1.0)).b, caW); }
           // optical sharpening (unsharp mask) that grows with magnification, so 12\xD7 stays crisp
           { vec2 px = 1.0 / uRes; vec3 nb = (sampleC(duv + vec2(px.x, 0.0)) + sampleC(duv - vec2(px.x, 0.0)) + sampleC(duv + vec2(0.0, px.y)) + sampleC(duv - vec2(0.0, px.y))) * 0.25;
             float dl = dot(sc - nb, vec3(0.299, 0.587, 0.114)); // luminance-only, so lens CA fringes aren't amplified
@@ -33371,7 +33406,7 @@ void main() {
           float rr = length(c * vec2(asp, 1.0));
           col *= 1.0 - smoothstep(0.35, 0.9, rr) * 0.6;
         } else {
-          col = sampleC(uv);
+          col = fxaa(uv);
         }
         // sun flare (ghosts along sun->center axis)
         if (uSun.z > 0.0) {
@@ -33511,10 +33546,11 @@ void main() {
     r.toneMapping = NoToneMapping;
     r.shadowMap.enabled = true;
     r.shadowMap.type = PCFShadowMap;
+    r.shadowMap.autoUpdate = false;
     r.autoClear = false;
     G.renderer = r;
     G.lens = makeLens();
-    G.camera = new PerspectiveCamera(60, 1, 1, 16e3);
+    G.camera = new PerspectiveCamera(60, 1, 0.3, 16e3);
     G.camera.rotation.order = "YXZ";
     G.fpScene = new Scene();
     G.fpCam = new PerspectiveCamera(50, 1, 0.02, 10);
@@ -33534,6 +33570,7 @@ void main() {
       G.contextLost = false;
       document.body.classList.remove("ctxlost");
       G.needsRebuild = true;
+      G._sz = null;
     });
     return r;
   }
@@ -33545,6 +33582,9 @@ void main() {
     G.H = h;
     const q = G.quality;
     const pr = Math.min(window.devicePixelRatio || 1, q.maxPr) * q.pr * (q.dynPr ?? 1);
+    const key = w + "x" + h + "@" + pr + ":" + q.msaa + ":" + q.hdr;
+    if (G.rt && G._sz === key) return;
+    G._sz = key;
     G.dpr = pr;
     r.setPixelRatio(1);
     r.setSize(Math.floor(w * pr), Math.floor(h * pr), false);
@@ -33557,6 +33597,7 @@ void main() {
     G.lens.u.uRes.value.set(rw, rh);
     resizeBloom(rw, rh);
     G.lens.u.uHdr.value = q.hdr ? 1 : 0;
+    G.lens.u.uAA.value = q.msaa ? 0 : 1;
     G.camera.aspect = w / h;
     G.camera.updateProjectionMatrix();
     G.fpCam.aspect = w / h;
@@ -33998,6 +34039,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     heartbeat: () => heartbeat,
     impact: () => impact,
     initAudio: () => initAudio,
+    preloadTheme: () => preloadTheme,
     radio: () => radio,
     setAmbience: () => setAmbience,
     setIntensity: () => setIntensity,
@@ -34523,18 +34565,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     og.connect(out);
     o.start(t);
     o.stop(t + 0.7);
-    const n3 = noiseSrc();
-    n3.stop(t + 0.2);
+    const n32 = noiseSrc();
+    n32.stop(t + 0.2);
     const bp3 = ctx.createBiquadFilter();
     bp3.type = "bandpass";
     bp3.frequency.value = 3800;
     bp3.Q.value = 5;
     const g3 = ctx.createGain();
     env(g3, t + 0.01, 1e-3, 0.12, 0.06);
-    n3.connect(bp3);
+    n32.connect(bp3);
     bp3.connect(g3);
     g3.connect(out);
-    n3.start(t);
+    n32.start(t);
     const ev = ECHO[A.envKind] || ECHO.mountain, eScale = sup ? 0.35 : 1;
     for (const [d, a, lpf, pan] of ev) {
       const e = noiseSrc();
@@ -35177,6 +35219,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       n.start(t);
       n.stop(t + 0.3);
     }
+  }
+  function preloadTheme(name) {
+    if (ctx) loadTheme(name === "villa" || name === "refinery" ? name : "menu");
   }
   function setMusicTheme(name) {
     if (THEMES[name]) M.theme = name;
@@ -36569,6 +36614,71 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     return result;
   }
+  function mergeVertices(geometry, tolerance = 1e-4) {
+    tolerance = Math.max(tolerance, Number.EPSILON);
+    const hashToIndex = {};
+    const indices = geometry.getIndex();
+    const positions = geometry.getAttribute("position");
+    const vertexCount = indices ? indices.count : positions.count;
+    let nextIndex = 0;
+    const attributeNames = Object.keys(geometry.attributes);
+    const sourceIndices = [];
+    const buffers = /* @__PURE__ */ new Map();
+    const newIndices = [];
+    const getters = ["getX", "getY", "getZ", "getW"];
+    const halfTolerance = tolerance * 0.5;
+    const exponent = Math.log10(1 / tolerance);
+    const hashMultiplier = Math.pow(10, exponent);
+    const hashAdditive = halfTolerance * hashMultiplier;
+    for (let i = 0; i < vertexCount; i++) {
+      const index = indices ? indices.getX(i) : i;
+      let hash = "";
+      for (let j = 0, l = attributeNames.length; j < l; j++) {
+        const name = attributeNames[j];
+        const attribute = geometry.getAttribute(name);
+        const itemSize = attribute.itemSize;
+        for (let k = 0; k < itemSize; k++) {
+          hash += `${Math.trunc(attribute[getters[k]](index) * hashMultiplier + hashAdditive)},`;
+        }
+      }
+      if (hash in hashToIndex) {
+        newIndices.push(hashToIndex[hash]);
+      } else {
+        sourceIndices.push(index);
+        hashToIndex[hash] = nextIndex;
+        newIndices.push(nextIndex);
+        nextIndex++;
+      }
+    }
+    const result = geometry.clone();
+    for (const name in geometry.attributes) {
+      result.setAttribute(name, remapAttribute(geometry.attributes[name], sourceIndices, buffers));
+    }
+    for (const name in geometry.morphAttributes) {
+      result.morphAttributes[name] = geometry.morphAttributes[name].map((attribute) => remapAttribute(attribute, sourceIndices, buffers));
+    }
+    result.setIndex(newIndices);
+    return result;
+  }
+  function remapAttribute(attribute, sourceIndices, buffers = /* @__PURE__ */ new Map()) {
+    const interleaved = attribute.isInterleavedBufferAttribute;
+    const source = interleaved ? attribute.data : attribute;
+    const stride = interleaved ? source.stride : attribute.itemSize;
+    let data2 = interleaved ? buffers.get(source) : void 0;
+    if (data2 === void 0) {
+      const array = new source.array.constructor(sourceIndices.length * stride);
+      for (let i = 0; i < sourceIndices.length; i++) {
+        for (let j = 0; j < stride; j++) array[i * stride + j] = source.array[sourceIndices[i] * stride + j];
+      }
+      data2 = interleaved ? new source.constructor(array, stride, source.meshPerAttribute) : new attribute.constructor(array, attribute.itemSize, attribute.normalized, attribute.meshPerAttribute);
+      data2.setUsage(source.usage);
+      if (interleaved) buffers.set(source, data2);
+    }
+    const result = interleaved ? new attribute.constructor(data2, attribute.itemSize, attribute.offset, attribute.normalized) : data2;
+    result.name = attribute.name;
+    if (!interleaved) result.gpuType = attribute.gpuType;
+    return result;
+  }
   var init_BufferGeometryUtils = __esm({
     "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"() {
       init_three_module();
@@ -37238,12 +37348,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   // src/scene/common.js
   function colorGeo(geo, color) {
     const g = geo.index ? geo.toNonIndexed() : geo;
-    const c = new Color(color), n = g.attributes.position.count, a = new Float32Array(n * 3);
+    const c = new Color(color), n = g.attributes.position.count, a = new Float32Array(n * 3), tn = g.attributes.tint;
     for (let i = 0; i < n; i++) {
-      a[i * 3] = c.r;
-      a[i * 3 + 1] = c.g;
-      a[i * 3 + 2] = c.b;
+      const k = tn ? tn.array : null;
+      a[i * 3] = c.r * (k ? k[i * 3] : 1);
+      a[i * 3 + 1] = c.g * (k ? k[i * 3 + 1] : 1);
+      a[i * 3 + 2] = c.b * (k ? k[i * 3 + 2] : 1);
     }
+    if (tn) g.deleteAttribute("tint");
     g.setAttribute("color", new BufferAttribute(a, 3));
     if (!g.attributes.uv) g.setAttribute("uv", new BufferAttribute(new Float32Array(n * 2), 2));
     return g;
@@ -37350,29 +37462,61 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return g;
   }
   function pineGeometry(snow = 0.6, seed = 0, palette = {}) {
-    const parts = [];
     const trunk = palette.trunk || "#3a2a1c", leaf = new Color(palette.leaf || "#1f3524"), snowC = new Color(palette.snow || "#e8eef6");
-    const lite = !!palette.lite, seg = lite ? 6 : 8;
-    parts.push([new CylinderGeometry(0.12, 0.22, 2.2, lite ? 4 : 6).translate(0, 1.1, 0), trunk]);
-    const tiers = lite ? 4 : 5;
+    const lite = !!palette.lite, arms = lite ? 8 : 11, tiers = lite ? 5 : 7, R = mulberry32(17 + Math.floor(seed * 100));
+    const parts = [[new CylinderGeometry(0.1, 0.24, 3.2, lite ? 5 : 7).translate(0, 1.6, 0), trunk]];
+    const H0 = 1.5, H1 = 12.8;
     for (let i = 0; i < tiers; i++) {
-      const r = 2.4 * (1 - i / (tiers + 0.6)) + 0.3, h = 2.6;
-      const y = 1.6 + i * 1.55;
-      const cone = new ConeGeometry(r, h, seg, 1);
-      cone.translate(0, y + h / 2, 0);
-      cone.rotateY(i * 0.7 + seed);
-      const c = leaf.clone().multiplyScalar(0.8 + i * 0.07);
-      parts.push([cone, "#" + c.getHexString()]);
-      if (snow > 0) {
-        const sc = new ConeGeometry(r * 0.82, h * 0.42, seg, 1, true);
-        sc.translate(0, y + h * 0.82, 0);
-        sc.rotateY(i * 0.7 + seed + 0.2);
-        parts.push([sc, "#" + leaf.clone().lerp(snowC, snow).getHexString()]);
+      const f = i / (tiers - 1), y = H0 + f * (H1 - H0 - 2.2), r = (2.7 * (1 - f) ** 0.9 + 0.35) * (0.92 + R() * 0.16), h = 1.9 - f * 0.6, droop = 0.55 + 0.25 * (1 - f);
+      const pos = [], idx = [];
+      const rot = R() * 6.28;
+      pos.push(0, y + h, 0);
+      pos.push(0, y + h * 0.15, 0);
+      for (let k = 0; k < arms * 2; k++) {
+        const tip = k % 2 === 0, ang = rot + k / (arms * 2) * Math.PI * 2 + (R() - 0.5) * 0.12;
+        const rr = tip ? r * (0.85 + R() * 0.3) : r * 0.5;
+        pos.push(Math.cos(ang) * rr, y - (tip ? droop : droop * 0.25) + (R() - 0.5) * 0.15, Math.sin(ang) * rr);
       }
+      const n = arms * 2;
+      for (let k = 0; k < n; k++) {
+        const a0 = 2 + k, a1 = 2 + (k + 1) % n;
+        idx.push(0, a1, a0);
+        idx.push(1, a0, a1);
+      }
+      const g = new BufferGeometry();
+      g.setAttribute("position", new Float32BufferAttribute(pos, 3));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      const tint = new Float32Array(pos.length), nrm = g.attributes.normal.array, base = leaf.clone().multiplyScalar(0.78 + f * 0.25);
+      for (let v3 = 0; v3 < pos.length / 3; v3++) {
+        const isTip = v3 >= 2 && (v3 - 2) % 2 === 0, under = v3 === 1;
+        const c = base.clone().multiplyScalar(under ? 0.45 : isTip ? 1.15 : 0.85);
+        const sn = snow * (v3 === 0 ? 0.85 : under ? 0 : isTip ? 0.75 : 0.55) * (0.65 + 0.7 * vnoise(pos[v3 * 3] * 1.7 + i, pos[v3 * 3 + 2] * 1.7, 5));
+        if (sn > 0) c.lerp(snowC, Math.min(0.92, sn * Math.max(0, nrm[v3 * 3 + 1]) * 1.2));
+        tint[v3 * 3] = c.r;
+        tint[v3 * 3 + 1] = c.g;
+        tint[v3 * 3 + 2] = c.b;
+      }
+      g.setAttribute("tint", new BufferAttribute(tint, 3));
+      parts.push([g, "#ffffff"]);
     }
-    const geos = parts.map(([g3, c]) => colorGeo(g3, c));
-    const g = mergeGeometries(geos, false);
-    return g;
+    const geos = parts.map(([g, c]) => {
+      const q = colorGeo(g, c);
+      if (!q.attributes.normal) q.computeVertexNormals();
+      return q;
+    });
+    return mergeGeometries(geos, false);
+  }
+  function blocksLOF(x, z, top, rad, from, targets) {
+    for (const t of targets) {
+      const dx = t[0] - from.x, dz = t[2] - from.z, L2 = dx * dx + dz * dz;
+      const u = Math.max(0, Math.min(1, ((x - from.x) * dx + (z - from.z) * dz) / L2));
+      const px2 = from.x + dx * u, pz2 = from.z + dz * u, d = Math.hypot(x - px2, z - pz2);
+      if (d > rad + 2.5) continue;
+      const ly = from.y + (t[1] - from.y) * u;
+      if (top + 1.5 > ly && u > 2e-3 && u < 0.995) return true;
+    }
+    return false;
   }
   function impostorTexture(geo) {
     if (_impCache.has(geo)) return _impCache.get(geo);
@@ -37465,16 +37609,143 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     im.computeBoundingSphere();
     return im;
   }
-  function rockGeometry(seed = 1, detail = 1) {
-    const g = new IcosahedronGeometry(1, detail);
-    const p = g.attributes.position;
+  function n3(x, y, z, s) {
+    return vnoise(x + z * 0.71, y - z * 0.53, s) * 0.5 + vnoise(y * 1.13 + 3.1, z * 1.07 - x * 0.31, s + 1) * 0.5;
+  }
+  function rockGeometry(seed = 1, detail = 1, o = {}) {
+    const det = Math.max(1, Math.min(8, detail * 2 + 1));
+    let g = new IcosahedronGeometry(1, det);
+    g.deleteAttribute("normal");
+    g.deleteAttribute("uv");
+    g = mergeVertices(g);
+    const p = g.attributes.position, disp = new Float32Array(p.count);
+    const sq = o.squash ?? 0.72, strata = o.strata ?? 1;
     for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-      const n = 1 + 0.28 * Math.sin(x * 3.1 + seed) * Math.cos(z * 2.7 + seed * 2) + 0.18 * Math.sin(y * 5 + seed * 3);
-      p.setXYZ(i, x * n, y * n * 0.7, z * n);
+      let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const big = n3(x * 1.1 + seed, y * 1.1, z * 1.1, seed) - 0.5, mid = n3(x * 2.6, y * 2.6 + seed, z * 2.6, seed + 7) - 0.5, fine = n3(x * 6.5, y * 6.5, z * 6.5 + seed, seed + 3) - 0.5;
+      let k = 1 + big * 0.55 + mid * 0.22 + fine * 0.07;
+      const band = Math.sin((y * 5.2 + big * 2) * strata) * 0.035 * strata;
+      k += band;
+      x *= k;
+      y *= k * sq;
+      z *= k;
+      if (y < -0.25 * sq) y = -0.25 * sq + (y + 0.25 * sq) * 0.25;
+      p.setXYZ(i, x, y, z);
+      disp[i] = big * 0.55 + mid * 0.22;
     }
     g.computeVertexNormals();
+    const nrm = g.attributes.normal, tint = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      const y = p.getY(i), up = nrm.getY(i);
+      const ao = 0.55 + 0.45 * Math.min(1, Math.max(0, (disp[i] + 0.3) / 0.55));
+      const base = 0.72 + 0.28 * Math.max(0, Math.min(1, (y + 0.3) / 0.9));
+      const st = 0.9 + 0.12 * Math.sin(y * 17 + n3(p.getX(i) * 3, y, p.getZ(i) * 3, seed + 9) * 3) * strata;
+      const crack = n3(p.getX(i) * 9, y * 9, p.getZ(i) * 9, seed + 11);
+      const cr = crack > 0.78 ? 0.55 : 1;
+      const top = o.topTint && up > 0.55 ? 1 : 0;
+      const v3 = ao * base * st * cr;
+      if (top) {
+        const t = o.topTint, m = Math.min(1, (up - 0.55) * 3) * (0.6 + 0.4 * n3(p.getX(i) * 4, 0, p.getZ(i) * 4, seed));
+        tint[i * 3] = v3 * (1 - m) + t[0] * m;
+        tint[i * 3 + 1] = v3 * (1 - m) + t[1] * m;
+        tint[i * 3 + 2] = v3 * (1 - m) + t[2] * m;
+      } else {
+        tint[i * 3] = v3 * (o.warm ? 1.04 : 1);
+        tint[i * 3 + 1] = v3;
+        tint[i * 3 + 2] = v3 * (o.warm ? 0.94 : 1);
+      }
+    }
+    g.setAttribute("tint", new BufferAttribute(tint, 3));
     return g;
+  }
+  function sandbagGeometry(seed = 0) {
+    let g = new BoxGeometry(0.62, 0.2, 0.34, 8, 3, 5);
+    g.deleteAttribute("normal");
+    g.deleteAttribute("uv");
+    g = mergeVertices(g);
+    const p = g.attributes.position, R = mulberry32(seed + 5);
+    const j = (R() - 0.5) * 0.05;
+    for (let i = 0; i < p.count; i++) {
+      let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const nx = x / 0.31, ny = y / 0.1, nz = z / 0.17;
+      const r = Math.max(Math.abs(nx), Math.abs(ny), Math.abs(nz));
+      const sph = Math.sqrt(nx * nx * 0.35 + ny * ny + nz * nz) || 1;
+      const pillow = 1 - 0.32 * (1 - Math.abs(nx) ** 3);
+      x = x * (0.92 + 0.08 / sph);
+      y = y * pillow * (1 + j) * (0.85 + 0.15 / Math.max(0.6, r));
+      z = z * (0.9 + 0.1 * (1 - Math.abs(nx) ** 4)) * pillow ** 0.4;
+      if (y > 0) y -= 0.02 * (1 - nx * nx);
+      p.setXYZ(i, x + (n3(x * 9, y * 9, z * 9, seed) - 0.5) * 0.012, y, z);
+    }
+    g.computeVertexNormals();
+    const tint = new Float32Array(p.count * 3), nrm = g.attributes.normal;
+    for (let i = 0; i < p.count; i++) {
+      const v3 = (0.78 + 0.22 * Math.max(0, nrm.getY(i))) * (0.92 + 0.12 * n3(p.getX(i) * 14, p.getY(i) * 14, p.getZ(i) * 14, seed + 2));
+      tint[i * 3] = v3;
+      tint[i * 3 + 1] = v3;
+      tint[i * 3 + 2] = v3 * 0.97;
+    }
+    g.setAttribute("tint", new BufferAttribute(tint, 3));
+    return g;
+  }
+  function sandbagWall(x0, x1, y, z, courses, ry = 0, colors = ["#8e7c5a", "#9a8862", "#857452"]) {
+    const out = [];
+    let s = 0;
+    for (let c = 0; c < courses; c++) for (let x = x0 + c % 2 * 0.3; x < x1 - 0.2; x += 0.6) {
+      const g = sandbagGeometry(s++ % 7);
+      g.rotateY((s * 0.37 % 1 - 0.5) * 0.12);
+      g.translate(x, y + 0.09 + c * 0.17, z + (s % 3 - 1) * 0.02);
+      if (ry) g.rotateY(ry);
+      out.push([g, colors[s % colors.length]]);
+    }
+    return out;
+  }
+  function butteGeometry(seed, radius, height4, o = {}) {
+    const R = mulberry32(seed * 31 + 7), seg = o.seg || 48, tiersN = 3 + Math.floor(R() * 3), parts = [];
+    const cols = o.colors || ["#b8693c", "#d09060", "#9c5634", "#c47c4c", "#e0b080"];
+    const outline = (a, s) => 1 + 0.18 * (fbm(Math.cos(a) * 2 + seed, Math.sin(a) * 2, 3, s) - 0.5) * 2 + 0.06 * Math.sin(a * 7 + seed);
+    {
+      const g = new CylinderGeometry(radius * 1, radius * 1.75, height4 * 0.3, seg, 2, true);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), a = Math.atan2(z, x), k = outline(a, seed);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+        p.setY(i, p.getY(i) + (fbm(x / 60, z / 60, 2, seed) - 0.5) * height4 * 0.05);
+      }
+      g.translate(0, height4 * 0.15, 0);
+      g.computeVertexNormals();
+      parts.push([g, o.skirt || "#c99a68"]);
+    }
+    let y = height4 * 0.3, r = radius;
+    for (let t = 0; t < tiersN; t++) {
+      const th = height4 * 0.7 / tiersN * (0.8 + R() * 0.4), rTop = r * (0.94 - R() * 0.05);
+      const g = new CylinderGeometry(rTop, r, th, seg, 4, false);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), a = Math.atan2(z, x), k = outline(a, seed + t * 3) * (1 + (vnoise(a * 9, p.getY(i) / 6, seed + t) - 0.5) * 0.08);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+      }
+      g.translate(0, y + th / 2, 0);
+      g.computeVertexNormals();
+      parts.push([g, cols[(seed + t) % cols.length]]);
+      y += th;
+      r = rTop * (0.86 + R() * 0.08);
+    }
+    const cap = new CylinderGeometry(r * 1.02, r * 1.1, height4 * 0.02, seg, 1);
+    {
+      const p = cap.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), k = outline(Math.atan2(z, x), seed + 99);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+      }
+    }
+    cap.translate(0, y, 0);
+    cap.computeVertexNormals();
+    parts.push([cap, "#d6a676"]);
+    return parts;
   }
   function makeFlag(w, h, color, o = {}) {
     const g = new PlaneGeometry(w, h, 16, 6).translate(w / 2, 0, 0);
@@ -37618,6 +37889,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_surfaces();
       init_three_module();
       init_BufferGeometryUtils();
+      init_rng();
       init_materials();
       init_state();
       glowTex = null;
@@ -37962,10 +38234,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function makeTerrain(o) {
     const R = o.R;
     const s0 = 2 * (320 / o.seg) ** 1.2, gr = 0.05 * (320 / o.seg);
-    const axis = (centres, c0) => {
+    const axis = (centres, c0, fc) => {
       const sp = (t2) => {
         let m2 = 1e9;
         for (const c2 of centres) m2 = Math.min(m2, s0 + Math.abs(t2 - c2) * gr);
+        if (o.fine && Math.abs(t2 - fc) < o.fine[2]) m2 = Math.min(m2, o.fine[3] + Math.abs(t2 - fc) * 0.02);
         return Math.min(m2, R * 0.08);
       };
       const a = [];
@@ -37977,7 +38250,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       a.push(c0 + R);
       return a;
     };
-    const xs = axis(o.xFocus || [o.cx], o.cx), zs = axis(o.zFocus || [o.cz], o.cz);
+    const xs = axis(o.xFocus || [o.cx], o.cx, o.fine ? o.fine[0] : 0), zs = axis(o.zFocus || [o.cz], o.cz, o.fine ? o.fine[1] : 0);
     const NX = xs.length - 1, NZ = zs.length - 1;
     const pos = new Float32Array((NX + 1) * (NZ + 1) * 3);
     const col = new Float32Array((NX + 1) * (NZ + 1) * 3);
@@ -38333,6 +38606,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       pow: 2.35,
       height,
       detail: 0.18,
+      fine: [0, 0, tier.mobile ? 18 : 24, tier.mobile ? 1.5 : 1.15],
       castSun: tier.shadows ? null : w.sunDir,
       castR: 5e3,
       color: (x, z, h, slope2, c) => {
@@ -38366,6 +38640,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const pine = pineGeometry(0.75, 0.3, { lite: tier.name !== "high" });
     const rnd = mulberry32(42);
     const nTrees = Math.floor(5200 * tier.trees);
+    const LOFT = [];
+    for (let x = -20; x <= 95; x += 5) for (let z = -812; z <= -728; z += 4) {
+      const gy = height(x, z);
+      LOFT.push([x, gy + 1.4, z], [x, gy + 7.5, z]);
+    }
+    const eye = w.nest.pos;
+    const lofOK = (x, z, y, s, sy) => !blocksLOF(x, z, y + 12.8 * s * (sy || 1), 2.8 * s, eye, LOFT);
+    w.lofTargets = LOFT;
     S2.add(makeForest(pine, nTrees, () => {
       const x = (rnd() - 0.5) * 2600, z = -150 - rnd() * 2200;
       const d = -z;
@@ -38378,21 +38660,22 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (dens < 0.47) return null;
       const sl = Math.abs(height(x + 3, z) - h) + Math.abs(height(x, z + 3) - h);
       if (sl > 4.2) return null;
-      return { x, y: h, z, r: rnd() * 6.28, s: 0.8 + rnd() * 0.9, sy: 0.9 + rnd() * 0.4 };
+      const s = 0.8 + rnd() * 0.9, sy = 0.9 + rnd() * 0.4;
+      if (!lofOK(x, z, h, s, sy)) return null;
+      return { x, y: h, z, r: rnd() * 6.28, s, sy };
     }, { cast: false, sway: 0.25, isNear: (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 || -p.z < 420 }));
     S2.add(makeForest(pine, 60, (i) => {
       const a = rnd() * 6.28, r = 62 + rnd() * 70;
       const x = 30 + Math.cos(a) * r, z = -790 + Math.sin(a) * r * 0.7;
       if (z > -735 && Math.abs(x - 20) < 50) return null;
-      return { x, y: height(x, z), z, r: rnd() * 6, s: 1.1 + rnd() * 0.5 };
+      const s = 1.1 + rnd() * 0.5;
+      if (!lofOK(x, z, height(x, z), s, 1)) return null;
+      return { x, y: height(x, z), z, r: rnd() * 6, s };
     }, { cast: true, sway: 0.3 }));
     const rockM = mat("#ffffff", { vc: true, rough: 0.95 });
     const nest = [];
     const addRock = (x, y, z, s, sy = 0.6, seed = 1) => {
-      const g = tf(rockGeometry(seed, 2), x, y, z, 0, seed, 0, s, s * sy, s);
-      nest.push([g, "#4b4950"]);
-      const cap = tf(rockGeometry(seed + 4, 1), x, y + s * sy * 0.55, z, 0, seed, 0, s * 0.9, s * sy * 0.35, s * 0.9);
-      nest.push([cap, "#eef2f8"]);
+      nest.push([tf(rockGeometry(seed, 3, { topTint: [1, 1.04, 1.1], strata: 0.6 }), x, y, z, 0, seed, 0, s, s * sy, s), "#6a6870"]);
     };
     addRock(-2.2, nestY - 0.2, -1.4, 1.3, 0.5, 2);
     addRock(2.4, nestY - 0.1, -1.8, 1.1, 0.7, 5);
@@ -38400,7 +38683,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     addRock(4.2, nestY, 0.6, 1.4, 0.9, 9);
     nest.push([tf(new CylinderGeometry(0.22, 0.25, 5.5, 8), -0.4, nestY - 0.12, -0.45, 0, 0.35, Math.PI / 2), "#4a3424"]);
     nest.push([tf(new CylinderGeometry(0.23, 0.26, 5.5, 8, 1, false, 0, Math.PI), -0.4, nestY - 0.05, -0.45, 0, 0.35, Math.PI / 2), "#f0f3f8"]);
-    for (let i = 0; i < 5; i++) nest.push([tf(new CapsuleGeometry(0.22, 0.45, 3, 8), -1 + i * 0.52, nestY - 0.1, -1.05, 0, 0, Math.PI / 2, 1, 0.65, 1), i % 2 ? "#6d6650" : "#776f58"]);
+    nest.push(...sandbagWall(-1.2, 1.6, nestY - 0.34, -1.05, 2, 0, ["#6d6650", "#776f58", "#645d48"]));
+    addRock(-5.6, nestY - 0.2, -2.6, 1, 0.7, 11);
+    addRock(5.8, nestY - 0.25, -2.9, 0.9, 0.6, 13);
     const nestMesh = mergedMesh(nest, { rough: 0.95 });
     nestMesh.castShadow = false;
     S2.add(nestMesh);
@@ -38684,7 +38969,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     h = Math.max(h, dune * dune * duneAmp + (fbm(x / 200, z / 200, 4, 9) - 0.4) * 10 * smoothstep2(0, 60, yard));
     const b = fbm(x / 1600 + 7, z / 1600, 4, 13);
     const butte = smoothstep2(0.56, 0.6, b) * (220 + 380 * ridged(x / 3e3, z / 3e3, 3, 2));
-    h += butte * smoothstep2(2200, 3800, d + Math.abs(x) * 0.3);
+    h += butte * smoothstep2(2200, 3800, d + Math.abs(x) * 0.3) * 0.18;
     h += ridged(x / 2500, z / 2500, 5, 17) * 500 * smoothstep2(5e3, 9e3, d);
     return h;
   }
@@ -38730,12 +39015,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       pow: 2.3,
       height: height2,
       detail: 0.3,
+      fine: [0, 0, tier.mobile ? 18 : 24, tier.mobile ? 1.5 : 1.15],
       color: (x, z, h, slope, c) => {
         const sand = new Color("#dcb888"), sand2 = new Color("#c99a68"), rock = new Color("#a8673f"), rock2 = new Color("#7a4a30");
         c.copy(sand).lerp(sand2, fbm(x / 120, z / 120, 3, 5));
         const band = Math.sin(h * 0.25) * 0.5 + 0.5;
         const steep = smoothstep2(0.25, 0.5, slope);
-        c.lerp(rock.clone().lerp(rock2, band), steep);
+        const sb = Math.sin(h * 0.25 + fbm(x / 40, z / 40, 2, 3) * 3) * 0.5 + 0.5, sb2 = Math.sin(h * 1.3 + x * 0.02) * 0.5 + 0.5;
+        const rc = rock.clone().lerp(rock2, sb * 0.8).lerp(new Color("#d8a878"), Math.max(0, sb2 - 0.75) * 1.6).multiplyScalar(0.82 + 0.3 * fbm(x / 9, z / 9 + h / 7, 3, 11));
+        c.lerp(rc, steep);
         const yard = Math.max(Math.abs(x + 60) - 225, Math.abs(z + 950) - 165);
         if (yard < 0) c.lerp(new Color("#b9a383"), 0.55 + 0.2 * vnoise(x / 12, z / 12, 2));
         if (Math.abs(x + 60) < 5 && z > -830 && z < -400) c.set("#8f8170");
@@ -38983,8 +39271,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     N.push([tf(new BoxGeometry(0.7, 2.6, 0.7), 4.1, ny + 1.1, -1.1), "#a3815e"]);
     N.push([tf(new BoxGeometry(2.6, 1.6, 0.5), -3.4, ny + 0.3, -1.3), "#9b7a58"]);
     N.push([tf(new BoxGeometry(2.2, 1.2, 0.5), 3.8, ny + 0.2, -1.2), "#9b7a58"]);
-    for (let i = 0; i < 6; i++) N.push([tf(new CapsuleGeometry(0.22, 0.45, 3, 8), -1.3 + i * 0.52, ny - 0.08, -1, 0, 0, Math.PI / 2, 1, 0.65, 1), i % 2 ? "#8b7a58" : "#97855f"]);
-    for (let i = 0; i < 4; i++) N.push([tf(rockGeometry(i + 3, 1), -6 + i * 4, ny - 0.3, -2.8 - i % 2, 0, i, 0, 1.2, 0.7, 1.2), "#9d6a44"]);
+    N.push(...sandbagWall(-1.6, 1.7, ny - 0.32, -1, 2, 0, ["#9a8762", "#a69470", "#8c7a58"]));
+    N.push(...sandbagWall(-2.2, -1, ny - 0.32, -0.7, 3, 0.5, ["#9a8762", "#a69470", "#8c7a58"]));
+    N.push(...sandbagWall(1.2, 2.4, ny - 0.32, -0.9, 3, -0.45, ["#9a8762", "#a69470", "#8c7a58"]));
+    for (const [x, y, z, s, sy, sd] of [[-4.8, -0.4, -2.2, 1.5, 0.75, 3], [5, -0.35, -2.4, 1.7, 0.7, 4], [-6.6, -0.2, -0.2, 1.3, 0.9, 5], [6.8, -0.3, 0.2, 1.2, 0.8, 6], [-3.2, -0.55, -3.6, 0.8, 0.6, 8], [3.6, -0.55, -3.9, 0.7, 0.6, 9]])
+      N.push([tf(rockGeometry(sd, 3, { warm: true }), x, ny + y, z, 0, sd, 0, s, s * sy, s), "#b07a4e"]);
     const nestMesh = mergedMesh(N, { rough: 0.95 });
     nestMesh.castShadow = false;
     S2.add(nestMesh);
@@ -38995,10 +39286,59 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const yard = Math.max(Math.abs(x + 60) - 240, Math.abs(z + 950) - 180);
       if (yard < 10) continue;
       const s = 1 + rnd() * 4;
-      rocks.push([tf(rockGeometry(i, 1), x, height2(x, z) - s * 0.2, z, 0, rnd() * 3, 0, s, s * 0.6, s), rnd() < 0.5 ? "#a8673f" : "#8f5a3a"]);
+      rocks.push([tf(rockGeometry(i, 1, { warm: true }), x, height2(x, z) - s * 0.2, z, 0, rnd() * 3, 0, s, s * 0.6, s), rnd() < 0.5 ? "#a8673f" : "#8f5a3a"]);
     }
     const rockMesh = mergedMesh(rocks, { rough: 0.95, cast: false });
     S2.add(rockMesh);
+    {
+      const B3 = [];
+      const R3 = mulberry32(505);
+      for (let i = 0; i < 16; i++) {
+        const a = -Math.PI / 2 + (R3() - 0.5) * 2.4, dist = 2600 + R3() * 4600, x = Math.cos(a) * dist * 1.25, z = Math.sin(a) * dist - 300;
+        const rad = 140 + R3() * 420, hh = 110 + R3() * 260 * (dist / 5e3);
+        for (const [g, c] of butteGeometry(i + 3, rad, hh)) B3.push([tf(g, x, height2(x, z) - 6, z, 0, R3() * 6.28, 0), c]);
+      }
+      const bm = mergedMesh(B3, { rough: 1, cast: false, receive: false });
+      S2.add(bm);
+    }
+    {
+      const E = [];
+      const Rr = mulberry32(606);
+      for (let i = 0; i < 7; i++) {
+        const x = -260 + i * 70 + Rr() * 20, z = -1180 - Rr() * 60, r = 2.5 + Rr() * 2.5, hh = 34 + Rr() * 30;
+        E.push([tf(new CylinderGeometry(r, r, hh, 16), x, height2(x, z) + hh / 2, z), i % 2 ? "#d8d4cc" : "#b9b4aa"]);
+        for (let k = 1; k < 5; k++) E.push([tf(new CylinderGeometry(r * 1.12, r * 1.12, 0.6, 16), x, height2(x, z) + hh * k / 5, z), "#6e6a64"]);
+        E.push([tf(new CylinderGeometry(0.4, 0.4, hh * 0.9, 6), x + r + 1.2, height2(x, z) + hh * 0.45, z), "#7a7d80"]);
+      }
+      for (let i = 0; i < 9; i++) {
+        const x = -320 + i % 3 * 52, z = -1260 - Math.floor(i / 3) * 52, r = 18 + Rr() * 5;
+        const y0 = height2(x, z);
+        E.push([tf(new CylinderGeometry(r, r, 14, 28), x, y0 + 7, z), "#e6e2d8"]);
+        E.push([tf(new CylinderGeometry(r * 0.98, r, 1.6, 28), x, y0 + 14.6, z), "#cfcabd"]);
+        E.push([tf(new CylinderGeometry(r + 0.2, r + 0.2, 0.9, 28), x, y0 + 4, z), "#a12a20"]);
+      }
+      for (let i = 0; i < 12; i++) {
+        const z = -1140 - i * 18;
+        E.push([tf(new BoxGeometry(520, 0.6, 0.6), -40, height2(-40, z) + 7, z), "#6d7072"]);
+        E.push([tf(new CylinderGeometry(0.7, 0.7, 520, 8), -40, height2(-40, z) + 7.9, z, 0, 0, Math.PI / 2), "#8f9396"]);
+      }
+      for (const [x, z, hh] of [[180, -1240, 70], [240, -1300, 58]]) {
+        E.push([tf(new CylinderGeometry(0.9, 1.6, hh, 10), x, height2(x, z) + hh / 2, z), "#a6a29a"]);
+        for (let k = 0; k < 3; k++) E.push([tf(new CylinderGeometry(1.8, 1.8, 0.5, 10), x, height2(x, z) + hh * (0.3 + k * 0.25), z), "#b22a20"]);
+      }
+      for (let i = 0; i < 4; i++) E.push([tf(new BoxGeometry(14, 10, 14), 40 + i * 16, height2(40, -1240) + 5, -1240), "#9aa0a3"], [tf(new CylinderGeometry(5, 5.6, 3, 16, 1, true), 40 + i * 16, height2(40, -1240) + 11.5, -1240), "#6f7477"]);
+      for (let i = 0; i < 6; i++) for (let k = 0; k < 4; k++) E.push([tf(new BoxGeometry(0.5, 30, 0.5), -150 + i * 6, height2(-150, -1230) + 15, -1230 + k * 6), "#5d6062"], [tf(new BoxGeometry(6, 0.4, 6), -147 + i * 6, height2(-150, -1230) + 6 + k * 7, -1227), "#6d7072"]);
+      const em = mergedMesh(E, { rough: 0.7, metal: 0.2, cast: false });
+      S2.add(em);
+      for (const [x, z, hh] of [[180, -1240, 70], [240, -1300, 58]]) {
+        const fl = new Smoke(S2, { at: [x, height2(x, z) + hh + 1, z], n: 26, rate: 10, life: 1.2, size: 2.6, grow: 1.1, rise: 5, color: "#ff7a1a", hot: "#fff0a0", opacity: 0.85, additive: true, windMul: 0.7, spread: 0.6 });
+        S2.add(glow("#ffb050", 7, x, height2(x, z) + hh + 1, z, 1.2));
+        w.updaters.push((dt, wind) => fl.update(dt, wind));
+      }
+      const steam2 = new Smoke(S2, { at: [64, height2(64, -1240) + 13, -1240], n: 50, rate: 4, life: 12, size: 8, grow: 4, rise: 3.2, color: "#f4f2ee", opacity: 0.32, windMul: 1, spread: 18 });
+      w.updaters.push((dt, wind) => steam2.update(dt, wind));
+      for (const [x, z, y] of [[-260, -1180, 66], [-50, -1200, 62], [180, -1240, 72], [240, -1300, 60]]) S2.add(glow("#ff3020", 2.2, x, height2(x, z) + y, z, 1));
+    }
     const flame = new Smoke(S2, { at: [110, 63, -1070], n: 40, rate: 14, life: 1.4, size: 3.2, grow: 1.2, rise: 6, color: "#ff7a1a", hot: "#fff0a0", opacity: 0.9, additive: true, windMul: 0.7, spread: 0.8 });
     const plume = new Smoke(S2, { at: [110, 66, -1070], n: 70, rate: 5, life: 14, size: 5, grow: 4, rise: 2.8, color: "#4b4540", opacity: 0.35, windMul: 1 });
     S2.add(glow("#ffb050", 9, 110, 64, -1070, 1.4));
@@ -42265,6 +42605,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.active = false;
           this.phase = "idle";
         }
+        prewarm(sc, compile) {
+          if (this.mat.envMap !== rifleEnv()) {
+            this.mat.envMap = rifleEnv();
+            this.mat.needsUpdate = true;
+          }
+          const objs = [this.mesh, ...this.rings, this.wake, this.ring];
+          for (const o of objs) sc.add(o);
+          compile();
+          for (const o of objs) o.removeFromParent();
+        }
         start(proj, pred) {
           this.active = true;
           this.phase = "flight";
@@ -43110,12 +43460,21 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const gl = G.renderer.getContext();
         if (!G.renderer.extensions.has("EXT_color_buffer_half_float") && !G.renderer.extensions.has("EXT_color_buffer_float")) G.quality.hdr = false;
         if (!G.quality.hdr) G.lens.u.uHdr.value = 0;
+        let lt = 0;
         const onLayout = () => {
-          resize();
-          checkRotate();
+          clearTimeout(lt);
+          lt = setTimeout(() => {
+            resize();
+            checkRotate();
+          }, 120);
         };
         resize();
         addEventListener("resize", onLayout);
+        addEventListener("orientationchange", () => {
+          onLayout();
+          setTimeout(onLayout, 400);
+        });
+        if (window.visualViewport) visualViewport.addEventListener("resize", onLayout);
         initFullscreen(onLayout, () => {
           if (document.pointerLockElement) G.suppressPause = true;
         });
@@ -43378,6 +43737,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         renderDossierPhoto($2("dzPhoto"), npcDef.look, id === "refinery" ? "#b7a689" : "#8f97a6");
         $2("bMap").getContext("2d").fillStyle = "#222";
         G.prebuilt = null;
+        preloadTheme(id);
         await nextFrame();
         try {
           if (titleWorld && id !== "villa") {
@@ -43413,6 +43773,23 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         freeTitle();
         if (G.mission) teardownMission();
         beginPlay(new RangeMission(G.quality));
+      }
+      function prewarm(M2) {
+        const r = G.renderer, t0 = performance.now();
+        try {
+          player.bc.prewarm && player.bc.prewarm(M2.world.scene, () => r.compile(M2.world.scene, G.camera));
+          r.compile(G.fpScene, G.fpCam);
+          const v0 = G.view;
+          G._shadowDirty = true;
+          for (const v3 of ["scope", "bino", "eye"]) {
+            G.view = v3;
+            render(0);
+          }
+          G.view = v0;
+        } catch (e) {
+          console.warn("prewarm", e);
+        }
+        G.stats.prewarmMs = Math.round(performance.now() - t0);
       }
       function beginPlay(M2) {
         G.mission = M2;
@@ -43453,6 +43830,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         acc = 0;
         G.timeScale = 1;
         G.timeScaleReal = 1;
+        prewarm(M2);
         $2("ghud").classList.remove("hidden");
         $2("hExfil").classList.add("hidden");
         $2("hRadio").classList.add("hidden");
@@ -43832,7 +44210,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           cam.fov = d.fov || 30;
         }
         cam.far = G.quality.far;
+        if (G.view !== "bulletcam") cam.near = G.mode === "play" && G.view === "eye" ? 0.3 : 2;
         cam.updateProjectionMatrix();
+        G._frameN = (G._frameN || 0) + 1;
+        r.shadowMap.needsUpdate = !G.quality.mobile || (G._frameN & 1) === 0 || G._shadowDirty;
+        G._shadowDirty = false;
         r.setRenderTarget(G.rt);
         r.setClearColor(0);
         r.clear();
