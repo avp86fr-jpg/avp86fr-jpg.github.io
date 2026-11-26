@@ -426,3 +426,12 @@ body.has-therm .hkeys .kt, body.has-spot .hkeys .ks { display: inline; }
 .rstars span { flex-basis: 100%; text-align: center; font-size: 10px; letter-spacing: .06em; color: rgba(255,255,255,0.45); }
 .cstars { font-style: normal; color: #ffc832; margin-left: 4px; letter-spacing: 1px; }
 .rstars { margin-bottom: 12px; }
+
+/* dialogue portraits: 256 px art, crisp at DPR 2, framed with a lit edge */
+.hradio img, .bmoth img, .story .sdlg img { border-radius: 6px; border: 1px solid rgba(255,190,90,0.55); box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.5); object-fit: cover; object-position: 50% 30%; background: #0b0e12; }
+.hradio img { width: 52px; height: 52px; }
+.hradio.intercept img { border-color: rgba(120,255,170,0.5); }
+.hradio.echo img { border-color: rgba(160,200,255,0.5); }
+body.touch .hradio img { width: 36px; height: 36px; border-radius: 4px; }
+.story .sdlg img { width: 72px; height: 72px; }
+.bmoth img { width: 60px; height: 60px; }

@@ -33312,7 +33312,8 @@ void main() {
       uSunPos: { value: new Vector2(0.5, 0.5) },
       uFocus: { value: 0 },
       uCold: { value: 0 },
-      uTherm: { value: 0 }
+      uTherm: { value: 0 },
+      uThermMode: { value: 0 }
     };
     const m = new ShaderMaterial({
       uniforms: u,
@@ -33323,7 +33324,7 @@ void main() {
         /* glsl */
         `
       precision highp float;
-      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold, uTherm; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
+      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold, uTherm, uThermMode; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
       uniform vec2 uOffset; uniform vec3 uBH; uniform vec3 uLift, uGain, uSun, uDustCol;
       varying vec2 vUv;
       float hh(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
@@ -33456,9 +33457,25 @@ void main() {
         col = col * uGain + uLift;
         col = mix(col, col * vec3(1.2, 0.55, 0.55), uRedTint);
         // thermal optic: white-hot palette \u2014 the cold night world collapses to slate greys, warm bodies (emissive) and lights bloom white
-        if (uTherm > 0.0) { float tl = dot(col, vec3(0.299, 0.587, 0.114)); float hot = smoothstep(0.5, 0.9, tl);
-          vec3 th = mix(vec3(0.03, 0.035, 0.045) + tl * vec3(0.4, 0.43, 0.45), vec3(1.0, 0.97, 0.88), hot);
-          th += (hh(vUv * uRes * 0.5 + fract(uTime * 7.0) * 37.0) - 0.5) * 0.06; col = mix(col, th, uTherm); }
+        if (uTherm > 0.0) { float tl = dot(col, vec3(0.299, 0.587, 0.114)); float hot = smoothstep(0.62, 0.95, tl);
+          // heat bloom: 4 wide taps of the raw scene pick up hot neighbours (bodies, engines, lamps)
+          vec2 px = 3.5 / uRes; float g = 0.0;
+          g += smoothstep(0.9, 2.2, dot(texture2D(tScene, vUv + vec2(px.x, 0.0)).rgb, vec3(0.333)));
+          g += smoothstep(0.9, 2.2, dot(texture2D(tScene, vUv - vec2(px.x, 0.0)).rgb, vec3(0.333)));
+          g += smoothstep(0.9, 2.2, dot(texture2D(tScene, vUv + vec2(0.0, px.y)).rgb, vec3(0.333)));
+          g += smoothstep(0.9, 2.2, dot(texture2D(tScene, vUv - vec2(0.0, px.y)).rgb, vec3(0.333)));
+          g *= 0.25;
+          float cold = clamp(tl * 0.9, 0.0, 0.55);
+          vec3 th;
+          if (uThermMode < 0.5) { // white-hot: slate-blue cold world, orange rim \u2192 white core
+            vec3 cool = vec3(0.035, 0.045, 0.065) + cold * vec3(0.30, 0.33, 0.38);
+            vec3 hc = mix(vec3(1.0, 0.42, 0.08), vec3(1.0, 0.97, 0.9), smoothstep(0.82, 1.0, tl));
+            th = mix(cool, hc, hot) + vec3(1.0, 0.45, 0.1) * g * 0.55 * (1.0 - hot);
+          } else { // black-hot
+            vec3 cool = vec3(0.86, 0.88, 0.9) - cold * vec3(0.55, 0.56, 0.57);
+            th = mix(cool, vec3(0.02, 0.02, 0.025), hot) - vec3(0.35) * g * (1.0 - hot);
+          }
+          th += (hh(vUv * uRes * 0.5 + fract(uTime * 7.0) * 37.0) - 0.5) * 0.05; col = mix(col, max(th, 0.0), uTherm); }
         // vignette & grain
         float v = length((vUv - 0.5) * vec2(asp, 1.0));
         col *= 1.0 - uVig * smoothstep(0.35, 1.1, v);
@@ -35451,7 +35468,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_audio();
       EYE_FOV = 60;
       BINO_ZOOM = 8;
-      ZOOMS_DESK = [4, 8, 12];
+      ZOOMS_DESK = [4, 8, 12, 20];
       ZOOMS_TOUCH = [5, 10, 20, 30];
       isTouch = () => typeof document !== "undefined" && document.body.classList.contains("touch");
       Optics = class {
@@ -36017,13 +36034,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       cx.strokeStyle = col;
       cx.fillStyle = col;
       cx.lineWidth = 1.6;
+      const cd0 = Math.hypot(p.x - cX, p.y - yOff - cY), fa = view === "eye" ? 0.9 : Math.min(0.9, Math.max(0.18, (cd0 - 16) / 60));
       cx.beginPath();
       cx.moveTo(0, -s);
       cx.lineTo(s, 0);
       cx.lineTo(0, s);
       cx.lineTo(-s, 0);
       cx.closePath();
-      cx.globalAlpha = 0.9;
+      cx.globalAlpha = fa;
       if (!dead && (cat === "target" || o.markedSuspect)) cx.fill();
       else cx.stroke();
       cx.globalAlpha = 1;
@@ -36036,18 +36054,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         cx.stroke();
       }
       cx.restore();
-      if (view !== "eye") labels.push({ o, x: p.x, y: p.y - yOff, col, dead, c: Math.hypot(p.x - cX, p.y - cY) });
+      if (view !== "eye") labels.push({ o, x: p.x, y: p.y - yOff, col, dead, cat, c: Math.hypot(p.x - cX, p.y - cY) });
     }
     if (view === "scope" && G.settings.difficulty !== "ghost" && P.dope) drawLeads(P, cam, pal, R, cX, cY);
     labels.sort((a, b) => a.c - b.c);
     const placed = [];
     cx.font = "700 10px ui-monospace, monospace";
-    for (const [i, L] of labels.entries()) {
-      if (i > 3) break;
-      const focus = i === 0 && L.c < R * 0.5;
+    const shown = labels.filter((L, i) => i === 0 && L.c < R * 0.35 || !L.dead && (L.cat === "target" || L.o.markedSuspect)).slice(0, 2);
+    for (const [i, L] of shown.entries()) {
+      const focus = i === 0 && L.c < R * 0.35;
       const full = (L.dead ? "\u2715 " : "") + tagLabel(L.o), name = focus ? full : full.split(/[ ·(]/)[0].slice(0, 10), d = focus ? Math.round(cam.position.distanceTo(L.o.pos)) + " m" : "";
       const w = Math.max(cx.measureText(name).width, focus ? 40 : 20) + 4, h = focus ? 22 : 13;
-      const slots = [[10, -12], [-10 - w, -12], [10, -36], [-10 - w, -36], [10, 12], [-10 - w, 12], [10, -60]];
+      const off = Math.max(14, 34 - L.c * 0.5);
+      const slots = [[off, -off], [-off - w, -off], [off, -off - 24], [-off - w, -off - 24], [off, off], [-off - w, off]];
       let at = null;
       for (const [dx, dy] of slots) {
         const r = { x: L.x + dx, y: L.y + dy, w, h };
@@ -36058,7 +36077,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       }
       if (!at) continue;
       placed.push(at);
-      if (Math.abs(at.y - (L.y - 12)) > 1 || at.x < L.x) {
+      {
         cx.strokeStyle = L.col;
         cx.globalAlpha = 0.5;
         cx.lineWidth = 1;
@@ -39725,6 +39744,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     return { lines: L, consequence, teaser };
   }
+  function portraitFor(who, r = {}) {
+    if (who === "echo") return "assets/portrait_echo.jpg";
+    if (who === "intercept") return "assets/portrait_intercept.jpg";
+    if (who !== "moth") return "";
+    const t = r.text || "", mood = r.mood || (r.on === "targetDown" || /thank|I'm alive|owe you|textbook|he's down|lind's down|is down/i.test(t) ? "relieved" : r.on === "alarm" || r.on === "halted" || /!|don't you dare|last chance|out of stalling|seconds to/i.test(t) ? "tense" : "");
+    return "assets/portrait_moth" + (mood ? "_" + mood : "") + ".jpg";
+  }
   function runDialogue(el2, lines, { cps = 52, gap = 650, onDone } = {}) {
     clearTimeout(el2._dlg);
     clearInterval(el2._tw);
@@ -39811,7 +39837,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         dl.classList.add("on");
         dl.className = "sdlg on " + s.who;
         who.textContent = WHO[s.who] || "";
-        img.style.display = s.who === "moth" ? "" : "none";
+        {
+          const src = portraitFor(s.who, s);
+          img.style.display = src ? "" : "none";
+          if (src) img.src = src;
+        }
         if (s.who !== "narr") radio();
         full = s.text;
         typing = true;
@@ -40255,7 +40285,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         dossier: {
           target: "LUKAS BRENNER",
           alias: '"The Auditor"',
-          ref: "CONTRACT M3",
+          ref: "CONTRACT 03",
           desc: "The client's cleaner. He closed the Kessel accounts by closing the people on them. Tonight his team waits at the harbour where Moth buys her way out.",
           clues: ["Charcoal raincoat, WHITE HAIR", "Rimless glasses, earpiece", "Arrives by black SUV ~23:12", "Works from a laptop at the west door of warehouse W1"],
           notes: "Moth walks in from the gate and meets the harbour master, then crosses the apron to the jetty. If Brenner reaches her, it is over. Thermal (N / THERM) cuts through the rain at night.",
@@ -40480,10 +40510,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       castSun: tier.shadows ? null : w.sunDir,
       color: (x, z, h, slope, c) => {
         const d = -z;
-        c.set("#e2e8f0").multiplyScalar(0.9 + 0.12 * vnoise(x / 20, z / 20, 3));
+        c.set("#e2e8f0").multiplyScalar((0.86 + 0.14 * vnoise(x / 20, z / 20, 3)) * (1 - Math.min(0.32, slope * 0.55)) * (0.93 + 0.07 * fbm(x / 90, z / 90, 2, 7)));
         const rock = new Color("#5d5c5a").lerp(new Color("#7b766e"), fbm(x / 30, z / 30 + h / 20, 3, 4));
-        c.lerp(rock, smoothstep2(0.32, 0.55, slope));
-        if (Math.abs(d - 700) < 6) c.set("#4a4b4e").lerp(new Color("#e8edf3"), smoothstep2(4.5, 6, Math.abs(d - 700)) + (Math.abs(d - 700) < 0.25 ? 0.6 : 0));
+        rock.multiplyScalar(0.78);
+        c.lerp(rock, smoothstep2(0.24, 0.46, slope + (fbm(x / 45, z / 45, 2, 8) - 0.5) * 0.25));
+        const rd = Math.abs(d - 700);
+        if (rd >= 6 && rd < 8.5) c.set("#9aa0a8").lerp(new Color("#d8dee6"), smoothstep2(6, 8.5, rd));
+        if (rd < 6) c.set("#3e3f42").lerp(new Color("#e8edf3"), smoothstep2(4.5, 6, Math.abs(d - 700)) + (Math.abs(d - 700) < 0.25 ? 0.6 : 0));
         if (h < 14) c.set("#44535e");
       }
     });
@@ -40545,7 +40578,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     box(3.4, 2.4, 0.4, -475.5, RY + 0.9, RZ - 6, "#c08010");
     box(8, 4, 6, 380, RY + 2, RZ - 14.5, "#6a4a34");
     box(1.1, 2.1, 0.1, 381.5, RY + 1.05, RZ - 11.45, "#2a1c14");
-    E.push([tf(new BoxGeometry(1.2, 0.9, 0.08), 377.5, RY + 2, RZ - 11.45), "#ffd9a0"], [tf(new BoxGeometry(1.2, 0.9, 0.08), 384.5, RY + 2, RZ - 11.45), "#ffd9a0"]);
+    box(1.2, 0.9, 0.08, 377.5, RY + 2, RZ - 11.45, "#4a3a28");
+    box(1.2, 0.9, 0.08, 384.5, RY + 2, RZ - 11.45, "#4a3a28");
     box(8.6, 0.5, 0.15, 380, RY + 3.2, RZ - 11.3, "#3a2a1c");
     P.push([tf(new CylinderGeometry(0.01, 6.2, 2.4, 4, 1), 380, RY + 5.2, RZ - 14.5, 0, Math.PI / 4, 0, 1, 1, 0.8), "#e8edf3"]);
     const N = [];
@@ -40555,6 +40589,21 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     N.push(...sandbagWall(-1.6, 1.7, nestY - 0.32, -1, 2, 0, ["#7a7868", "#86846f", "#6c6a5c"]));
     for (const [x, y, z, s, sy, sd] of [[-5.5, -0.6, 0.6, 1.3, 0.7, 13], [6.5, -0.6, 1.4, 1.2, 0.7, 14], [-7.5, -0.3, 2.6, 1.4, 1, 15], [8.2, -0.3, 3.2, 1.3, 0.9, 16]])
       N.push([tf(rockGeometry(sd, 3, { topTint: [1.35, 1.38, 1.44] }), x, nestY + y, z, 0, sd, 0, s, s * sy, s), "#77746e"]);
+    {
+      const RK = [], rr = mulberry32(77), n = low ? 34 : 56;
+      for (let i = 0, k = 0; i < 600 && k < n; i++) {
+        const x = -650 + rr() * 1600, band = rr(), d = band < 0.45 ? 610 + rr() * 72 : band < 0.85 ? 716 + rr() * 90 : 200 + rr() * 380, z = -d;
+        if (Math.abs(d - 700) < 14 || Math.abs(x) < 80 && d > 560) continue;
+        const h = height4(x, z), sl = Math.abs(height4(x + 4, z) - h) + Math.abs(height4(x, z + 4) - h);
+        if (sl < 1.2) continue;
+        const sc = 2 + rr() * (d > 700 ? 5 : 3.5);
+        k++;
+        RK.push([tf(rockGeometry(30 + i, 1, { topTint: [1.4, 1.42, 1.48] }), x, h - sc * 0.25, z, rr(), rr() * 6, rr() * 0.4, sc * (1 + rr() * 0.6), sc * (0.6 + rr() * 0.5), sc), "#5a5856"]);
+      }
+      const rm = mergedMesh(RK, { rough: 0.95 });
+      rm.castShadow = false;
+      S2.add(rm);
+    }
     const nm = mergedMesh(N, { rough: 0.9 });
     nm.castShadow = false;
     S2.add(nm);
@@ -40563,7 +40612,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     em.material = mat("#ffe2b0", { emissive: "#ffd090", ei: 1.8 });
     S2.add(em);
     S2.add(lightPoints(lights, { intensity: 1.2 }));
-    const pine = pineGeometry(0.8, 0.3, { lite: tier.name !== "high" });
+    const pine = pineGeometry(0.45, 0.3, { lite: tier.name !== "high", leaf: "#11201a" });
     const eye = w.nest.pos, LOFT = [];
     for (let x = -600; x <= 920; x += 20) LOFT.push([x, RY + 1.4, RZ], [x, RY + 3, RZ - 5]);
     const lofOK = (x, z, y, s) => !blocksLOF(x, z, y + 12.8 * s, 2.8 * s, eye, LOFT);
@@ -40580,7 +40629,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const s = 0.8 + rnd() * 0.9, sy = 0.9 + rnd() * 0.4;
       if (d > 30 && d < 760 && !lofOK(x, z, h, s)) return null;
       return { x, y: h, z, r: rnd() * 6.28, s, sy };
-    }, { cast: false, sway: 0.2, isNear: mob ? (p) => Math.abs(-p.z - 700) < 70 && Math.abs(p.x - 300) < 380 || -p.z < 90 : (p) => Math.abs(-p.z - 700) < 200 || -p.z < 360 }));
+    }, { cast: false, sway: 0.2, impTint: "#a9b4b0", isNear: mob ? (p) => Math.abs(-p.z - 700) < 70 && Math.abs(p.x - 300) < 380 || -p.z < 90 : (p) => Math.abs(-p.z - 700) < 200 || -p.z < 360 }));
     addWindMarkers(S2, w, height4, [[-40, -240], [60, -480]], { color: "#d83a2a", color2: "#f2f2f2", pole: 6, drift: false });
     const flag = makeFlag(2.4, 1.5, "#2a4a7a", { emblem: "#f2f2f2", amp: 1 });
     flag.position.set(905 + 8, RY + 7, RZ - 10);
@@ -40661,7 +40710,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         dossier: {
           target: "OSKAR LIND",
           alias: '"The Notary"',
-          ref: "CONTRACT M3",
+          ref: "CONTRACT 04",
           desc: "Private banker. He signs for money nobody may see \u2014 including the client's. He crosses the pass in an armoured car, with the account key in his briefcase.",
           clues: ["Navy overcoat, grey beanie", "GLASSES and a BRIEFCASE \u2014 never lets go of it", "Rides in the dark armoured car (middle of the convoy)", "Convoy stops at the mountain hut for chains ~11:46"],
           notes: "You cannot shoot through armour. Catch him on foot \u2014 at the checkpoint, at the hut \u2014 or put a round in an engine block to stop the convoy and flush him out. Stop it on the iron bridge and nothing gets past.",
@@ -40957,7 +41006,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           dossier: {
             target: "ANTON RAVEL",
             alias: '"The Quartermaster"',
-            ref: "CONTRACT M1",
+            ref: "CONTRACT 01",
             desc: "Arms broker. Moves surplus anti-armour stock to whoever pays. Tonight he closes a deal at his chalet with a foreign buyer.",
             clues: ["Camel overcoat \u2014 RED SCARF", "Grey hair and beard, carries a black case", "Arrives by black SUV around 18:30", "Takes a private call on the upper balcony ~18:40"],
             notes: "He never takes calls in front of guests. Balcony is out of sight of the terrace \u2014 no witnesses up there.",
@@ -41136,7 +41185,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           dossier: {
             target: "COL. DRAZEN VOSK",
             alias: '"The Warden"',
-            ref: "CONTRACT M2",
+            ref: "CONTRACT 02",
             traits: [
               ["Khaki uniform", (L) => near(L.top, "#b5a078", 0.2)],
               ["Black beret", (L) => L.hat === "beret"],
@@ -42566,7 +42615,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const ok = !res.failed;
     $("rStatus").textContent = M2.kind === "range" ? "RANGE COMPLETE" : ok ? "CONTRACT COMPLETE" : "CONTRACT FAILED";
     $("rStatus").className = "rstatus " + (ok ? "ok" : "fail");
-    $("rTitle").textContent = M2.kind === "range" ? "SHOOTING RANGE" : "M" + M2.def.num + " \xB7 " + M2.def.title;
+    $("rTitle").textContent = M2.kind === "range" ? "SHOOTING RANGE" : "CONTRACT " + String(M2.def.num).padStart(2, "0") + " \xB7 " + M2.def.title;
     const FAILS = { civilian: "A civilian was killed \u2014 contract terminated", escaped: "The target escaped", time: "Out of time \u2014 the window closed" };
     Object.assign(FAILS, M2.def?.fails || {});
     const lines = res.lines;
@@ -43137,6 +43186,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             v3.colliders.push(eng, body);
             this.world.colliders.unshift(eng);
             this.world.colliders.push(body);
+            {
+              const hb = new Mesh(new BoxGeometry(truck ? 2.36 : 1.9, truck ? 0.9 : 0.6, 1), new MeshBasicMaterial({ color: "#ffffff" }));
+              hb.position.set(0, truck ? 1.3 : 0.86, truck ? 2.9 : 1.85);
+              hb.visible = false;
+              c.mesh.add(hb);
+              v3.heat = hb;
+            }
             v3.update(0);
             v3.smokeFx = new Smoke(S2, { n: 30, rate: 6, life: 5, size: 1.4, grow: 3, rise: 1.5, color: "#2c2a28", opacity: 0.6 });
             v3.smokeFx.on = false;
@@ -44383,9 +44439,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           if (consume("range")) this.range();
           if (consume("therm")) {
             if (this.world.night) {
-              G.thermal = !G.thermal;
+              G.thermal = G.thermal === 1 ? 2 : G.thermal === 2 ? false : 1;
               ui("click");
-              emit("toast", G.thermal ? "THERMAL ON \xB7 white-hot" : "THERMAL OFF");
+              emit("toast", G.thermal === 1 ? "THERMAL \xB7 WHITE-HOT  (N again: black-hot)" : G.thermal === 2 ? "THERMAL \xB7 BLACK-HOT" : "THERMAL OFF");
               if (this.view === "eye") this.setView("scope");
             } else {
               ui("deny");
@@ -45049,7 +45105,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           typewrite($2("hRadioTxt"), r.text, 60, false);
           $2("hRadioWho").textContent = (r.who || "moth").toUpperCase();
           $2("hRadio").className = "hradio " + (r.who || "moth");
-          $2("hRadioImg").style.display = (r.who || "moth") === "moth" ? "" : "none";
+          {
+            const im = $2("hRadioImg"), src = portraitFor(r.who || "moth", r);
+            im.style.display = src ? "" : "none";
+            if (src && !im.src.endsWith(src)) im.src = src;
+          }
           radioT = 6 + r.text.length * 0.035;
           if (r.hint) showHint(r.hint);
         });
@@ -45257,6 +45317,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             }
           }
         }
+        if (M2.kind !== "range" && G.player) {
+          const fd = M2.world.focusDist || 700;
+          if (IN.touch) G.player.autoZoom(fd);
+          else G.player.optics.zi = fd > 600 ? 2 : 1;
+        }
         G.thermal = false;
         document.body.classList.toggle("has-therm", !!M2.world.night);
         document.body.classList.toggle("has-spot", !!M2.world.spotter);
@@ -45270,7 +45335,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         $2("ghud").classList.remove("hidden");
         $2("hExfil").classList.add("hidden");
         $2("hRadio").classList.add("hidden");
-        $2("hMission").textContent = (M2.kind === "range" ? "" : "M" + M2.def.num + " \xB7 ") + M2.def.title;
+        $2("hMission").textContent = (M2.kind === "range" ? "" : "CONTRACT " + String(M2.def.num).padStart(2, "0") + " \xB7 ") + M2.def.title;
         buildTimelineDom(M2);
         setAmbience(M2.kind === "range" ? "range" : M2.def.ambience);
         setIntensity(M2.def.music || 0.15);
@@ -45431,7 +45496,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         G.intro = { t: 0, dur: 9, path: new CatmullRomCurve3(pts, false, "centripetal"), looks, T: T2 };
         $2("ghud").classList.add("intro");
         const card = $2("introCard");
-        card.querySelector("b").textContent = M2.kind === "range" ? "SHOOTING RANGE" : "M" + M2.def.num + " \xB7 " + M2.def.title;
+        card.querySelector("b").textContent = M2.kind === "range" ? "SHOOTING RANGE" : "CONTRACT " + String(M2.def.num).padStart(2, "0") + " \xB7 " + M2.def.title;
         card.querySelector("span").textContent = M2.kind === "range" ? "Calibration \xB7 200\u20131100 m" : M2.def.place + " \u2014 " + M2.def.time;
         card.classList.remove("hidden");
         card.classList.remove("out");
@@ -45735,9 +45800,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         {
           const th = G.thermal && G.mode === "play" && (view === "scope" || view === "bino") ? 1 : 0;
           L.uTherm.value = th;
+          L.uThermMode.value = G.thermal === 2 ? 1 : 0;
           if (G.mission && G.mission.npcs && (th || G._thermWas)) for (const n of G.mission.npcs) {
-            const m = n.holder.userData.mesh.material, k = th ? n.alive ? 1.6 : Math.max(0.15, 1.6 - (G.mission.mt - (n.deathT ?? G.mission.mt)) * 0.035) : 0;
+            const m = n.holder.userData.mesh.material, k = th ? n.alive ? 4.5 : Math.max(0.2, 4.5 - (G.mission.mt - (n.deathT ?? G.mission.mt)) * 0.1) : 0;
             m.emissive.setRGB(k, k * 0.96, k * 0.9);
+          }
+          if (G.mission && G.mission.vehicles && (th || G._thermWas)) {
+            for (const v3 of Object.values(G.mission.vehicles)) if (v3.heat) {
+              v3.heatT = v3.state === "driving" ? 1 : Math.max(v3.disabled ? 0 : 0.35, (v3.heatT ?? 0.6) - 4e-4);
+              v3.heat.visible = !!th && v3.heatT > 0.05;
+              v3.heat.material.color.setScalar(4 * v3.heatT);
+            }
           }
           G._thermWas = th;
         }
