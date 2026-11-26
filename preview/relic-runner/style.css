@@ -342,3 +342,6 @@ body.zoneOn .popups { top: 47%; transition: top .2s; }
 /* pass 13k: field journal only at run start / pause / goal complete */
 .missions { opacity: 0; visibility: hidden; transition: opacity .35s, visibility 0s .35s; }
 .missions.show { opacity: 1; visibility: visible; transition: opacity .35s, visibility 0s; }
+/* pass 13o: while a banner (set piece / mission) is up, popups grow upward from just above it instead of into it */
+.banOn .popups { top: auto; bottom: 67%; flex-direction: column-reverse; }
+body.zoneOn .banOn .popups { top: 47%; bottom: auto; flex-direction: column; }
