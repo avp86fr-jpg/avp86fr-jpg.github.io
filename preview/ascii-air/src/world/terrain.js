@@ -47,7 +47,7 @@ export function computeHeight(x, z) {
   const radius = islandRadius(ang) + ncoast;
 
   // Extra capes
-  const capeSE = dist2(x, z, -260, -1280);
+  const capeSE = dist2(x, z, -180, -1260);
   const capePush = smoothstep(160, 40, capeSE) * 90;
   const r = radius + capePush;
 
@@ -59,10 +59,14 @@ export function computeHeight(x, z) {
   mask = Math.max(mask, isletMask);
 
   // Force landing pads and the airport to stay on dry land
-  const airportPad = Math.max(0, 1 - Math.max(Math.abs(z + 1100) / 170, Math.abs(x) / 560));
+  const airportPad = Math.max(
+    0,
+    1 - Math.max(Math.abs(z + 1100) / 36, Math.abs(x - 50) / 400),
+    1 - Math.max(Math.abs(z + 1060) / 80, Math.abs(x - 160) / 150)
+  );
   const grassPad = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 48, Math.abs(x + 820) / 190));
   const coveSunny = smoothstep(90, 28, dist2(x, z, 40, -1220));
-  const beachCape = smoothstep(80, 24, dist2(x, z, -260, -1280));
+  const beachCape = smoothstep(80, 24, dist2(x, z, -180, -1260));
   mask = Math.max(mask, airportPad, grassPad, coveSunny, beachCape);
 
   // Arch rock islet
@@ -74,6 +78,9 @@ export function computeHeight(x, z) {
     const open = smoothstep(-1450, -1580, z);
     mask *= 1 - open * 0.96;
   }
+  // Central postcard bay — water reaches toward the viaduct, splitting airfield (east) from the cape (west).
+  const postcardBay = smoothstep(150, 28, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1600, -1360, z);
+  mask *= 1 - postcardBay * 0.92;
 
   // Seabed
   const bed = -8 - 26 * (1 - smoothstep(r - 40, r + 700, dist)) - 4 * fbm(x * 0.002, z * 0.002, 3, 3);
@@ -117,7 +124,7 @@ export function computeHeight(x, z) {
   h = Math.max(h, ridgeH * mask);
 
   // Lighthouse cape height
-  const ld = dist2(x, z, -260, -1280);
+  const ld = dist2(x, z, -180, -1260);
   const capeH = smoothstep(340, 36, ld) * (28 + 22 * ridge(x * 0.01, z * 0.01, 3, 4));
   h = Math.max(h, capeH * Math.max(mask, smoothstep(380, 90, ld)));
 
@@ -128,7 +135,7 @@ export function computeHeight(x, z) {
   // Ochre sea-cliffs along the south coast, with noisy inlets
   if (z < -1080 && z > -1420 && Math.abs(x) < 1100) {
     const along = smoothstep(-1080, -1160, z) * smoothstep(-1420, -1260, z);
-    const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 130, Math.abs(x) / 500)), 1.2);
+    const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 50, Math.abs(x - 80) / 280)), 1.2);
     const inlet = fbm(x * 0.0045, z * 0.0045, 3, 29);
     const cut = smoothstep(0.62, 0.82, inlet);
     const cliffH = 16 + 32 * fbm(x * 0.0032, z * 0.0032, 3, 17) + 10 * ridge(x * 0.012, z * 0.01, 2, 5);
@@ -139,7 +146,7 @@ export function computeHeight(x, z) {
   // Ochre sea-cliffs ringing the whole coast, with noisy inlets, sparing the runway.
   {
     const ring = smoothstep(0.12, 0.42, mask) * smoothstep(0.92, 0.62, mask);
-    const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 130, Math.abs(x) / 500)), 1.2);
+    const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 50, Math.abs(x - 80) / 280)), 1.2);
     const inlet = fbm(x * 0.0042, z * 0.0042, 3, 29);
     const cut = smoothstep(0.70, 0.88, inlet);
     const cliffH = 18 + 36 * fbm(x * 0.003, z * 0.003, 3, 17) + 12 * ridge(x * 0.011, z * 0.01, 2, 5);
@@ -235,10 +242,14 @@ export function computeHeight(x, z) {
   if (mask <= 0.001) h = bed;
 
   // Re-assert pads after the shore clamp so the runway cannot fall into the sea
-  const airportPad2 = Math.max(0, 1 - Math.max(Math.abs(z + 1100) / 170, Math.abs(x) / 560));
+  const airportPad2 = Math.max(
+    0,
+    1 - Math.max(Math.abs(z + 1100) / 28, Math.abs(x - 50) / 400),
+    1 - Math.max(Math.abs(z + 1060) / 80, Math.abs(x - 160) / 150)
+  );
   const grassPad2 = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 48, Math.abs(x + 820) / 190));
   const cove2 = smoothstep(90, 28, dist2(x, z, 40, -1220));
-  const beachCape2 = smoothstep(80, 24, dist2(x, z, -260, -1280));
+  const beachCape2 = smoothstep(80, 24, dist2(x, z, -180, -1260));
   h = flatten(h, 4.2, Math.pow(saturate(airportPad2), 1.15));
   h = flatten(h, 90, Math.pow(saturate(grassPad2), 1.2) * 0.95);
   h = flatten(h, 1.8, cove2 * 0.9);
@@ -267,6 +278,8 @@ export function computeHeight(x, z) {
   // Never leave a y=0 sea sheet — it z-fights the water and reads as a pale patch.
   const nearLag = dist2(x, z, -740, -1120) < 280;
   const nearCove = dist2(x, z, 40, -1220) < 120;
+  const bayCut = smoothstep(150, 28, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1600, -1360, z);
+  h = lerp(h, Math.min(h, -6), bayCut * 0.95);
   if (h < 0.45 && !nearLag && !nearCove && mask < 0.55) h = Math.min(h, bed);
 
   return h;
@@ -341,10 +354,10 @@ export function createTerrain() {
     switch (m) {
       case MAT.SEA: return [0.07, 0.32 + n * 0.04, 0.40];
       case MAT.WATER_DEEP: return [0.06, 0.22, 0.30];
-      case MAT.SAND: return [0.96, 0.88, 0.62 + n * 0.06];
-      case MAT.GRASS: return [0.48 + n * 0.16, 0.82 + n * 0.12, 0.22 + n * 0.06];
-      case MAT.FOREST: return [0.18, 0.52 + n * 0.10, 0.16];
-      case MAT.ROCK: return [0.80 + n * 0.06, 0.56 + n * 0.04, 0.30];
+      case MAT.SAND: return [0.98, 0.90, 0.58 + n * 0.06];
+      case MAT.GRASS: return [0.42 + n * 0.10, 0.78 + n * 0.10, 0.16 + n * 0.04];
+      case MAT.FOREST: return [0.12, 0.58 + n * 0.10, 0.12];
+      case MAT.ROCK: return [0.90 + n * 0.05, 0.62 + n * 0.05, 0.26];
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];
       case MAT.RUNWAY: return [0.22, 0.23, 0.26];

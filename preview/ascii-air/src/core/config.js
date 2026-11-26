@@ -232,7 +232,7 @@ export const LANDMARKS = {
   church:       { x: 330,  z: -940,  name: "Chapel" },
   market:       { x: 240,  z: -960,  name: "Market" },
   harbor:       { x: 180,  z: -1220, name: "Harbor" },
-  lighthouse:   { x: -260, z: -1280, name: "Cinder Cape Light" },
+  lighthouse:   { x: -180, z: -1260, name: "Cinder Cape Light" },
   pier:         { x: 200,  z: -1280, name: "Long Pier" },
   beach:        { x: 40,   z: -1220, name: "Sunny Beach" },
   lagoon:       { x: -740, z: -1120, name: "Quiet Lagoon" },
@@ -242,11 +242,11 @@ export const LANDMARKS = {
   waterfall:    { x: 20,   z: -820,  name: "Mistfall" },
   bridge:       { x: -20,  z: -920,  name: "Stone Bridge" },
   cave:         { x: 30,   z: -800,  name: "Fall Cave" },
-  castle:       { x: -340, z: 80,    name: "Cliff Ruins" },
-  windmills:    { x: 520,  z: -860,  name: "Mill Hills" },
+  castle:       { x: -280, z: 40,    name: "Cliff Ruins" },
+  windmills:    { x: 400,  z: -880,  name: "Mill Hills" },
   grassStrip:   { x: -820, z: 1120,  name: "Ridge Strip" },
   palmIslet:    { x: 180,  z: -1880, name: "One-Palm Isle" },
-  arch:         { x: -400, z: -1480, name: "Sea Arch" },
+  arch:         { x: -105, z: -1390, name: "Sea Arch" },
 };
 
 export const AUDIO_FILES = [

@@ -125,11 +125,13 @@ export function createFlightCamera(camera) {
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     if (hero) {
-      const dist = 38 + (portrait ? 4 : 0);
-      const height = 13 + (portrait ? 1.5 : 0);
-      const side = 12;
+      // 3/4 rear-above over the water, nearly level look INTO the island.
+      // Tail nearest the camera, nose pointing away at the vista.
+      const dist = 25 + (portrait ? 3 : 0);
+      const height = 8.5 + (portrait ? 1.2 : 0);
+      const side = 4.2;
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
-      _look.copy(craft.pos).addScaledVector(_fwd, 52).add(new THREE.Vector3(0, -14, 0));
+      _look.set(0, 42, -450);
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
@@ -151,8 +153,9 @@ export function createFlightCamera(camera) {
     const spd = craft.airspeed || 0;
     const k = clamp((spd - 28) / 48, 0, 1);
     const baseFov = portrait ? CAM.fovPortrait : CAM.fov;
-    if (!state.hero && state.mode !== "title") camera.fov = baseFov + k * 8;
-    else camera.fov = baseFov;
+    if (state.hero) camera.fov = 54;
+    else if (state.mode === "title") camera.fov = 52;
+    else camera.fov = baseFov + k * 8;
     camera.near = CAM.near;
     camera.far = CAM.far;
 
@@ -161,11 +164,11 @@ export function createFlightCamera(camera) {
       const t = state.titleOrbit;
       // Stay over the water, south-east, looking in at the vista (not the airfield).
       camera.position.set(
-        -90 + Math.sin(t * 0.5) * 110,
-        88 + Math.sin(t * 0.35) * 12,
-        -1780 + Math.cos(t * 0.5) * 60
+        -30 + Math.sin(t * 0.5) * 50,
+        88 + Math.sin(t * 0.35) * 8,
+        -1720 + Math.cos(t * 0.5) * 36
       );
-      camera.lookAt(10, 70, -180);
+      camera.lookAt(0, 44, -400);
       camera.up.set(0, 1, 0);
       camera.updateProjectionMatrix();
       return;
@@ -224,7 +227,7 @@ export function createFlightCamera(camera) {
     camera.position.copy(r.pos);
     camera.up.copy(r.up);
     camera.lookAt(r.look);
-    camera.fov = portrait ? CAM.fovPortrait : CAM.fov;
+    camera.fov = state.hero ? 54 : (portrait ? CAM.fovPortrait : CAM.fov);
     camera.updateProjectionMatrix();
   }
 

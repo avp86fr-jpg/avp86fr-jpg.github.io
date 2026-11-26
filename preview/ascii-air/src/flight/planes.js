@@ -105,12 +105,12 @@ function buildTrainer(s) {
     wire(g, dark, side * 4.20, 1.70, 0.85, side * 2.45, 0.08, -0.55);
   }
 
-  // Cream tail at the BACK: fin, rudder, stab, elevator
-  add(g, new THREE.BoxGeometry(0.10, 1.85, 1.35), cream, MAT.PLANE, 0, 1.18, -3.15);
-  add(g, new THREE.BoxGeometry(0.12, 1.85, 0.10), red, MAT.PLANE, 0, 1.18, -2.52);
-  const rudder = add(g, new THREE.BoxGeometry(0.08, 1.45, 0.48), cream, MAT.PLANE, 0, 1.18, -3.82);
-  add(g, new THREE.BoxGeometry(3.35, 0.10, 1.05), cream, MAT.PLANE, 0, 0.38, -3.20);
-  const elev = add(g, new THREE.BoxGeometry(3.05, 0.08, 0.42), cream, MAT.PLANE, 0, 0.38, -3.78);
+  // Cream tail at the BACK, oversized so it reads as the nearest part in a 3/4 rear shot
+  add(g, new THREE.BoxGeometry(0.12, 2.45, 1.70), cream, MAT.PLANE, 0, 1.45, -3.25);
+  add(g, new THREE.BoxGeometry(0.14, 2.45, 0.12), red, MAT.PLANE, 0, 1.45, -2.45);
+  const rudder = add(g, new THREE.BoxGeometry(0.10, 1.95, 0.62), cream, MAT.PLANE, 0, 1.45, -4.05);
+  add(g, new THREE.BoxGeometry(4.10, 0.12, 1.35), cream, MAT.PLANE, 0, 0.42, -3.30);
+  const elev = add(g, new THREE.BoxGeometry(3.70, 0.10, 0.52), cream, MAT.PLANE, 0, 0.42, -3.98);
 
   // Gear under the forward fuselage
   add(g, new THREE.BoxGeometry(0.08, 1.25, 0.08), dark, MAT.METAL, 1.12, -0.62, 0.85);
@@ -129,9 +129,9 @@ function buildTrainer(s) {
   add(prop, new THREE.CylinderGeometry(0.12, 0.12, 0.42, 8), dark, MAT.METAL, 0, 0, 0.08, Math.PI / 2);
   add(prop, new THREE.SphereGeometry(0.20, 8, 6), cream, MAT.PLANE, 0, 0, 0.30);
   const discMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0xd8c8a0, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
+    color: 0xf0e6c8, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
   }));
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.45, 28), discMat);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.05, 24), discMat);
   disc.name = "prop-blur";
   prop.add(disc);
   const bladeMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({

@@ -39,11 +39,11 @@ void main() {
 `;
 
 export function createSky(scene) {
-  const hemi = new THREE.HemisphereLight(0xe8f6ff, 0x8ab060, 1.35);
-  const sun = new THREE.DirectionalLight(0xfff6d8, 0.45);
+  const hemi = new THREE.HemisphereLight(0xe8f6ff, 0x6ab050, 1.5);
+  const sun = new THREE.DirectionalLight(0xfff6d8, 0.75);
   sun.position.set(200, 400, 100);
   sun.castShadow = false;
-  const amb = new THREE.AmbientLight(0xfff4e0, 0.7);
+  const amb = new THREE.AmbientLight(0xfff8f0, 0.85);
 
   const skyGeo = new THREE.SphereGeometry(4800, 24, 16);
   retagGeometry(skyGeo, MAT.SKY, 0);
@@ -102,7 +102,7 @@ export function createSky(scene) {
 
   scene.add(skyMesh, hemi, sun, amb, stars, moon);
 
-  const fog = new THREE.Fog(0xd0e0c8, 900, 4200);
+  const fog = new THREE.Fog(0xb8e4f8, 1100, 4800);
   scene.fog = fog;
 
   const state = {
@@ -124,8 +124,8 @@ export function createSky(scene) {
       { t: 0,  z: 0x02030a, ho: 0x0a1020, g: 0x05060c, s: 0xb0c4ff, i: 0.05, si: 0.0, hc: 0x1a2230, ac: 0x0a0c18, fog: 0x0a1020 },
       { t: 5,  z: 0x0a1230, ho: 0x2a2048, g: 0x100818, s: 0xffc8a0, i: 0.12, si: 0.05, hc: 0x3a2858, ac: 0x120818, fog: 0x1a1430 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
-      { t: 9,  z: 0x2a86d8, ho: 0xf0d8a8, g: 0x8ab070, s: 0xfff0c0, i: 1.15, si: 0.55, hc: 0xffe8c8, ac: 0x8aaf60, fog: 0xd8e4c8 },
-      { t: 12, z: 0x2a84dc, ho: 0xf4e0b4, g: 0x90b070, s: 0xfff4c8, i: 1.2,  si: 0.6,  hc: 0xffeed0, ac: 0x8ab060, fog: 0xd0e0c0 },
+      { t: 9,  z: 0x3aa8ee, ho: 0xb8e6ff, g: 0x7ec868, s: 0xfff6d0, i: 1.25, si: 0.75, hc: 0xd8f0ff, ac: 0x6ab050, fog: 0xb8e4f8 },
+      { t: 12, z: 0x3aacf0, ho: 0xc4eeff, g: 0x88d070, s: 0xfff8d8, i: 1.3,  si: 0.8,  hc: 0xe0f4ff, ac: 0x6ab050, fog: 0xc0e8f8 },
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
       { t: 20.5,z:0x050818, ho: 0x14182c, g: 0x08060c, s: 0xc0d0ff, i: 0.08, si: 0.02, hc: 0x1a2238, ac: 0x0a0c18, fog: 0x0c101c },

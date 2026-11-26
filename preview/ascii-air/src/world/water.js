@@ -44,19 +44,26 @@ void main() {
   vec3 V = normalize(cameraPosition - vWorld);
   float fres = pow(1.0 - sat(dot(N, V)), 3.0);
   float ndl = sat(dot(N, normalize(uSunDir)));
-  // Layered water: deep ocean, mid teal, a thin coastal shallow — not a huge pale disk.
-  float radial = length(vWorld.xz - vec2(0.0, -200.0));
-  float mid = sat(1.0 - (radial - 700.0) / 1600.0);
-  float shore = sat(1.0 - abs(radial - 1080.0) / 160.0);
-  vec3 midCol = mix(uDeep, uShallow, 0.38);
-  vec3 water = mix(uDeep, midCol, mid * 0.28 + 0.06 * ndl);
-  water = mix(water, uShallow, shore * 0.35);
-  float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 64.0);
-  vec3 col = water + uSky * fres * 0.07 + uSunCol * sp * 0.22 * (0.35 + shore * 0.65);
-  float stroke = step(0.96, fract(vWorld.x * 0.07 + vWorld.z * 0.06 + vWave * 2.0));
-  col = mix(col, vec3(0.78, 0.93, 0.90), stroke * (0.18 + 0.35 * shore));
-  // Thin foam only in a narrow shore band
-  float surf = shore * sat(vWave * 1.8) * 0.42;
+  // Bright cerulean sea, turquoise shallows along the south coast, foam and sparkle.
+  float foamZone = sat(1.0 - abs(vWorld.z + 1280.0) / 180.0) * sat(1.0 - abs(vWorld.x) / 900.0);
+  float bayShore = sat(1.0 - abs(vWorld.x - 10.0) / 150.0) * sat(1.0 - abs(vWorld.z + 1180.0) / 240.0);
+  foamZone = max(foamZone, bayShore);
+  float mid = sat(1.0 - length(vWorld.xz - vec2(0.0, -900.0)) / 2200.0);
+  vec3 midCol = mix(uDeep, uShallow, 0.55);
+  vec3 water = mix(uDeep, midCol, mid * 0.45 + 0.08 * ndl);
+  float shoreBand = sat(1.0 - abs(foamZone - 0.38) * 3.8);
+  water = mix(water, uShallow, shoreBand * 0.7 + foamZone * 0.12);
+  float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
+  // Sparkle highlights
+  float glitter = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 1.6) * 43758.5));
+  vec3 col = water + uSky * fres * 0.10 + uSunCol * sp * (0.28 + shoreBand * 0.25);
+  col += uSunCol * glitter * 0.20 * (0.22 + shoreBand * 0.5);
+  // Soft ripple highlights, not dark streak lines
+  float ripple = smoothstep(0.82, 0.98, fract(vWorld.x * 0.045 + vWorld.z * 0.04 + vWave * 1.6));
+  col = mix(col, vec3(0.70, 0.93, 0.98), ripple * 0.12);
+  float surf = shoreBand * sat(0.35 + vWave * 1.4) * 0.85;
+  float foamLine = sat(1.0 - abs(foamZone - 0.38) * 8.0);
+  col = mix(col, vec3(1.0, 1.0, 1.0), foamLine * 0.82 + surf * 0.28);
   float crest = sat(vWave * uChop - 0.85);
   float crestThin = crest * (1.0 - sat((vWave * uChop - 1.25) * 2.4));
   float foamAmt = crestThin * sat(uChop - 1.35);
@@ -80,8 +87,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x0d5e6c) },
-      uShallow: { value: new THREE.Color(0x3bb8b0) },
+      uDeep: { value: new THREE.Color(0x1a96c8) },
+      uShallow: { value: new THREE.Color(0x5ee3d6) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },
@@ -132,8 +139,8 @@ export function createWater() {
         mat.uniforms.uShallow.value.setHex(0x4a7a9a);
         mat.uniforms.uSky.value.setHex(0x6a8498);
       } else {
-        mat.uniforms.uDeep.value.setHex(0x0d5e6c);
-        mat.uniforms.uShallow.value.setHex(0x3ab0a8);
+        mat.uniforms.uDeep.value.setHex(0x1a96c8);
+        mat.uniforms.uShallow.value.setHex(0x5ee3d6);
         mat.uniforms.uSky.value.setHex(0xa8e0f4);
       }
     },

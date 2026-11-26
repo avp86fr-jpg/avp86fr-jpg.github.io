@@ -296,12 +296,20 @@ function makeWindmill() {
 
 function makeArch() {
   const g = new THREE.Group();
-  add(g, box(8, 28, 10, 0x6a6058, MAT.ROCK), -10, 14, 0);
-  add(g, box(8, 28, 10, 0x6a6058, MAT.ROCK), 10, 14, 0);
-  add(g, box(28, 10, 10, 0x6a6058, MAT.ROCK), 0, 32, 0);
-  // inner darker lip
-  add(g, box(6, 6, 11, 0x5a5048, MAT.ROCK), -8, 6, 0);
-  add(g, box(6, 6, 11, 0x5a5048, MAT.ROCK), 8, 6, 0);
+  const ochre = 0xc99248;
+  const shade = 0xa07030;
+  // Standing ochre ring: the lower half sits in the water, leaving a natural sea-arch opening.
+  const torus = new THREE.TorusGeometry(16, 6.2, 8, 20);
+  torus.rotateY(0.35);
+  retagGeometry(torus, MAT.ROCK, 0);
+  const mesh = new THREE.Mesh(torus, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: ochre, flatShading: true })));
+  mesh.userData.matId = MAT.ROCK;
+  mesh.position.y = 10;
+  g.add(mesh);
+  add(g, box(10, 14, 12, shade, MAT.ROCK), -16, 5, 0);
+  add(g, box(10, 14, 12, shade, MAT.ROCK), 16, 5, 0);
+  add(g, box(8, 8, 10, ochre, MAT.ROCK), -16, 14, 2);
+  add(g, box(8, 8, 10, ochre, MAT.ROCK), 16, 14, -1);
   return g;
 }
 
@@ -450,12 +458,11 @@ function makeRoad(from, to, width = 8) {
 
 
 function mergeStatic(group, skipNames = new Set()) {
-  const buckets = new Map();
+  const items = [];
   const toRemove = [];
   group.updateMatrixWorld(true);
   group.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh) return;
-    // skip animated / named specials
     let n = o;
     while (n) {
       if (skipNames.has(n.name)) return;
@@ -463,30 +470,55 @@ function mergeStatic(group, skipNames = new Set()) {
     }
     const mat = o.material;
     if (!mat || mat.transparent) return;
-    const idAttr = o.geometry.getAttribute("aId");
-    const mid = (idAttr ? idAttr.getX(0) : (o.userData.matId || 8));
-    const col = mat.color ? mat.color.getHex() : 0;
-    // Quantize so close ochres / roof reds share a draw.
-    const q = (col & 0xf0f0f0);
-    const key = mid + ":" + q + ":" + (mat.type || "");
-    if (!buckets.has(key)) buckets.set(key, { mat, geos: [] });
     const g = o.geometry.clone();
     g.applyMatrix4(o.matrixWorld);
-    buckets.get(key).geos.push(g);
+    const idAttr = g.getAttribute("aId");
+    const mid = (idAttr ? idAttr.getX(0) : (o.userData.matId || 8));
+    const col = mat.color ? mat.color : new THREE.Color(0xffffff);
+    const vc = g.getAttribute("color");
+    const p = g.getAttribute("position");
+    const colors = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      if (vc) {
+        colors[i * 3] = vc.getX(i);
+        colors[i * 3 + 1] = vc.getY(i);
+        colors[i * 3 + 2] = vc.getZ(i);
+      } else {
+        colors[i * 3] = col.r;
+        colors[i * 3 + 1] = col.g;
+        colors[i * 3 + 2] = col.b;
+      }
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    items.push({ g, mid });
     toRemove.push(o);
   });
   for (const o of toRemove) {
     if (o.parent) o.parent.remove(o);
   }
-  const merged = new THREE.Group();
-  merged.name = "landmarks-merged";
-  merged.matrixAutoUpdate = false;
-  for (const { mat, geos } of buckets.values()) {
-    const geo = mergeGeos(geos, (mat.userData && mat.userData.matId) || (geos[0] && geos[0].getAttribute("aId") && geos[0].getAttribute("aId").getX(0)) || 8);
-    const mesh = new THREE.Mesh(geo, mat);
-    merged.add(mesh);
+  if (!items.length) return;
+  const geo = mergeGeos(items.map((it) => it.g), items[0].mid);
+  // Color was not copied by mergeGeos — attach a baked buffer in the same vertex order.
+  let n = 0;
+  for (const it of items) n += it.g.getAttribute("position").count;
+  const cols = new Float32Array(n * 3);
+  let base = 0;
+  for (const it of items) {
+    const c = it.g.getAttribute("color");
+    const p = it.g.getAttribute("position");
+    for (let i = 0; i < p.count; i++) {
+      cols[(base + i) * 3] = c.getX(i);
+      cols[(base + i) * 3 + 1] = c.getY(i);
+      cols[(base + i) * 3 + 2] = c.getZ(i);
+    }
+    base += p.count;
   }
-  group.add(merged);
+  geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = "landmarks-merged";
+  mesh.matrixAutoUpdate = false;
+  group.add(mesh);
 }
 
 function mergeGeos(geos, fallbackId = 8) {
@@ -530,6 +562,55 @@ function mergeGeos(geos, fallbackId = 8) {
   return out;
 }
 
+
+function makeCoastalCliffs(H) {
+  const positions = [];
+  const colors = [];
+  const indices = [];
+  const pts = [];
+  for (let x = -980; x <= 880; x += 8) {
+    let zLand = null, h = 0;
+    for (let z = -1470; z <= -1020; z += 6) {
+      const hh = H(x, z);
+      if (hh > 8) { zLand = z; h = hh; break; }
+    }
+    if (zLand != null && zLand > -1470) pts.push({ x, z: zLand - 1.5, h: Math.min(Math.max(h, 12), 70) });
+  }
+  const ochre = [0.92, 0.62, 0.26];
+  const shade = [0.62, 0.38, 0.14];
+  function vert(x, y, z, c) {
+    const i = positions.length / 3;
+    positions.push(x, y, z);
+    const hatch = (Math.sin(x * 0.62 + y * 0.85) * Math.sin(z * 0.18 + x * 0.08) > 0.28) ? 0.72 : 1;
+    colors.push(c[0] * hatch, c[1] * hatch, c[2] * hatch);
+    return i;
+  }
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (Math.hypot(b.x - a.x, b.z - a.z) > 40) continue;
+    const y0 = -0.5;
+    const i0 = vert(a.x, y0, a.z - 2, shade);
+    const i1 = vert(a.x, a.h * 0.95, a.z, ochre);
+    const i2 = vert(b.x, y0, b.z - 2, shade);
+    const i3 = vert(b.x, b.h * 0.95, b.z, ochre);
+    indices.push(i0, i2, i1, i1, i2, i3);
+    const i4 = vert(a.x, a.h * 0.95, a.z + 5, ochre);
+    const i5 = vert(b.x, b.h * 0.95, b.z + 5, ochre);
+    indices.push(i1, i3, i4, i4, i3, i5);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  retagGeometry(geo, MAT.ROCK, 0);
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false }));
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.matId = MAT.ROCK;
+  mesh.name = "cliffs";
+  return mesh;
+}
+
 export function createLandmarks(scene, terrain, sky) {
   const group = new THREE.Group();
   group.name = "landmarks";
@@ -544,6 +625,7 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Hangar
   const hangar = makeHangar();
+  hangar.scale.setScalar(1.55);
   hangar.position.set(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z), LANDMARKS.hangar.z);
   hangar.rotation.y = 0.1;
   group.add(hangar);
@@ -577,6 +659,7 @@ export function createLandmarks(scene, terrain, sky) {
   group.add(windsock);
 
   const tower = makeTower();
+  tower.scale.setScalar(1.5);
   tower.position.set(LANDMARKS.tower.x, H(LANDMARKS.tower.x, LANDMARKS.tower.z), LANDMARKS.tower.z);
   group.add(tower);
   sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xffe2a0, 4, 80);
@@ -632,18 +715,18 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   // Town houses
-  const houseColors = [0xd2b07a, 0xc4a060, 0xccaa70, 0xd8b878, 0xc8a468];
-  const roofColors = [0xe22a1c, 0xc41a14, 0xe03820, 0xd02018, 0xee4a28];
+  const houseColors = [0xf0d8a0, 0xe8cc8c, 0xf4e0b0, 0xe6c878, 0xf2d498];
+  const roofColors = [0xf02218, 0xd41010, 0xff3020, 0xe01814, 0xff3a22];
   const spots = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  for (let i = 0; i < 56; i++) {
+  for (let i = 0; i < 64; i++) {
     const a = rnd() * Math.PI * 2;
-    const r = 20 + rnd() * 140;
+    const r = 16 + rnd() * 110;
     const x = LANDMARKS.town.x + Math.cos(a) * r;
     const z = LANDMARKS.town.z + Math.sin(a) * r * 0.7;
     if (Math.abs(z + 1100) < 70) continue;
-    const h = house(6 + rnd() * 4, 6 + rnd() * 4, 4 + rnd() * 3, 3 + rnd() * 2, houseColors[i % 5], roofColors[i % 5]);
+    const h = house(8 + rnd() * 5, 8 + rnd() * 5, 5 + rnd() * 4, 4 + rnd() * 3, houseColors[i % 5], roofColors[i % 5]);
     h.position.set(x, H(x, z), z);
     h.rotation.y = rnd() * Math.PI * 2;
     group.add(h);
@@ -651,6 +734,7 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   const church = makeChurch();
+  church.scale.setScalar(1.45);
   church.position.set(LANDMARKS.church.x, H(LANDMARKS.church.x, LANDMARKS.church.z), LANDMARKS.church.z);
   group.add(church);
 
@@ -678,11 +762,11 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(-300, 0.9, -1500);
+  steamer.position.set(-90, 0.9, -1480);
   steamer.rotation.y = -0.9;
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[-220, -1500, 0x2a6cb6], [-340, -1420, 0xe8e0c8], [-400, -1360, 0xc05030], [-180, -1460, 0xc08020], [60, -1560, 0xf4ead0]];
+  const coastal = [[-70, -1510, 0x2a6cb6], [-120, -1450, 0xe8e0c8], [-40, -1530, 0xc05030], [40, -1500, 0xc08020], [-100, -1410, 0xf4ead0]];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
@@ -704,19 +788,20 @@ export function createLandmarks(scene, terrain, sky) {
   group.add(wreck);
 
   const light = makeLighthouse();
+  light.scale.setScalar(1.55);
   light.position.set(LANDMARKS.lighthouse.x, H(LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z), LANDMARKS.lighthouse.z);
   group.add(light);
   sky.addLamp(new THREE.Vector3(LANDMARKS.lighthouse.x, light.position.y + 40, LANDMARKS.lighthouse.z), 0xfff2c0, 8, 260);
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(2.6, 1.8, 2.1);
+  bridge.scale.set(3.2, 2.2, 2.6);
   bridge.position.set(bx, 28, bz);
   bridge.rotation.y = 0.9;
   group.add(bridge);
 
   const castle = makeCastle();
-  castle.scale.setScalar(2.05);
+  castle.scale.setScalar(2.7);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
   group.add(castle);
 
@@ -733,8 +818,8 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   const arch = makeArch();
-  arch.scale.setScalar(2.05);
-  arch.position.set(LANDMARKS.arch.x, 2, LANDMARKS.arch.z);
+  arch.scale.setScalar(1.45);
+  arch.position.set(LANDMARKS.arch.x, 0, LANDMARKS.arch.z);
   arch.rotation.y = -0.5;
   group.add(arch);
 
@@ -746,7 +831,7 @@ export function createLandmarks(scene, terrain, sky) {
   const falls = makeWaterfall();
   // sheet hangs down from ~88 to ~16, center at ~52
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
-  falls.scale.set(1.15, 1.05, 1.15);
+  falls.scale.set(1.8, 1.6, 1.8);
   falls.position.set(wx, 50, wz);
   falls.rotation.y = 0.35;
   group.add(falls);
@@ -774,6 +859,7 @@ export function createLandmarks(scene, terrain, sky) {
     sky.addLamp(bulb.position.clone(), 0xffc878, 2.2, 28);
   }
 
+  group.add(makeCoastalCliffs(H));
   mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock"]));
   // keep boat meshes (they bob)
   scene.add(group);
@@ -795,7 +881,7 @@ export function createLandmarks(scene, terrain, sky) {
       if (beam) {
         beam.rotation.y += dt * 0.6;
         beam.visible = true;
-        beam.material.opacity = 0.16 + night * 0.2;
+        beam.material.opacity = 0.48 + night * 0.22;
       }
       const blow = this._storm ? 0.7 : 0.15;
       for (const b of boats) {

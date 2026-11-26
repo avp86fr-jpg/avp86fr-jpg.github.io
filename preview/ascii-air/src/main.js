@@ -692,12 +692,12 @@ function hudShot() {
 }
 
 function heroShot(opts = {}) {
-  const x = opts.x ?? -80;
-  const y = opts.y ?? 78;
-  const z = opts.z ?? -1620;
-  const tx = opts.tx ?? -20;
-  const ty = opts.ty ?? 55;
-  const tz = opts.tz ?? -180;
+  const x = opts.x ?? 0;
+  const y = opts.y ?? 68;
+  const z = opts.z ?? -1580;
+  const tx = opts.tx ?? 0;
+  const ty = opts.ty ?? 42;
+  const tz = opts.tz ?? -450;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
