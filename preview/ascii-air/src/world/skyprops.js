@@ -5,7 +5,7 @@ import { TAU } from "../core/utils.js";
 
 function cloudPuff(mat) {
   const g = new THREE.Group();
-  const geo = retagGeometry(new THREE.IcosahedronGeometry(1, 0), MAT.CLOUD);
+  const geo = retagGeometry(new THREE.SphereGeometry(1, 12, 10), MAT.CLOUD);
   const spots = [
     [0, 0, 0, 1.6], [1.4, 0.2, 0.2, 1.2], [-1.3, 0.1, -0.2, 1.1], [0.3, 0.5, 0.6, 0.9],
   ];
@@ -26,8 +26,8 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0xfffdf8,
     emissive: 0xf0f4ff,
-    emissiveIntensity: 0.7,
-    flatShading: true,
+    emissiveIntensity: 0.55,
+    flatShading: false,
   }));
   const clouds = new THREE.Group();
   const nCloud = Math.floor(28 * q.clouds);
@@ -105,8 +105,23 @@ export function createSkyProps(scene, quality = "medium") {
   scene.add(group);
 
   group.traverse((o) => { if (o.material) patchMaterialIdAlpha(o.material); });
+  let stormOn = false;
   return {
     group, cloudInst, cloudData, balloons, blimp, birds,
+    setStorm(on) {
+      on = !!on;
+      if (on === stormOn) return;
+      stormOn = on;
+      if (on) {
+        cloudMat.color.setHex(0x6a7380);
+        cloudMat.emissive.setHex(0x3a4450);
+        cloudMat.emissiveIntensity = 0.25;
+      } else {
+        cloudMat.color.setHex(0xfffdf8);
+        cloudMat.emissive.setHex(0xf0f4ff);
+        cloudMat.emissiveIntensity = 0.55;
+      }
+    },
     update(dt, time) {
       // drift clouds slowly — skip matrix rewrite every frame if costly; update every 0.25s is ok
       dummy.rotation.set(0, 0, 0);

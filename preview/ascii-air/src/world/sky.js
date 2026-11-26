@@ -201,24 +201,24 @@ export function createSky(scene) {
   }
 
   function applyStormLook() {
-    skyMat.uniforms.uZenith.value.setHex(0x24344c);
-    skyMat.uniforms.uHorizon.value.setHex(0x6a7a90);
-    skyMat.uniforms.uGround.value.setHex(0x3a4a58);
+    skyMat.uniforms.uZenith.value.setHex(0x3a5570);
+    skyMat.uniforms.uHorizon.value.setHex(0x6a8498);
+    skyMat.uniforms.uGround.value.setHex(0x4a5a60);
     skyMat.uniforms.uSunCol.value.setHex(0xc8d0dc);
-    skyMat.uniforms.uNight.value = 0.35;
+    skyMat.uniforms.uNight.value = 0.22;
     state.sunColor.setHex(0xc8d0dc);
-    state.horizonColor.setHex(0x6a7a90);
-    state.zenithColor.setHex(0x24344c);
-    state.fogColor.setHex(0x4a5868);
-    hemi.color.setHex(0x8898ac);
+    state.horizonColor.setHex(0x6a8498);
+    state.zenithColor.setHex(0x3a5570);
+    state.fogColor.setHex(0x5a7080);
+    hemi.color.setHex(0x8aa0b4);
     hemi.groundColor.setHex(0x3a4038);
-    hemi.intensity = 0.7;
+    hemi.intensity = 0.75;
     sun.color.setHex(0xc8d0dc);
-    sun.intensity = 0.22;
-    amb.intensity = 0.4;
-    fog.color.setHex(0x4a5868);
-    fog.near = 900;
-    fog.far = 4200;
+    sun.intensity = 0.28;
+    amb.intensity = 0.45;
+    fog.color.setHex(0x5a7080);
+    fog.near = 1100;
+    fog.far = 4600;
     stars.material.opacity = 0;
     stars.visible = false;
     for (const L of state.lights) {

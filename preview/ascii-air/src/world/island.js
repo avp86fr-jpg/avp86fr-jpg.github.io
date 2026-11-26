@@ -79,9 +79,14 @@ export function createIsland(scene, quality = "medium") {
     thermals.update(dt);
   }
 
+  function setStorm(on, windKt) {
+    if (skyprops && typeof skyprops.setStorm === "function") skyprops.setStorm(on);
+    if (landmarks && typeof landmarks.setWind === "function") landmarks.setWind(windKt, on);
+  }
+
   return {
     terrain, sky, water, landmarks, flora, skyprops, thermals,
     heightAt, materialAt, normalAt, isWater, landingSurface, thermalAt,
-    update, LANDMARKS,
+    update, setStorm, LANDMARKS,
   };
 }

@@ -7,12 +7,19 @@ import { MISSIONS, getMission } from "./data.js";
 import { resetCraft, launchCraft } from "../flight/physics.js";
 
 function ringMesh(radius = 14) {
-  const geo = new THREE.TorusGeometry(radius, 2.2, 8, 24);
-  retagGeometry(geo, MAT.RING, 1);
-  const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xff8a28 }));
-  const m = new THREE.Mesh(geo, mat);
-  m.userData.hero = 1;
-  return m;
+  const g = new THREE.Group();
+  const tube = 1.15;
+  const core = new THREE.Mesh(
+    retagGeometry(new THREE.TorusGeometry(radius, tube, 10, 32), MAT.RING, 1),
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xffe14a, toneMapped: false }))
+  );
+  const rim = new THREE.Mesh(
+    retagGeometry(new THREE.TorusGeometry(radius, tube * 1.28, 8, 32), MAT.RING, 1),
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0x1a140c, toneMapped: false, transparent: true, opacity: 0.85, side: THREE.BackSide }))
+  );
+  g.add(rim, core);
+  g.userData.hero = 1;
+  return g;
 }
 
 function markerPole(color = 0xffee88) { // color passed to MeshBasic
@@ -112,7 +119,6 @@ export function createMissionSystem(scene, world, audio) {
         const dz = (m.rings[Math.min(i + 1, m.rings.length - 1)].z - (m.rings[Math.max(0, i - 1)].z));
         mesh.rotation.y = Math.atan2(dx, dz);
       }
-      mesh.material = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: i === 0 ? 0xffc45a : 0x8a3a12 }));
       add(mesh);
     });
   }
@@ -357,7 +363,6 @@ export function createMissionSystem(scene, world, audio) {
     mesh.position.set(x, y, z);
     mesh.lookAt(x, y, z + 1); // face north by default; caller can rotate
     mesh.userData.demoRing = true;
-    mesh.material.color.set(0xffc45a);
     group.add(mesh);
     if (!group.parent) scene.add(group);
     return mesh;

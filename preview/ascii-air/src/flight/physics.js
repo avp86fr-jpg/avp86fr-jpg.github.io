@@ -79,7 +79,13 @@ export function resetCraft(c, spawn, heading, planeId) {
   c.roll = 0;
   c.aoa = 0;
   c.tow = null;
+  c.airTime = 0;
+  c.groundedTime = 0;
+  c.unstickT = 0;
+  c.vspeed = 0;
+  c.events = [];
   c.spawn = { x: sp.x, y: sp.y, z: sp.z, heading: h };
+  // Sit on the surface if a world height is already known; otherwise SPAWN.y is a safe default.
 }
 
 /** Apply a launch velocity along current heading. */
@@ -132,12 +138,14 @@ export function stepCraft(c, input, world, dt, settings) {
     return;
   }
 
-  // Throttle
+  // Throttle — on the ground, one press of Space/Action or holding power goes to full
   if (def.engine) {
-    if (input.throttleSet != null) c.throttle = clamp(input.throttleSet, 0, 1);
-    else c.throttle = clamp(c.throttle + (input.throttle || 0) * dt * 0.7, 0, 1);
-    if (c.onGround && input.autoThrottle && c.throttle < 0.15 && input.actionHeld) {
-      c.throttle = 0.8;
+    if (c.onGround && (input.actionHeld || (input.throttle || 0) > 0.4 || (input.autoThrottle && input.actionPressed))) {
+      c.throttle = 1;
+    } else if (input.throttleSet != null) {
+      c.throttle = clamp(input.throttleSet, 0, 1);
+    } else {
+      c.throttle = clamp(c.throttle + (input.throttle || 0) * dt * 1.8, 0, 1);
     }
   } else {
     c.throttle = 0;
@@ -335,6 +343,28 @@ function finishKinematics(c, world) {
 
   const surface = world.landingSurface(c.pos.x, c.pos.z);
   const water = th < 0.35;
+  if (c.unstickT > 0) {
+    c.unstickT -= PHYS.dt;
+    if (c.throttle > 0.45 && c.airspeed >= c.def.stallSpeed * 0.7) {
+      if (c.pos.y - gear < th + 0.4) {
+        c.pos.y = th + gear + 0.5;
+        c.vel.y = Math.max(c.vel.y, 4.0);
+      }
+      _euler.setFromQuaternion(c.quat, "YXZ");
+      _euler.x = Math.max(_euler.x, 0.10);
+      c.quat.setFromEuler(_euler);
+      c.onGround = false;
+      c.waterborne = false;
+      c.airTime += PHYS.dt;
+      c.groundedTime = 0;
+      c.altitude = c.pos.y;
+      c.agl = c.pos.y - th - gear;
+      return;
+    } else {
+      c.unstickT = 0;
+    }
+  }
+
   const hit = c.pos.y - gear <= th + 0.02 || (water && c.pos.y <= 1.15 && c.def.waterCapable);
 
   if (!hit) {
@@ -397,17 +427,27 @@ function finishKinematics(c, world) {
       }
     }
     c.vel.y = 0;
-    // rolling resistance as an exponential decay (dt-safe). 0.992/step at 120Hz was a brick wall.
-    const kRoll = (surface === "runway" || surface === "grass") ? 0.08 : 0.22;
+    // rolling resistance as an exponential decay (dt-safe)
+    const kRoll = (surface === "runway" || surface === "grass" || surface === "beach") ? 0.06 : 0.18;
     const kBrake = c.throttle < 0.08 ? 1.15 : 0;
     const rollDamp = Math.exp(-(kRoll + kBrake) * PHYS.dt);
     c.vel.x *= rollDamp;
     c.vel.z *= rollDamp;
-    // takeoff hint: with power and speed, a little free nose-up
-    if (c.throttle > 0.55 && c.airspeed > c.def.stallSpeed * 0.72 && c.pitch > -0.05) {
-      c.vel.y += 6 * PHYS.dt;
-    }
+    const vr = c.def.stallSpeed * 0.78;
+    const ready = c.def.engine && c.throttle > 0.55 && c.airspeed >= vr;
     _euler.setFromQuaternion(c.quat, "YXZ");
+    if (ready) {
+      // Automatic gentle rotation and unstick — dead-simple takeoff
+      _euler.x = 0.14;
+      _euler.z = damp(_euler.z, 0, 8, PHYS.dt);
+      c.quat.setFromEuler(_euler);
+      c.vel.y = Math.max(c.vel.y, 7.2);
+      c.pos.y = th + gear + 1.2;
+      c.onGround = false;
+      c.airTime = 0.05;
+      c.unstickT = 1.25;
+      return;
+    }
     _euler.x = damp(_euler.x, 0, 6, PHYS.dt);
     _euler.z = damp(_euler.z, 0, 6, PHYS.dt);
     c.quat.setFromEuler(_euler);

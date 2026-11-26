@@ -61,15 +61,15 @@ export function createFlightCamera(camera) {
     } else {
       const hero = state.hero;
       const landing = hero === "landing";
-      const dist = (landing ? 12 : hero ? 14 : CAM.chaseDist) + (portrait ? 3 : 0);
-      const height = (landing ? 3.2 : hero ? 4.2 : CAM.chaseHeight) + (portrait ? 2 : 0);
+      const dist = (landing ? 12 : hero ? 13 : CAM.chaseDist) + (portrait ? 3 : 0);
+      const height = (landing ? 3.2 : hero ? 3.1 : CAM.chaseHeight) + (portrait ? 2 : 0);
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0));
       camera.position.lerp(_pos, 1 - Math.exp(-CAM.chaseLag * dt));
       camera.up.copy(worldUp);
       if (landing) {
         _look.copy(craft.pos).addScaledVector(_fwd, 110).add(new THREE.Vector3(0, -2, 0));
       } else if (hero) {
-        _look.copy(craft.pos).addScaledVector(_fwd, 70).add(new THREE.Vector3(0, -10, 0));
+        _look.copy(craft.pos).addScaledVector(_fwd, 48).add(new THREE.Vector3(0, -2, 0));
       } else {
         _look.copy(craft.pos).addScaledVector(_fwd, 16).add(new THREE.Vector3(0, 0.6, 0));
       }
@@ -97,7 +97,7 @@ export function createFlightCamera(camera) {
     if (landing) {
       _look.copy(craft.pos).addScaledVector(_fwd, 110).add(new THREE.Vector3(0, -2, 0));
     } else if (hero) {
-      _look.copy(craft.pos).addScaledVector(_fwd, 70).add(new THREE.Vector3(0, -10, 0));
+      _look.copy(craft.pos).addScaledVector(_fwd, 48).add(new THREE.Vector3(0, -2, 0));
     } else {
       _look.copy(craft.pos).addScaledVector(_fwd, 16).add(new THREE.Vector3(0, 0.6, 0));
     }

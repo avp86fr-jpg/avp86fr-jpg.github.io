@@ -50,10 +50,18 @@ void main() {
   vec3 water = mix(uDeep, uShallow, nearIsle * 0.85 + 0.05 * ndl);
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
   vec3 col = water + uSky * fres * 0.08 + uSunCol * sp * 0.25 * nearIsle;
-  // white surf band on the shallows + storm foam crests
+  // white surf on the shallows + thin outlined foam crests and spray in a blow
   float surf = sat((nearIsle - 0.78) / 0.22) * sat(vWave * 1.8);
-  float crest = sat(vWave * uChop - 0.28);
-  col = mix(col, vec3(0.95, 0.98, 1.0), max(surf * 0.55, crest * 0.35 * sat(uChop - 1.2)));
+  float crest = sat(vWave * uChop - 0.62);
+  float crestThin = crest * (1.0 - sat((vWave * uChop - 1.15) * 2.2));
+  float foamAmt = crestThin * sat(uChop - 1.15);
+  col = mix(col, vec3(0.96, 0.98, 1.0), max(surf * 0.5, foamAmt * 0.92));
+  float foamEdge = sat((foamAmt - 0.25) * 10.0) * (1.0 - sat((foamAmt - 0.55) * 12.0));
+  col = mix(col, vec3(0.14, 0.16, 0.20), foamEdge * 0.55);
+  if (uChop > 1.4) {
+    float spray = step(0.86, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 6.0) * 43758.5));
+    col = mix(col, vec3(0.93, 0.96, 1.0), spray * 0.45 * sat(crest));
+  }
   gl_FragColor = vec4(col, uMatId / 255.0);
 }
 `;
@@ -110,13 +118,13 @@ export function createWater() {
     _storm: false,
     setStorm(on) {
       this._storm = !!on;
-      const chop = on ? 1.7 : 1.0;
+      const chop = on ? 2.6 : 1.0;
       mat.uniforms.uChop.value = chop;
-      if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.4 : 1.0;
+      if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.6 : 1.0;
       if (on) {
-        mat.uniforms.uDeep.value.setHex(0x1a2838);
-        mat.uniforms.uShallow.value.setHex(0x3a4a5c);
-        mat.uniforms.uSky.value.setHex(0x4a5868);
+        mat.uniforms.uDeep.value.setHex(0x2a5580);
+        mat.uniforms.uShallow.value.setHex(0x4a7a9a);
+        mat.uniforms.uSky.value.setHex(0x6a8498);
       } else {
         mat.uniforms.uDeep.value.setHex(0x1568b4);
         mat.uniforms.uShallow.value.setHex(0x3ad4e4);

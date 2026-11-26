@@ -24,6 +24,7 @@ export function createPilot() {
   const jacket = mat(0xe0a04a, MAT.ROOF);
   const scarf = mat(0x2aa8a0, MAT.METAL);
   const goggle = mat(0x3a3a3a, MAT.METAL);
+  const lens = mat(0xc8a838, MAT.METAL);
 
   const head = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(0.28, 8, 6), MAT.PLANE, 1), skin);
   head.position.set(0, 0.42, 0.02);
@@ -36,18 +37,26 @@ export function createPilot() {
   const brim = new THREE.Mesh(retagGeometry(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 8), MAT.WOOD, 1), cap);
   brim.position.set(0, 0.50, 0.08);
   brim.rotation.x = -0.3;
-  const glassL = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(0.08, 6, 5), MAT.METAL, 1), goggle);
-  glassL.position.set(-0.1, 0.44, 0.22);
-  glassL.scale.set(1, 0.8, 0.4);
+  const glassL = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(0.11, 8, 6), MAT.METAL, 1), lens);
+  glassL.position.set(-0.12, 0.44, 0.24);
+  glassL.scale.set(1.1, 0.9, 0.45);
+  const rimL = new THREE.Mesh(retagGeometry(new THREE.TorusGeometry(0.1, 0.025, 5, 10), MAT.METAL, 1), goggle);
+  rimL.position.copy(glassL.position);
   const glassR = glassL.clone();
-  glassR.position.x = 0.1;
+  glassR.position.x = 0.12;
+  const rimR = rimL.clone();
+  rimR.position.x = 0.12;
+  const strap = new THREE.Mesh(retagGeometry(new THREE.TorusGeometry(0.27, 0.025, 5, 12), MAT.METAL, 1), goggle);
+  strap.position.set(0, 0.44, 0.02);
+  strap.rotation.x = 0.15;
+  strap.scale.set(1, 0.85, 1);
   const body = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(0.36, 8, 6), MAT.ROOF, 1), jacket);
   body.position.set(0, 0.02, -0.04);
   body.scale.set(0.85, 1.0, 0.7);
   const wrap = new THREE.Mesh(retagGeometry(new THREE.TorusGeometry(0.22, 0.05, 6, 10), MAT.METAL, 1), scarf);
   wrap.position.set(0, 0.22, 0.02);
   wrap.rotation.x = 1.2;
-  g.add(head, curls, hat, brim, glassL, glassR, body, wrap);
+  g.add(head, curls, hat, brim, glassL, glassR, rimL, rimR, strap, body, wrap);
   g.scale.setScalar(1);
   return g;
 }

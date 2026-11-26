@@ -110,21 +110,23 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
 .throttle-track {
   position: absolute;
   width: 44px; height: 160px;
-  border: 1px solid rgba(160, 255, 200, 0.4);
-  background: rgba(8, 16, 12, 0.35);
+  border: 3px solid #1a140c;
+  background: #f6edd4;
   pointer-events: auto;
   touch-action: none;
+  border-radius: 8px;
 }
 .throttle-fill {
-  position: absolute; left: 2px; right: 2px; bottom: 2px;
-  background: linear-gradient(180deg, rgba(120,255,180,0.0), rgba(80,255,170,0.45));
+  position: absolute; left: 3px; right: 3px; bottom: 3px;
+  background: linear-gradient(180deg, #e06a4f, #c01418);
   pointer-events: none;
+  border-radius: 4px;
 }
 .throttle-knob {
-  position: absolute; left: 50%; width: 36px; height: 18px;
+  position: absolute; left: 50%; width: 40px; height: 16px;
   transform: translate(-50%, 50%);
-  border: 1px solid rgba(200,255,220,0.8);
-  background: rgba(150,255,200,0.4);
+  border: 2px solid #1a140c;
+  background: #f4ead0;
   pointer-events: none;
 }
 .safe-pad {
@@ -384,4 +386,176 @@ button.album-btn:active, button.ascii-btn:active { background: #ffe08a; }
 }
 @media (max-width: 960px) {
   .album-panel { font-size: 14px; padding: 4px 8px; }
+}
+
+
+/* AEROPOSTALE AIR — cream-paper HUD matching the album reference */
+#hud-stats {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  min-width: 260px;
+  padding: 8px 14px 10px;
+  font-size: 16px;
+  line-height: 1.35;
+  z-index: 6;
+}
+.stats-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid #1a140c;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+}
+.stats-wings { font-size: 20px; }
+#hud-compass {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  z-index: 6;
+}
+#hud-mission {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  min-width: 250px;
+  max-width: 32vw;
+  padding: 8px 14px;
+  font-size: 16px;
+  line-height: 1.35;
+  z-index: 6;
+}
+#hud-minimap {
+  position: absolute;
+  left: 12px;
+  bottom: 118px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.15;
+  z-index: 6;
+}
+#hud-flight.flight-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 6px 10px;
+  z-index: 6;
+  white-space: normal;
+}
+.gauge-box {
+  min-width: 72px;
+  text-align: center;
+  border-right: 1.5px solid rgba(26,20,12,0.25);
+  padding: 0 8px;
+}
+.gauge-box:last-child { border-right: 0; }
+.g-lab { font-size: 11px; letter-spacing: 0.12em; opacity: 0.75; }
+.g-val { font-family: Itim, "Patrick Hand", cursive; font-size: 22px; line-height: 1.1; }
+.g-unit { font-size: 11px; }
+.g-val.flaps span { padding: 0 3px; opacity: 0.45; }
+.g-val.flaps span.on { opacity: 1; outline: 2px solid #1a140c; }
+#g-horizon { width: 72px; height: 72px; border-radius: 50%; display: block; }
+#hud-photo, #hud-aux {
+  position: absolute;
+  right: 12px;
+  bottom: 118px;
+  min-width: 180px;
+  padding: 8px 12px;
+  font-size: 15px;
+  z-index: 6;
+}
+#hud-photo.ready { outline: 3px solid #c01418; }
+#hud-msg {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 22px;
+  pointer-events: none;
+  z-index: 7;
+  max-width: 50vw;
+  text-align: center;
+}
+.speech-balloon {
+  position: absolute;
+  left: 50%;
+  bottom: 28%;
+  transform: translateX(-50%);
+  background: #f6edd4;
+  color: #1a140c;
+  border: 3px solid #1a140c;
+  border-radius: 18px;
+  padding: 12px 18px;
+  font-family: "Patrick Hand", Itim, cursive;
+  font-size: 20px;
+  line-height: 1.25;
+  max-width: min(520px, 70vw);
+  text-align: center;
+  z-index: 8;
+  pointer-events: auto;
+  white-space: normal;
+}
+.speech-balloon:after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #1a140c;
+}
+#mobile-layer .ctrl-label {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  font-family: "Patrick Hand", Itim, cursive;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: #f6edd4;
+  text-shadow: 0 1px 0 #1a140c, 0 0 4px #1a140c;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#mobile-layer .album-btn {
+  min-width: 48px;
+  min-height: 48px;
+  pointer-events: auto;
+}
+#mobile-layer .throttle-track, #mobile-layer .stick-base {
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Mobile: condensed HUD, keep the centre clear */
+@media (max-width: 1000px), (max-height: 620px) {
+  #hud-stats { min-width: 0; font-size: 13px; padding: 5px 8px; max-width: 42vw; }
+  .stats-banner { font-size: 13px; }
+  #hud-compass { font-size: 12px; padding: 4px 8px; top: 8px; }
+  #hud-mission { font-size: 13px; min-width: 0; max-width: 42vw; padding: 5px 8px; }
+  #hud-minimap, #hud-photo, #hud-aux { display: none !important; }
+  #hud-flight.flight-bar { bottom: 8px; gap: 4px; padding: 4px 6px; }
+  .gauge-box { min-width: 48px; padding: 0 4px; }
+  .g-val { font-size: 16px; }
+  #g-horizon { width: 48px; height: 48px; }
+  #hud-msg { font-size: 16px; top: 16%; max-width: 60vw; }
+  .speech-balloon { font-size: 16px; bottom: 32%; max-width: 76vw; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  #hud-stats { top: 6px; left: 8px; }
+  #hud-mission { top: 6px; right: 8px; }
+  #hud-flight.flight-bar { transform: translateX(-50%) scale(0.92); transform-origin: bottom center; }
 }

@@ -174,6 +174,8 @@ function startFreeFlight() {
   if (weather) weather.set("clear");
   mode = "fly";
   paused = false;
+  autoPilotOn = false;
+  autoPilotTarget = null;
   ui.showHUD();
   audio.setMusic(clock.hour > 19 || clock.hour < 6 ? "music_night" : "music_day", 0.55);
 }
@@ -188,6 +190,8 @@ function startMission(id) {
   rebuildPlane(pid);
   if (m.start) launchCraft(craft, m.start.speed || 40, 0);
   missions.start(m, craft);
+  autoPilotOn = false;
+  autoPilotTarget = null;
   clock.set(m.hour ?? 10);
   clock.frozen = true;
   flyCam.state.mode = "chase";
@@ -336,6 +340,11 @@ function syncPlaneMesh() {
   if (planeMesh.userData.prop && craft.def.engine) {
     planeMesh.userData.prop.rotation.z += (0.4 + craft.throttle * 2.2 + craft.airspeed * 0.03);
   }
+  const ud = planeMesh.userData;
+  if (ud.elevator) ud.elevator.rotation.x = Math.max(-0.35, Math.min(0.35, -(craft.pitch || 0) * 0.45));
+  if (ud.rudder) ud.rudder.rotation.y = Math.max(-0.35, Math.min(0.35, (craft.yawRate || craft.angVel?.y || 0) * 0.4));
+  if (ud.ailL) ud.ailL.rotation.x = Math.max(-0.35, Math.min(0.35, (craft.roll || 0) * 0.5));
+  if (ud.ailR) ud.ailR.rotation.x = Math.max(-0.35, Math.min(0.35, -(craft.roll || 0) * 0.5));
   if (contrail) {
     const airborne = !craft.onGround && !craft.crashed && craft.airspeed > 18;
     const tail = new THREE.Vector3(0, 0.2, 4).applyQuaternion(craft.quat).add(craft.pos);
@@ -510,7 +519,7 @@ function step(now) {
     }
 
     accum += dtRaw;
-    const steps = Math.min(8, Math.floor(accum / PHYS.dt));
+    const steps = Math.min(24, Math.floor(accum / PHYS.dt));
     for (let i = 0; i < steps; i++) {
       stepCraft(craft, inp, island, PHYS.dt, settings);
       if (mode === "title" && craft.crashed) {
@@ -530,6 +539,7 @@ function step(now) {
       weather.applyToCraft(craft, dtRaw);
       look.uniforms.uRain.value = weather.state.rain;
       look.uniforms.uFlash.value = weather.state.flash;
+      if (typeof island.setStorm === "function") island.setStorm(weather.state.id === "storm", weather.state.windKt);
     }
 
     syncPlaneMesh();
@@ -620,14 +630,15 @@ function hudShot() {
 }
 
 function heroShot(opts = {}) {
-  const x = opts.x ?? 80;
-  const y = opts.y ?? 130;
-  const z = opts.z ?? -1680;
-  const tx = opts.tx ?? 0;
-  const ty = opts.ty ?? 90;
-  const tz = opts.tz ?? 80;
+  const x = opts.x ?? 260;
+  const y = opts.y ?? 52;
+  const z = opts.z ?? -1460;
+  const tx = opts.tx ?? 40;
+  const ty = opts.ty ?? 28;
+  const tz = opts.tz ?? -200;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
+  if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
   clock.set(opts.hour ?? 11);
   island.sky.setHour(opts.hour ?? 11);
   camOverride = null;
@@ -716,14 +727,15 @@ function landingShot(opts = {}) {
 
 function stormShot(opts = {}) {
   const pose = heroShot({ ...opts, weather: "storm", hour: opts.hour ?? 11, showcase: false });
-  if (weather) weather.set("storm", { windDeg: 270, windKt: 24, visibility: 4.2, turbulence: 0.7 });
+  if (weather) weather.set("storm", { windDeg: 270, windKt: 22.7, visibility: 4.2, turbulence: 0.7 });
+  if (typeof island.setStorm === "function") island.setStorm(true, 22.7);
   island.sky.setHour(opts.hour ?? 11);
   weather.state.flash = 0.42;
   weather.state.rain = 1;
   if (weather.bolt) {
     weather.bolt.visible = true;
-    weather.bolt.position.set(420, 260, -1100);
-    weather.bolt.scale.set(1.8, 1.8, 1.8);
+    weather.bolt.position.set(380, 280, -200);
+    weather.bolt.scale.set(2.4, 3.2, 2.4);
   }
   showcaseRings("ace", 4, 12, 46.219, "storm");
   if (missions.spawnDemoRing) {
@@ -771,6 +783,22 @@ function exposeAPI() {
     clearLook() { camOverride = null; },
     launch: (spd) => launchCraft(craft, spd, 2),
     setAutopilot: (on, target, opts) => { autoPilotOn = !!on; autoPilotTarget = target; autoPilotOpts = opts || {}; },
+    setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
+    getPaused: () => paused,
+    // Step live input (held keys / touch) through physics without waiting on the renderer.
+    advance(seconds) {
+      const steps = Math.max(1, Math.round(seconds / PHYS.dt));
+      const inp = input.update(settings);
+      for (let i = 0; i < steps; i++) {
+        const stepInp = input.update(settings);
+        if (weather) weather.applyToCraft(craft, PHYS.dt);
+        stepCraft(craft, stepInp, island, PHYS.dt, settings);
+        handleCraftEvents();
+        maybeRespawn();
+      }
+      syncPlaneMesh();
+    },
+
     steerTo: (inp, craft, x, y, z, opts) => autopilot(craft, { x, y, z }, inp, opts || {}),
     completeMissionNow: (stars = 3) => {
       if (missions.state.active) {

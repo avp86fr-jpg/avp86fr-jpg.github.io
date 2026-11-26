@@ -53,7 +53,7 @@ export function createInput(root) {
       roll: dead(p.axes[0] || 0),
       pitch: dead(p.axes[1] || 0),
       yaw: (p.buttons[4]?.pressed ? -1 : 0) + (p.buttons[5]?.pressed ? 1 : 0),
-      throttleSet: p.buttons[7] ? p.buttons[7].value : null,
+      throttleSet: (p.buttons[7] && p.buttons[7].value > 0.06) ? p.buttons[7].value : null,
       action: !!(p.buttons[0]?.pressed),
       camera: !!(p.buttons[3]?.pressed && !p._cam),
     };

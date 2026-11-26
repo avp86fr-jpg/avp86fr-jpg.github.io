@@ -1,7 +1,7 @@
-/** AEROPOSTALE ISLAND — global configuration. */
+/** AEROPOSTALE AIR — global configuration. */
 
 export const VERSION = "m1.0";
-export const TITLE = "AEROPOSTALE ISLAND";
+export const TITLE = "AEROPOSTALE AIR";
 
 export const WORLD = {
   size: 3000,          // island extent, meters (approx 3×3 km)
@@ -29,7 +29,7 @@ export const CAM = {
   far: 6200,
   chaseDist: 16,
   chaseHeight: 4.6,
-  chaseLag: 10,
+  chaseLag: 5,
 };
 
 /** Material IDs written to the ID target (0–255). */
@@ -91,7 +91,7 @@ export const STAR_UNLOCKS = {
 export const PLANES = {
   trainer: {
     id: "trainer",
-    name: "ISLAND HOPPER",
+    name: "COURRIER C-14",
     unlocked: true,
     mass: 680,
     wingArea: 16.4,
@@ -110,8 +110,8 @@ export const PLANES = {
     gearHeight: 1.15,
     waterCapable: false,
     engine: true,
-    color: "#f4f4f8",
-    accent: "#e01820",
+    color: "#c01418",
+    accent: "#f4ead0",
     engineSound: "engine_trainer",
   },
   seaplane: {

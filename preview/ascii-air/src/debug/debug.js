@@ -12,7 +12,7 @@ export function createDebug(root) {
     if (!on) return;
     const c = info.craft;
     el.textContent =
-`AEROPOSTALE ISLAND  ${info.backend}  ${info.grid.cols}×${info.grid.rows}px
+`AEROPOSTALE AIR  ${info.backend}  ${info.grid.cols}×${info.grid.rows}px
 fps ${info.fps.toFixed(0)}  frame ${info.frameMs.toFixed(1)}ms  calls ${info.calls}
 mode ${info.mode}  q ${info.quality}
 

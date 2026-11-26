@@ -53,42 +53,53 @@ void main() {
   col = mix(vec3(L), col, uSat);
   col = mix(vec3(0.5), col, uContrast);
 
-  // Uniform-width ink: sample a 1.5px ring so lines stay even (no thick/thin taper).
-  // Depth edges (silhouettes) get a slightly firmer mark; colour seams stay hairline.
+  // Two-tone album shading, then thin ink only — never fill a slope or the horizon.
+  col = mix(col, floor(col * 6.0 + 0.5) / 6.0, 0.22);
+
   float d  = linDepth(texture2D(tDepth, vUv).r);
-  vec2 o1 = px * 1.15;
+  vec2 o1 = px * 1.4; // ~2px at 1080p
   float dL = linDepth(texture2D(tDepth, vUv + vec2(-o1.x, 0.0)).r);
   float dR = linDepth(texture2D(tDepth, vUv + vec2( o1.x, 0.0)).r);
   float dU = linDepth(texture2D(tDepth, vUv + vec2(0.0,  o1.y)).r);
   float dDn = linDepth(texture2D(tDepth, vUv + vec2(0.0, -o1.y)).r);
-  float gDepth = max(abs(dR - dL), abs(dU - dDn)) / max(d, 1.0);
-  float sil = step(0.018 * uOutline, gDepth);
+  // Near-side occlusion only: a neighbour must be much farther than this pixel.
+  // Gradual slopes have a small jump and are ignored.
+  float jump = max(max(dL, dR), max(dU, dDn)) - d;
+  float rel = jump / max(d, 1.0);
+  float farCut = uNearFar.y * 0.80;
+  float notSky = step(d, farCut);
+  float sil = step(0.055 * uOutline, rel) * notSky;
 
   vec3 cL = texture2D(tColor, vUv + vec2(-o1.x, 0.0)).rgb;
   vec3 cR = texture2D(tColor, vUv + vec2( o1.x, 0.0)).rgb;
   vec3 cU = texture2D(tColor, vUv + vec2(0.0,  o1.y)).rgb;
   vec3 cD = texture2D(tColor, vUv + vec2(0.0, -o1.y)).rgb;
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
-  float colEdge = step(0.22, gCol);
-  float notSky = step(d, uNearFar.y * 0.90);
-  float ink = max(sil, colEdge * 0.85) * notSky;
+  float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
+  // Colour seams only if they are a thin ridge (one side similar, the other jumps).
+  float colEdge = step(0.42, gCol) * step(minN, 0.10) * notSky;
 
-  vec3 inkCol = vec3(0.08, 0.07, 0.06);
+  float ink = max(sil, colEdge);
+  vec3 inkCol = vec3(0.10, 0.08, 0.06);
   col = mix(col, inkCol, ink);
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;
 
   if (uRain > 0.04) {
-    float streak = fract((vUv.x * uRes.x + vUv.y * uRes.y * 1.35) * 0.07 - uTime * 9.0);
-    float slash = abs(fract(vUv.x * 90.0 + vUv.y * 120.0) - 0.5);
-    if (streak > 0.86 && slash < 0.08) {
-      col = mix(col, vec3(0.78, 0.86, 0.95), 0.45 * uRain);
-    }
-    col *= 1.0 - 0.10 * uRain;
+    // Dense diagonal comic-book rain slashes
+    vec2 ruv = vUv * uRes;
+    float axis = ruv.x * 0.62 + ruv.y;
+    float id = floor(axis / 13.0);
+    float phase = fract(axis / 13.0);
+    float drop = fract(ruv.y * 0.035 - uTime * 1.9 + id * 0.41);
+    float line = step(phase, 0.11);
+    float dash = step(0.28, drop) * step(drop, 0.92);
+    col = mix(col, vec3(0.78, 0.84, 0.92), line * dash * 0.62 * uRain);
+    col *= 1.0 - 0.07 * uRain;
   }
-  // Cool white flash, never a purple wash
-  col += vec3(0.82, 0.88, 1.0) * uFlash * 0.28;
+  // Brief cool-white screen flash; the bolt mesh itself carries the purple-white colour
+  col += vec3(0.85, 0.88, 1.0) * uFlash * 0.22;
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }

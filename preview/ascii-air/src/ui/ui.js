@@ -30,9 +30,9 @@ export function paintWordmark() {
     ${pilotSvg()}
     <div class="title-copy">
       <h1 class="title-wordmark">${TITLE}</h1>
-      <p class="title-tag">Mail planes over a sunny island</p>
+      <p class="title-tag">Des avions-poste au-dessus d'une île ensoleillée</p>
     </div>
-    <div class="speech-balloon title-balloon">Ready when you are!</div>
+    <div class="speech-balloon title-balloon">Prêt au départ !</div>
   `;
   return el;
 }
@@ -46,9 +46,9 @@ export function createUI(root, hooks) {
   const loading = document.createElement("div");
   loading.id = "loading";
   loading.innerHTML = `<div class="logo-slot"></div>
-    <div class="hint">AEROPOSTALE ISLAND</div>
+    <div class="hint">AEROPOSTALE AIR</div>
     <div class="bar"><span id="load-bar"></span></div>
-    <div id="load-msg" class="hint" style="margin-top:10px">warming the engine…</div>`;
+    <div id="load-msg" class="hint" style="margin-top:10px">on chauffe le moteur…</div>`;
   wrap.appendChild(loading);
 
   const title = document.createElement("div");
@@ -57,7 +57,7 @@ export function createUI(root, hooks) {
   title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8vh;pointer-events:none;";
   title.innerHTML = `
     <div class="logo-slot" id="logo"></div>
-    <div class="hint" style="margin:6px 0 14px">An island in the sun. A little mail plane. Clear skies ahead.</div>
+    <div class="hint" style="margin:6px 0 14px">Une île au soleil. Un courrier postal. Ciel clair devant.</div>
     <div class="album-panel" id="title-menu" style="pointer-events:auto;min-width:min(80vw,360px);padding:10px 0;"></div>
     <div id="ios-hint" class="hint hidden" style="margin-top:10px;max-width:90vw;text-align:center;white-space:normal;padding:0 12px"></div>
   `;
@@ -70,15 +70,23 @@ export function createUI(root, hooks) {
   hud.className = "hidden";
   hud.style.cssText = "position:absolute;inset:0;pointer-events:none;";
   hud.innerHTML = `
-    <div class="album-panel balloon" id="hud-stats"></div>
-    <div class="album-panel balloon" id="hud-compass"></div>
-    <div class="album-panel balloon" id="hud-mission"></div>
-    <div class="banner hud-line" id="hud-msg" style="top:18%;font-size:18px;"></div>
-    <div class="album-panel balloon hidden" id="hud-minimap"></div>
-    <div class="album-panel balloon" id="hud-flight"></div>
-    <div class="album-panel balloon hidden" id="hud-photo"></div>
-    <div class="album-panel balloon hidden" id="hud-aux"></div>
-    <button class="album-btn hidden" id="hud-fs">FULL</button>
+    <div class="album-panel" id="hud-stats"></div>
+    <div class="album-panel" id="hud-compass"></div>
+    <div class="album-panel" id="hud-mission"></div>
+    <div class="banner hud-line" id="hud-msg"></div>
+    <div class="album-panel hidden" id="hud-minimap"></div>
+    <div class="album-panel flight-bar" id="hud-flight">
+      <div class="gauge-box" id="g-vit"></div>
+      <div class="gauge-box" id="g-alt"></div>
+      <canvas id="g-horizon" width="96" height="96" aria-label="Horizon"></canvas>
+      <div class="gauge-box" id="g-vs"></div>
+      <div class="gauge-box" id="g-flaps"></div>
+      <div class="gauge-box" id="g-gear"></div>
+    </div>
+    <div class="album-panel hidden" id="hud-photo"></div>
+    <div class="album-panel hidden" id="hud-aux"></div>
+    <div class="speech-balloon hidden" id="hud-hint"></div>
+    <button type="button" class="album-btn hidden" id="hud-fs">PLEIN ÉCRAN</button>
   `;
   wrap.appendChild(hud);
 
@@ -117,7 +125,7 @@ export function createUI(root, hooks) {
     state.screen = "title";
     title.classList.remove("hidden");
     const items = [
-      { label: "FREE FLIGHT", fn: () => hooks.onFreeFlight?.() },
+      { label: "VOL LIBRE", fn: () => hooks.onFreeFlight?.() },
       { label: "MISSIONS", fn: () => showMissions(save) },
       { label: "HANGAR", fn: () => showHangar(save) },
       { label: "ALBUM", fn: () => showAlbum(save) },
@@ -127,7 +135,7 @@ export function createUI(root, hooks) {
     const hint = title.querySelector("#ios-hint");
     if (iosFullscreenHint()) {
       hint.classList.remove("hidden");
-      hint.textContent = "iPhone Safari can't go full screen here. Share → Add to Home Screen, then open AEROPOSTALE ISLAND like an app.";
+      hint.textContent = "iPhone Safari can't go full screen here. Share → Add to Home Screen, puis ouvrez AEROPOSTALE AIR comme une application.";
     } else hint.classList.add("hidden");
     mobile.layout(isPortrait(), false);
   }
@@ -195,7 +203,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       const got = all.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
       return { label: `${a.name}   ${got}/${all.length * 3} ★`, fn: () => showClass(save, a.id) };
     });
-    acts.push({ label: "BACK", fn: () => { closeOverlay(); showTitle(save); } });
+    acts.push({ label: "RETOUR", fn: () => { closeOverlay(); showTitle(save); } });
     const p = openOverlay(`<div style="white-space:pre;margin-bottom:8px">MISSIONS</div><div id="mlist"></div>`);
     renderMenu(p.querySelector("#mlist"), acts, save);
   }
@@ -205,7 +213,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       label: k.toUpperCase(),
       fn: () => showMissionList(save, activity, k),
     }));
-    items.push({ label: "BACK", fn: () => showMissions(save) });
+    items.push({ label: "RETOUR", fn: () => showMissions(save) });
     const p = openOverlay(`<div style="white-space:pre;margin-bottom:8px">${activity.toUpperCase()}</div><div id="mlist"></div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
@@ -219,7 +227,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       label: `${m.title.padEnd(22)} ${starsStr(save.stars[m.id] | 0)}`,
       fn: () => showBrief(save, m),
     }));
-    items.push({ label: "BACK", fn: () => showClass(save, activity) });
+    items.push({ label: "RETOUR", fn: () => showClass(save, activity) });
     const p = openOverlay(`<div style="white-space:pre;margin-bottom:8px">${activity.toUpperCase()}  ·  ${klass.toUpperCase()}</div><div id="mlist"></div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
@@ -237,8 +245,8 @@ ${wrapText(m.brief, 44)}
       <div id="mlist"></div>`;
     const p = openOverlay(html);
     const items = [];
-    if (!lockedPlane) items.push({ label: "FLY", fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
-    items.push({ label: "BACK", fn: () => showMissionList(save, m.activity, m.klass) });
+    if (!lockedPlane) items.push({ label: "EN VOL", fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
+    items.push({ label: "RETOUR", fn: () => showMissionList(save, m.activity, m.klass) });
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
@@ -251,7 +259,7 @@ ${wrapText(m.brief, 44)}
         fn: () => { if (un) { hooks.onSelectPlane?.(p.id); closeOverlay(); showTitle(save); } },
       };
     });
-    items.push({ label: "BACK", fn: () => { closeOverlay(); showTitle(save); } });
+    items.push({ label: "RETOUR", fn: () => { closeOverlay(); showTitle(save); } });
     const p = openOverlay(`<div style="margin-bottom:8px">HANGAR</div><div id="mlist"></div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
@@ -276,7 +284,7 @@ ${wrapText(m.brief, 44)}
       d.appendChild(cap);
       box.appendChild(d);
     });
-    renderMenu(p.querySelector("#mlist"), [{ label: "BACK", fn: () => { closeOverlay(); showTitle(save); } }], save);
+    renderMenu(p.querySelector("#mlist"), [{ label: "RETOUR", fn: () => { closeOverlay(); showTitle(save); } }], save);
   }
 
   function showOptions(save) {
@@ -334,7 +342,7 @@ ${wrapText(m.brief, 44)}
       box.appendChild(g);
     }
     refresh();
-    renderMenu(p.querySelector("#mlist"), [{ label: "BACK", fn: () => { closeOverlay(); hooks.onSettings?.(s); showTitle(save); } }], save);
+    renderMenu(p.querySelector("#mlist"), [{ label: "RETOUR", fn: () => { closeOverlay(); hooks.onSettings?.(s); showTitle(save); } }], save);
   }
 
   function showPause(save) {
@@ -369,6 +377,22 @@ time  ${formatTime(result.time || 0)}
     hud.classList.remove("hidden");
     state.screen = "fly";
     closeOverlay();
+    mobile.layout(isPortrait(), true);
+    maybeFlyHint();
+  }
+  function maybeFlyHint() {
+    const h = hud.querySelector("#hud-hint");
+    if (!h) return;
+    try { if (localStorage.getItem("apa_flyhint")) return; } catch {}
+    h.classList.remove("hidden");
+    h.textContent = "Poussez GAZ (ou Shift / Espace) — l'avion roule et décolle tout seul. Dirigez avec le manche ou WASD.";
+    const hide = () => {
+      h.classList.add("hidden");
+      try { localStorage.setItem("apa_flyhint", "1"); } catch {}
+    };
+    state._hideHint = hide;
+    setTimeout(hide, 12000);
+    h.addEventListener("pointerdown", hide, { once: true });
   }
 
   function compass(hdg) {
@@ -423,26 +447,25 @@ time  ${formatTime(result.time || 0)}
     photo.style.right = padR + "px"; photo.style.bottom = (padB + 48) + "px";
     aux.style.right = padR + "px"; aux.style.bottom = (padB + 48) + "px";
 
-    const spd = Math.round(craft.airspeed * 1.94384);
-    const altM = Math.max(0, craft.altitude);
-    const altFt = Math.round(altM * 3.28084);
-    const vs = Math.round(craft.vspeed * 196.85);
-    const vsS = (vs >= 0 ? "+" : "") + vs;
-    const thr = Math.round(craft.throttle * 100);
+    const spd = Math.round((craft.airspeed || 0) * 3.6);
+    const altM = Math.max(0, Math.round(craft.altitude || 0));
+    const vs = craft.vspeed || 0;
+    const vsS = (vs >= 0 ? "+" : "") + vs.toFixed(1);
     const hdg = ((Math.round((headingToNorth(craft.heading) * 180 / Math.PI) + 360) % 360));
-    const gear = craft.gearDown ? "DOWN" : "UP";
-    const flaps = (craft.flaps || 0) > 0.5 ? "FULL" : "UP";
-    const asp = bar(craft.throttle, 8, "█", "░");
-    const spdBar = bar(Math.min(1, (craft.airspeed || 0) / 70), 8, "█", "░");
+    const flapN = (craft.flaps || 0) > 0.66 ? 3 : (craft.flaps || 0) > 0.33 ? 2 : (craft.flaps || 0) > 0.1 ? 1 : 0;
     const stars = save.starsTotal ?? save.stars ?? 0;
     const photos = (save.photos && save.photos.length) || 0;
     const planeName = (craft.def && craft.def.name) || (craft.id || "TRAINER").toUpperCase();
 
-    stats.textContent = "AEROPOSTALE ISLAND\n★ " + String(stars).padStart(3) + " / 180\n○ " + String(photos).padStart(2) + " / 50 (Treasures)\n★ " + planeName + "  Lv.2";
+    stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span><span class="stats-wings" aria-hidden="true">✉</span></div>'
+      + "★ " + String(stars).padStart(3) + " / 180\n"
+      + "○ " + String(photos).padStart(2) + " / 50 (Trésors)\n"
+      + "✈ " + planeName + "  Niv.2";
     comp.textContent = compassStrip(craft.heading, hdg);
 
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";
-    const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° @ " + Math.round(weather.windKt) + " kt";
+    const windKmh = Math.round((weather.windKt || 0) * 1.852);
+    const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° à " + windKmh + " km/h";
 
     miss.style.display = "";
     if (mission && mission.active && !mission.result) {
@@ -450,20 +473,23 @@ time  ${formatTime(result.time || 0)}
       const klass = (m.klass || "").toUpperCase();
       const lines = [];
       if (m.activity === "rings") {
-        lines.push("RING COURSE  (" + (klass || "PRO") + ")");
-        lines.push("> Fly through all rings!");
-        lines.push("> Rings: " + mission.ringsPassed + "/" + m.rings.length);
-        lines.push("> Time: " + formatTime(mission.t));
-        lines.push("> Wind: " + windLine);
-        if (m.weather || weather.id === "storm") lines.push("> Weather: " + wx);
+        lines.push("PARCOURS D'ANNEAUX  (" + (klass || "PRO") + ")");
+        lines.push("> Franchir les " + m.rings.length + " anneaux");
+        lines.push("> Anneaux : " + mission.ringsPassed + " / " + m.rings.length);
+        lines.push("> Temps : " + formatTime(mission.t));
+        if (m.timeLimits && m.timeLimits[0]) lines.push("> Temps cible : " + formatTime(m.timeLimits[0]));
+        const best = (save.best && save.best[m.id]) ? formatTime(save.best[m.id]) : "—";
+        lines.push("> Meilleur : " + best);
+        lines.push("> Vent : " + windLine);
+        if (m.weather || weather.id === "storm") lines.push("> Météo : " + (weather.id === "storm" ? "ORAGE" : "CLAIR"));
       } else if (m.activity === "landing") {
         const rwy = (m.target && m.target.heading > 2) ? "27" : "09";
         const typ = (m.target && m.target.type === "runway") ? rwy : String((m.target && m.target.type) || "").toUpperCase();
-        lines.push("LANDING  (" + (klass || "PRO") + ")");
-        lines.push("> Land at the airport.");
-        lines.push("> Runway: " + typ);
-        lines.push("> Wind: " + windLine);
-        lines.push("> Grade: " + (mission.message || "—"));
+        lines.push("ATTERRISSAGE  (" + (klass || "PRO") + ")");
+        lines.push("> Se poser à l'aérodrome.");
+        lines.push("> Piste : " + typ);
+        lines.push("> Vent : " + windLine);
+        lines.push("> Note : " + (mission.message || "—"));
       } else if (m.activity === "balloons") {
         lines.push(m.title);
         lines.push("> " + mission.popped + "/" + mission.balloons.length + "   " + formatTime(Math.max(0, (m.timeLimit || 90) - mission.t)));
@@ -477,24 +503,33 @@ time  ${formatTime(result.time || 0)}
     } else if (mission && mission.result) {
       miss.textContent = mission.message || "";
     } else {
-      miss.textContent = "FREE FLIGHT\n> " + hourToClock(hour) + "\n> Wind: " + windLine + "\n> Weather: " + wx;
+      miss.textContent = "VOL LIBRE\n> " + hourToClock(hour) + "\n> Vent : " + windLine + "\n> Météo : " + (weather.id === "storm" ? "ORAGE" : "CLAIR");
     }
 
     const landing = mission && mission.active && mission.active.activity === "landing" && !mission.result;
     const stormy = weather.id === "storm" || (mission && mission.active && mission.active.weather === "storm");
-    if (landing) {
-      flight.textContent = "SPD " + String(spd).padStart(3) + " kt   ALT " + String(altFt).padStart(4) + " ft   " + attitude(craft) + "   V/S " + vsS + " fpm   FLAPS " + flaps + "   GEAR " + gear;
-    } else if (stormy) {
-      flight.textContent = "SPD " + String(spd).padStart(3) + " " + spdBar + "   ALT " + String(altFt).padStart(4) + " ft   " + attitude(craft) + "   THR " + asp + " " + String(thr).padStart(3) + "%   WIND " + windLine;
-    } else {
-      flight.textContent = "SPD " + String(spd).padStart(3) + " " + spdBar + "   ALT " + String(altFt).padStart(4) + " ft   " + attitude(craft) + "   THR " + asp + " " + String(thr).padStart(3) + "%   " + planeIcon(craft);
+    const vitEl = flight.querySelector("#g-vit");
+    const altEl = flight.querySelector("#g-alt");
+    const vsEl = flight.querySelector("#g-vs");
+    const flEl = flight.querySelector("#g-flaps");
+    const geEl = flight.querySelector("#g-gear");
+    if (vitEl) vitEl.innerHTML = '<div class="g-lab">VIT</div><div class="g-val">' + String(spd).padStart(3, " ") + '</div><div class="g-unit">km/h</div>';
+    if (altEl) altEl.innerHTML = '<div class="g-lab">ALT</div><div class="g-val">' + String(altM).padStart(4, " ") + '</div><div class="g-unit">m</div>';
+    if (vsEl) vsEl.innerHTML = '<div class="g-lab">V/S</div><div class="g-val">' + vsS + '</div><div class="g-unit">m/s</div>';
+    if (flEl) {
+      const ticks = [0, 1, 2, 3].map((n) => '<span class="' + (n === flapN ? "on" : "") + '">' + n + "</span>").join(" ");
+      flEl.innerHTML = '<div class="g-lab">VOLETS</div><div class="g-val flaps">' + ticks + "</div>";
     }
+    if (geEl) geEl.innerHTML = '<div class="g-lab">TRAIN</div><div class="g-val gear">' + (craft.gearDown ? "▼" : "▲") + "</div>";
+    drawHorizon(flight.querySelector("#g-horizon"), craft);
 
-    msg.textContent = craft.crashed ? "RECOVERING…" : ((mission && mission.result) ? mission.message : "");
+    msg.textContent = craft.crashed ? "REPRISE…" : ((mission && mission.result) ? mission.message : "");
+    if (state._hideHint && !craft.onGround && (craft.altitude || 0) > 8) state._hideHint();
+
 
     if (!portrait && !mobileChrome && window.innerWidth > 900 && window.innerHeight > 560) {
       mmap.classList.remove("hidden");
-      mmap.textContent = "MAP      N\n" + drawMini(craft);
+      mmap.textContent = "CARTE          N\n" + drawMini(craft) + "\n         3 km";
     } else mmap.classList.add("hidden");
 
     const showPhoto = mission && mission.active && mission.active.activity === "photo" && !mission.result;
@@ -503,7 +538,7 @@ time  ${formatTime(result.time || 0)}
       aux.classList.add("hidden");
       const sub = (mission.active.subject && mission.active.subject.name) || "subject";
       photo.classList.toggle("ready", !!mission.photoReady);
-      photo.textContent = "PHOTO\n┌────────────┐\n│ " + String(sub).slice(0, 10).padEnd(10) + " │\n│ " + (mission.photoReady ? "  IN FRAME  " : "  find it   ") + " │\n└────────────┘";
+      photo.textContent = "MISSION PHOTO\n┌────────────┐\n│ " + String(sub).slice(0, 10).padEnd(10) + " │\n│ " + (mission.photoReady ? "  CADRÉ !   " : "  chercher  ") + " │\n└────────────┘";
     } else if (landing) {
       photo.classList.add("hidden");
       aux.classList.remove("hidden");
@@ -511,13 +546,13 @@ time  ${formatTime(result.time || 0)}
       const glideS = (a.glide >= 0 ? "+" : "") + a.glide.toFixed(1);
       const latS = (a.lat >= 0 ? "+" : "") + a.lat.toFixed(1);
       const etaS = a.eta > 0 ? (Math.round(a.eta) + " s") : "—";
-      aux.textContent = "LANDING ASSIST\n> Glide: " + glideS + "°\n> Center: " + latS + " m\n> Speed: " + Math.round(a.spd) + " kt\nTOUCHDOWN    ~" + etaS;
+      aux.textContent = "AIDE À L'ATTERRISSAGE\n> Plané : " + glideS + "°\n> Axe : " + latS + " m\n> Vitesse : " + Math.round(a.spd) + " km/h\nTOUCHER    ~" + etaS;
     } else if (stormy && !portrait) {
       photo.classList.add("hidden");
       aux.classList.remove("hidden");
-      const turb = weather.turbulence > 0.55 ? "High" : weather.turbulence > 0.2 ? "Med" : "Low";
-      const rain = weather.rain > 0.6 ? "Heavy" : weather.rain > 0.2 ? "Light" : "None";
-      aux.textContent = "WEATHER\n> " + wx + "\n> Rain: " + rain + "\n> Visibility: " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence: " + turb;
+      const turb = weather.turbulence > 0.55 ? "élevée" : weather.turbulence > 0.2 ? "moyenne" : "faible";
+      const rain = weather.rain > 0.6 ? "forte" : weather.rain > 0.2 ? "légère" : "aucune";
+      aux.textContent = "MÉTÉO : ORAGE\n> Pluie : " + rain + "\n> Visibilité : " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence : " + turb;
     } else {
       photo.classList.add("hidden");
       aux.classList.add("hidden");
@@ -526,6 +561,36 @@ time  ${formatTime(result.time || 0)}
 
     mobile.layout(portrait, state.screen === "fly");
     mobile.setThrottle(craft.throttle);
+  }
+
+
+  function drawHorizon(cv, craft) {
+    if (!cv || !cv.getContext) return;
+    const ctx = cv.getContext("2d");
+    const w = cv.width, h = cv.height;
+    ctx.clearRect(0, 0, w, h);
+    const roll = craft.roll || 0;
+    const pitch = craft.pitch || 0;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(w/2, h/2, w/2 - 2, 0, Math.PI * 2); ctx.clip();
+    ctx.translate(w/2, h/2);
+    ctx.rotate(-roll);
+    ctx.translate(0, pitch * 70);
+    ctx.fillStyle = "#6eb7e8";
+    ctx.fillRect(-w, -h * 2, w * 2, h * 2);
+    ctx.fillStyle = "#c9a36a";
+    ctx.fillRect(-w, 0, w * 2, h * 2);
+    ctx.strokeStyle = "#1a140c";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-w, 0); ctx.lineTo(w, 0); ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = "#1a140c";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(w/2, h/2, w/2 - 2, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "#c01418";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(10, h/2); ctx.lineTo(w - 10, h/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w/2, h/2); ctx.lineTo(w/2 + 8, h/2 + 6); ctx.lineTo(w/2 - 8, h/2 + 6); ctx.closePath(); ctx.stroke();
   }
 
   function compassStrip(hdg, deg) {
@@ -537,9 +602,13 @@ time  ${formatTime(result.time || 0)}
       const ang = ((n * 360 - span / 2) + (i / (width - 1)) * span + 360) % 360;
       const near = (d) => Math.min(Math.abs(ang - d), 360 - Math.abs(ang - d)) < (span / width) * 0.7;
       if (near(0)) s += "N";
+      else if (near(45)) s += "NE";
       else if (near(90)) s += "E";
+      else if (near(135)) s += "SE";
       else if (near(180)) s += "S";
-      else if (near(270)) s += "W";
+      else if (near(225)) s += "SO";
+      else if (near(270)) s += "O";
+      else if (near(315)) s += "NO";
       else s += (i % 2 === 0) ? "·" : " ";
     }
     return `⟨${s}⟩  ${String(deg).padStart(3, "0")}° ${compass(hdg)}`;
@@ -566,7 +635,7 @@ time  ${formatTime(result.time || 0)}
     const lat = -dx * fz + dz * fx;
     const alt = Math.max(0, (craft.altitude || 0) - 4);
     const glide = along > 8 ? -(Math.atan2(alt, along) * 180 / Math.PI) : 0;
-    const spd = (craft.airspeed || 0) * 1.94384;
+    const spd = (craft.airspeed || 0) * 3.6;
     const eta = Math.max(0, (along > 0 && craft.airspeed > 5) ? along / craft.airspeed : 0);
     return { glide, lat, spd, eta, along };
   }
