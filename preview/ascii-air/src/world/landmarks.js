@@ -662,13 +662,21 @@ function makeCoastalCliffs(H) {
     }
     if (zLand != null && zLand > -1470) pts.push({ x, z: zLand - 1.5, h: Math.min(Math.max(h, 12), 70) });
   }
-  const ochre = [0.76, 0.58, 0.38];
-  const shade = [0.52, 0.40, 0.26];
+  // Extra hatched wall along the west limestone cape
+  const ax = LANDMARKS.arch.x, az = LANDMARKS.arch.z;
+  for (let x = ax - 70; x <= ax + 50; x += 6) {
+    if (Math.abs(x - ax) < 9) continue; // leave the window open
+    const zWall = az - 10;
+    const hh = Math.max(H(x, zWall + 8), 18);
+    pts.push({ x, z: zWall, h: Math.min(hh + 8, 48) });
+  }
+  const ochre = [0.72, 0.54, 0.34];
+  const shade = [0.46, 0.34, 0.22];
   function vert(x, y, z, c) {
     const i = positions.length / 3;
     positions.push(x, y, z);
-    const stripe = Math.sin(x * 1.25 + y * 1.7) + 0.55 * Math.sin((x - y) * 2.4 + z * 0.2);
-    const hatch = stripe > 0.35 ? 0.48 : stripe > 0.05 ? 0.7 : stripe > -0.25 ? 0.88 : 1;
+    const stripe = Math.sin(x * 1.45 + y * 2.1) + 0.6 * Math.sin((x - y) * 2.8 + z * 0.2);
+    const hatch = stripe > 0.28 ? 0.42 : stripe > 0.0 ? 0.64 : stripe > -0.28 ? 0.82 : 1;
     colors.push(c[0] * hatch, c[1] * hatch, c[2] * hatch);
     return i;
   }
@@ -743,7 +751,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   const windsock = makeWindsock();
-  windsock.position.set(LANDMARKS.tower.x + 18, H(LANDMARKS.tower.x + 18, LANDMARKS.tower.z + 12), LANDMARKS.tower.z + 12);
+  windsock.scale.setScalar(2.3);
+  windsock.position.set(LANDMARKS.hangar.x - 22, H(LANDMARKS.hangar.x - 22, LANDMARKS.hangar.z - 36), LANDMARKS.hangar.z - 36);
   group.add(windsock);
 
   const tower = makeTower();
@@ -866,17 +875,17 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(-30, 0.9, -1470);
+  steamer.position.set(-36, 0.9, -1488);
   steamer.rotation.y = -0.7;
-  steamer.scale.setScalar(1.55);
+  steamer.scale.setScalar(1.85);
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[-18, -1505, 0x2a6cb6], [-42, -1440, 0xe8e0c8], [16, -1488, 0xc05030], [-8, -1520, 0xc08020], [-55, -1425, 0xf4ead0]];
+  const coastal = [[-24, -1522, 0x2a6cb6], [-48, -1460, 0xe8e0c8], [18, -1510, 0xc05030], [4, -1534, 0xc08020], [-62, -1440, 0xf4ead0]];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
     b.rotation.y = -0.55;
-    b.scale.setScalar(1.45);
+    b.scale.setScalar(1.85);
     group.add(b);
     boats.push(b);
   }
@@ -901,8 +910,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(2.4, 2.0, 2.2);
-  bridge.position.set(bx, 28, bz);
+  bridge.scale.set(3.4, 2.8, 2.6);
+  bridge.position.set(bx, Math.max(22, H(bx, bz) + 8), bz);
   bridge.rotation.y = 0.08;
   group.add(bridge);
 
@@ -947,8 +956,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const falls = makeWaterfall();
   // sheet hangs down from ~88 to ~16, center at ~52
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
-  falls.scale.set(1.8, 1.6, 1.8);
-  falls.position.set(wx, 50, wz);
+  falls.scale.set(2.8, 2.6, 2.4);
+  falls.position.set(wx, Math.max(40, H(wx, wz) - 8), wz);
   falls.rotation.y = 0.05;
   group.add(falls);
 

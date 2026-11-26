@@ -110,12 +110,12 @@ export function computeHeight(x, z) {
   if (z > -1040 && z < 280 && Math.abs(x) < 820) {
     const runway = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 58, Math.abs(x) / 400)), 1.35);
     const w = smoothstep(-1040, -900, z) * smoothstep(280, 40, z) * smoothstep(820, 480, Math.abs(x)) * runway;
-    h += w * (16 + 30 * fbm(x * 0.0017, z * 0.0016, 4, 11) + 11 * ridge((x + 90) * 0.0044, z * 0.0044, 2, 5));
+    h += w * (22 + 36 * fbm(x * 0.0017, z * 0.0016, 4, 11) + 14 * ridge((x + 90) * 0.0044, z * 0.0044, 2, 5));
   }
 
   // West mill hills
-  const hd = dist2(x, z, 520, -860);
-  const hills = smoothstep(620, 80, hd) * (58 + 22 * fbm(x * 0.003, z * 0.003, 4, 21));
+  const hd = dist2(x, z, LANDMARKS.windmills.x, LANDMARKS.windmills.z);
+  const hills = smoothstep(260, 50, hd) * (26 + 16 * fbm(x * 0.003, z * 0.003, 4, 21));
   h = Math.max(h, hills * mask);
 
   // Castle cliff plateau (east of the cone, visible in the hero vista)
@@ -130,10 +130,23 @@ export function computeHeight(x, z) {
   const ridgeH = smoothstep(380, 80, sd) * 92;
   h = Math.max(h, ridgeH * mask);
 
-  // Lighthouse cape height
-  const ld = dist2(x, z, -180, -1260);
-  const capeH = smoothstep(340, 36, ld) * (28 + 22 * ridge(x * 0.01, z * 0.01, 3, 4));
-  h = Math.max(h, capeH * Math.max(mask, smoothstep(380, 90, ld)));
+  // Lighthouse / arch cape — steep south face, rocky shelf, not a sand dome
+  const ld = dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z);
+  const ad = dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z);
+  const capeCore = Math.max(smoothstep(200, 36, ld), smoothstep(100, 24, ad));
+  let capeH = capeCore * (24 + 16 * ridge(x * 0.012, z * 0.012, 3, 4));
+  if (z < LANDMARKS.arch.z - 6 && x < -30) {
+    capeH *= smoothstep(LANDMARKS.arch.z - 48, LANDMARKS.arch.z - 6, z);
+  }
+  h = Math.max(h, capeH * Math.max(mask, capeCore));
+  // Shear the west cape's south face into a cliff, except the arch window
+  if (x < -20 && z < LANDMARKS.arch.z - 8) {
+    const slot = (Math.abs(x - LANDMARKS.arch.x) < 10) && (z > LANDMARKS.arch.z - 22);
+    if (!slot) {
+      const drop = saturate((LANDMARKS.arch.z - 8 - z) / 18);
+      h = lerp(h, -1.5, drop);
+    }
+  }
 
   // Small sandy cove only — the rest of the south coast is a cliff
   const cove = smoothstep(90, 28, dist2(x, z, 40, -1220));
@@ -206,8 +219,8 @@ export function computeHeight(x, z) {
     h = lerp(h, Math.min(h, target), carve * (i === 3 ? 0.35 : 0.9));
   }
 
-  const up = capsuleDist(x, z, 30, -300, 20, -820);
-  const down = capsuleDist(x, z, 20, -820, -20, -920);
+  const up = capsuleDist(x, z, 30, -300, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
+  const down = capsuleDist(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z, LANDMARKS.bridge.x, LANDMARKS.bridge.z);
   if (up < 40) h = Math.max(h, 70);
   if (down < 36 && dist2(x, z, 0, -870) < 90) h = Math.min(h, 22);
 
@@ -217,16 +230,16 @@ export function computeHeight(x, z) {
 
   // Mistfall: a high lip and a hard drop so the sheet reads as a waterfall, not a floating tower
   {
-    const wd = dist2(x, z, 20, -820);
+    const wd = dist2(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
     if (wd < 90) {
       const lip = smoothstep(90, 18, wd);
-      if (z >= -820) h = Math.max(h, lerp(h, 82, lip));
+      if (z >= LANDMARKS.waterfall.z) h = Math.max(h, lerp(h, 70, lip));
       else h = lerp(h, 18, lip * 0.9);
     }
-    const bd = dist2(x, z, -20, -920);
+    const bd = dist2(x, z, LANDMARKS.bridge.x, LANDMARKS.bridge.z);
     if (bd < 60) {
       const bank = smoothstep(60, 18, bd);
-      const span = (Math.abs(x + 20) < 16) && (Math.abs(z + 920) < 20);
+      const span = (Math.abs(x - LANDMARKS.bridge.x) < 16) && (Math.abs(z - LANDMARKS.bridge.z) < 20);
       if (span) h = lerp(h, 8, bank);
       else h = Math.max(h, 24 * bank);
     }
@@ -249,7 +262,8 @@ export function computeHeight(x, z) {
 
   // Shore clamp: no vertical walls at the waterline
   if (mask < 0.99 && mask > 0.01) {
-    h = lerp(bed * 0.3, h, mask);
+    const westCliff = x < -20 && z < -1180;
+    if (!westCliff) h = lerp(bed * 0.3, h, mask);
   }
 
   if (mask <= 0.001) h = bed;
@@ -266,7 +280,9 @@ export function computeHeight(x, z) {
   h = flatten(h, 4.2, Math.pow(saturate(airportPad2), 1.15));
   h = flatten(h, 90, Math.pow(saturate(grassPad2), 1.2) * 0.95);
   h = flatten(h, 1.8, cove2 * 0.9);
-  h = Math.max(h, (22 + 18 * ridge(x * 0.02, z * 0.02, 2, 4)) * beachCape2);
+  // Only raise the inland cape shelf — do not rebuild a sand dome south of the arch
+  const capeInland = smoothstep(LANDMARKS.arch.z - 2, LANDMARKS.lighthouse.z + 10, z);
+  h = Math.max(h, (22 + 18 * ridge(x * 0.02, z * 0.02, 2, 4)) * beachCape2 * capeInland);
 
   // South-east ochre sea-cliffs
   if (x > 280 && x < 1000 && z < -680 && z > -1400) {
@@ -294,6 +310,15 @@ export function computeHeight(x, z) {
   const bayCut = smoothstep(150, 28, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1600, -1360, z);
   h = lerp(h, Math.min(h, -6), bayCut * 0.95);
   if (h < 0.45 && !nearLag && !nearCove && mask < 0.55) h = Math.min(h, bed);
+
+  // Final cape cliff after pads / domes, so the hero sees a cut limestone face
+  if (x < -20 && z < LANDMARKS.arch.z - 8) {
+    const slot = (Math.abs(x - LANDMARKS.arch.x) < 10) && (z > LANDMARKS.arch.z - 22);
+    if (!slot) {
+      const drop = saturate((LANDMARKS.arch.z - 8 - z) / 16);
+      h = lerp(h, -1.5, drop);
+    }
+  }
 
   return h;
 }
@@ -389,7 +414,7 @@ export function createTerrain(quality = "medium") {
         }
         if (vd < 420 && h > 110) return [0.70 + n * 0.06, 0.48, 0.32];
         // Grey-ochre coastal rock, not a yellow dome
-        return [0.82 + n * 0.06, 0.68 + n * 0.05, 0.42];
+        return [0.70 + n * 0.08, 0.56 + n * 0.05, 0.34];
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];
