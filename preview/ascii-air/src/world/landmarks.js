@@ -116,18 +116,26 @@ function makeMarketStall(rng) {
 function makeLighthouse() {
   const g = new THREE.Group();
   g.name = "lighthouse";
-  add(g, cyl(7, 9, 6, 10, 0x6a6258, MAT.ROCK), 0, 3, 0);
-  add(g, cyl(5.2, 6.6, 28, 12, 0xf4f0e4, MAT.BUILDING), 0, 20, 0);
-  // red bands
-  add(g, cyl(5.5, 6.0, 3.2, 12, 0xc03a3a, MAT.ROOF), 0, 14, 0);
-  add(g, cyl(5.4, 5.7, 3.2, 12, 0xc03a3a, MAT.ROOF), 0, 24, 0);
-  add(g, cyl(6.2, 6.2, 4, 12, 0x2a2a2a, MAT.METAL), 0, 36, 0);
-  const lantern = cyl(3.4, 3.4, 4.2, 10, 0xfff4c0, MAT.LIGHT, 1);
+  const white = 0xf8f4ea;
+  const red = 0xd01418;
+  // Slim white tower with crisp red bands
+  add(g, cyl(5.4, 6.4, 4.5, 12, 0x8a8070, MAT.ROCK), 0, 2.2, 0);
+  add(g, cyl(3.15, 4.05, 36, 14, white, MAT.BUILDING), 0, 22, 0);
+  add(g, cyl(3.65, 4.00, 5.6, 14, red, MAT.ROOF), 0, 11, 0);
+  add(g, cyl(3.50, 3.75, 5.6, 14, red, MAT.ROOF), 0, 22, 0);
+  add(g, cyl(3.35, 3.55, 5.6, 14, red, MAT.ROOF), 0, 33, 0);
+  // Gallery and lantern
+  add(g, cyl(4.4, 4.4, 0.45, 14, 0x2a2a2a, MAT.METAL), 0, 40.4, 0);
+  add(g, cyl(4.15, 4.15, 1.1, 14, 0x2a2a2a, MAT.METAL), 0, 41.1, 0);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    add(g, box(0.22, 4.2, 0.22, 0x2a2a2a, MAT.METAL), Math.cos(a) * 3.5, 43.3, Math.sin(a) * 3.5);
+  }
+  const lantern = cyl(3.0, 3.0, 4.0, 12, 0xfff4c0, MAT.LIGHT, 1);
   lantern.name = "lantern";
-  add(g, lantern, 0, 40, 0);
-  add(g, cone(4.2, 3.2, 8, 0x2a2a2a, MAT.METAL), 0, 43.8, 0);
-  // gallery
-  add(g, cyl(6.6, 6.6, 0.3, 12, 0x888888, MAT.METAL), 0, 37.8, 0);
+  add(g, lantern, 0, 43.4, 0);
+  add(g, cone(4.0, 3.0, 8, red, MAT.ROOF), 0, 47.0, 0);
+  add(g, cyl(0.28, 0.28, 1.6, 6, 0x2a2a2a, MAT.METAL), 0, 49.0, 0);
 
   // Beam — long thin box / cone that we rotate
   const beamGeo = new THREE.ConeGeometry(18, 220, 8, 1, true);
@@ -141,7 +149,7 @@ function makeLighthouse() {
     side: THREE.DoubleSide,
   });
   const beam = new THREE.Mesh(beamGeo, beamMat);
-  beam.position.set(0, 40, 0);
+  beam.position.set(0, 43.4, 0);
   beam.name = "beam";
   g.add(beam);
   g.userData.beam = beam;
@@ -248,27 +256,60 @@ function makeWreck() {
 
 function makeBridge() {
   const g = new THREE.Group();
-  add(g, box(8, 2, 36, 0x8a8478, MAT.ROCK), 0, 0, 0);
-  add(g, box(1.2, 3, 36, 0x7a7468, MAT.ROCK), -3.6, 2.2, 0);
-  add(g, box(1.2, 3, 36, 0x7a7468, MAT.ROCK), 3.6, 2.2, 0);
-  // arches (boxes as piers)
-  add(g, box(4, 14, 4, 0x7a7468, MAT.ROCK), 0, -8, -10);
-  add(g, box(4, 14, 4, 0x7a7468, MAT.ROCK), 0, -8, 10);
+  const stone = 0xcfc3a6;
+  const shade = 0x8e836c;
+  // Deck runs east-west; arches open to the south camera.
+  add(g, box(72, 1.8, 12, stone, MAT.ROCK), 0, 10, 0);
+  add(g, box(72, 2.6, 1.2, shade, MAT.ROCK), 0, 12.2, -5.5);
+  add(g, box(72, 2.6, 1.2, shade, MAT.ROCK), 0, 12.2, 5.5);
+  for (let i = -6; i <= 6; i++) {
+    add(g, box(1.4, 1.3, 1.4, stone, MAT.ROCK), i * 5.5, 13.8, -5.5);
+    add(g, box(1.4, 1.3, 1.4, stone, MAT.ROCK), i * 5.5, 13.8, 5.5);
+  }
+  for (let i = -2; i <= 2; i++) {
+    const x = i * 14;
+    add(g, box(3.6, 18, 10, stone, MAT.ROCK), x, 1, 0);
+    const torus = new THREE.TorusGeometry(5.6, 1.45, 7, 16, Math.PI);
+    retagGeometry(torus, MAT.ROCK, 0);
+    const arch = new THREE.Mesh(torus, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: shade, flatShading: true })));
+    arch.userData.matId = MAT.ROCK;
+    arch.position.set(x, 4.4, 0);
+    g.add(arch);
+  }
   return g;
 }
 
 function makeCastle() {
   const g = new THREE.Group();
-  add(g, box(28, 16, 22, 0x8a8680, MAT.ROCK), 0, 8, 0);
-  add(g, box(8, 26, 8, 0x8a8680, MAT.ROCK), -12, 13, -8);
-  add(g, box(8, 22, 8, 0x8a8680, MAT.ROCK), 12, 11, -8);
-  add(g, box(8, 18, 8, 0x8a8680, MAT.ROCK), -12, 9, 8);
-  // broken wall
-  add(g, box(18, 10, 3, 0x7a7670, MAT.ROCK), 6, 5, 12, 0, 0.2, 0.1);
-  add(g, box(6, 5, 4, 0x7a7670, MAT.ROCK), 14, 2, 10, 0.3, 0.5, 0);
-  // crenellations
-  for (let i = -2; i <= 2; i++) {
-    add(g, box(3, 3, 3, 0x8a8680, MAT.ROCK), i * 5, 17.5, -10);
+  const stone = 0xc5bba8;
+  const shade = 0x8f8676;
+  // Keep and curtain wall
+  add(g, box(30, 16, 24, stone, MAT.ROCK), 0, 8, 0);
+  add(g, box(32, 2.2, 26, shade, MAT.ROCK), 0, 16.8, 0);
+  // Four corner towers
+  const towers = [[-13, 14, -10, 28], [13, 12, -10, 24], [-13, 11, 10, 22], [13, 11, 10, 22]];
+  for (const [x, y, z, h] of towers) {
+    add(g, box(9, h, 9, stone, MAT.ROCK), x, h / 2, z);
+    add(g, box(10.2, 1.4, 10.2, shade, MAT.ROCK), x, h + 0.4, z);
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (i !== 0 && j !== 0) continue;
+        add(g, box(2.2, 2.4, 2.2, stone, MAT.ROCK), x + i * 4.2, h + 2.0, z + j * 4.2);
+      }
+    }
+  }
+  // Gate arch
+  add(g, box(8, 10, 3, shade, MAT.ROCK), 0, 5, 13);
+  const gate = new THREE.TorusGeometry(3.2, 1.1, 6, 12, Math.PI);
+  retagGeometry(gate, MAT.ROCK, 0);
+  const gm = new THREE.Mesh(gate, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: shade, flatShading: true })));
+  gm.userData.matId = MAT.ROCK;
+  gm.position.set(0, 4.2, 14.2);
+  g.add(gm);
+  // Curtain crenellations
+  for (let i = -3; i <= 3; i++) {
+    add(g, box(2.4, 2.6, 2.4, stone, MAT.ROCK), i * 4.2, 19.2, -11.6);
+    add(g, box(2.4, 2.6, 2.4, stone, MAT.ROCK), i * 4.2, 19.2, 11.6);
   }
   return g;
 }
@@ -576,8 +617,8 @@ function makeCoastalCliffs(H) {
     }
     if (zLand != null && zLand > -1470) pts.push({ x, z: zLand - 1.5, h: Math.min(Math.max(h, 12), 70) });
   }
-  const ochre = [0.92, 0.62, 0.26];
-  const shade = [0.62, 0.38, 0.14];
+  const ochre = [0.76, 0.58, 0.38];
+  const shade = [0.52, 0.40, 0.26];
   function vert(x, y, z, c) {
     const i = positions.length / 3;
     positions.push(x, y, z);
@@ -715,18 +756,18 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   // Town houses
-  const houseColors = [0xf0d8a0, 0xe8cc8c, 0xf4e0b0, 0xe6c878, 0xf2d498];
+  const houseColors = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
   const roofColors = [0xf02218, 0xd41010, 0xff3020, 0xe01814, 0xff3a22];
   const spots = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  for (let i = 0; i < 64; i++) {
+  for (let i = 0; i < 96; i++) {
     const a = rnd() * Math.PI * 2;
-    const r = 16 + rnd() * 110;
+    const r = 10 + rnd() * 95;
     const x = LANDMARKS.town.x + Math.cos(a) * r;
     const z = LANDMARKS.town.z + Math.sin(a) * r * 0.7;
     if (Math.abs(z + 1100) < 70) continue;
-    const h = house(8 + rnd() * 5, 8 + rnd() * 5, 5 + rnd() * 4, 4 + rnd() * 3, houseColors[i % 5], roofColors[i % 5]);
+    const h = house(5.4 + rnd() * 3.0, 5.2 + rnd() * 2.8, 4.2 + rnd() * 2.2, 3.0 + rnd() * 1.6, houseColors[i % 5], roofColors[i % 5]);
     h.position.set(x, H(x, z), z);
     h.rotation.y = rnd() * Math.PI * 2;
     group.add(h);
@@ -788,20 +829,20 @@ export function createLandmarks(scene, terrain, sky) {
   group.add(wreck);
 
   const light = makeLighthouse();
-  light.scale.setScalar(1.55);
+  light.scale.setScalar(1.7);
   light.position.set(LANDMARKS.lighthouse.x, H(LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z), LANDMARKS.lighthouse.z);
   group.add(light);
   sky.addLamp(new THREE.Vector3(LANDMARKS.lighthouse.x, light.position.y + 40, LANDMARKS.lighthouse.z), 0xfff2c0, 8, 260);
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(3.2, 2.2, 2.6);
+  bridge.scale.set(2.4, 2.0, 2.2);
   bridge.position.set(bx, 28, bz);
-  bridge.rotation.y = 0.9;
+  bridge.rotation.y = 0.08;
   group.add(bridge);
 
   const castle = makeCastle();
-  castle.scale.setScalar(2.7);
+  castle.scale.setScalar(3.15);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
   group.add(castle);
 

@@ -922,5 +922,6 @@ function exposeAPI() {
 
 boot().catch((err) => {
   console.error(err);
+  window.__bootErr = (err && err.stack) || String(err);
   ui.setLoad(1, "error: " + (err && err.message ? err.message : err));
 });

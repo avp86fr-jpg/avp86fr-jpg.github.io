@@ -47,12 +47,12 @@ void main() {
   // Bright cerulean sea, turquoise shallows along the south coast, foam and sparkle.
   float foamZone = sat(1.0 - abs(vWorld.z + 1280.0) / 180.0) * sat(1.0 - abs(vWorld.x) / 900.0);
   float bayShore = sat(1.0 - abs(vWorld.x - 10.0) / 150.0) * sat(1.0 - abs(vWorld.z + 1180.0) / 240.0);
-  foamZone = max(foamZone, bayShore);
+  foamZone = max(foamZone, bayShore * 0.4);
   float mid = sat(1.0 - length(vWorld.xz - vec2(0.0, -900.0)) / 2200.0);
   vec3 midCol = mix(uDeep, uShallow, 0.55);
   vec3 water = mix(uDeep, midCol, mid * 0.45 + 0.08 * ndl);
-  float shoreBand = sat(1.0 - abs(foamZone - 0.38) * 3.8);
-  water = mix(water, uShallow, shoreBand * 0.7 + foamZone * 0.12);
+  float shoreBand = sat(1.0 - abs(foamZone - 0.32) * 5.0);
+  water = mix(water, uShallow, shoreBand * 0.95 + foamZone * 0.04);
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
   // Sparkle highlights
   float glitter = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 1.6) * 43758.5));
@@ -62,8 +62,8 @@ void main() {
   float ripple = smoothstep(0.82, 0.98, fract(vWorld.x * 0.045 + vWorld.z * 0.04 + vWave * 1.6));
   col = mix(col, vec3(0.70, 0.93, 0.98), ripple * 0.12);
   float surf = shoreBand * sat(0.35 + vWave * 1.4) * 0.85;
-  float foamLine = sat(1.0 - abs(foamZone - 0.38) * 8.0);
-  col = mix(col, vec3(1.0, 1.0, 1.0), foamLine * 0.82 + surf * 0.28);
+  float foamLine = sat(1.0 - abs(foamZone - 0.30) * 14.0);
+  col = mix(col, vec3(1.0, 1.0, 1.0), foamLine * 0.92 + surf * 0.15);
   float crest = sat(vWave * uChop - 0.85);
   float crestThin = crest * (1.0 - sat((vWave * uChop - 1.25) * 2.4));
   float foamAmt = crestThin * sat(uChop - 1.35);
@@ -87,8 +87,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x1a96c8) },
-      uShallow: { value: new THREE.Color(0x5ee3d6) },
+      uDeep: { value: new THREE.Color(0x1460b8) },
+      uShallow: { value: new THREE.Color(0x3ad4c8) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },
@@ -139,8 +139,8 @@ export function createWater() {
         mat.uniforms.uShallow.value.setHex(0x4a7a9a);
         mat.uniforms.uSky.value.setHex(0x6a8498);
       } else {
-        mat.uniforms.uDeep.value.setHex(0x1a96c8);
-        mat.uniforms.uShallow.value.setHex(0x5ee3d6);
+        mat.uniforms.uDeep.value.setHex(0x1460b8);
+        mat.uniforms.uShallow.value.setHex(0x3ad4c8);
         mat.uniforms.uSky.value.setHex(0xa8e0f4);
       }
     },

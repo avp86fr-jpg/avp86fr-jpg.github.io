@@ -70,7 +70,9 @@ export function retagGeometry(geometry, matId, hero = 0) {
 
 /** Write aId.x / 255 into fragment alpha so the color pass also carries a material ID. */
 export function patchMaterialIdAlpha(material) {
-  if (!material || material.userData._idAlpha) return material;
+  if (!material) return material;
+  if (!material.userData) material.userData = {};
+  if (material.userData._idAlpha) return material;
   // Sky, water and other custom shaders already pack a mat-id in alpha. Do not rewrite them.
   if (material.isShaderMaterial || material.isRawShaderMaterial || material.isPointsMaterial || material.isLineBasicMaterial || material.isLineDashedMaterial) {
     return material;

@@ -75,15 +75,13 @@ function buildTrainer(s) {
   add(g, new THREE.BoxGeometry(0.7, 0.08, 0.22), cream, MAT.PLANE, 0, 1.08, 1.35, 0.35, 0, 0);
 
   // Stagger: UPPER wing slightly AHEAD of the lower wing (classic biplane).
-  // Dihedral: each panel tilts up at the tip.
+  // Flat, thin, straight panels — no dihedral curl, no bulbous tips.
   const zU = 0.62, zL = -0.08;
   for (const side of [1, -1]) {
-    const diU = side * -0.07;
-    const diL = side * -0.10;
-    add(g, new THREE.BoxGeometry(5.7, 0.15, 2.05), red, MAT.PLANE, side * 2.90, 1.78, zU, 0, 0, diU);
-    add(g, new THREE.CylinderGeometry(1.02, 1.02, 0.15, 12), red, MAT.PLANE, side * 5.75, 1.78 + Math.sin(Math.abs(diU)) * 2.9, zU, 0, 0, Math.PI / 2);
-    add(g, new THREE.BoxGeometry(5.15, 0.13, 1.80), red, MAT.PLANE, side * 2.60, 0.02, zL, 0, 0, diL);
-    add(g, new THREE.CylinderGeometry(0.90, 0.90, 0.13, 12), red, MAT.PLANE, side * 5.15, 0.02 + Math.sin(Math.abs(diL)) * 2.6, zL, 0, 0, Math.PI / 2);
+    add(g, new THREE.BoxGeometry(6.2, 0.08, 1.95), red, MAT.PLANE, side * 3.15, 1.78, zU);
+    add(g, new THREE.BoxGeometry(0.22, 0.08, 1.95), red, MAT.PLANE, side * 6.26, 1.78, zU);
+    add(g, new THREE.BoxGeometry(5.6, 0.07, 1.72), red, MAT.PLANE, side * 2.85, 0.02, zL);
+    add(g, new THREE.BoxGeometry(0.20, 0.07, 1.72), red, MAT.PLANE, side * 5.66, 0.02, zL);
   }
   envelopeDecal(g, cream, dark, 2.7, 1.90, zU);
   envelopeDecal(g, cream, dark, -2.7, 1.90, zU);
@@ -93,14 +91,14 @@ function buildTrainer(s) {
   const ailL = add(g, new THREE.BoxGeometry(2.35, 0.08, 0.42), red, MAT.PLANE, 2.7, 0.02, ailZ);
   const ailR = add(g, new THREE.BoxGeometry(2.35, 0.08, 0.42), red, MAT.PLANE, -2.7, 0.02, ailZ);
 
-  // Struts, cabane, wires between the staggered wings
+  // Dark, readable interplane struts and cabane
   for (const side of [1, -1]) {
-    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 2.45, 0.90, 0.42);
-    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 2.45, 0.90, -0.05);
-    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 4.20, 0.90, 0.42);
-    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 4.20, 0.90, -0.05);
-    add(g, new THREE.BoxGeometry(0.07, 1.25, 0.07), cream, MAT.WOOD, side * 0.55, 1.18, 0.70, 0, 0, side * 0.26);
-    add(g, new THREE.BoxGeometry(0.07, 1.25, 0.07), cream, MAT.WOOD, side * 0.55, 1.18, 0.10, 0, 0, side * 0.26);
+    add(g, new THREE.BoxGeometry(0.10, 1.78, 0.10), dark, MAT.WOOD, side * 2.55, 0.90, 0.42);
+    add(g, new THREE.BoxGeometry(0.10, 1.78, 0.10), dark, MAT.WOOD, side * 2.55, 0.90, -0.08);
+    add(g, new THREE.BoxGeometry(0.10, 1.78, 0.10), dark, MAT.WOOD, side * 4.35, 0.90, 0.42);
+    add(g, new THREE.BoxGeometry(0.10, 1.78, 0.10), dark, MAT.WOOD, side * 4.35, 0.90, -0.08);
+    add(g, new THREE.BoxGeometry(0.09, 1.25, 0.09), dark, MAT.WOOD, side * 0.55, 1.18, 0.70, 0, 0, side * 0.26);
+    add(g, new THREE.BoxGeometry(0.09, 1.25, 0.09), dark, MAT.WOOD, side * 0.55, 1.18, 0.10, 0, 0, side * 0.26);
     wire(g, dark, side * 2.45, 1.70, 0.85, side * 4.20, 0.08, -0.55);
     wire(g, dark, side * 4.20, 1.70, 0.85, side * 2.45, 0.08, -0.55);
   }
@@ -285,7 +283,7 @@ export function createPlaneMesh(id, colors) {
   // Builders place the nose at +Z; flight/camera forward is -Z, so flip the visual.
   visual.name = "plane-visual";
   visual.rotation.y = Math.PI;
-  visual.scale.setScalar(1.2);
+  visual.scale.setScalar(1.05);
   const g = new THREE.Group();
   g.name = "plane-" + id;
   g.add(visual);

@@ -304,11 +304,10 @@ export function computeMaterial(x, z, h, slope) {
   if (h < 3.5 && dist2(x, z, -740, -1120) < 260) return MAT.SAND;
   if (h < 3.2 && dist2(x, z, 40, -1220) < 90) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
-  // lighthouse cape and south sea-cliffs
-  if (dist2(x, z, -260, -1280) < 180 && h > 1.4) return MAT.ROCK;
-  if (slope > 0.28 && h > 2 && h < 70 && dist > 400) return MAT.ROCK;
-  if (z < -1000 && h > 2 && (slope > 0.18 || h > 7)) return MAT.ROCK;
-  if (h > 3 && h < 60 && slope > 0.32) return MAT.ROCK;
+  // Coastal cliffs only — steep faces near the water, not the whole south slope.
+  const nearCoast = h > 1.4 && h < 48 && (z < -1180 || dist2(x, z, -180, -1260) < 160);
+  if (nearCoast && slope > 0.22) return MAT.ROCK;
+  if (slope > 0.55 && h < 80) return MAT.ROCK;
   // forest belts
   const forestN = fbm(x * 0.0022, z * 0.0022, 4, 44);
   if (h > 12 && h < 95 && slope < 0.42 && forestN > 0.40 && vd > 240) return MAT.FOREST;
@@ -355,9 +354,21 @@ export function createTerrain() {
       case MAT.SEA: return [0.07, 0.32 + n * 0.04, 0.40];
       case MAT.WATER_DEEP: return [0.06, 0.22, 0.30];
       case MAT.SAND: return [0.98, 0.90, 0.58 + n * 0.06];
-      case MAT.GRASS: return [0.42 + n * 0.10, 0.78 + n * 0.10, 0.16 + n * 0.04];
-      case MAT.FOREST: return [0.12, 0.58 + n * 0.10, 0.12];
-      case MAT.ROCK: return [0.90 + n * 0.05, 0.62 + n * 0.05, 0.26];
+      case MAT.GRASS: return [0.36 + n * 0.10, 0.80 + n * 0.10, 0.16 + n * 0.04];
+      case MAT.FOREST: return [0.10, 0.55 + n * 0.12, 0.12];
+      case MAT.ROCK: {
+        const vd = Math.hypot(x, z - 200);
+        // Sharp red-orange volcano peak with lava streaks
+        if (vd < 380 && h > 148) {
+          const t = Math.min(1, (h - 148) / 80);
+          const lava = (Math.sin(x * 0.12 + z * 0.1) * Math.sin(h * 0.08)) > 0.45;
+          if (lava && t > 0.25) return [0.95, 0.28, 0.06];
+          return [0.86 + t * 0.10, 0.38 - t * 0.18, 0.10];
+        }
+        if (vd < 420 && h > 110) return [0.70 + n * 0.06, 0.48, 0.32];
+        // Grey-ochre coastal rock, not a yellow dome
+        return [0.72 + n * 0.06, 0.58 + n * 0.04, 0.38];
+      }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];
       case MAT.RUNWAY: return [0.22, 0.23, 0.26];
