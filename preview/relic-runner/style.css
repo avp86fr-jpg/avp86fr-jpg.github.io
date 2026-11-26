@@ -286,3 +286,9 @@ body.comic #tBrake { background: var(--cr) !important; color: #fff; } body.comic
 body.comic .tbtn.down { background: var(--cb) !important; color: #fff; box-shadow: 1px 1px 0 var(--ink) !important; }
 body.comic .missions { top: 7.9em; } body.comic.touch .bark { bottom: calc(var(--s,1) * 198px); }
 body.comic.portrait .bark { bottom: auto; } body.comic.touch.short:not(.portrait) .bark { bottom: auto; }
+
+/* pass 12: tap-zone steering (left / right halves of the steering area) */
+body.tzones #tStick::before, body.tzones #tStick::after { content: '\25C0'; position: absolute; bottom: 14%; left: 12%; font: 52px/1 'Bangers', sans-serif; color: rgba(255,244,214,.5); -webkit-text-stroke: 2px #1d1612; pointer-events: none; transition: color .05s, transform .05s; }
+body.tzones #tStick::after { content: '\25B6'; left: auto; right: 24%; }
+body.tzones #tStick { background: linear-gradient(90deg, transparent 49.6%, rgba(255,244,214,.18) 49.6%, rgba(255,244,214,.18) 50.4%, transparent 50.4%); }
+body.tzones #tStick[data-z="-1"]::before, body.tzones #tStick[data-z="1"]::after { color: #ffd24a; transform: scale(1.15); }
