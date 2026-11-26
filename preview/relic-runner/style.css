@@ -318,3 +318,15 @@ body.touch #touch #tStick { left: 0; bottom: 0; width: calc(var(--t) * 236px); h
 .padBtn.L { left: calc(var(--t) * 22px); } .padBtn.R { left: calc(var(--t) * 124px); }
 .padBtn.on { background: #ffd23a; transform: translateY(3px) scale(.94); box-shadow: 0 1px 0 #1d1612; }
 body.touch #tBase { display: none; }
+/* pass 13: expedition picker (title) — album-cover tabs */
+#title .exps { display: flex; gap: 8px; justify-content: center; margin: 0 auto 12px; flex-wrap: wrap; max-width: 96vw; }
+#title .exp { width: 150px; padding: 7px 9px 8px; background: #f4ead2; color: #2a1c10; border: 3px solid #1a1008; border-radius: 10px; box-shadow: 3px 3px 0 #1a1008; text-align: left; cursor: pointer; transition: transform .12s; }
+#title .exp i { font-style: normal; font: 900 11px/1 system-ui, sans-serif; background: #1a1008; color: #f4ead2; padding: 2px 6px; border-radius: 4px; }
+#title .exp b { display: block; font: 900 13px/1.1 'Trebuchet MS', system-ui, sans-serif; margin: 5px 0 3px; letter-spacing: .02em; }
+#title .exp span { display: block; font: 11px/1.25 system-ui, sans-serif; opacity: .8; }
+#title .exp.on { background: #ffc93c; transform: translateY(-3px); box-shadow: 3px 6px 0 #1a1008; }
+@media (max-height: 520px) { #title .exp { width: 128px; padding: 5px 7px; } #title .exp span { display: none; } #title .exps { margin-bottom: 6px; margin-top: 4px; } #title .logo .l2, #title .logo .tag { display: none; } }
+body.portrait #title .exps { max-width: 92vw; } body.portrait #title .exp { width: 42vw; }
+.vehs { display: flex; gap: 10px; justify-content: center; margin: 6px 0 10px; } .veh { padding: 8px 12px; border: 3px solid #1a1008; border-radius: 10px; background: #f4ead2; color: #2a1c10; box-shadow: 3px 3px 0 #1a1008; cursor: pointer; min-width: 180px; }
+.veh b { display: block; font: 900 14px/1.1 'Trebuchet MS', system-ui, sans-serif; } .veh small { font-size: 11px; opacity: .8; } .veh.on { background: #ffc93c; }
+@media (max-height: 820px) { #title .logo .l2, #title .logo .tag { display: none; } #title .exp span { font-size: 10px; } }
