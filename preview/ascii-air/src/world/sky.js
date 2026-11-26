@@ -121,7 +121,7 @@ export function createSky(scene) {
     const h = ((hour % 24) + 24) % 24;
     // keyframes: 0 night, 5 pre-dawn, 6.5 sunrise, 9 morning, 12 noon, 17 golden, 19 dusk, 21 night
     const keys = [
-      { t: 0,  z: 0x02030a, ho: 0x0a1020, g: 0x05060c, s: 0xb0c4ff, i: 0.05, si: 0.0, hc: 0x1a2230, ac: 0x0a0c18, fog: 0x0a1020 },
+      { t: 0,  z: 0x04061a, ho: 0x12182c, g: 0x0c1018, s: 0xb0c4ff, i: 0.08, si: 0.0, hc: 0x222a3c, ac: 0x12141e, fog: 0x0c1220 },
       { t: 5,  z: 0x0a1230, ho: 0x2a2048, g: 0x100818, s: 0xffc8a0, i: 0.12, si: 0.05, hc: 0x3a2858, ac: 0x120818, fog: 0x1a1430 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
       { t: 9,  z: 0x3aa8ee, ho: 0xb8e6ff, g: 0x7ec868, s: 0xfff6d0, i: 1.25, si: 0.75, hc: 0xd8f0ff, ac: 0x6ab050, fog: 0xb8e4f8 },
@@ -129,7 +129,7 @@ export function createSky(scene) {
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
       { t: 20.5,z:0x050818, ho: 0x14182c, g: 0x08060c, s: 0xc0d0ff, i: 0.08, si: 0.02, hc: 0x1a2238, ac: 0x0a0c18, fog: 0x0c101c },
-      { t: 24, z: 0x02030a, ho: 0x0a1020, g: 0x05060c, s: 0xb0c4ff, i: 0.05, si: 0.0, hc: 0x1a2230, ac: 0x0a0c18, fog: 0x0a1020 },
+      { t: 24, z: 0x04061a, ho: 0x12182c, g: 0x0c1018, s: 0xb0c4ff, i: 0.08, si: 0.0, hc: 0x222a3c, ac: 0x12141e, fog: 0x0c1220 },
     ];
     let a = keys[0], b = keys[1];
     for (let i = 0; i < keys.length - 1; i++) {
@@ -179,7 +179,7 @@ export function createSky(scene) {
     hemi.intensity = pal.hemiInt;
     sun.color.copy(pal.sun);
     sun.intensity = pal.sunInt;
-    amb.intensity = 0.22 + (1 - night) * 0.55;
+    amb.intensity = 0.38 + (1 - night) * 0.42;
 
     fog.color.copy(pal.fog);
     fog.near = night > 0.6 ? 700 : 2800;

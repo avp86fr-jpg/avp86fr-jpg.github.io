@@ -565,7 +565,8 @@ time  ${formatTime(result.time || 0)}
     const vsS = (vs >= 0 ? "+" : "") + vs.toFixed(1);
     const hdg = ((Math.round((headingToNorth(craft.heading) * 180 / Math.PI) + 360) % 360));
     const flapN = (craft.flaps || 0) > 0.66 ? 3 : (craft.flaps || 0) > 0.33 ? 2 : (craft.flaps || 0) > 0.1 ? 1 : 0;
-    const stars = save.starsTotal ?? save.stars ?? 0;
+    const starMax = MISSION_COUNT * 3;
+    const stars = (typeof save.starsTotal === "number") ? save.starsTotal : (typeof save.stars === "number" ? save.stars : 0);
     const photos = (save.photos && save.photos.length) || 0;
     const planeName = (craft.def && craft.def.name) || (craft.id || "TRAINER").toUpperCase();
 
@@ -577,7 +578,7 @@ time  ${formatTime(result.time || 0)}
       stats.innerHTML = '<div class="stat-pill">★ ' + stars + '　○ ' + photos + "</div>";
     } else {
       stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span><span class="stats-wings" aria-hidden="true">✉</span></div>'
-        + '<div class="stat-row">★ ' + String(stars).padStart(3) + " / 180 " + sbar(stars, 180) + "</div>"
+        + '<div class="stat-row">★ ' + String(stars).padStart(3) + " / " + starMax + " " + sbar(stars, starMax) + "</div>"
         + '<div class="stat-row">○ ' + String(photos).padStart(2) + " / 50 (Treasures) " + sbar(photos, 50) + "</div>"
         + '<div class="stat-row">✈ ' + planeName + "  Lvl.2</div>";
     }
@@ -671,7 +672,7 @@ time  ${formatTime(result.time || 0)}
         }
         else if (m.activity === "rescue") {
           const cur = (m.stops || [])[mission.next];
-          miss.textContent = cur ? ((cur.type === "raft" ? "Raft: " : "Pylon: ") + cur.name) : "Rescue";
+          miss.textContent = cur ? ((cur.type === "raft" ? "Raft: " : (m.mode === "race" || cur.type === "pylon" ? "Pylon: " : "Mark: ")) + cur.name) : "Rescue";
         }
         else miss.textContent = m.title || "Mission";
       } else miss.textContent = lines.join("\n");

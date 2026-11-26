@@ -867,7 +867,7 @@ function exposeAPI() {
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,
     render: () => {
-      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save }); } catch {}
+      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }) }); } catch {}
       renderFrame(performance.now() / 1000, 1 / 60);
     },
     getCamInfo() {
