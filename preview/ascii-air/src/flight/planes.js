@@ -55,7 +55,7 @@ function buildTrainer(s) {
   // Fat cowling at the nose, tapering to a slim tail cone.
   add(g, new THREE.CylinderGeometry(0.86, 0.40, 6.2, 14), red, MAT.PLANE, 0, 0.28, 0.05, Math.PI / 2, 0, 0);
   add(g, new THREE.SphereGeometry(0.86, 12, 10), red, MAT.PLANE, 0, 0.28, 3.05);
-  add(g, new THREE.SphereGeometry(0.40, 10, 8), red, MAT.PLANE, 0, 0.32, -3.15);
+  add(g, new THREE.ConeGeometry(0.28, 1.15, 8), red, MAT.PLANE, 0, 0.32, -3.55, -Math.PI / 2, 0, 0);
   add(g, new THREE.BoxGeometry(0.95, 0.14, 5.6), cream, MAT.PLANE, 0, -0.22, 0.2);
 
   // Radial engine + cowling rings, clearly at the FRONT
@@ -106,12 +106,12 @@ function buildTrainer(s) {
     wire(g, dark, side * 4.20, 1.70, 0.85, side * 2.45, 0.08, -0.55);
   }
 
-  // Cream tail at the BACK, oversized so it reads as the nearest part in a 3/4 rear shot
-  add(g, new THREE.BoxGeometry(0.12, 2.45, 1.70), cream, MAT.PLANE, 0, 1.45, -3.25);
-  add(g, new THREE.BoxGeometry(0.14, 2.45, 0.12), red, MAT.PLANE, 0, 1.45, -2.45);
-  const rudder = add(g, new THREE.BoxGeometry(0.10, 1.95, 0.62), cream, MAT.PLANE, 0, 1.45, -4.05);
-  add(g, new THREE.BoxGeometry(4.10, 0.12, 1.35), cream, MAT.PLANE, 0, 0.42, -3.30);
-  const elev = add(g, new THREE.BoxGeometry(3.70, 0.10, 0.52), cream, MAT.PLANE, 0, 0.42, -3.98);
+  // Cream tail at the BACK — tall fin so the rear reads as a tail, not a red ball
+  add(g, new THREE.BoxGeometry(0.16, 2.95, 1.90), cream, MAT.PLANE, 0, 1.70, -3.35);
+  add(g, new THREE.BoxGeometry(0.18, 2.95, 0.14), red, MAT.PLANE, 0, 1.70, -2.45);
+  const rudder = add(g, new THREE.BoxGeometry(0.14, 2.15, 0.70), cream, MAT.PLANE, 0, 1.55, -4.15);
+  add(g, new THREE.BoxGeometry(4.40, 0.14, 1.50), cream, MAT.PLANE, 0, 0.42, -3.35);
+  const elev = add(g, new THREE.BoxGeometry(4.00, 0.12, 0.55), cream, MAT.PLANE, 0, 0.42, -4.05);
 
   // Gear under the forward fuselage
   add(g, new THREE.BoxGeometry(0.08, 1.25, 0.08), dark, MAT.METAL, 1.12, -0.62, 0.85);
@@ -146,8 +146,8 @@ function buildTrainer(s) {
   g.add(prop);
 
   const pilot = seatPilot(g);
-  pilot.position.set(0, 0.62, 0.85);
-  pilot.scale.setScalar(1.08);
+  pilot.position.set(0, 1.08, 0.85);
+  pilot.scale.setScalar(0.78);
 
   g.userData.prop = prop;
   g.userData.propBlur = disc;

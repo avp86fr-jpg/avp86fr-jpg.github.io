@@ -3,6 +3,7 @@ import { WORLD, MAT, LANDMARKS, QUALITY } from "../core/config.js";
 import { clamp, lerp, smoothstep, saturate } from "../core/utils.js";
 import { fbm, ridge, valueNoise } from "./noise.js";
 import { tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
+import { terrainLambert } from "../render/textured.js";
 
 const SIZE = WORLD.size;
 const HALF = SIZE * 0.5;
@@ -320,6 +321,12 @@ export function computeHeight(x, z) {
     }
   }
 
+  // Vegetated east-coast shelf (hero left foreground), not a sand waste
+  if (x > 50 && x < 320 && z > -1400 && z < -1180) {
+    const shelf = smoothstep(50, 110, x) * smoothstep(320, 250, x) * smoothstep(-1400, -1320, z) * smoothstep(-1180, -1240, z);
+    h = Math.max(h, lerp(h, 6 + 8 * fbm(x * 0.02, z * 0.02, 3, 9), shelf * 0.85));
+  }
+
   return h;
 }
 
@@ -332,8 +339,11 @@ export function computeMaterial(x, z, h, slope) {
   if (h < 1.6 && !westCape) return MAT.SAND;
   if (westCape && h < 40) return MAT.ROCK;
   const vd = dist2(x, z, 0, 200);
-  if (vd < 160 && h > 200) return MAT.SNOW;
-  if (vd < 420 && (slope > 0.55 || h > 130)) return MAT.ROCK;
+  if (vd < 80 && h > 210) return MAT.SNOW;
+  if (vd < 200 && h > 165) return MAT.ROCK;
+  if (vd < 420 && slope > 0.55 && h > 80) return MAT.ROCK;
+  // Greener lower slopes of the volcano
+  if (vd < 420 && h > 40 && h < 165 && slope < 0.5) return (h > 110 ? MAT.FOREST : MAT.GRASS);
   if (slope > 0.62) return MAT.ROCK;
   // airport / runway
   if (Math.abs(z + 1100) < 28 && Math.abs(x) < 430 && h > 2 && h < 8) return MAT.RUNWAY;
@@ -342,7 +352,9 @@ export function computeMaterial(x, z, h, slope) {
   if (Math.abs(z - 1120) < 16 && Math.abs(x + 820) < 140) return MAT.RUNWAY;
   // lagoon sand + the one small cove; south coast is rock
   if (h < 3.5 && dist2(x, z, -740, -1120) < 260) return MAT.SAND;
-  if (h < 5.5 && dist2(x, z, 40, -1220) < 160) return MAT.SAND;
+  if (h < 4.2 && dist2(x, z, 20, -1210) < 90) return MAT.SAND;
+  // East-coast foreground shelf stays grassy (hero left)
+  if (x > 50 && x < 320 && z > -1400 && z < -1185 && h > 3.5) return (h > 14 ? MAT.FOREST : MAT.GRASS);
   if (h < 4.5 && dist2(x, z, LANDMARKS.lighthouse.x + 40, LANDMARKS.lighthouse.z + 40) < 80) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
   // Coastal cliffs only — steep faces near the water, not the whole south slope.
@@ -405,16 +417,15 @@ export function createTerrain(quality = "medium") {
       case MAT.FOREST: return [0.12 + n * 0.04, 0.50 + n * 0.16, 0.14];
       case MAT.ROCK: {
         const vd = Math.hypot(x, z - 200);
-        // Sharp red-orange volcano peak with lava streaks
-        if (vd < 380 && h > 148) {
-          const t = Math.min(1, (h - 148) / 80);
-          const lava = (Math.sin(x * 0.12 + z * 0.1) * Math.sin(h * 0.08)) > 0.45;
-          if (lava && t > 0.25) return [0.95, 0.28, 0.06];
-          return [0.86 + t * 0.10, 0.38 - t * 0.18, 0.10];
+        // Crater glow only at the lip — the cone itself is brown/grey rock
+        if (vd < 90 && h > 200) {
+          const lava = (Math.sin(x * 0.18 + z * 0.14) * Math.sin(h * 0.1)) > 0.35;
+          return lava ? [0.95, 0.28, 0.08] : [0.55, 0.32, 0.22];
         }
-        if (vd < 420 && h > 110) return [0.70 + n * 0.06, 0.48, 0.32];
-        // Grey-ochre coastal rock, not a yellow dome
-        return [0.55 + n * 0.10, 0.46 + n * 0.06, 0.30];
+        if (vd < 280 && h > 150) return [0.42 + n * 0.08, 0.38 + n * 0.04, 0.32];
+        if (vd < 420 && h > 90) return [0.48 + n * 0.08, 0.44 + n * 0.05, 0.34];
+        // Grey-ochre coastal rock
+        return [0.50 + n * 0.10, 0.44 + n * 0.06, 0.30];
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];
@@ -505,11 +516,7 @@ export function createTerrain(quality = "medium") {
   geo.setIndex(idx);
   geo.computeBoundingSphere();
 
-  const mat = new THREE.MeshLambertMaterial({
-    vertexColors: true,
-    flatShading: false,
-  });
-  patchMaterialIdAlpha(mat);
+  const mat = terrainLambert();
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   mesh.userData.matId = MAT.GRASS;

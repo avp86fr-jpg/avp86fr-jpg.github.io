@@ -19,6 +19,7 @@ import { createUI } from "./ui/ui.js";
 import { createDebug, autopilot } from "./debug/debug.js";
 import { createClock } from "./time/cycle.js";
 import { QUALITY } from "./core/config.js";
+import { texturesReady } from "./render/textured.js";
 
 const canvas = document.getElementById("view");
 const uiRoot = document.getElementById("ui-root");
@@ -497,6 +498,8 @@ function renderFrame(time, camDt = 1 / 60) {
 }
 
 async function warmup() {
+  ui.setLoad(0.65, "loading textures…");
+  await texturesReady();
   ui.setLoad(0.7, "compiling shaders…");
   // Draw a dummy frame with a variety of objects in view so programs compile
   camera.position.set(200, 180, -400);
@@ -671,10 +674,9 @@ async function boot() {
     const meshes = [];
     const lg = island.landmarks && island.landmarks.group;
     if (lg) {
-      const merged = lg.getObjectByName("landmarks-merged");
-      const cliffs = lg.getObjectByName("cliffs");
-      if (merged) meshes.push(merged);
-      if (cliffs) meshes.push(cliffs);
+      lg.traverse((o) => {
+        if (o.isMesh && (o.name === "cliffs" || (o.name && o.name.startsWith("landmarks-merged")))) meshes.push(o);
+      });
     }
     flyCam.setWorld(island, meshes);
   }
@@ -748,13 +750,13 @@ function heroShot(opts = {}) {
   if (contrail) contrail.clear();
   if (missions.spawnDemoChain) {
     const chain = [];
-    for (let i = 0; i < 4; i++) {
-      const t = 0.16 + i * 0.13;
+    for (let i = 0; i < 3; i++) {
+      const t = 0.14 + i * 0.22;
       chain.push({
-        x: x + (tx - x) * t - 70,
-        y: y - 4 - i * 4,
-        z: z + (tz - z) * t,
-        r: 18 - i * 1.5,
+        x: x + (tx - x) * t - 130,
+        y: y - 8 - i * 10,
+        z: z + (tz - z) * t + 20,
+        r: 8 - i * 1.3,
       });
     }
     missions.spawnDemoChain(chain);

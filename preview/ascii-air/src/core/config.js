@@ -223,9 +223,9 @@ export const HERO_VIEW = {
   // left-foreground (airport) to right-background (cape).
   plane: { x: 90, y: 52, z: -1505 },
   look:  { x: -30, y: 42, z: -800 },
-  dist: 33,
-  height: 8.5,
-  side: 4.5,
+  dist: 30,
+  height: 8.2,
+  side: 14.0,
   fov: 50,
 };
 

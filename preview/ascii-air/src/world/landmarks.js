@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { MAT, LANDMARKS, QUALITY } from "../core/config.js";
 import { tagMesh, retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
+import { triplanarLambert, loadTex } from "../render/textured.js";
 
 const _col = new THREE.Color();
 
@@ -56,10 +57,10 @@ function makeHangar() {
   const g = new THREE.Group();
   g.name = "hangar";
   // Cream hall, barrel roof running east-west so the arched profile faces the south (hero)
-  add(g, box(36, 10, 26, 0xe8d8b0, MAT.BUILDING), 0, 5, 0);
+  add(g, box(36, 8, 24, 0xfffaf0, MAT.BUILDING), 0, 4, 0);
   // Top-half barrel only (a full cylinder plus two arched walls read as cat-ears from the runway)
   const hallGeo = new THREE.CylinderGeometry(16, 16, 38, 22, 1, false, -Math.PI / 2, Math.PI);
-  const hall = mesh(hallGeo, 0xf0d8a8, MAT.ROOF);
+  const hall = mesh(hallGeo, 0xfff8ee, MAT.BUILDING);
   hall.rotation.z = Math.PI / 2;
   hall.position.set(0, 11, 0);
   g.add(hall);
@@ -70,8 +71,19 @@ function makeHangar() {
   face.holes.push(door);
   const faceGeo = new THREE.ExtrudeGeometry(face, { depth: 1.2, bevelEnabled: false });
   faceGeo.translate(0, 0, 12.6);
-  g.add(mesh(faceGeo, 0xe4d2a4, MAT.BUILDING));
-  add(g, box(40, 14, 1.2, 0xdccaa0, MAT.BUILDING), 0, 7, -13.2);
+  g.add(mesh(faceGeo, 0xfffaf0, MAT.BUILDING));
+  // South face (hero-facing): same arched wall — never a blank khaki slab
+  const faceS = face.clone();
+  const faceGeoS = new THREE.ExtrudeGeometry(faceS, { depth: 1.2, bevelEnabled: false });
+  faceGeoS.rotateY(Math.PI);
+  faceGeoS.translate(0, 0, -12.6);
+  g.add(mesh(faceGeoS, 0xfffaf0, MAT.BUILDING));
+  // Dark windows + red door so the hall reads as a building, not a box
+  add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), -10, 6.2, -13.5);
+  add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), 10, 6.2, -13.5);
+  add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), -10, 6.2, 13.5);
+  add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), 10, 6.2, 13.5);
+  add(g, box(6.5, 8, 0.6, 0x9a2018, MAT.ROOF), 0, 4.2, -13.6);
   // envelope emblem
   add(g, box(6.2, 4.2, 0.4, 0xf4ead0, MAT.BUILDING), 0, 16.2, 15.0);
   add(g, box(6.2, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 16.2, 15.2);
@@ -85,10 +97,10 @@ function makeHangar() {
 function makeTower() {
   const g = new THREE.Group();
   g.name = "tower";
-  add(g, box(7.2, 30, 7.2, 0xf2e6c8, MAT.BUILDING), 0, 15, 0);
+  add(g, box(7.2, 30, 7.2, 0xf7f1e4, MAT.BUILDING), 0, 15, 0);
   add(g, box(7.6, 1.2, 7.6, 0xb08c5c, MAT.ROCK), 0, 8, 0);
   add(g, box(7.6, 1.2, 7.6, 0xb08c5c, MAT.ROCK), 0, 16, 0);
-  add(g, box(11, 6, 11, 0xe8d4a0, MAT.BUILDING), 0, 33, 0);
+  add(g, box(11, 6, 11, 0xf7f1e4, MAT.BUILDING), 0, 33, 0);
   add(g, box(9, 3.1, 0.3, 0x2a2420, MAT.METAL), 0, 33, 5.6);
   add(g, box(0.3, 3.1, 9, 0x2a2420, MAT.METAL), 5.6, 33, 0);
   add(g, box(12, 0.6, 12, 0x8a3a2a, MAT.ROOF), 0, 36.2, 0);
@@ -98,12 +110,12 @@ function makeTower() {
 
 function makeChurch() {
   const g = new THREE.Group();
-  add(g, box(12, 10, 18, 0xd2b07a, MAT.BUILDING), 0, 5, 0);
+  add(g, box(12, 10, 18, 0xfaf6ee, MAT.BUILDING), 0, 5, 0);
   const roof = mesh(new THREE.ConeGeometry(11, 6, 4), 0xe02018, MAT.ROOF);
   roof.rotation.y = Math.PI / 4;
   roof.position.y = 13;
   g.add(roof);
-  add(g, box(4, 16, 4, 0xd2b07a, MAT.BUILDING), 0, 8, -8);
+  add(g, box(4, 16, 4, 0xfaf6ee, MAT.BUILDING), 0, 8, -8);
   add(g, cone(3, 7, 4, 0xe02018, MAT.ROOF), 0, 20, -8);
   add(g, box(0.4, 3.5, 0.4, 0xeeeeee, MAT.METAL), 0, 24.5, -8);
   add(g, box(1.6, 0.4, 0.4, 0xeeeeee, MAT.METAL), 0, 25.5, -8); // cross
@@ -265,8 +277,8 @@ function makeWreck() {
 
 function makeBridge() {
   const g = new THREE.Group();
-  const stone = 0xcfc3a6;
-  const shade = 0x8e836c;
+  const stone = 0xd6cebe;
+  const shade = 0xb8ae9c;
   // Deck runs east-west; arches open to the south camera.
   add(g, box(72, 1.8, 12, stone, MAT.ROCK), 0, 10, 0);
   add(g, box(72, 2.6, 1.2, shade, MAT.ROCK), 0, 12.2, -5.5);
@@ -290,8 +302,8 @@ function makeBridge() {
 
 function makeCastle() {
   const g = new THREE.Group();
-  const stone = 0xc5bba8;
-  const shade = 0x8f8676;
+  const stone = 0xd8d0c0;
+  const shade = 0xc0b6a6;
   // Keep and curtain wall
   add(g, box(30, 16, 24, stone, MAT.ROCK), 0, 8, 0);
   add(g, box(32, 2.2, 26, shade, MAT.ROCK), 0, 16.8, 0);
@@ -325,7 +337,7 @@ function makeCastle() {
 
 function makeWindmill() {
   const g = new THREE.Group();
-  add(g, cyl(5, 6.5, 16, 8, 0xe8dcc4, MAT.BUILDING), 0, 8, 0);
+  add(g, cyl(5, 6.5, 16, 8, 0xf7f1e4, MAT.BUILDING), 0, 8, 0);
   add(g, cone(6.4, 5, 8, 0x8a3a2a, MAT.ROOF), 0, 18.5, 0);
   const hub = new THREE.Group();
   hub.position.set(0, 14, 5.2);
@@ -347,10 +359,10 @@ function makeWindmill() {
 function makeArch() {
   const g = new THREE.Group();
   g.name = "arch";
-  const pale = 0xe4cc9a;
-  const mid = 0xcbb27a;
-  const shade = 0xa88858;
-  const dark = 0x8a6a40;
+  const pale = 0xe4d6b4;
+  const mid = 0xd2c4a0;
+  const shade = 0xc0b08a;
+  const dark = 0x8a7a5c;
   // Tall pale-ochre limestone headland with an arch CUT through, facing south.
   const shape = new THREE.Shape();
   const W = 14, Hgt = 58;
@@ -377,9 +389,9 @@ function makeArch() {
     const stripe = Math.sin(x * 0.55 + y * 1.15) + 0.5 * Math.sin((x - y) * 1.8 + z * 0.2);
     const hatch = stripe > 0.35 ? 0.62 : stripe > 0.0 ? 0.8 : stripe > -0.3 ? 0.92 : 1;
     const shadeAmt = (z > 4 ? 0.82 : 1) * (y < 4 ? 0.85 : 1);
-    col[i * 3] = 0.62 * hatch * shadeAmt;
-    col[i * 3 + 1] = 0.52 * hatch * shadeAmt;
-    col[i * 3 + 2] = 0.34 * hatch * shadeAmt;
+    col[i * 3] = 0.86 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.78 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.58 * hatch * shadeAmt;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
@@ -398,22 +410,20 @@ function makeArch() {
 
 function makeCave(heightAt) {
   const g = new THREE.Group();
-  // recess behind waterfall
-  add(g, box(16, 10, 18, 0x2a2420, MAT.ROCK), 0, 5, 0);
-  add(g, box(14, 8, 10, 0x1a1612, MAT.ROCK), 0, 4, 6);
+  // Intentionally empty — the previous solid boxes read as a dark mid-frame slab.
   return g;
 }
 
 function makeWaterfall() {
   const g = new THREE.Group();
   const mat = new THREE.MeshBasicMaterial({
-    color: 0xeaf8ff,
+    color: 0xd8f4ff,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.55,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
-  const geo = new THREE.PlaneGeometry(18, 56, 1, 10);
+  const geo = new THREE.PlaneGeometry(8, 36, 1, 10);
   retagGeometry(geo, MAT.WATERFALL, 1);
   const sheet = new THREE.Mesh(geo, mat);
   sheet.name = "falls";
@@ -546,8 +556,50 @@ function makeRoad(from, to, width = 8) {
 }
 
 
+function bucketOf(o, mid) {
+  let n = o;
+  while (n) {
+    if (n.name === "arch") return "rock";
+    n = n.parent;
+  }
+  if (mid === MAT.ROOF) return "roof";
+  if (mid === MAT.BUILDING) return "plaster";
+  if (mid === MAT.ROCK) return "stone";
+  return "plain";
+}
+
+function mergeBucket(items, name, kind) {
+  if (!items.length) return null;
+  const geo = mergeGeos(items.map((it) => it.g), items[0].mid);
+  let n = 0;
+  for (const it of items) n += it.g.getAttribute("position").count;
+  const cols = new Float32Array(n * 3);
+  let base = 0;
+  for (const it of items) {
+    const c = it.g.getAttribute("color");
+    const p = it.g.getAttribute("position");
+    for (let i = 0; i < p.count; i++) {
+      cols[(base + i) * 3] = c.getX(i);
+      cols[(base + i) * 3 + 1] = c.getY(i);
+      cols[(base + i) * 3 + 2] = c.getZ(i);
+    }
+    base += p.count;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+  let mat;
+  if (kind === "rock") mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.045, vertexColors: true, flatShading: true, matId: MAT.ROCK });
+  else if (kind === "stone") mat = triplanarLambert({ map: loadTex("stone.png"), scale: 0.06, vertexColors: true, flatShading: true, matId: MAT.ROCK });
+  else if (kind === "plaster") mat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, vertexColors: true, flatShading: true, matId: MAT.BUILDING });
+  else if (kind === "roof") mat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, vertexColors: true, flatShading: true, matId: MAT.ROOF });
+  else mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = name;
+  mesh.matrixAutoUpdate = false;
+  return mesh;
+}
+
 function mergeStatic(group, skipNames = new Set()) {
-  const items = [];
+  const buckets = { rock: [], stone: [], plaster: [], roof: [], plain: [] };
   const toRemove = [];
   group.updateMatrixWorld(true);
   group.traverse((o) => {
@@ -579,35 +631,20 @@ function mergeStatic(group, skipNames = new Set()) {
       }
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    items.push({ g, mid });
+    const kind = bucketOf(o, mid);
+    buckets[kind].push({ g, mid });
     toRemove.push(o);
   });
   for (const o of toRemove) {
     if (o.parent) o.parent.remove(o);
   }
-  if (!items.length) return;
-  const geo = mergeGeos(items.map((it) => it.g), items[0].mid);
-  // Color was not copied by mergeGeos — attach a baked buffer in the same vertex order.
-  let n = 0;
-  for (const it of items) n += it.g.getAttribute("position").count;
-  const cols = new Float32Array(n * 3);
-  let base = 0;
-  for (const it of items) {
-    const c = it.g.getAttribute("color");
-    const p = it.g.getAttribute("position");
-    for (let i = 0; i < p.count; i++) {
-      cols[(base + i) * 3] = c.getX(i);
-      cols[(base + i) * 3 + 1] = c.getY(i);
-      cols[(base + i) * 3 + 2] = c.getZ(i);
-    }
-    base += p.count;
+  let main = null;
+  for (const kind of ["plain", "plaster", "stone", "rock", "roof"]) {
+    const mesh = mergeBucket(buckets[kind], main ? "landmarks-merged-" + kind : "landmarks-merged", kind);
+    if (!mesh) continue;
+    if (!main) main = mesh;
+    group.add(mesh);
   }
-  geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
-  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.name = "landmarks-merged";
-  mesh.matrixAutoUpdate = false;
-  group.add(mesh);
 }
 
 function mergeGeos(geos, fallbackId = 8) {
@@ -659,6 +696,7 @@ function makeCoastalCliffs(H) {
   // Only the west limestone cape and the far-east headland — never a wall in front of the airport.
   const ranges = [
     { x0: -480, x1: -40, z0: -1470, z1: -1080 },
+    { x0: 60, x1: 300, z0: -1420, z1: -1200 },
     { x0: 520, x1: 900, z0: -1400, z1: -1080 },
   ];
   const pts = [];
@@ -667,9 +705,13 @@ function makeCoastalCliffs(H) {
       let zLand = null, h = 0;
       for (let z = R.z0; z <= R.z1; z += 5) {
         const hh = H(x, z);
-        if (hh > 7) { zLand = z; h = hh; break; }
+        if (hh > (R.x0 === 60 ? 4.2 : 7)) { zLand = z; h = hh; break; }
       }
-      if (zLand != null) pts.push({ x, z: zLand - 1.2, h: Math.min(Math.max(h, 10), 56), band: R.x0 });
+      if (zLand != null) {
+        const hMin = R.x0 === 60 ? 6 : 10;
+        const hMax = R.x0 === 60 ? 22 : 56;
+        pts.push({ x, z: zLand - 1.2, h: Math.min(Math.max(h, hMin), hMax), band: R.x0 });
+      }
     }
   }
   // Extra wall along the west cape, leaving the arch window open
@@ -726,7 +768,7 @@ function makeCoastalCliffs(H) {
   geo.setIndex(indices);
   geo.computeVertexNormals();
   retagGeometry(geo, MAT.ROCK, 0);
-  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  const mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.04, vertexColors: true, flatShading: true, matId: MAT.ROCK });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.userData.matId = MAT.ROCK;
   mesh.name = "cliffs";
@@ -771,7 +813,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Hangar
   const hangar = makeHangar();
-  hangar.scale.setScalar(2.25);
+  hangar.scale.setScalar(1.55);
   hangar.position.set(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z), LANDMARKS.hangar.z);
   hangar.rotation.y = 0;
   group.add(hangar);
@@ -816,23 +858,15 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   {
     const vx = 0, vz = 200;
     const vy = H(vx, vz);
-    const lava = cyl(28, 36, 3.2, 14, 0xff3a12, MAT.LIGHT, 1);
+    const lava = cyl(20, 26, 2.8, 14, 0xff3a12, MAT.LIGHT, 1);
     lava.position.set(vx, vy - 6, vz);
     lava.name = "lava";
     group.add(lava);
-    const glow = cyl(18, 22, 2.2, 12, 0xffc050, MAT.LIGHT, 1);
+    const glow = cyl(12, 16, 2.0, 12, 0xffc050, MAT.LIGHT, 1);
     glow.position.set(vx, vy - 4.2, vz);
     glow.name = "lava";
     group.add(glow);
-    // bright lava rivers down the south and east flanks
-    for (const [dx, dz, len, rot] of [[40, 70, 90, 0.4], [-30, 80, 80, -0.3], [70, 20, 70, 1.1], [-60, 40, 75, -1.0]]) {
-      const river = box(7, 2.2, len, 0xff5a18, MAT.LIGHT, 1);
-      river.position.set(vx + dx, vy - 18, vz + dz);
-      river.rotation.x = 0.35;
-      river.rotation.y = rot;
-      river.name = "lava";
-      group.add(river);
-    }
+    // No flank rivers — those read as a flat orange cone from the hero.
     const plume = new THREE.Group();
     plume.name = "smoke";
     plume.position.set(vx, vy + 8, vz);
@@ -841,7 +875,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     puffMat.userData.matId = MAT.CLOUD;
     const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.CLOUD, 0);
     const spots = [
-      [0, 10, 0, 10], [6, 22, 3, 9], [-5, 28, -3, 8], [3, 38, 2, 7],
+      [0, 8, 0, 5], [3, 16, 2, 4], [-2, 22, -1, 3.2],
     ];
     const inst = new THREE.InstancedMesh(puffGeo, puffMat, spots.length);
     inst.name = "smoke";
@@ -958,18 +992,18 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(4.4, 3.6, 3.2);
+  bridge.scale.set(3.4, 2.8, 2.6);
   bridge.position.set(bx, Math.max(22, H(bx, bz) + 8), bz);
   bridge.rotation.y = 0.08;
   group.add(bridge);
 
   const castle = makeCastle();
-  castle.scale.setScalar(3.15);
+  castle.scale.setScalar(2.05);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
   group.add(castle);
   // Cape fort on the west ridge, readable in the hero (master's right side)
   const capeFort = makeCastle();
-  capeFort.scale.setScalar(1.9);
+  capeFort.scale.setScalar(1.45);
   const fX = LANDMARKS.lighthouse.x - 36, fZ = LANDMARKS.lighthouse.z + 85;
   capeFort.position.set(fX, H(fX, fZ), fZ);
   capeFort.rotation.y = 0.3;
@@ -1004,17 +1038,17 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const falls = makeWaterfall();
   // sheet hangs down from ~88 to ~16, center at ~52
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
-  falls.scale.set(1.5, 1.35, 1.2);
+  falls.scale.set(0.7, 0.55, 0.7);
   falls.position.set(wx, H(wx, wz) - 6, wz - 10);
   // Dark rock flanks so the sheet reads as a fall, not a white slab
-  const lip = box(16, 8, 18, 0x6a5840, MAT.ROCK);
-  lip.position.set(wx, H(wx, wz) + 10, wz + 2);
+  const lip = box(8, 4, 8, 0x8a7a60, MAT.ROCK);
+  lip.position.set(wx, H(wx, wz) + 4, wz + 1);
   group.add(lip);
-  const wallL = box(5, 28, 10, 0x5a4a34, MAT.ROCK);
-  wallL.position.set(wx - 12, H(wx, wz) - 4, wz);
+  const wallL = box(3, 12, 5, 0x8a7a60, MAT.ROCK);
+  wallL.position.set(wx - 6, H(wx, wz) - 2, wz);
   group.add(wallL);
-  const wallR = box(5, 26, 10, 0x5a4a34, MAT.ROCK);
-  wallR.position.set(wx + 12, H(wx, wz) - 5, wz);
+  const wallR = box(3, 11, 5, 0x8a7a60, MAT.ROCK);
+  wallR.position.set(wx + 6, H(wx, wz) - 2, wz);
   group.add(wallR);
 
   falls.rotation.y = 0.05;

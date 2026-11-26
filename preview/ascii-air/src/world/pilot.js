@@ -20,9 +20,9 @@ export function createPilot() {
   g.name = "pilot";
   const skin = mat(0xf0c8a0, MAT.PLANE);
   const hair = mat(0x2a1a14, MAT.WOOD);
-  const cap = mat(0x7a4a28, MAT.WOOD);
-  const jacket = mat(0xe0a04a, MAT.ROOF);
-  const scarf = mat(0x2aa8a0, MAT.METAL);
+  const cap = mat(0x5a3218, MAT.WOOD);
+  const jacket = mat(0x6a3a22, MAT.WOOD);
+  const scarf = mat(0xc45a2a, MAT.ROOF);
   const goggle = mat(0x3a3a3a, MAT.METAL);
   const lens = mat(0xc8a838, MAT.METAL);
 
@@ -50,13 +50,16 @@ export function createPilot() {
   strap.position.set(0, 0.44, 0.02);
   strap.rotation.x = 0.15;
   strap.scale.set(1, 0.85, 1);
-  const body = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(0.36, 8, 6), MAT.ROOF, 1), jacket);
-  body.position.set(0, 0.02, -0.04);
-  body.scale.set(0.85, 1.0, 0.7);
+  const body = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(0.26, 8, 6), MAT.WOOD, 1), jacket);
+  body.position.set(0, 0.0, -0.06);
+  body.scale.set(0.75, 0.95, 0.6);
   const wrap = new THREE.Mesh(retagGeometry(new THREE.TorusGeometry(0.22, 0.05, 6, 10), MAT.METAL, 1), scarf);
   wrap.position.set(0, 0.22, 0.02);
   wrap.rotation.x = 1.2;
-  g.add(head, curls, hat, brim, glassL, glassR, rimL, rimR, strap, body, wrap);
+  const tail = new THREE.Mesh(retagGeometry(new THREE.BoxGeometry(0.12, 0.08, 0.7), MAT.ROOF, 1), scarf);
+  tail.position.set(0.16, 0.16, -0.42);
+  tail.rotation.set(0.2, 0.35, 0.15);
+  g.add(head, curls, hat, brim, glassL, glassR, rimL, rimR, strap, body, wrap, tail);
   g.scale.setScalar(1);
   return g;
 }
@@ -65,7 +68,7 @@ export function createPilot() {
 export function seatPilot(plane) {
   const p = createPilot();
   p.position.set(0, 0.55, 0.7);
-  p.scale.setScalar(0.85);
+  p.scale.setScalar(0.62);
   plane.add(p);
   return p;
 }

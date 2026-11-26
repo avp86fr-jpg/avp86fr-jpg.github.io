@@ -111,7 +111,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       const h = terrain.heightAt(jx, jz);
       const m = terrain.materialAt(jx, jz);
       if (h < 4.5 || h > 145) continue;
-      if (jz < -1180 && h < 10) continue;
+      if (jz < -1180 && h < 10 && jx < 40) continue;
       if (m === MAT.RUNWAY || m === MAT.ROAD || m === MAT.DIRT) continue;
       if (Math.abs(jz + 1100) < 95 && Math.abs(jx) < 520) continue;
       if (Math.abs(jz - 1120) < 32 && Math.abs(jx + 820) < 170) continue;
@@ -127,6 +127,7 @@ export function createFlora(scene, terrain, quality = "medium") {
     }
   }
   const groves = [
+    [80, -1320], [150, -1280], [210, -1260], [50, -1300], [180, -1340], [240, -1220], [100, -1250],
     [-220, -980], [160, -860],
     [-360, -620], [240, -520], [80, -400], [-180, -300],
     [200, 80], [340, 260], [-300, 200], [120, 420],
@@ -148,7 +149,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       const z = gz + Math.sin(a) * r * 0.8;
       const h = terrain.heightAt(x, z);
       if (h < 4.5 || h > 150) continue;
-      if (z < -1180 && h < 10) continue;
+      if (z < -1180 && h < 10 && x < 40) continue;
       if (Math.abs(z + 1100) < 95 && Math.abs(x) < 520) continue;
       blobs.push({ x, y: h + 1.2, z, s: 1.6 + (i % 4) * 0.45, r: a });
     }

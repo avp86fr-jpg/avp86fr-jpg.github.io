@@ -6,6 +6,7 @@ import { createSky } from "./sky.js";
 import { createLandmarks } from "./landmarks.js";
 import { createFlora } from "./flora.js";
 import { createSkyProps, createThermals } from "./skyprops.js";
+import { makeBackdrop } from "../render/textured.js";
 
 export const THERMAL_FIELDS = [
   { id: "volcano-e", x: 220, z: 280, r: 80, y: 40, h: 220, strength: 14 },
@@ -27,6 +28,8 @@ export function createIsland(scene, quality = "medium") {
   const landmarks = createLandmarks(scene, terrain, sky, quality);
   const flora = createFlora(scene, terrain, quality);
   const skyprops = createSkyProps(scene, quality);
+  const backdrop = makeBackdrop();
+  scene.add(backdrop);
   const thermals = createThermals(scene, THERMAL_FIELDS);
 
   function heightAt(x, z) { return terrain.heightAt(x, z); }
@@ -77,6 +80,12 @@ export function createIsland(scene, quality = "medium") {
     landmarks.update(dt, time, hour, sky.night);
     skyprops.update(dt, time);
     thermals.update(dt);
+    if (backdrop && backdrop.material) {
+      const night = sky.night || 0;
+      backdrop.visible = night < 0.55;
+      backdrop.material.transparent = night > 0.12;
+      backdrop.material.opacity = 1 - Math.min(1, night * 1.8);
+    }
   }
 
   function setStorm(on, windKt) {

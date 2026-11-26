@@ -201,12 +201,13 @@ export function createFlightCamera(camera) {
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     if (hero) {
-      // 3/4 rear-above, look along the diagonal vista (SE -> NNW).
+      // 3/4 rear-above (~25° side, ~15° down). Look just past the nose so both
+      // wings, fuselage, tail and struts read; the island stays in the background.
       const dist = HERO_VIEW.dist + (portrait ? 4 : 0);
       const height = HERO_VIEW.height + (portrait ? 1.2 : 0);
       const side = HERO_VIEW.side;
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
-      _look.set(HERO_VIEW.look.x, HERO_VIEW.look.y, HERO_VIEW.look.z);
+      _look.copy(craft.pos).addScaledVector(_fwd, 120).add(new THREE.Vector3(0, -7, 0));
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
