@@ -333,7 +333,7 @@ body.portrait #title .exps { max-width: 92vw; } body.portrait #title .exp { widt
 #zone .zch { margin-top: 6px; color: #ffc93c; letter-spacing: .12em; font-weight: 800; }
 
 /* pass 13h: popups step below the zone title card while it is up */
-body.zoneOn .popups { top: 47%; transition: top .2s; }
+body.zoneOn .popups { top: 53%; transition: top .2s; }
 /* pass 13h: expedition medals */
 .md { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; text-decoration: none; }
 .md em { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1a1008; background: transparent; display: inline-block; box-sizing: border-box; }
@@ -344,7 +344,7 @@ body.zoneOn .popups { top: 47%; transition: top .2s; }
 .missions.show { opacity: 1; visibility: visible; transition: opacity .35s, visibility 0s; }
 /* pass 13o: while a banner (set piece / mission) is up, popups grow upward from just above it instead of into it */
 .banOn .popups { top: auto; bottom: 67%; flex-direction: column-reverse; }
-body.zoneOn .banOn .popups { top: 47%; bottom: auto; flex-direction: column; }
+body.zoneOn .banOn .popups { top: 53%; bottom: auto; flex-direction: column; }
 /* pass 13s: on short phone screens the comic sound words sit higher and smaller so they never hide the jeep */
 body.touch.short .sfxw { font-size: min(9vw, 13vh, 80px); margin-top: -10vh; }
 /* pass 13v: expedition horizon swatch */
