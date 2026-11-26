@@ -114,3 +114,6 @@ body.touch .missions { top: 92px; right: auto; left: 50%; transform: translateX(
 body.touch .missions .mtitle { display: none; } body.touch .mcard { transform: none !important; padding: 3px 7px; }
 body.touch #pauseBtn { left: auto; right: 14px; margin-left: 0; top: 96px; }
 @media (max-height: 520px) { body.touch .missions { top: 62px; } body.touch #pauseBtn { top: 84px; } }
+/* short landscape phones: keep the touch cluster clear of the score / multiplier and move pause beside the distance scroll */
+@media (max-height: 420px) { body.touch .tbtn { width: 72px; height: 72px; font-size: 14px; } body.touch #tNitro { bottom: 150px; right: 20px; } body.touch #tHB { bottom: 214px; right: 112px; } body.touch #tBrake { width: 62px; height: 62px; right: 186px; bottom: 30px; }
+  body.touch #pauseBtn { top: 10px; right: auto; left: 50%; margin-left: -190px; } }
