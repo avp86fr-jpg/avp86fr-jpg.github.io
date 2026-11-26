@@ -111,6 +111,19 @@ export const MISSIONS = [
     ], 11),
   },
 
+  {
+    id: "rings-a1", activity: "rings", klass: "ace", title: "Storm Circuit",
+    brief: "A ring course in a heavy storm. Watch the wind and the turbulence.",
+    hour: 11, plane: "trainer", weather: "storm",
+    start: { x: 80, y: 130, z: -1680, heading: 1.5708, speed: 46 },
+    timeLimits: [140, 110, 90],
+    rings: pathRings([
+      [80, 120, -1320, 18], [200, 110, -1100, 16], [40, 130, -860, 16],
+      [-160, 140, -700, 16], [0, 160, -400, 16], [80, 130, -200, 16],
+      [200, 120, 40, 16], [40, 140, 200, 16],
+    ], 16),
+  },
+
   // ---------- LANDINGS BEGINNER ----------
   {
     id: "land-b1", activity: "landing", klass: "beginner", title: "Main Runway 09",

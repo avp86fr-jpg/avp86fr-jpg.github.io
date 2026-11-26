@@ -212,3 +212,20 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
   .term-panel { font-size: 11px; padding: 4px 6px; }
   #hud-minimap { width: 120px; height: 108px; font-size: 8px; }
 }
+
+.throttle-track.slim {
+  width: 20px;
+  background: rgba(4, 12, 22, 0.35);
+  border: 1px solid rgba(170, 220, 255, 0.4);
+}
+.throttle-track.slim .throttle-fill {
+  background: linear-gradient(180deg, rgba(120,200,255,0.0), rgba(80,180,255,0.35));
+}
+@media (max-width: 960px) {
+  .term-panel { font-size: 10px; padding: 3px 6px; }
+  #hud-stats { min-width: 0; }
+  #hud-mission { min-width: 0; max-width: 42vw; }
+  #hud-flight { font-size: 10px; padding: 3px 8px; }
+  #hud-aux, #hud-photo { font-size: 10px; width: auto; min-height: 0; max-width: 36vw; }
+  #hud-compass { font-size: 10px; padding: 2px 8px; }
+}

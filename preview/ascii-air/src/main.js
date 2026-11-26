@@ -1,11 +1,12 @@
 import * as THREE from "three";
 import { CAM, PHYS, DEFAULT_SETTINGS, PLANES, SPAWN, STAR_UNLOCKS, VERSION, MAT } from "./core/config.js";
-import { isMobileUA, isIOS, isStandalone, nowMs, clamp } from "./core/utils.js";
+import { isMobileUA, isIOS, isStandalone, nowMs, clamp, headingFromXZ } from "./core/utils.js";
 import { createAsciiPipeline, computeGrid } from "./ascii/asciiPass.js";
 import { getIdMaterial, tagMesh, patchMaterialIdAlpha, retagGeometry } from "./render/idMaterial.js";
 import { makeColorDepthRT, makeRT } from "./render/targets.js";
 import { createBloom } from "./post/bloom.js";
 import { createIsland } from "./world/island.js";
+import { createWeather } from "./world/weather.js";
 import { createPlaneMesh } from "./flight/planes.js";
 import { createCraft, resetCraft, launchCraft, stepCraft, startTow } from "./flight/physics.js";
 import { createFlightCamera } from "./flight/camera.js";
@@ -109,6 +110,7 @@ const clock = createClock(10);
 ui.setLoad(0.05, "raising the island…");
 
 let island = null;
+let weather = null;
 let craft = createCraft(save.plane || "trainer");
 let planeMesh = null;
 let contrail = null;
@@ -164,6 +166,8 @@ function startFreeFlight() {
   clock.frozen = false;
   if (clock.hour < 6 || clock.hour > 20) clock.set(10);
   flyCam.state.mode = "chase";
+  flyCam.state.hero = false;
+  if (weather) weather.set("clear");
   mode = "fly";
   paused = false;
   ui.showHUD();
@@ -183,6 +187,9 @@ function startMission(id) {
   clock.set(m.hour ?? 10);
   clock.frozen = true;
   flyCam.state.mode = "chase";
+  flyCam.state.hero = false;
+  if (weather) weather.set(m.weather || "clear");
+  if (m.activity === "landing") { craft.flaps = 1; }
   mode = "fly";
   paused = false;
   pendingResult = null;
@@ -311,9 +318,9 @@ function coastalAmt() {
 
 
 function createContrail(sc) {
-  const N = 56;
-  const geo = retagGeometry(new THREE.SphereGeometry(0.32, 5, 4), MAT.CLOUD, 1);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xf2f8ff });
+  const N = 36;
+  const geo = retagGeometry(new THREE.SphereGeometry(0.14, 5, 4), MAT.CLOUD, 1);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xb8deff });
   patchMaterialIdAlpha(mat);
   const inst = new THREE.InstancedMesh(geo, mat, N);
   inst.frustumCulled = false;
@@ -335,7 +342,7 @@ function createContrail(sc) {
       for (let i = 0; i < hist.length; i++) {
         const t = i / Math.max(1, hist.length - 1);
         dummy.position.copy(hist[i]);
-        dummy.scale.setScalar(0.35 + t * 1.8);
+        dummy.scale.setScalar(0.18 + t * 0.55);
         dummy.updateMatrix();
         inst.setMatrixAt(i, dummy.matrix);
       }
@@ -498,6 +505,13 @@ function step(now) {
     }
     clock.step(dtRaw);
     island.update(dtRaw, now / 1000, clock.hour);
+    if (weather) {
+      weather.update(dtRaw, now / 1000);
+      weather.applyToCraft(craft, dtRaw);
+      ascii.uniforms.uRain.value = weather.state.rain;
+      ascii.uniforms.uFlash.value = weather.state.flash;
+    }
+
     syncPlaneMesh();
 
     if (mode === "fly") {
@@ -520,7 +534,7 @@ function step(now) {
       if (craft.stalled && !craft.onGround) {
         if (!step._stallT || now - step._stallT > 280) { audio.play("stall", { gain: 0.4 }); step._stallT = now; }
       }
-      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait());
+      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }) });
     }
   }
 
@@ -547,6 +561,7 @@ async function boot() {
 
   ui.setLoad(0.5, "raising the island…");
   island = createIsland(scene, settings.quality || "medium");
+  weather = createWeather(scene, island.sky, island.water);
   missions = createMissionSystem(scene, island, audio);
   rebuildPlane(save.plane || "trainer");
   resetCraft(craft, SPAWN.airport, SPAWN.airport.heading, craft.id);
@@ -572,12 +587,144 @@ async function boot() {
   exposeAPI();
 }
 
+
+
+function hudShot() {
+  ui.showHUD();
+  ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), {
+    weather: weather && weather.state,
+    save: Object.assign({}, save, { starsTotal: totalStars(save) }),
+  });
+}
+
+function heroShot(opts = {}) {
+  const x = opts.x ?? 80;
+  const y = opts.y ?? 130;
+  const z = opts.z ?? -1680;
+  const tx = opts.tx ?? 0;
+  const ty = opts.ty ?? 90;
+  const tz = opts.tz ?? 80;
+  startFreeFlight();
+  if (weather) weather.set(opts.weather || "clear");
+  clock.set(opts.hour ?? 11);
+  island.sky.setHour(opts.hour ?? 11);
+  camOverride = null;
+  const hdg = headingFromXZ(tx - x, tz - z);
+  resetCraft(craft, { x, y, z, heading: hdg }, hdg, "trainer");
+  launchCraft(craft, opts.speed ?? 46, 0);
+  craft.gearDown = false;
+  craft.onGround = false;
+  craft.throttle = 0.78;
+  rebuildPlane("trainer");
+  flyCam.state.mode = "chase";
+  flyCam.state.hero = true;
+  craft.angVel.set(0, 0, 0);
+  craft.roll = 0;
+  craft.pitch = 0;
+  flyCam.snap(craft, false);
+  paused = true;
+  if (opts.showcase !== false) showcaseRings("pro", 3, 12, 27.346, null);
+  if (contrail) contrail.clear();
+  if (missions.spawnDemoRing) {
+    const rx = x + (tx - x) * 0.28;
+    const rz = z + (tz - z) * 0.28;
+    const ry = y - 14;
+    const ring = missions.spawnDemoRing(rx, ry, rz, opts.ringR ?? 18);
+    if (ring) ring.lookAt(x, y, z);
+  }
+  syncPlaneMesh();
+  hudShot();
+  return { x, y, z, heading: hdg };
+}
+
+
+
+function showcaseRings(klass, passed, total, tsec, weatherId) {
+  const rings = [];
+  for (let i = 0; i < total; i++) rings.push({ x: 0, y: 80, z: 0, r: 16 });
+  missions.state.active = {
+    id: "showcase",
+    activity: "rings",
+    klass,
+    title: "Ring Course",
+    brief: "Fly through all rings!",
+    weather: weatherId || null,
+    rings,
+    timeLimit: 180,
+  };
+  missions.state.ringsPassed = passed;
+  missions.state.t = tsec;
+  missions.state.result = null;
+}
+
+function landingShot(opts = {}) {
+  const m = getMission("land-p1");
+  startFreeFlight();
+  if (m) {
+    currentMissionId = "land-p1";
+    missions.start(m, craft);
+  }
+  if (weather) weather.set("clear", { windDeg: 310, windKt: 8 });
+  clock.set(opts.hour ?? 11);
+  island.sky.setHour(opts.hour ?? 11);
+  camOverride = null;
+  const x = opts.x ?? 540;
+  const y = opts.y ?? 28;
+  const z = opts.z ?? -1100;
+  const hdg = Math.PI;
+  resetCraft(craft, { x, y, z, heading: hdg }, hdg, "trainer");
+  launchCraft(craft, opts.speed ?? 34, -1.0);
+  craft.gearDown = true;
+  craft.flaps = 1;
+  craft.onGround = false;
+  craft.throttle = 0.4;
+  craft.angVel.set(0, 0, 0);
+  craft.roll = 0;
+  craft.pitch = -0.08;
+  rebuildPlane("trainer");
+  flyCam.state.mode = "chase";
+  flyCam.state.hero = "landing";
+  flyCam.snap(craft, false);
+  paused = true;
+  syncPlaneMesh();
+  if (contrail) contrail.clear();
+  hudShot();
+  return { x, y, z, heading: hdg };
+}
+
+function stormShot(opts = {}) {
+  const pose = heroShot({ ...opts, weather: "storm", hour: opts.hour ?? 11, showcase: false });
+  if (weather) weather.set("storm", { windDeg: 270, windKt: 24, visibility: 4.2, turbulence: 0.7 });
+  island.sky.setHour(opts.hour ?? 11);
+  weather.state.flash = 0.42;
+  weather.state.rain = 1;
+  if (weather.bolt) {
+    weather.bolt.visible = true;
+    weather.bolt.position.set(420, 260, -1100);
+    weather.bolt.scale.set(1.8, 1.8, 1.8);
+  }
+  showcaseRings("ace", 4, 12, 46.219, "storm");
+  if (missions.spawnDemoRing) {
+    const ring = missions.spawnDemoRing(80, 116, -1320, 18);
+    if (ring) ring.lookAt(pose.x, pose.y, pose.z);
+  }
+  flyCam.state.hero = true;
+  flyCam.snap(craft, false);
+  syncPlaneMesh();
+  if (ascii && weather) {
+    ascii.uniforms.uRain.value = 1;
+    ascii.uniforms.uFlash.value = 0.42;
+  }
+  hudShot();
+  return pose;
+}
+
 function exposeAPI() {
   window.ASCII_AIR = {
     version: VERSION,
     ready: true,
     backend,
-    settings, save, craft, camera, scene, renderer, island, missions, audio, ui, clock,
+    settings, save, craft, camera, scene, renderer, island, missions, audio, ui, clock, weather,
     getPerf() {
       return {
         fps, frameMs, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
@@ -585,7 +732,8 @@ function exposeAPI() {
         quality: settings.quality,
       };
     },
-    startMission, startFreeFlight, backToTitle,
+    startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot,
+    setWeather: (id, opts) => weather && weather.set(id, opts),
     setTime: (h) => { clock.set(h); island.sky.setHour(h); },
     setDisplayMode: (m) => { settings.displayMode = m; applyVisualSettings(); },
     setCharSize: (s) => { settings.charSize = s; applyVisualSettings(); },

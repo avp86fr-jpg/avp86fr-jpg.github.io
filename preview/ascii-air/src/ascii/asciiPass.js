@@ -35,6 +35,8 @@ uniform float uTrail;
 uniform vec3 uTint;
 uniform vec3 uPaperBg;
 uniform vec3 uPaperFg;
+uniform float uRain;
+uniform float uFlash;
 
 float linDepth(float d) {
   float zN = uNearFar.x;
@@ -129,21 +131,14 @@ void main() {
     }
   }
 
-  // Sky: mostly background colour, never a dense dot field.
-  // Only the sun (very bright) and a few soft cloud patches get glyphs.
+  // Sky: DENSE bright glyphs on a dark field — stars, colons, middots. Never a flat wash.
   if (matId == 21.0) {
     float sh = fract(sin(cell.x * 12.9898 + cell.y * 78.233) * 43758.5453);
-    if (lum > 0.94) {
-      glyph = ${G.STARF}.0;
-    } else if (lum > 0.82 && rawL > 0.78) {
-      glyph = ${G.SHADE1}.0; // soft sun glow / bright cloud
-    } else if (sh > 0.993) {
-      glyph = ${G.STAR}.0; // sparse day stars — stylized, never a dot field
-    } else if (sh > 0.987) {
-      glyph = ${G.MIDDOT}.0;
-    } else {
-      glyph = 0.0;
-    }
+    if (lum > 0.93) glyph = ${G.STARF}.0;
+    else if (sh > 0.965) glyph = ${G.STAR}.0;
+    else if (sh > 0.70) glyph = ${G.COLON}.0;
+    else if (sh > 0.38) glyph = ${G.MIDDOT}.0;
+    else glyph = ${G.DOT}.0;
   }
 
   // Clouds: soft ░▒ shapes, not noise
@@ -170,11 +165,8 @@ void main() {
 
   // Distant fog: thin glyphs only very far away, never mush the island
   float fogAmt = clamp((d - 1400.0) / max(uFog, 1.0), 0.0, 1.0);
-  if (matId != 21.0 && matId != 18.0 && hero < 0.5) {
-    if (fogAmt > 0.75 && lum < 0.55) {
-      if (fogAmt > 0.92) glyph = 0.0;
-      else glyph = 1.0;
-    }
+  if (matId != 21.0 && matId != 18.0 && hero < 0.5 && fogAmt > 0.88) {
+    if (lum < 0.35) glyph = ${G.DOT}.0;
   }
 
   // Sample atlas — tight smoothstep keeps cells sharp, not mushy
@@ -186,58 +178,82 @@ void main() {
   g = smoothstep(0.34, 0.66, g);
 
   vec3 col = colS.rgb;
-  // Recover a sunny exposure if the source is a bit low
-  col = col * 1.04 + 0.01;
+  // Saturate and keep a healthy midtone range so ramps actually change
+  float L0 = luma(col);
+  col = mix(vec3(L0), col, 1.62);
+  col = col * 1.06;
   col = mix(col, quantize(col, uQuantize), step(2.0, uQuantize));
-  col = mix(uFogColor, col, 1.0 - fogAmt * 0.35);
+  // Distant haze stays deep blue, never a white wall
+  vec3 haze = vec3(0.06, 0.12, 0.28);
+  col = mix(col, haze, fogAmt * 0.22);
 
-  if (hero > 0.5 || matId == 10.0 || matId == 20.0 || matId == 19.0) {
-    col *= 1.0 + 0.4 * uContrast;
-    col = mix(col, vec3(1.0), 0.10);
+  if (hero > 0.5 || matId == 10.0 || matId == 20.0 || matId == 19.0 || matId == 18.0) {
+    col *= 1.0 + 0.45 * uContrast;
+    col = mix(col, vec3(1.0), 0.12);
   }
 
   vec3 bg, fg, outc;
-  // Screen-space fallback for a rich daytime sky if the colour RT blows out.
-  vec3 styledSky = mix(vec3(0.42, 0.70, 0.94), vec3(0.07, 0.28, 0.72), pow(clamp(vUv.y, 0.0, 1.0), 0.85));
+  float L = luma(col);
   if (uMode > 2.5) {
     bg = uPaperBg;
     fg = uPaperFg * (0.4 + luma(col) * 0.8);
     outc = mix(bg, fg, g);
   } else if (uMode > 0.5) {
-    float L = luma(col);
+    L = luma(col);
     vec3 tint = uTint;
-    bg = tint * (0.03 + L * 0.10);
-    fg = tint * (0.35 + L * 1.45);
+    bg = tint * (0.03 + L * 0.08);
+    fg = tint * (0.40 + L * 1.50);
     outc = mix(bg, fg, g);
-    outc += tint * g * g * 0.18 * uGlowBoost;
-  } else if (matId == 21.0) {
-    // Always a saturated sky field; never a white wall or a black void.
-    vec3 src = clamp(col, 0.0, 1.0);
-    float srcL = luma(src);
-    float trust = step(0.08, src.b - src.r * 0.7) * step(srcL, 0.78) * step(0.12, srcL);
-    vec3 skyCol = mix(styledSky, src, trust * 0.55);
-    if (rawL > 0.94) skyCol = mix(skyCol, vec3(1.0, 0.96, 0.78), 0.8);
-    bg = skyCol;
-    fg = mix(skyCol, vec3(1.0), 0.4);
-    outc = mix(bg, fg, g);
-    outc += skyCol * g * g * 0.15 * uGlowBoost;
-  } else if (matId == 7.0) {
-    // White puffy clouds on the sky
-    vec3 cloud = mix(vec3(0.90, 0.94, 1.0), vec3(1.0), clamp(luma(col) * 0.6, 0.0, 1.0));
-    bg = mix(styledSky, cloud, 0.35 + 0.5 * g);
-    fg = cloud;
-    outc = mix(bg, fg, g);
-    outc += cloud * g * g * 0.2 * uGlowBoost;
+    outc += tint * g * g * 0.22 * uGlowBoost;
   } else {
-    // Tinted cell background + sharp glyph. Never a near-black field.
-    float L = luma(col);
-    bg = col * (0.28 + 0.18 * L);
-    fg = col * (1.05 + 0.45 * g) + vec3(0.04) * g;
-    outc = mix(bg, max(fg, col * 0.85), g);
-    outc += col * g * g * 0.26 * uGlowBoost;
+    // Reference look: dark navy cell background, BRIGHT saturated glyphs, glow on the ink.
+    col = clamp(col, 0.0, 1.6);
+    L = clamp(luma(col), 0.0, 1.0);
+    vec3 bgNavy = vec3(0.03, 0.08, 0.18);
+    if (matId == 21.0) {
+      bgNavy = mix(vec3(0.05, 0.14, 0.36), vec3(0.02, 0.05, 0.18), pow(clamp(vUv.y, 0.0, 1.0), 0.85));
+      col = mix(vec3(0.20, 0.50, 1.0), vec3(0.55, 0.82, 1.0), clamp(0.2 + vUv.y * 0.45, 0.0, 1.0));
+      if (rawL > 0.94) col = mix(col, vec3(1.0, 0.95, 0.72), 0.75);
+    } else if (matId == 7.0) {
+      col = mix(vec3(0.62, 0.74, 0.95), vec3(1.0, 1.0, 1.0), clamp(L0 * 1.15, 0.0, 1.0));
+    } else if (matId == 1.0 || matId == 16.0) {
+      col = mix(vec3(L), col, 1.45);
+      col = max(col, vec3(0.02, 0.18, 0.42));
+      col.b = max(col.b, col.r * 1.25 + 0.08);
+      // lift so glyphs stay turquoise even if the colour RT is dark
+      col *= 1.25;
+    } else {
+      // Land / buildings: keep hue, give glyphs a readable brightness floor
+      vec3 hue = col / max(L, 0.08);
+      col = hue * mix(0.42, 1.15, pow(L, 0.65));
+    }
+    L = clamp(luma(col), 0.0, 1.0);
+    bg = mix(bgNavy, col * 0.20, 0.55);
+    fg = col * (1.25 + 0.55 * L) + vec3(0.05);
+    if (matId == 20.0 || matId == 18.0 || matId == 11.0) {
+      fg *= 1.25;
+      fg = mix(fg, vec3(1.0, 0.85, 0.35), matId == 20.0 ? 0.25 : 0.0);
+    }
+    outc = mix(bg, max(fg, col * 0.9), g);
+    outc += fg * g * g * 0.42 * uGlowBoost;
   }
+  // Storm: diagonal rain glyphs and a lightning flash over the whole frame
+  if (uRain > 0.04) {
+    outc *= 1.0 - 0.08 * uRain;
+    float colH = fract(sin(cell.x * 17.13 + 1.7) * 931.7);
+    float streak = fract((cell.x + cell.y * 1.35) * 0.37 - uTime * 11.0);
+    float slash = 1.0 - smoothstep(0.07, 0.15, abs(fracuv.x - (1.0 - fracuv.y)));
+    if (colH > 0.32 && streak > 0.84) {
+      outc = mix(outc, vec3(0.55, 0.78, 1.0), slash * 0.8 * uRain);
+    }
+    // white foam already in the sea; add a little extra spray near mid
+  }
+  outc += vec3(0.55, 0.42, 0.95) * uFlash;
+  outc += vec3(0.25, 0.28, 0.4) * uFlash * 0.6;
   gl_FragColor = vec4(outc, 1.0);
 }
+
+
 `;
 
 export function computeGrid(cssW, cssH, charSize, qualityScale = 1, dpr = 1) {
@@ -290,6 +306,8 @@ export function createAsciiPipeline() {
     uTint: { value: new THREE.Color(0x5aff90) },
     uPaperBg: { value: new THREE.Color(0xf0e6c8) },
     uPaperFg: { value: new THREE.Color(0x1a140c) },
+    uRain: { value: 0 },
+    uFlash: { value: 0 },
   };
 
   const mat = new THREE.ShaderMaterial({

@@ -3,7 +3,7 @@ import { MAT, PLANES } from "../core/config.js";
 import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
 function mat(color, matId = MAT.PLANE, hero = 1) {
-  const m = new THREE.MeshLambertMaterial({ color, flatShading: true });
+  const m = new THREE.MeshLambertMaterial({ color, flatShading: true, emissive: color, emissiveIntensity: 0.35 });
   m.userData.matId = matId;
   patchMaterialIdAlpha(m);
   return m;

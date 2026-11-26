@@ -6,11 +6,13 @@ const VERT = /* glsl */ `
 varying vec3 vWorld;
 varying vec3 vN;
 uniform float uTime;
+uniform float uChop;
 void main() {
   vec3 p = position;
-  float w1 = sin(p.x * 0.03 + uTime * 0.8) * 0.18;
-  float w2 = cos(p.z * 0.025 + uTime * 0.6) * 0.16;
-  float w3 = sin((p.x + p.z) * 0.045 + uTime * 1.1) * 0.08;
+  float chop = max(uChop, 1.0);
+  float w1 = sin(p.x * 0.03 + uTime * 0.8) * 0.18 * chop;
+  float w2 = cos(p.z * 0.025 + uTime * 0.6) * 0.16 * chop;
+  float w3 = sin((p.x + p.z) * 0.045 + uTime * 1.1) * 0.08 * chop;
   p.y += w1 + w2 + w3;
   vec3 t = vec3(1.0, 0.03 * cos(p.x * 0.03 + uTime * 0.8), 0.0);
   vec3 b = vec3(0.0, 0.025 * -sin(p.z * 0.025 + uTime * 0.6), 1.0);
@@ -32,6 +34,7 @@ uniform vec3 uSunCol;
 uniform vec3 uSky;
 uniform float uTime;
 uniform float uMatId;
+uniform float uChop;
 float sat(float x){ return clamp(x, 0.0, 1.0); }
 void main() {
   vec3 N = normalize(vN);
@@ -39,11 +42,12 @@ void main() {
   float fres = pow(1.0 - sat(dot(N, V)), 3.0);
   float ndl = sat(dot(N, normalize(uSunDir)));
   // depth cue from absolute y around 0 is useless; use distance from origin-ish
-  float shore = 0.0;
-  vec3 water = mix(uDeep, uShallow, 0.25 + 0.15 * ndl);
+  float radial = length(vWorld.xz);
+  float nearIsle = sat(1.0 - (radial - 650.0) / 1100.0);
+  vec3 water = mix(uDeep, uShallow, nearIsle * 0.80 + 0.08 * ndl);
   // sparkle
-  float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 40.0);
-  vec3 col = water + uSky * fres * 0.45 + uSunCol * sp * 0.65;
+  float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 36.0);
+  vec3 col = water + uSky * fres * 0.12 + uSunCol * sp * (0.45 + 0.55 * nearIsle);
   gl_FragColor = vec4(col, uMatId / 255.0);
 }
 `;
@@ -57,15 +61,17 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x0a4a8c) },
-      uShallow: { value: new THREE.Color(0x2ec8dc) },
+      uDeep: { value: new THREE.Color(0x053a7a) },
+      uShallow: { value: new THREE.Color(0x1ec4d2) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
-      uSky: { value: new THREE.Color(0x87c8ea) },
+      uSky: { value: new THREE.Color(0x2a5a90) },
       uMatId: { value: 1.0 },
+      uChop: { value: 1.0 },
     },
     vertexShader: VERT,
     fragmentShader: FRAG,
+    toneMapped: false,
   });
   // Patch in saturate if needed — already defined in frag
   const mesh = new THREE.Mesh(geo, mat);
@@ -95,15 +101,34 @@ export function createWater() {
 
   return {
     mesh, lake, materials: [mat, lakeMat],
+    _storm: false,
+    setStorm(on) {
+      this._storm = !!on;
+      const chop = on ? 3.2 : 1.0;
+      mat.uniforms.uChop.value = chop;
+      if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.4 : 1.0;
+      if (on) {
+        mat.uniforms.uDeep.value.setHex(0x021028);
+        mat.uniforms.uShallow.value.setHex(0x163858);
+        mat.uniforms.uSky.value.setHex(0x152040);
+      } else {
+        mat.uniforms.uDeep.value.setHex(0x053a7a);
+        mat.uniforms.uShallow.value.setHex(0x1ec4d2);
+        mat.uniforms.uSky.value.setHex(0x2a5a90);
+      }
+    },
     update(t, sky) {
       mat.uniforms.uTime.value = t;
       lakeMat.uniforms.uTime.value = t;
-      if (sky) {
+      if (sky && !this._storm) {
         mat.uniforms.uSunDir.value.copy(sky.sunDir);
         lakeMat.uniforms.uSunDir.value.copy(sky.sunDir);
         mat.uniforms.uSunCol.value.copy(sky.sunColor);
         mat.uniforms.uSky.value.copy(sky.horizonColor);
         lakeMat.uniforms.uSunCol.value.copy(sky.sunColor);
+      } else if (sky) {
+        mat.uniforms.uSunDir.value.copy(sky.sunDir);
+        lakeMat.uniforms.uSunDir.value.copy(sky.sunDir);
       }
     },
   };

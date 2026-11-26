@@ -7,7 +7,7 @@ import { MISSIONS, getMission } from "./data.js";
 import { resetCraft, launchCraft } from "../flight/physics.js";
 
 function ringMesh(radius = 14) {
-  const geo = new THREE.TorusGeometry(radius, 0.7, 8, 20);
+  const geo = new THREE.TorusGeometry(radius, 1.15, 8, 22);
   retagGeometry(geo, MAT.RING, 1);
   const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xff8a28 }));
   const m = new THREE.Mesh(geo, mat);
@@ -348,5 +348,21 @@ export function createMissionSystem(scene, world, audio) {
 
   function abort() { clear(); }
 
-  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS };
+  function spawnDemoRing(x, y, z, radius = 18) {
+    // Remove previous demo rings
+    const stale = [];
+    group.traverse((o) => { if (o.userData && o.userData.demoRing) stale.push(o); });
+    stale.forEach((o) => o.parent && o.parent.remove(o));
+    const mesh = ringMesh(radius);
+    mesh.position.set(x, y, z);
+    mesh.lookAt(x, y, z + 1); // face north by default; caller can rotate
+    mesh.userData.demoRing = true;
+    mesh.material.color.set(0xffc45a);
+    group.add(mesh);
+    if (!group.parent) scene.add(group);
+    return mesh;
+  }
+
+  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing };
+
 }

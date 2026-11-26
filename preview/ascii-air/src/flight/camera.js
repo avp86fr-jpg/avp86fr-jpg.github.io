@@ -13,6 +13,7 @@ export function createFlightCamera(camera) {
   const state = {
     mode: "chase", // chase | cockpit | cinematic
     comfort: false,
+    hero: false,
     rollMix: 0,
     shake: 0,
     titleOrbit: 0,
@@ -58,13 +59,20 @@ export function createFlightCamera(camera) {
       camera.up.set(0, 1, 0);
       camera.lookAt(craft.pos);
     } else {
-      const dist = CAM.chaseDist + (portrait ? 3 : 0);
-      const height = CAM.chaseHeight + (portrait ? 2 : 0);
+      const hero = state.hero;
+      const landing = hero === "landing";
+      const dist = (landing ? 24 : hero ? 18 : CAM.chaseDist) + (portrait ? 3 : 0);
+      const height = (landing ? 8.0 : hero ? 6.2 : CAM.chaseHeight) + (portrait ? 2 : 0);
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0));
-      // keep above terrain slightly — caller can lift
       camera.position.lerp(_pos, 1 - Math.exp(-CAM.chaseLag * dt));
       camera.up.copy(worldUp);
-      _look.copy(craft.pos).addScaledVector(_fwd, 8).add(new THREE.Vector3(0, 1.2, 0));
+      if (landing) {
+        _look.copy(craft.pos).addScaledVector(_fwd, 280).add(new THREE.Vector3(0, -4, 0));
+      } else if (hero) {
+        _look.copy(craft.pos).addScaledVector(_fwd, 95).add(new THREE.Vector3(0, -18, 0));
+      } else {
+        _look.copy(craft.pos).addScaledVector(_fwd, 16).add(new THREE.Vector3(0, 0.6, 0));
+      }
       camera.lookAt(_look);
     }
 
@@ -78,5 +86,25 @@ export function createFlightCamera(camera) {
 
   function bump(amt = 0.4) { state.shake = Math.max(state.shake, amt); }
 
-  return { state, update, cycle, bump, camera };
+  function snap(craft, portrait = false) {
+    _fwd.set(0, 0, -1).applyQuaternion(craft.quat);
+    const hero = state.hero;
+    const landing = hero === "landing";
+    const dist = (landing ? 24 : hero ? 18 : CAM.chaseDist) + (portrait ? 3 : 0);
+    const height = (landing ? 8.0 : hero ? 6.2 : CAM.chaseHeight) + (portrait ? 2 : 0);
+    camera.position.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0));
+    camera.up.set(0, 1, 0);
+    if (landing) {
+      _look.copy(craft.pos).addScaledVector(_fwd, 280).add(new THREE.Vector3(0, -4, 0));
+    } else if (hero) {
+      _look.copy(craft.pos).addScaledVector(_fwd, 95).add(new THREE.Vector3(0, -18, 0));
+    } else {
+      _look.copy(craft.pos).addScaledVector(_fwd, 16).add(new THREE.Vector3(0, 0.6, 0));
+    }
+    camera.lookAt(_look);
+    camera.fov = portrait ? CAM.fovPortrait : CAM.fov;
+    camera.updateProjectionMatrix();
+  }
+
+  return { state, update, cycle, bump, snap, camera };
 }

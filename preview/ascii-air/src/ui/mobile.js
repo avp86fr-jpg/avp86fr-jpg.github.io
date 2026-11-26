@@ -116,16 +116,19 @@ export function createMobileLayer(root, input, hooks) {
     } else {
       stick.style.left = padL + "px";
       stick.style.bottom = padB + "px";
-      stick.style.width = "128px";
-      stick.style.height = "128px";
-      thr.style.right = padR + "px";
-      thr.style.bottom = (padB + 90) + "px";
-      thr.style.height = "160px";
-      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:78px;height:78px;border-radius:50%;`;
-      btnCam.style.cssText = `position:absolute;right:${padR + 88}px;bottom:${padB}px;`;
-      btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:48px;`;
-      btnGear.style.cssText = `position:absolute;left:${padL}px;top:${padT + 4}px;`;
-      btnFs.style.cssText = `position:absolute;left:${padL + 64}px;top:${padT + 4}px;`;
+      stick.style.width = "96px";
+      stick.style.height = "96px";
+      // Slim, low-contrast throttle at the far-right edge — no big green slab over the scene
+      thr.style.right = Math.max(4, padR - 2) + "px";
+      thr.style.bottom = (padB + 72) + "px";
+      thr.style.height = "110px";
+      thr.style.width = "20px";
+      thr.classList.add("slim");
+      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:64px;height:64px;border-radius:50%;`;
+      btnCam.style.cssText = `position:absolute;right:${padR + 70}px;bottom:${padB}px;min-width:44px;min-height:44px;`;
+      btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:44px;min-height:44px;`;
+      btnGear.style.cssText = `position:absolute;left:${padL}px;top:${padT}px;min-width:44px;min-height:44px;`;
+      btnFs.style.cssText = `position:absolute;left:${padL + 52}px;top:${padT}px;min-width:44px;min-height:44px;`;
     }
   }
 

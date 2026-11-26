@@ -276,6 +276,23 @@ function makeWaterfall() {
   return g;
 }
 
+
+function makeParkedPlane() {
+  const g = new THREE.Group();
+  add(g, box(1.4, 1.2, 6.2, 0xf4f4f8, MAT.PLANE, 0), 0, 0.7, 0);
+  add(g, box(10.2, 0.16, 1.6, 0xf4f4f8, MAT.PLANE, 0), 0, 1.2, 0.3);
+  add(g, box(10.2, 0.05, 0.25, 0xe01820, MAT.PLANE, 0), 0, 1.3, 0.3);
+  add(g, box(0.12, 1.4, 1.0, 0xf4f4f8, MAT.PLANE, 0), 0, 1.5, -2.8);
+  add(g, box(2.4, 0.1, 0.7, 0xf4f4f8, MAT.PLANE, 0), 0, 0.8, -2.8);
+  return g;
+}
+function makeCar(color) {
+  const g = new THREE.Group();
+  add(g, box(3.2, 1.0, 1.5, color, MAT.METAL, 0), 0, 0.7, 0);
+  add(g, box(1.6, 0.7, 1.4, 0x9ad4e8, MAT.METAL, 0), -0.2, 1.3, 0);
+  return g;
+}
+
 function paintDigit(g, ch, x, y, z, scale = 1) {
   // 5x7 strokes using bright hero bars, readable in ASCII
   const on = {
@@ -293,37 +310,53 @@ function paintDigit(g, ch, x, y, z, scale = 1) {
   }
 }
 
+function chevronPair(g, x, y, z, dir, scale = 1) {
+  // V pointing along +X if dir=+1 (toward increasing x / runway 09), -1 for 27
+  const len = 9 * scale, thick = 1.15 * scale, w = 5.5 * scale;
+  const col = 0x3cff6a;
+  const L = box(len, 0.3, thick, col, MAT.LIGHT, 1);
+  const R = box(len, 0.3, thick, col, MAT.LIGHT, 1);
+  L.position.set(x, y, z - w * 0.35);
+  R.position.set(x, y, z + w * 0.35);
+  L.rotation.y = dir * 0.55;
+  R.rotation.y = -dir * 0.55;
+  g.add(L, R);
+}
+
 function makeRunwayLights(parent, x0, x1, z, y) {
   const g = new THREE.Group();
   const len = Math.abs(x1 - x0);
   const wide = len > 500; // main runway
   const edge = wide ? 17 : 10;
-  for (let x = x0; x <= x1; x += wide ? 22 : 28) {
+  for (let x = x0; x <= x1; x += wide ? 14 : 24) {
     for (const s of [-edge, edge]) {
-      const l = box(0.9, 0.55, 0.9, 0xfff4c0, MAT.LIGHT, 1);
+      const l = box(wide ? 1.6 : 0.9, wide ? 1.15 : 0.55, wide ? 1.6 : 0.9, 0xffb018, MAT.LIGHT, 1);
       l.position.set(x, y, z + s);
       g.add(l);
     }
   }
-  // edge lines
   add(g, box(len, 0.22, 1.1, 0xf8f6e8, MAT.LIGHT, 1), (x0 + x1) / 2, y, z - edge);
   add(g, box(len, 0.22, 1.1, 0xf8f6e8, MAT.LIGHT, 1), (x0 + x1) / 2, y, z + edge);
-  // threshold bars (several close stripes)
   for (const side of [x0, x1]) {
     const dir = side === x0 ? 1 : -1;
-    for (let i = 0; i < (wide ? 6 : 3); i++) {
-      add(g, box(2.2, 0.26, wide ? 22 : 12, 0xffffff, MAT.LIGHT, 1), side + dir * (6 + i * 3.4), y, z);
+    for (let i = 0; i < (wide ? 8 : 3); i++) {
+      add(g, box(2.4, 0.28, wide ? 24 : 12, 0xffffff, MAT.LIGHT, 1), side + dir * (6 + i * 3.2), y, z);
     }
   }
-  // centerline ticks
-  for (let x = x0 + 28; x < x1 - 28; x += wide ? 18 : 22) {
-    add(g, box(wide ? 12 : 8, 0.24, 1.3, 0xffffff, MAT.LIGHT, 1), x, y, z);
+  for (let x = x0 + 28; x < x1 - 28; x += wide ? 16 : 22) {
+    add(g, box(wide ? 12 : 8, 0.24, 1.4, 0xffffff, MAT.LIGHT, 1), x, y, z);
   }
   if (wide) {
-    paintDigit(g, "0", x0 + 36, y + 0.2, z - 6, 1.1);
-    paintDigit(g, "9", x0 + 36, y + 0.2, z + 6, 1.1);
-    paintDigit(g, "2", x1 - 36, y + 0.2, z - 6, 1.1);
-    paintDigit(g, "7", x1 - 36, y + 0.2, z + 6, 1.1);
+    // 09 at the west threshold, 27 at the east — large centreline numerals
+    paintDigit(g, "0", x0 + 48, y + 0.25, z - 8, 2.4);
+    paintDigit(g, "9", x0 + 48, y + 0.25, z + 8, 2.4);
+    paintDigit(g, "2", x1 - 52, y + 0.25, z - 9, 3.0);
+    paintDigit(g, "7", x1 - 52, y + 0.25, z + 9, 3.0);
+    // green chevrons leading in: west of 09 (dir +X), east of 27 (dir -X)
+    for (let i = 0; i < 5; i++) {
+      chevronPair(g, x0 - 28 - i * 16, y, z, +1, 1.15);
+      chevronPair(g, x1 + 28 + i * 16, y, z, -1, 1.15);
+    }
   }
   parent.add(g);
   return g;
@@ -438,6 +471,22 @@ export function createLandmarks(scene, terrain, sky) {
   hangar.position.set(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z), LANDMARKS.hangar.z);
   hangar.rotation.y = 0.1;
   group.add(hangar);
+
+  // Parked trainer on the apron + a few cars
+  {
+    const apronY = H(LANDMARKS.hangar.x + 28, LANDMARKS.hangar.z + 6) + 1.2;
+    const pk = makeParkedPlane();
+    pk.position.set(LANDMARKS.hangar.x + 18, apronY, LANDMARKS.hangar.z + 2);
+    pk.rotation.y = 1.2;
+    group.add(pk);
+    const carCols = [0xc45a3a, 0x3a5a8a, 0xd0c8b0];
+    for (let i = 0; i < 3; i++) {
+      const car = makeCar(carCols[i]);
+      car.position.set(LANDMARKS.hangar.x + 36 + i * 10, apronY, LANDMARKS.hangar.z - 16 - (i % 2) * 6);
+      car.rotation.y = 0.05 * i;
+      group.add(car);
+    }
+  }
 
   const tower = makeTower();
   tower.position.set(LANDMARKS.tower.x, H(LANDMARKS.tower.x, LANDMARKS.tower.z), LANDMARKS.tower.z);

@@ -86,6 +86,12 @@ export function computeHeight(x, z) {
   volc += ridge(x * 0.004, z * 0.004, 3, 8) * 18 * smoothstep(480, 80, vd);
   h = Math.max(h, volc * Math.max(mask, smoothstep(520, 200, vd)));
 
+  // Rolling foothills between the south coast and the cone (keeps runway flat)
+  if (z > -850 && z < 160 && Math.abs(x) < 900) {
+    const fw = smoothstep(-850, -620, z) * smoothstep(160, 10, z) * smoothstep(900, 520, Math.abs(x));
+    h += fw * (14 + 24 * fbm(x * 0.0020, z * 0.0020, 4, 7) + 8 * ridge(x * 0.006, z * 0.006, 2, 3));
+  }
+
   // West mill hills
   const hd = dist2(x, z, -960, 180);
   const hills = smoothstep(620, 80, hd) * (58 + 22 * fbm(x * 0.003, z * 0.003, 4, 21));
@@ -266,10 +272,10 @@ export function createTerrain() {
     switch (m) {
       case MAT.SEA: return [0.08, 0.42 + n * 0.08, 0.78];
       case MAT.WATER_DEEP: return [0.05, 0.22, 0.52];
-      case MAT.SAND: return [0.86, 0.74, 0.46 + n * 0.05];
-      case MAT.GRASS: return [0.26 + n * 0.18, 0.62 + n * 0.20, 0.16 + n * 0.06];
-      case MAT.FOREST: return [0.10, 0.38 + n * 0.08, 0.12];
-      case MAT.ROCK: return [0.62 + n * 0.10, 0.56, 0.50];
+      case MAT.SAND: return [0.90, 0.80, 0.50 + n * 0.06];
+      case MAT.GRASS: return [0.32 + n * 0.20, 0.72 + n * 0.22, 0.12 + n * 0.06];
+      case MAT.FOREST: return [0.08, 0.30 + n * 0.10, 0.08];
+      case MAT.ROCK: return [0.42 + n * 0.10, 0.32 + n * 0.06, 0.28];
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];
       case MAT.RUNWAY: return [0.22, 0.23, 0.26];
@@ -316,10 +322,22 @@ export function createTerrain() {
   const sunX = 0.45, sunY = 0.8, sunZ = 0.25;
   for (let o = 0; o < verts * verts; o++) {
     const ndl = Math.max(0, nrm[o*3]*sunX + nrm[o*3+1]*sunY + nrm[o*3+2]*sunZ);
-    const sh = 0.48 + 0.50 * ndl;
     const x = pos[o*3], z = pos[o*3+2];
-    const n2 = 0.88 + 0.24 * fbm(x * 0.035, z * 0.035, 3, 2.2);
-    col[o*3] *= sh * n2; col[o*3+1] *= sh * n2; col[o*3+2] *= sh * n2;
+    const hgt = pos[o*3+1];
+    const vd = Math.hypot(x, z - 200);
+    // Lava in the crater and in noisy streaks down the cone
+    const streak = fbm(x * 0.025, z * 0.025, 3, 11);
+    if (vd < 42 && hgt > 210) {
+      col[o*3] = 1.0; col[o*3+1] = 0.28 + streak * 0.25; col[o*3+2] = 0.04;
+      aid[o*2] = MAT.LIGHT; aid[o*2+1] = 1;
+    } else if (vd < 150 && hgt > 130 && streak > 0.58) {
+      col[o*3] = 0.95; col[o*3+1] = 0.22 + (streak - 0.58) * 0.8; col[o*3+2] = 0.04;
+      aid[o*2] = MAT.LIGHT; aid[o*2+1] = 1;
+    } else {
+      const sh = 0.38 + 0.75 * Math.pow(ndl, 0.7);
+      const n2 = 0.82 + 0.32 * fbm(x * 0.030, z * 0.030, 3, 2.2);
+      col[o*3] *= sh * n2; col[o*3+1] *= sh * n2; col[o*3+2] *= sh * n2;
+    }
   }
   geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));

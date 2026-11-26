@@ -25,6 +25,7 @@ export function createCraft(planeId = "trainer") {
     angVel: new THREE.Vector3(), // body space
     throttle: 0,
     gearDown: true,
+    flaps: 0,
     onGround: true,
     waterborne: false,
     stalled: false,
@@ -66,6 +67,7 @@ export function resetCraft(c, spawn, heading, planeId) {
   c.angVel.set(0, 0, 0);
   c.throttle = 0;
   c.gearDown = true;
+  c.flaps = 0;
   c.onGround = true;
   c.waterborne = false;
   c.stalled = false;

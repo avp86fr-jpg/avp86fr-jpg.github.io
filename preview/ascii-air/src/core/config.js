@@ -27,9 +27,9 @@ export const CAM = {
   fovPortrait: 68,
   near: 0.8,
   far: 6200,
-  chaseDist: 16,
-  chaseHeight: 4.2,
-  chaseLag: 8,
+  chaseDist: 18,
+  chaseHeight: 5.4,
+  chaseLag: 10,
 };
 
 /** Material IDs written to the ID target (0–255). */
@@ -65,14 +65,14 @@ export const MAT_COUNT = 25;
 
 export const CHAR_SIZE = {
   // CSS pixels per cell before DPR tightening. Medium PC at 1920 is ~213×120 (~1.33× denser than 160×90).
-  large:  { desktop: 11, mobile: 10 },
-  medium: { desktop: 8,  mobile: 7 },
-  fine:   { desktop: 6,  mobile: 6 },
+  large:  { desktop: 9, mobile: 8 },
+  medium: { desktop: 6,  mobile: 6 },
+  fine:   { desktop: 5,  mobile: 5.5 },
 };
 
 export const GRID_CAPS = {
-  desktop: { cols: 280, rows: 160 },
-  mobile:  { cols: 160, rows: 96 },
+  desktop: { cols: 320, rows: 180 },
+  mobile:  { cols: 180, rows: 140 },
 };
 
 export const DISPLAY_MODES = ["color", "green", "amber", "paper"];

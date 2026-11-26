@@ -93,6 +93,7 @@ export function createUI(root, hooks) {
     <div class="term-panel hidden" id="hud-minimap"></div>
     <div class="term-panel" id="hud-flight"></div>
     <div class="term-panel hidden" id="hud-photo"></div>
+    <div class="term-panel hidden" id="hud-aux"></div>
     <button class="ascii-btn hidden" id="hud-fs">FULL</button>
   `;
   wrap.appendChild(hud);
@@ -410,77 +411,136 @@ time  ${formatTime(result.time || 0)}
     const names = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
     return names[idx];
   }
-  function headingToNorth(h) { return h + Math.PI / 2; }
+  function headingToNorth(h) { return Math.PI / 2 - h; }
   function wrapPos(t) { t %= 1; return t < 0 ? t + 1 : t; }
 
-  function updateHUD(craft, mission, hour, portrait) {
+  function updateHUD(craft, mission, hour, portrait, ctx) {
+    ctx = ctx || {};
+    const weather = ctx.weather || { id: "clear", rain: 0, windDeg: 40, windKt: 6, visibility: 12, turbulence: 0 };
+    const save = ctx.save || {};
     const ins = safeInsets();
     const mobileChrome = (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900);
-    const padT = 10 + ins.top + (mobileChrome ? 56 : 0);
-    const padB = 10 + ins.bottom + (mobileChrome ? (portrait ? 160 : 96) : 0);
-    const padL = 10 + ins.left;
-    const padR = 10 + ins.right;
+    const padT = 8 + ins.top + (mobileChrome ? 40 : 0);
+    const padB = 8 + ins.bottom + (mobileChrome ? (portrait ? 148 : 56) : 0);
+    const padL = 8 + ins.left;
+    const padR = 8 + ins.right;
     const stats = hud.querySelector("#hud-stats");
     const comp = hud.querySelector("#hud-compass");
     const miss = hud.querySelector("#hud-mission");
     const mmap = hud.querySelector("#hud-minimap");
     const flight = hud.querySelector("#hud-flight");
     const photo = hud.querySelector("#hud-photo");
+    const aux = hud.querySelector("#hud-aux");
     const fsBtn = hud.querySelector("#hud-fs");
     const msg = hud.querySelector("#hud-msg");
 
     stats.style.top = padT + "px"; stats.style.left = padL + "px";
     comp.style.top = padT + "px";
     fsBtn.style.top = padT + "px"; fsBtn.style.right = padR + "px";
-    miss.style.top = (padT + 52) + "px"; miss.style.right = padR + "px";
-    mmap.style.left = padL + "px"; mmap.style.bottom = (padB + 52) + "px";
+    miss.style.top = (padT + (mobileChrome ? 44 : 48)) + "px"; miss.style.right = padR + "px";
+    mmap.style.left = padL + "px"; mmap.style.bottom = (padB + 48) + "px";
     flight.style.bottom = padB + "px";
-    photo.style.right = padR + "px"; photo.style.bottom = (padB + 52) + "px";
+    photo.style.right = padR + "px"; photo.style.bottom = (padB + 48) + "px";
+    aux.style.right = padR + "px"; aux.style.bottom = (padB + 48) + "px";
 
     const spd = Math.round(craft.airspeed * 1.94384);
-    const alt = Math.round(Math.max(0, craft.altitude));
+    const altM = Math.max(0, craft.altitude);
+    const altFt = Math.round(altM * 3.28084);
     const vs = Math.round(craft.vspeed * 196.85);
     const vsS = (vs >= 0 ? "+" : "") + vs;
     const thr = Math.round(craft.throttle * 100);
     const hdg = ((Math.round((headingToNorth(craft.heading) * 180 / Math.PI) + 360) % 360));
-    const stall = craft.stalled ? "  ▸ STALL ◂" : "";
-    const gear = craft.gearDown ? "GEAR DN" : "GEAR UP";
+    const gear = craft.gearDown ? "DOWN" : "UP";
+    const flaps = (craft.flaps || 0) > 0.5 ? "FULL" : "UP";
     const asp = bar(craft.throttle, 8, "█", "░");
     const spdBar = bar(Math.min(1, (craft.airspeed || 0) / 70), 8, "█", "░");
+    const stars = save.starsTotal ?? save.stars ?? 0;
+    const photos = (save.photos && save.photos.length) || 0;
+    const planeName = (craft.def && craft.def.name) || (craft.id || "TRAINER").toUpperCase();
 
-    stats.textContent = `IAS  ${String(spd).padStart(3)} kt\nALT  ${String(alt).padStart(4)} m\nVS   ${vsS.padStart(5)}\n${gear}${stall}`;
+    stats.textContent = "ASCII AIR  v1.0\n★ " + String(stars).padStart(3) + " / 180\n○ " + String(photos).padStart(2) + " / 50 (Treasures)\n★ " + planeName + "  Lv.2";
     comp.textContent = compassStrip(craft.heading, hdg);
+
+    const wx = weather.id === "storm" ? "STORM" : "CLEAR";
+    const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° @ " + Math.round(weather.windKt) + " kt";
+
     miss.style.display = "";
-    if (mission?.active && !mission.result) {
+    if (mission && mission.active && !mission.result) {
       const m = mission.active;
-      let lines = [m.title];
-      if (m.activity === "rings") lines.push(`RING ${mission.ringsPassed + 1}/${m.rings.length}   ${formatTime(mission.t)}`);
-      if (m.activity === "landing") lines.push(`${m.target.type.toUpperCase()}  line up the posts`);
-      if (m.activity === "balloons") lines.push(`${mission.popped}/${mission.balloons.length}   ${formatTime(Math.max(0, (m.timeLimit || 90) - mission.t))}`);
-      if (m.activity === "photo") lines.push(mission.photoReady ? "▸ IN FRAME — ACTION" : "find the framing ring");
+      const klass = (m.klass || "").toUpperCase();
+      const lines = [];
+      if (m.activity === "rings") {
+        lines.push("RING COURSE  (" + (klass || "PRO") + ")");
+        lines.push("> Fly through all rings!");
+        lines.push("> Rings: " + mission.ringsPassed + "/" + m.rings.length);
+        lines.push("> Time: " + formatTime(mission.t));
+        lines.push("> Wind: " + windLine);
+        if (m.weather || weather.id === "storm") lines.push("> Weather: " + wx);
+      } else if (m.activity === "landing") {
+        const rwy = (m.target && m.target.heading > 2) ? "27" : "09";
+        const typ = (m.target && m.target.type === "runway") ? rwy : String((m.target && m.target.type) || "").toUpperCase();
+        lines.push("LANDING  (" + (klass || "PRO") + ")");
+        lines.push("> Land at the airport.");
+        lines.push("> Runway: " + typ);
+        lines.push("> Wind: " + windLine);
+        lines.push("> Grade: " + (mission.message || "—"));
+      } else if (m.activity === "balloons") {
+        lines.push(m.title);
+        lines.push("> " + mission.popped + "/" + mission.balloons.length + "   " + formatTime(Math.max(0, (m.timeLimit || 90) - mission.t)));
+      } else if (m.activity === "photo") {
+        lines.push(m.title);
+        lines.push(mission.photoReady ? "> IN FRAME — ACTION" : "> find the framing ring");
+      } else {
+        lines.push(m.title);
+      }
       miss.textContent = lines.join("\n");
-    } else if (mission?.result) {
+    } else if (mission && mission.result) {
       miss.textContent = mission.message || "";
     } else {
-      miss.textContent = `${hourToClock(hour)}\n${craft.thermal > 3 ? "THERMAL ▴" : "FREE FLIGHT"}`;
+      miss.textContent = "FREE FLIGHT\n> " + hourToClock(hour) + "\n> Wind: " + windLine + "\n> Weather: " + wx;
     }
 
-    flight.textContent = `SPD ${String(spd).padStart(3)} ${spdBar}   ${attitude(craft)}   ALT ${String(alt).padStart(4)}   THR ${asp} ${String(thr).padStart(3)}%   ${planeIcon(craft)}`;
+    const landing = mission && mission.active && mission.active.activity === "landing" && !mission.result;
+    const stormy = weather.id === "storm" || (mission && mission.active && mission.active.weather === "storm");
+    if (landing) {
+      flight.textContent = "SPD " + String(spd).padStart(3) + " kt   ALT " + String(altFt).padStart(4) + " ft   " + attitude(craft) + "   V/S " + vsS + " fpm   FLAPS " + flaps + "   GEAR " + gear;
+    } else if (stormy) {
+      flight.textContent = "SPD " + String(spd).padStart(3) + " " + spdBar + "   ALT " + String(altFt).padStart(4) + " ft   " + attitude(craft) + "   THR " + asp + " " + String(thr).padStart(3) + "%   WIND " + windLine;
+    } else {
+      flight.textContent = "SPD " + String(spd).padStart(3) + " " + spdBar + "   ALT " + String(altFt).padStart(4) + " ft   " + attitude(craft) + "   THR " + asp + " " + String(thr).padStart(3) + "%   " + planeIcon(craft);
+    }
 
-    msg.textContent = craft.crashed ? "RECOVERING…" : (mission?.result ? mission.message : "");
+    msg.textContent = craft.crashed ? "RECOVERING…" : ((mission && mission.result) ? mission.message : "");
 
     if (!portrait && !mobileChrome && window.innerWidth > 900 && window.innerHeight > 560) {
       mmap.classList.remove("hidden");
-      mmap.textContent = "MAP\n" + drawMini(craft);
+      mmap.textContent = "MAP      N\n" + drawMini(craft);
     } else mmap.classList.add("hidden");
 
-    if (mission?.active?.activity === "photo" && !mission.result) {
+    const showPhoto = mission && mission.active && mission.active.activity === "photo" && !mission.result;
+    if (showPhoto) {
       photo.classList.remove("hidden");
-      const sub = mission.active.subject?.name || "subject";
+      aux.classList.add("hidden");
+      const sub = (mission.active.subject && mission.active.subject.name) || "subject";
       photo.classList.toggle("ready", !!mission.photoReady);
-      photo.textContent = `PHOTO\n┌────────────┐\n│ ${String(sub).slice(0, 10).padEnd(10)} │\n│ ${mission.photoReady ? "  IN FRAME  " : "  find it   "} │\n└────────────┘`;
+      photo.textContent = "PHOTO\n┌────────────┐\n│ " + String(sub).slice(0, 10).padEnd(10) + " │\n│ " + (mission.photoReady ? "  IN FRAME  " : "  find it   ") + " │\n└────────────┘";
+    } else if (landing) {
+      photo.classList.add("hidden");
+      aux.classList.remove("hidden");
+      const a = landingAssist(craft, mission.active);
+      const glideS = (a.glide >= 0 ? "+" : "") + a.glide.toFixed(1);
+      const latS = (a.lat >= 0 ? "+" : "") + a.lat.toFixed(1);
+      const etaS = a.eta > 0 ? (Math.round(a.eta) + " s") : "—";
+      aux.textContent = "LANDING ASSIST\n> Glide: " + glideS + "°\n> Center: " + latS + " m\n> Speed: " + Math.round(a.spd) + " kt\nTOUCHDOWN    ~" + etaS;
+    } else if (stormy && !portrait) {
+      photo.classList.add("hidden");
+      aux.classList.remove("hidden");
+      const turb = weather.turbulence > 0.55 ? "High" : weather.turbulence > 0.2 ? "Med" : "Low";
+      const rain = weather.rain > 0.6 ? "Heavy" : weather.rain > 0.2 ? "Light" : "None";
+      aux.textContent = "WEATHER\n> " + wx + "\n> Rain: " + rain + "\n> Visibility: " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence: " + turb;
     } else {
       photo.classList.add("hidden");
+      aux.classList.add("hidden");
       photo.classList.remove("ready");
     }
 
@@ -512,6 +572,23 @@ time  ${formatTime(result.time || 0)}
     if (b > 0.28) return `\\\\${mid}\\\\`;
     if (b < -0.28) return `/${mid}/`;
     return `-${mid}-`;
+  }
+
+  function landingAssist(craft, m) {
+    const tgt = (m && m.target) || { x: 0, z: -1100, heading: 0, len: 800 };
+    const hdg = tgt.heading || 0;
+    const fx = Math.cos(hdg), fz = Math.sin(hdg);
+    const len = tgt.len || 800;
+    const thx = (tgt.x || 0) - fx * (len * 0.45);
+    const thz = (tgt.z != null ? tgt.z : -1100) - fz * (len * 0.45);
+    const dx = thx - craft.pos.x, dz = thz - craft.pos.z;
+    const along = dx * fx + dz * fz;
+    const lat = -dx * fz + dz * fx;
+    const alt = Math.max(0, (craft.altitude || 0) - 4);
+    const glide = along > 8 ? -(Math.atan2(alt, along) * 180 / Math.PI) : 0;
+    const spd = (craft.airspeed || 0) * 1.94384;
+    const eta = (along > 0 && craft.airspeed > 5) ? along / craft.airspeed : 0;
+    return { glide, lat, spd, eta, along };
   }
 
   function planeIcon(craft) {
