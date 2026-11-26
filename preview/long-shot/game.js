@@ -1,4 +1,5 @@
 (() => {
+  var __defProp = Object.defineProperty;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __esm = (fn, res, err) => function __init() {
     if (err) throw err[0];
@@ -14,6 +15,10 @@
     } catch (e) {
       throw mod = 0, e;
     }
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
   };
 
   // node_modules/three/build/three.core.js
@@ -33977,6 +33982,32 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/audio/audio.js
+  var audio_exports = {};
+  __export(audio_exports, {
+    alarmSiren: () => alarmSiren,
+    ambienceTick: () => ambienceTick,
+    applyVolumes: () => applyVolumes,
+    audio: () => audio,
+    audioState: () => audioState,
+    bolt: () => bolt,
+    brass: () => brass,
+    breath: () => breath,
+    distantShots: () => distantShots,
+    duck: () => duck,
+    explosion: () => explosion,
+    heartbeat: () => heartbeat,
+    impact: () => impact,
+    initAudio: () => initAudio,
+    radio: () => radio,
+    setAmbience: () => setAmbience,
+    setIntensity: () => setIntensity,
+    setMusicTheme: () => setMusicTheme,
+    shot: () => shot,
+    stinger: () => stinger,
+    stopWhiz: () => stopWhiz,
+    ui: () => ui,
+    whiz: () => whiz
+  });
   function makeNoise() {
     const len = ctx.sampleRate * 2, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -33990,36 +34021,193 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     return b;
   }
+  function kick() {
+    if (!ctx) return;
+    if (ctx.state !== "running") {
+      try {
+        ctx.resume();
+      } catch {
+      }
+    }
+    try {
+      const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource();
+      s.buffer = b;
+      s.connect(ctx.destination);
+      s.start(0);
+    } catch {
+    }
+  }
   function initAudio() {
     if (ctx) {
-      if (ctx.state === "suspended") ctx.resume();
+      if (ctx.state !== "running") kick();
       return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    ctx = new AC();
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = "playback";
+    } catch {
+    }
+    ctx = new AC({ latencyHint: "interactive" });
+    kick();
     master = ctx.createGain();
-    master.connect(ctx.destination);
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -2;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 2e-3;
+    limiter.release.value = 0.12;
+    master.connect(limiter);
+    limiter.connect(ctx.destination);
+    const an = ctx.createAnalyser();
+    an.fftSize = 512;
+    limiter.connect(an);
+    const buf = new Float32Array(512);
+    A.level = () => {
+      an.getFloatTimeDomainData(buf);
+      let pk = 0;
+      for (const v3 of buf) pk = Math.max(pk, Math.abs(v3));
+      return pk;
+    };
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -10;
-    comp.ratio.value = 4;
-    comp.connect(master);
+    let head = comp;
+    if (PHONE) {
+      comp.threshold.value = -20;
+      comp.knee.value = 8;
+      comp.ratio.value = 6;
+      comp.attack.value = 4e-3;
+      comp.release.value = 0.2;
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 95;
+      hp.Q.value = 0.7;
+      const ls = ctx.createBiquadFilter();
+      ls.type = "lowshelf";
+      ls.frequency.value = 180;
+      ls.gain.value = -4;
+      const pk = ctx.createBiquadFilter();
+      pk.type = "peaking";
+      pk.frequency.value = 2600;
+      pk.Q.value = 0.9;
+      pk.gain.value = 3.5;
+      comp.connect(hp);
+      hp.connect(ls);
+      ls.connect(pk);
+      pk.connect(master);
+    } else {
+      comp.threshold.value = -10;
+      comp.ratio.value = 4;
+      comp.connect(master);
+    }
     music = ctx.createGain();
-    music.connect(comp);
+    music.connect(head);
     sfx = ctx.createGain();
-    sfx.connect(comp);
+    sfx.connect(head);
     amb = ctx.createGain();
-    amb.connect(comp);
+    amb.connect(head);
     verb = ctx.createConvolver();
-    verb.buffer = makeImpulse();
+    verb.buffer = PHONE ? makeImpulse(1.8, 3) : makeImpulse();
     const vg = ctx.createGain();
     vg.gain.value = 0.55;
     verb.connect(vg);
-    vg.connect(comp);
+    vg.connect(head);
     noiseBuf = makeNoise();
     A.ready = true;
+    A.phone = PHONE;
     applyVolumes();
+    loadSfxBank();
+    loadTheme("menu");
     startMusic();
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) kick();
+    });
+    ctx.onstatechange = () => {
+      A.state = ctx.state;
+    };
+  }
+  function loadScript(src) {
+    return new Promise((res) => {
+      const sc = document.createElement("script");
+      sc.src = src;
+      sc.async = true;
+      sc.onload = res;
+      sc.onerror = res;
+      document.head.appendChild(sc);
+    });
+  }
+  function b64buf(b) {
+    const bin = atob(b), u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return u.buffer;
+  }
+  async function decodeMap(map, prefix) {
+    for (const [k, v3] of Object.entries(map)) {
+      if (typeof v3 !== "string") continue;
+      try {
+        BANK[prefix + k] = await decode(b64buf(v3));
+      } catch {
+      }
+    }
+  }
+  async function loadSfxBank() {
+    if (LOADING.sfx) return;
+    LOADING.sfx = 1;
+    await loadScript("audio/sfx.js");
+    const d = window.LS_AUDIO && window.LS_AUDIO.sfx;
+    if (!d) return;
+    await decodeMap(d, "");
+    window.LS_AUDIO.sfx = null;
+    if (A.envKind) setAmbience(A.envKind);
+  }
+  async function loadTheme(key) {
+    if (LOADING["m" + key]) return;
+    LOADING["m" + key] = 1;
+    await loadScript("audio/music_" + key + ".js");
+    const d = window.LS_AUDIO && window.LS_AUDIO.music && window.LS_AUDIO.music[key];
+    if (!d) return;
+    await decodeMap(d, "mus_" + key + "_");
+    window.LS_AUDIO.music[key] = null;
+  }
+  function play(name, o = {}) {
+    const b = BANK[name];
+    if (!b || !ctx) return null;
+    let same = 0;
+    for (const v4 of VOICES) if (v4.n === name) same++;
+    if (same >= (o.maxSame || 3)) return VOICES.find((v4) => v4.n === name).s;
+    while (VOICES.length >= MAXV) {
+      const v4 = VOICES.shift();
+      try {
+        v4.s.stop();
+      } catch {
+      }
+    }
+    const t = now() + Math.max(0, o.delay || 0), s = ctx.createBufferSource();
+    s.buffer = b;
+    if (o.rate) s.playbackRate.value = o.rate;
+    const g = ctx.createGain();
+    g.gain.value = o.gain ?? 1;
+    s.connect(g);
+    let node = g;
+    if (o.pan && ctx.createStereoPanner) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = o.pan;
+      g.connect(p);
+      node = p;
+    }
+    node.connect(o.bus || sfx);
+    s.start(t);
+    const v3 = { n: name, s };
+    VOICES.push(v3);
+    s.onended = () => {
+      const i = VOICES.indexOf(v3);
+      if (i >= 0) VOICES.splice(i, 1);
+      try {
+        node.disconnect();
+        g.disconnect();
+      } catch {
+      }
+    };
+    return s;
   }
   function applyVolumes() {
     if (!ctx) return;
@@ -34063,6 +34251,34 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     ambNodes = [];
     A.envKind = kind || A.envKind;
     if (!kind) return;
+    const lk = "loop_" + (kind === "desert" ? "desert" : "mountain");
+    if (BANK[lk]) {
+      const s = ctx.createBufferSource();
+      s.buffer = BANK[lk];
+      s.loop = true;
+      s.playbackRate.value = kind === "range" ? 0.92 : 1;
+      const f = ctx.createBiquadFilter();
+      f.type = "lowpass";
+      f.frequency.value = kind === "range" ? 5e3 : 12e3;
+      f.Q.value = 0.5;
+      const g3 = ctx.createGain();
+      g3.gain.value = kind === "range" ? 0.35 : 0.6;
+      s.connect(f);
+      f.connect(g3);
+      g3.connect(amb);
+      s.start(now(), Math.random() * 10);
+      ambNodes.push(s, g3);
+      A.windGain = g3;
+      A.windBp = f;
+      A.windMul = kind === "range" ? 1 : 1.7;
+      A.birdTimer = 5;
+      A.clinkTimer = kind === "mountain" ? 3 : null;
+      A.steamTimer = 4;
+      A.thumpTimer = 1e9;
+      A.murmur = null;
+      return;
+    }
+    A.windMul = 1;
     const w = noiseSrc(true);
     const bp = ctx.createBiquadFilter();
     bp.type = "bandpass";
@@ -34168,7 +34384,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function ambienceTick(dt, windSpeed, storm = 0) {
     if (!ctx || !A.windGain) return;
-    A.windGain.gain.setTargetAtTime(0.1 + Math.min(1, windSpeed / 8) * 0.25 + storm * 0.35, now(), 0.5);
+    A.windGain.gain.setTargetAtTime((0.1 + Math.min(1, windSpeed / 8) * 0.25 + storm * 0.35) * (A.windMul || 1), now(), 0.5);
     A.windBp.Q.setTargetAtTime(0.6 - storm * 0.3, now(), 0.5);
     A.birdTimer = (A.birdTimer ?? 9) - dt;
     if (A.envKind !== "desert" && A.birdTimer < 0) {
@@ -34205,6 +34421,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
   }
   function clink() {
+    if (play("amb_clink", { bus: amb, gain: 0.8, pan: Math.random() - 0.5, rate: 0.9 + Math.random() * 0.2 })) return;
     const t = now();
     for (const [d, f] of [[0, 3200 + Math.random() * 900], [0.06, 4100 + Math.random() * 600]]) {
       const o = ctx.createOscillator();
@@ -34219,6 +34436,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
   }
   function steam() {
+    if (play("amb_steam", { bus: amb, gain: 0.7, pan: Math.random() - 0.5 })) return;
     const t = now();
     const n = noiseSrc();
     const hp = ctx.createBiquadFilter();
@@ -34235,6 +34453,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     n.stop(t + 2.5);
   }
   function bird() {
+    if (play("amb_bird", { bus: amb, gain: 0.8, pan: Math.random() * 1.6 - 0.8, rate: 0.85 + Math.random() * 0.35 })) return;
     const t = now();
     const o = ctx.createOscillator();
     o.type = "sine";
@@ -34259,6 +34478,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const t = now();
     const sup = !!G.settings.suppressor;
     duck(0.35, 1.6);
+    if (play((sup ? "shotsup_" : "shot_") + (ECHO[A.envKind] ? A.envKind : "mountain"), { gain: 1, rate: 0.97 + Math.random() * 0.06 })) return;
     const out = ctx.createGain();
     out.gain.value = 1;
     out.connect(sfx);
@@ -34287,16 +34507,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     bp.type = "bandpass";
     bp.frequency.value = sup ? 700 : 320;
     bp.Q.value = sup ? 1.6 : 0.7;
-    const g2 = ctx.createGain();
-    env(g2, t, 3e-3, sup ? 0.55 : 1.1, sup ? 0.12 : 0.4);
+    const g22 = ctx.createGain();
+    env(g22, t, 3e-3, (sup ? 0.55 : 1.1) * (PHONE ? 1.35 : 1), sup ? 0.12 : 0.4);
     n2.connect(bp);
-    bp.connect(g2);
-    g2.connect(out);
+    bp.connect(g22);
+    g22.connect(out);
     n2.start(t);
     const o = ctx.createOscillator();
     o.type = "sine";
     o.frequency.setValueAtTime(sup ? 110 : 140, t);
-    o.frequency.exponentialRampToValueAtTime(34, t + 0.3);
+    o.frequency.exponentialRampToValueAtTime(PHONE ? 72 : 34, t + 0.3);
     const og = ctx.createGain();
     env(og, t, 3e-3, sup ? 0.5 : 1.25, sup ? 0.2 : 0.5);
     o.connect(og);
@@ -34335,11 +34555,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     const tg = ctx.createGain();
     tg.gain.value = sup ? 0.15 : 0.5;
-    g2.connect(tg);
+    g22.connect(tg);
     tg.connect(verb);
   }
   function bolt() {
     if (!ctx) return;
+    if (play("bolt", { delay: 0.3, gain: 0.9 })) return;
     const t = now() + 0.35;
     const click = (tt, f, a) => {
       const n2 = noiseSrc();
@@ -34347,11 +34568,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       bp2.type = "bandpass";
       bp2.frequency.value = f;
       bp2.Q.value = 4;
-      const g2 = ctx.createGain();
-      env(g2, tt, 1e-3, a, 0.05);
+      const g3 = ctx.createGain();
+      env(g3, tt, 1e-3, a, 0.05);
       n2.connect(bp2);
-      bp2.connect(g2);
-      g2.connect(sfx);
+      bp2.connect(g3);
+      g3.connect(sfx);
       n2.start(tt);
       n2.stop(tt + 0.1);
     };
@@ -34374,6 +34595,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function impact(kind, delay = 0) {
     if (!ctx) return;
     const t = now() + Math.max(0, delay);
+    const ik = { metal: "imp_metal", plate: "imp_plate", body: "imp_body", glass: "imp_glass" }[kind] || "imp_ground";
+    if (play(ik, { delay, gain: kind === "plate" ? 0.8 : 0.9, rate: 0.95 + Math.random() * 0.1 })) return;
     if (kind === "metal" || kind === "plate") {
       for (const f of kind === "plate" ? [620, 1240, 1770] : [900, 1500]) {
         const o = ctx.createOscillator();
@@ -34403,6 +34626,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function explosion(delay = 0, big = 1) {
     if (!ctx) return;
+    if (play("explosion", { delay, gain: Math.min(1, 0.75 * big) })) return;
     const t = now() + delay;
     const n = noiseSrc();
     const lp = ctx.createBiquadFilter();
@@ -34429,6 +34653,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function distantShots(n = 3, delay = 0) {
     if (!ctx) return;
+    if (BANK.distant) {
+      for (let i = 0; i < n; i++) play("distant", { delay: delay + i * (0.18 + Math.random() * 0.25), gain: 0.5, rate: 0.9 + Math.random() * 0.2, maxSame: 6 });
+      return;
+    }
     for (let i = 0; i < n; i++) {
       const t = now() + delay + i * (0.18 + Math.random() * 0.25);
       const s = noiseSrc();
@@ -34525,6 +34753,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (!ctx) return;
     const t = now();
     duck(0.55, 3);
+    if (play("radio", { gain: 0.8 })) return;
     const n = noiseSrc();
     const bp = ctx.createBiquadFilter();
     bp.type = "bandpass";
@@ -34549,17 +34778,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function ui(kind = "click") {
     if (!ctx) return;
     const t = now();
+    const uk = { click: "ui_click", tag: "ui_tag", confirm: "ui_confirm", ping: "ui_ping", deny: "ui_deny", success: "ui_success", fail: "ui_fail", whoosh: "ui_whoosh", type: "ui_type", tick: "ui_type", stamp: "ui_stamp", zoom: "ui_zoom", range: "ui_ping" }[kind];
+    if (uk && play(uk, { gain: kind === "type" || kind === "tick" ? 0.7 : 1, rate: kind === "type" ? 0.9 + Math.random() * 0.25 : kind === "range" ? 1.3 : 1, maxSame: kind === "type" ? 2 : 3 })) return;
     if (kind === "confirm" || kind === "ping") {
       const fs = kind === "ping" ? [1760, 2637] : [392, 587];
       fs.forEach((f2, i) => {
         const o2 = ctx.createOscillator();
         o2.type = kind === "ping" ? "sine" : "triangle";
         o2.frequency.value = f2;
-        const g2 = ctx.createGain();
-        env(g2, t + i * 0.09, 4e-3, kind === "ping" ? 0.05 : 0.09, kind === "ping" ? 0.5 : 0.6);
-        o2.connect(g2);
-        g2.connect(sfx);
-        if (verb) g2.connect(verb);
+        const g3 = ctx.createGain();
+        env(g3, t + i * 0.09, 4e-3, kind === "ping" ? 0.05 : 0.09, kind === "ping" ? 0.5 : 0.6);
+        o2.connect(g3);
+        g3.connect(sfx);
+        if (verb) g3.connect(verb);
         o2.start(t + i * 0.09);
         o2.stop(t + i * 0.09 + 0.8);
       });
@@ -34569,14 +34800,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const o2 = ctx.createOscillator();
       o2.type = "square";
       o2.frequency.value = 2400;
-      const g2 = ctx.createGain();
-      env(g2, t, 1e-3, 0.02, 0.025);
+      const g3 = ctx.createGain();
+      env(g3, t, 1e-3, 0.02, 0.025);
       const hp = ctx.createBiquadFilter();
       hp.type = "highpass";
       hp.frequency.value = 1500;
       o2.connect(hp);
-      hp.connect(g2);
-      g2.connect(sfx);
+      hp.connect(g3);
+      g3.connect(sfx);
       o2.start(t);
       o2.stop(t + 0.05);
       return;
@@ -34587,11 +34818,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const lp = ctx.createBiquadFilter();
       lp.type = "lowpass";
       lp.frequency.value = 700;
-      const g2 = ctx.createGain();
-      env(g2, t, 2e-3, 0.18, 0.7);
+      const g3 = ctx.createGain();
+      env(g3, t, 2e-3, 0.18, 0.7);
       n.connect(lp);
-      lp.connect(g2);
-      g2.connect(sfx);
+      lp.connect(g3);
+      g3.connect(sfx);
       n.start(t);
       const o2 = ctx.createOscillator();
       o2.frequency.setValueAtTime(140, t);
@@ -34612,11 +34843,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       bp.Q.value = 1.2;
       bp.frequency.setValueAtTime(300, t);
       bp.frequency.exponentialRampToValueAtTime(2400, t + 0.35);
-      const g2 = ctx.createGain();
-      env(g2, t, 0.15, 0.3, 0.18);
+      const g3 = ctx.createGain();
+      env(g3, t, 0.15, 0.3, 0.18);
       n.connect(bp);
-      bp.connect(g2);
-      g2.connect(sfx);
+      bp.connect(g3);
+      g3.connect(sfx);
       n.start(t);
       return;
     }
@@ -34626,11 +34857,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const bp = ctx.createBiquadFilter();
       bp.type = "bandpass";
       bp.frequency.value = 3e3 + Math.random() * 1500;
-      const g2 = ctx.createGain();
-      env(g2, t, 1e-3, 0.015, 0.05);
+      const g3 = ctx.createGain();
+      env(g3, t, 1e-3, 0.015, 0.05);
       n.connect(bp);
-      bp.connect(g2);
-      g2.connect(sfx);
+      bp.connect(g3);
+      g3.connect(sfx);
       n.start(t);
       return;
     }
@@ -34735,8 +34966,64 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     M.tremVoices?.forEach((o, i) => o.frequency.setTargetAtTime(mtof(T2.root + 36 + ch[(i + 1) % 4]), t, 0.1));
     M.chord = ch;
   }
+  function sampledMusic() {
+    const key = themeKey(M.theme);
+    if (M.cur === key) return true;
+    if (!BANK["mus_" + key + "_alarm"]) {
+      loadTheme(key);
+      return !!M.layers;
+    }
+    const t = now() + 0.05, dur = BANK["mus_" + key + "_calm"].duration;
+    if (M.layers) for (const l of M.layers) {
+      l.g.gain.cancelScheduledValues(t);
+      l.g.gain.setTargetAtTime(0, t, 0.7);
+      const s = l.s;
+      setTimeout(() => {
+        try {
+          s.stop();
+        } catch {
+        }
+      }, 4e3);
+    }
+    M.layers = ["calm", "tension", "alarm"].map((n) => {
+      const s = ctx.createBufferSource();
+      s.buffer = BANK["mus_" + key + "_" + n];
+      s.loop = true;
+      s.loopEnd = dur;
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      s.connect(g);
+      g.connect(M.duck);
+      s.start(t);
+      return { n, s, g };
+    });
+    M.cur = key;
+    if (!M.sampled) {
+      M.sampled = true;
+      for (const v3 of M.pad) {
+        try {
+          v3.o.stop();
+        } catch {
+        }
+      }
+      M.tremVoices?.forEach((o) => {
+        try {
+          o.stop();
+        } catch {
+        }
+      });
+      for (const k in M.stems) M.stems[k].g.gain.value = 0;
+    }
+    return true;
+  }
   function schedule() {
     if (!ctx || ctx.state !== "running") return;
+    if (sampledMusic()) {
+      M.I += (M.It - M.I) * 0.04;
+      const I2 = M.I, t02 = now();
+      if (M.cur && M.layers) for (const l of M.layers) l.g.gain.setTargetAtTime(l.n === "calm" ? 0.95 - I2 * 0.45 : l.n === "tension" ? Math.max(0, Math.min(1, (I2 - 0.12) * 2.2)) * 0.9 : Math.max(0, Math.min(1, (I2 - 0.55) * 2.4)) * 0.85, t02, 0.8);
+      return;
+    }
     const T2 = THEMES[M.theme], spb = 60 / T2.bpm / 4;
     M.I += (M.It - M.I) * 0.04;
     const I = M.I, t0 = now();
@@ -34779,11 +35066,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         o2.frequency.value = mtof(T2.root + 12 + ch[0]);
         const g = ctx.createGain();
         env(g, t, 0.02, 0.22, s16 === 0 ? spb * 7 : spb * 3);
-        const g2 = ctx.createGain();
-        g2.gain.value = 0.25;
+        const g22 = ctx.createGain();
+        g22.gain.value = 0.25;
         o.connect(g);
-        o2.connect(g2);
-        g2.connect(g);
+        o2.connect(g22);
+        g22.connect(g);
         g.connect(M.stems.bass.g);
         o.start(t);
         o2.start(t);
@@ -34809,10 +35096,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const o = ctx.createOscillator();
       o.frequency.setValueAtTime(120, t);
       o.frequency.exponentialRampToValueAtTime(42, t + 0.18);
-      const g2 = ctx.createGain();
-      env(g2, t, 2e-3, 0.35, 0.35);
-      o.connect(g2);
-      g2.connect(out);
+      const g3 = ctx.createGain();
+      env(g3, t, 2e-3, 0.35, 0.35);
+      o.connect(g3);
+      g3.connect(out);
       o.start(t);
       o.stop(t + 0.5);
       return;
@@ -35008,6 +35295,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function brass() {
     if (!ctx) return;
+    if (play("brass", { delay: 0.45, gain: 0.8, rate: 0.9 + Math.random() * 0.2 })) return;
     const t = now() + 0.45;
     for (const [d, f, a] of [[0, 5200, 0.03], [0.11, 4700, 0.018], [0.19, 5600, 0.01]]) {
       const o = ctx.createOscillator();
@@ -35020,12 +35308,28 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       o.stop(t + d + 0.2);
     }
   }
-  var ctx, master, music, sfx, amb, verb, noiseBuf, A, now, ambNodes, ECHO, heartT, THEMES, M, mtof, siren;
+  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, heartT, THEMES, M, mtof, themeKey, siren;
   var init_audio = __esm({
     "src/audio/audio.js"() {
       init_state();
       ctx = null;
       A = { ready: false, intensity: 0, heart: 0 };
+      audio = A;
+      PHONE = typeof navigator !== "undefined" && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+      audioState = () => ctx ? ctx.state : "none";
+      BANK = {};
+      LOADING = {};
+      VOICES = [];
+      MAXV = PHONE ? 10 : 18;
+      A.bankState = () => ({ sfx: !!BANK.shot_mountain, music: Object.keys(BANK).filter((k) => k.startsWith("mus_")).length, voices: VOICES.length, sampledMusic: !!M.sampled });
+      decode = (ab) => new Promise((res, rej) => {
+        try {
+          const pr = ctx.decodeAudioData(ab, res, rej);
+          if (pr && pr.catch) pr.catch(rej);
+        } catch (e) {
+          rej(e);
+        }
+      });
       now = () => ctx.currentTime;
       ambNodes = [];
       ECHO = {
@@ -35043,6 +35347,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       };
       M = { theme: "menu", I: 0, It: 0, step: 0, next: 0, timer: null, bus: null, stems: {}, pad: [], duck: null };
       mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+      themeKey = (th) => th === "villa" || th === "refinery" ? th : "menu";
       siren = null;
     }
   });
@@ -35303,7 +35608,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       }
     }
     for (const c of world.colliders) {
-      if (c.disabled) continue;
+      if (c.disabled || c.soft) continue;
       const s = segCollider(p0, p1, c);
       if (s >= 0 && (!best || s < best.s)) best = { s, kind: "collider", collider: c };
     }
@@ -36516,6 +36821,67 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     });
     return tex2;
   }
+  function wearMap(repeat = 0.3) {
+    const key = "wear" + repeat;
+    if (cache2[key]) return cache2[key];
+    const N = 512, r = rng(4242), c = document.createElement("canvas");
+    c.width = c.height = N;
+    const g = c.getContext("2d");
+    g.fillStyle = "rgb(222,222,222)";
+    g.fillRect(0, 0, N, N);
+    const wrap = (f) => {
+      for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+        g.save();
+        g.translate(ox, oy);
+        f();
+        g.restore();
+      }
+    };
+    for (const [n, col, rad] of [[30, "rgba(165,155,128,0.42)", 40], [20, "rgba(132,134,108,0.34)", 30]]) for (let k = 0; k < n; k++) {
+      const cx2 = r() * N, cy = r() * N, rr = rad * (0.6 + r() * 0.8);
+      wrap(() => {
+        g.fillStyle = col;
+        g.beginPath();
+        for (let a = 0; a <= 24; a++) {
+          const t2 = a / 24 * Math.PI * 2, q = rr * (0.7 + 0.3 * Math.sin(t2 * 3 + k) + 0.15 * Math.sin(t2 * 7 + k * 2));
+          g.lineTo(cx2 + Math.cos(t2) * q, cy + Math.sin(t2) * q * 0.7);
+        }
+        g.fill();
+      });
+    }
+    for (let k = 0; k < 2600; k++) {
+      const v3 = 150 + r() * 80;
+      g.fillStyle = `rgba(${v3 | 0},${v3 | 0},${v3 * 0.95 | 0},0.25)`;
+      g.fillRect(r() * N, r() * N, 1 + r() * 2, 1 + r() * 2);
+    }
+    g.lineCap = "round";
+    for (let k = 0; k < 70; k++) {
+      const x = r() * N, y = r() * N, a = r() * Math.PI, l = 8 + r() * 46;
+      wrap(() => {
+        g.strokeStyle = `rgba(255,252,240,${0.35 + r() * 0.4})`;
+        g.lineWidth = 0.6 + r() * 0.9;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.quadraticCurveTo(x + Math.cos(a) * l * 0.5 + (r() - 0.5) * 6, y + Math.sin(a) * l * 0.5 + (r() - 0.5) * 6, x + Math.cos(a) * l, y + Math.sin(a) * l);
+        g.stroke();
+      });
+    }
+    for (let k = 0; k < 40; k++) {
+      const x = r() * N, y = r() * N, s = 1.5 + r() * 3.5;
+      wrap(() => {
+        g.fillStyle = "rgba(255,255,250,0.85)";
+        g.beginPath();
+        g.ellipse(x, y, s, s * (0.4 + r() * 0.6), r() * 3, 0, Math.PI * 2);
+        g.fill();
+      });
+    }
+    const t = new CanvasTexture(c);
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.repeat.set(repeat, repeat);
+    t.anisotropy = 4;
+    t.colorSpace = SRGBColorSpace;
+    return cache2[key] = t;
+  }
   var cache2, envs;
   var init_surfaces = __esm({
     "src/render/surfaces.js"() {
@@ -36533,12 +36899,30 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (!g.attributes.normal) g.computeVertexNormals();
     const n = g.attributes.position.count, [hex, me, ro] = C[key], c = new Color(hex);
     const col = new Float32Array(n * 3), pbr = new Float32Array(n * 2);
+    const nor = g.attributes.normal, pos = g.attributes.position, wearK = WEAR[key] || 0, bare = WEAR_BARE[key] || BARE;
     for (let i = 0; i < n; i++) {
-      col[i * 3] = c.r;
-      col[i * 3 + 1] = c.g;
-      col[i * 3 + 2] = c.b;
-      pbr[i * 2] = me;
-      pbr[i * 2 + 1] = ro;
+      let r = c.r, gg = c.g, b = c.b, m = me, rr = ro;
+      if (wearK) {
+        const ax = Math.abs(nor.getX(i)), ay = Math.abs(nor.getY(i)), az = Math.abs(nor.getZ(i)), e = smooth(0.1, 0.42, 1 - Math.max(ax, ay, az));
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), nz = 0.5 + 0.5 * Math.sin(x * 211 + z * 97) * Math.sin(y * 173 - z * 61), w = e * wearK * (0.45 + 0.75 * nz);
+        const mott = 1 + Math.sin(x * 57 + y * 91) * Math.sin(z * 43 + x * 29) * 0.05;
+        r = (r + (bare.r - r) * w) * mott;
+        gg = (gg + (bare.g - gg) * w) * mott;
+        b = (b + (bare.b - b) * w) * mott;
+        m = me + (0.9 - me) * w;
+        rr = ro + (0.32 - ro) * w;
+        if (y < -0.1 && (key === "fde" || key === "fdeD")) {
+          const d = 0.92;
+          r *= d;
+          gg *= d;
+          b *= d;
+        }
+      }
+      col[i * 3] = r;
+      col[i * 3 + 1] = gg;
+      col[i * 3 + 2] = b;
+      pbr[i * 2] = m;
+      pbr[i * 2 + 1] = rr;
     }
     g.setAttribute("color", new BufferAttribute(col, 3));
     g.setAttribute("pbr", new BufferAttribute(pbr, 2));
@@ -36612,7 +36996,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       };
       MATS = {
         metal: mk("grain", 3, 0.35),
-        cera: mk("speckle", 3, 0.55),
+        cera: Object.assign(mk("speckle", 3, 0.55), { map: wearMap(0.45) }),
         poly: mk("stipple", 2, 0.9),
         knurl: mk("knurl", 6, 0.8),
         glass: new MeshPhysicalMaterial({ color: "#0a1a24", metalness: 0, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, iridescence: 0.9, iridescenceIOR: 1.6, iridescenceThicknessMinimum: 180, iridescenceThicknessMaximum: 520, envMapIntensity: 2.2, specularIntensity: 1 })
@@ -36734,6 +37118,30 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         add("alu", T(new CylinderGeometry(62e-4, 62e-4, 6e-3, 6), 0.024, 0.043, z, 0, 0, RX));
       }
     }
+    add("alu", lathe([[0.0462, 0], [0.0466, 2e-3], [0.0466, 0.062], [0.0472, 0.064], [0.0472, 0.07], [0.0445, 0.07]], S2(72), 0.078, -0.402), 8);
+    add("hole", T(new CylinderGeometry(0.0445, 0.0445, 2e-3, S2(40)), 0, 0.078, -0.47, RX));
+    {
+      const cap = (M2) => {
+        const P = [["poly", lathe([[0, 0], [0.05, 0], [0.051, 2e-3], [0.051, 0.013], [0.048, 0.014], [0, 0.014]], S2(48), 0, 0)], ["poly", T(rbox(0.016, 0.012, 0.014, 3e-3), 0, 0.052, -7e-3)], ["bright", T(new CylinderGeometry(22e-4, 22e-4, 0.018, 10), 0, 0.058, -7e-3, 0, 0, RX)]];
+        for (const [k, g] of P) add(k, g.applyMatrix4(M2));
+      };
+      cap(new Matrix4().compose(new Vector3(-0.1, 0.078, -0.47), new Quaternion().setFromEuler(new Euler(0, -RX - 0.3, 0)), new Vector3(1, 1, 1).multiplyScalar(0.95)));
+      cap(new Matrix4().compose(new Vector3(0.071, 0.078, 0.216), new Quaternion().setFromEuler(new Euler(0, RX + 0.25, 0)), new Vector3(0.72, 0.72, 0.72)));
+    }
+    add("rub", lathe([[0.0372, -0.012], [0.0385, -0.01], [0.0385, 0], [0.0372, 2e-3], [0.0305, 2e-3], [0.0305, -0.012]], S2(64), 0.078, 0.214), 6);
+    for (let i = 0; i < 7; i++) {
+      const a = -0.9 + i * 0.3;
+      add("paint", T(new BoxGeometry(8e-4, i % 2 ? 24e-4 : 42e-4, 12e-4), Math.sin(a) * 0.0366, 0.078 + Math.cos(a) * 0.0366, 0.2 - 0.095, 0, 0, -a));
+    }
+    add("alu", T(rbox(0.012, 0.014, 0.02, 3e-3), 0.044, 0.068, 0.01));
+    add("glass", T(new CylinderGeometry(38e-4, 38e-4, 0.016, 12), 0.044, 0.075, 0.01, RX));
+    add("bright", T(new SphereGeometry(15e-4, 8, 6), 0.044, 0.0785, 0.01));
+    for (const [y, z] of [[-0.094, -0.4], [-0.158, 0.31]]) {
+      add("bright", T(new CylinderGeometry(42e-4, 48e-4, 0.012, S2(16)), 0, y, z));
+      add("steel", T(new TorusGeometry(0.011, 17e-4, 6, S2(18)), 0, y - 0.016, z, 0, RX, 0.25));
+      add("blk", T(new CylinderGeometry(22e-4, 22e-4, 0.014, 10), 0, y - 7e-3, z, 0, 0, RX));
+    }
+    for (const z of [-0.06, 0.07]) screw(add, 0, -0.091, z, Math.PI, 0, 0, 34e-4, q);
     add("alu", T(rbox(0.046, 0.028, 0.046, 5e-3, 3), 0, -0.093, -0.555), 6);
     add("bright", T(new CylinderGeometry(5e-3, 5e-3, 0.064, S2(16)), 0, -0.1, -0.545, 0, 0, RX));
     for (const sx of [-1, 1]) {
@@ -36790,7 +37198,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     });
     return { body, bolt: bolt2, can, brake, tris: Math.round(tris + can.geometry.attributes.position.count / 3) };
   }
-  var RX, C, rbox, smooth, MATS, QSEG;
+  var RX, C, BARE, WEAR_BARE, WEAR, rbox, smooth, MATS, QSEG;
   var init_rifle = __esm({
     "src/scene/rifle.js"() {
       init_three_module();
@@ -36814,6 +37222,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         brass: ["#c99a44", 1, 0.24],
         gold: ["#a88638", 1, 0.3]
       };
+      BARE = new Color("#a7a59e");
+      WEAR_BARE = { blk: new Color("#8a8c8e"), steel: new Color("#9a9c9e") };
+      WEAR = { fde: 0.95, fdeD: 0.9, alu: 0.75, blk: 0.55, steel: 0.45, poly: 0.25 };
       rbox = (w, h, d, r, s = 2) => new RoundedBoxGeometry(w, h, d, s, Math.min(r, Math.min(w, h, d) / 2 - 1e-5));
       smooth = (a, b, x) => {
         const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -36842,8 +37253,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return geo;
   }
   function mergedMesh(list, o = {}) {
-    const geos = list.map(([g2, c]) => {
-      const q = colorGeo(g2, c);
+    const geos = list.map(([g3, c]) => {
+      const q = colorGeo(g3, c);
       for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
       return q;
     });
@@ -36959,7 +37370,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         parts.push([sc, "#" + leaf.clone().lerp(snowC, snow).getHexString()]);
       }
     }
-    const geos = parts.map(([g2, c]) => colorGeo(g2, c));
+    const geos = parts.map(([g3, c]) => colorGeo(g3, c));
     const g = mergeGeometries(geos, false);
     return g;
   }
@@ -36997,8 +37408,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return out;
   }
   function impostorGeometry(I) {
-    const g1 = new PlaneGeometry(I.hw * 2, I.h).translate(0, I.y0 + I.h / 2, 0), g2 = g1.clone().rotateY(Math.PI / 2);
-    const g = mergeGeometries([g1, g2], false);
+    const g1 = new PlaneGeometry(I.hw * 2, I.h).translate(0, I.y0 + I.h / 2, 0), g22 = g1.clone().rotateY(Math.PI / 2);
+    const g = mergeGeometries([g1, g22], false);
     const n = g.attributes.normal;
     for (let i = 0; i < n.count; i++) n.setXYZ(i, 0, 1, 0);
     return g;
@@ -37600,6 +38011,27 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const x = pos[v3 * 3], y = pos[v3 * 3 + 1], z = pos[v3 * 3 + 2];
       const slope = 1 - nrm[v3 * 3 + 1];
       o.color(x, z, y, slope, c);
+      if (o.castSun && Math.hypot(x - o.cx, z - o.cz) < (o.castR || 2500)) {
+        const d = o.castSun;
+        let t = 6, lit = 1;
+        while (t < 5e3) {
+          const yy = y + 0.5 + d.y * t, hh = o.height(x + d.x * t, z + d.z * t);
+          if (hh > yy) {
+            lit = 0;
+            break;
+          }
+          t += 6 + t * 0.07;
+        }
+        if (!lit) {
+          c.r *= 0.4;
+          c.g *= 0.5;
+          c.b *= 0.8;
+        } else {
+          c.r *= 1.05;
+          c.g *= 1.01;
+          c.b *= 0.95;
+        }
+      }
       col[v3 * 3] = c.r;
       col[v3 * 3 + 1] = c.g;
       col[v3 * 3 + 2] = c.b;
@@ -37786,6 +38218,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function disposeScene(scene) {
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
+      if (o.userData && o.userData.geoHi) {
+        o.userData.geoHi.dispose();
+        o.userData.geoLo.dispose();
+      }
       if (o.material) {
         const ms = Array.isArray(o.material) ? o.material : [o.material];
         for (const m of ms) {
@@ -37897,6 +38333,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       pow: 2.35,
       height,
       detail: 0.18,
+      castSun: tier.shadows ? null : w.sunDir,
+      castR: 5e3,
       color: (x, z, h, slope2, c) => {
         const snow = new Color("#eef2fa"), shade = new Color("#c9d3e6"), rock = new Color("#5a5458"), rock2 = new Color("#3d3a40");
         const warm = smoothstep2(800, 2600, h);
@@ -38089,6 +38527,51 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let i = 0; i < 14; i++) P.push([tf(new SphereGeometry(0.9 + icRng() * 0.8, 8, 5), 12 + i * 2.7, PAD_Y - 0.4, -762.8 + icRng() * 0.6, 0, 0, 0, 1.6, 0.35, 0.8), snowC]);
     P.push([tf(new BoxGeometry(0.9, 2.2, 0.9), 21, DECK + 10.4, -782.5), stone]);
     P.push([tf(new BoxGeometry(1.05, 0.25, 1.05), 21, DECK + 11.55, -782.5), snowC]);
+    {
+      const wood = "#5a3e28", cush = "#e8e2d4", iron = "#262626", rr = mulberry32(311);
+      for (const [x, z, ry] of [[14.5, -768.5, 0.3], [16.2, -770.6, 0.1], [43.6, -768.6, -0.3], [45.2, -770.6, -0.1]]) {
+        P.push([tf(new BoxGeometry(0.7, 0.12, 1.8), x, DECK + 0.35, z, 0, ry), wood]);
+        P.push([tf(new BoxGeometry(0.66, 0.08, 1.2), x, DECK + 0.45, z + 0.25, 0, ry), cush]);
+        P.push([tf(new BoxGeometry(0.66, 0.08, 0.7), x - 0.3 * Math.sin(ry), DECK + 0.75, z - 0.65, 0.9, ry), cush]);
+        for (const [dx, dz] of [[-0.3, -0.8], [0.3, -0.8], [-0.3, 0.8], [0.3, 0.8]]) P.push([tf(new BoxGeometry(0.06, 0.3, 0.06), x + dx, DECK + 0.15, z + dz, 0, ry), iron]);
+      }
+      for (const [x, z] of [[15.6, -772.3], [44.4, -772.3]]) {
+        P.push([tf(new CylinderGeometry(0.32, 0.32, 0.05, 12), x, DECK + 0.6, z), "#d9d3c8"]);
+        P.push([tf(new CylinderGeometry(0.04, 0.04, 0.6, 6), x, DECK + 0.3, z), iron]);
+        P.push([tf(new CylinderGeometry(0.035, 0.035, 0.26, 8), x + 0.1, DECK + 0.76, z), "#1e3a24"]);
+        P.push([tf(new CylinderGeometry(0.03, 0.02, 0.12, 8), x - 0.08, DECK + 0.68, z + 0.05), "#e8f0f2"]);
+      }
+      for (let k = 0; k < 6; k++) P.push([tf(new CylinderGeometry(0.035, 0.035, 0.24, 8), 26 + Math.cos(k) * 0.6, DECK + 0.91, -770 + Math.sin(k) * 0.6), k % 2 ? "#e8f0f2" : "#4a1a20"]);
+      for (let r = 0; r < 6; r++) for (let k = 0; k < 14; k++) P.push([tf(new CylinderGeometry(0.09 + rr() * 0.03, 0.1, 1, 6), 44.6 - k * 0.2 - r % 2 * 0.1, DECK + 0.12 + r * 0.19, -777.2, Math.PI / 2, 0, 0), rr() > 0.5 ? "#8a6040" : "#6e4a30"]);
+      P.push([tf(new BoxGeometry(3.2, 0.12, 1.3), 43.3, DECK + 1.35, -777.3), "#3a2617"]);
+      P.push([tf(new BoxGeometry(2.2, 0.08, 0.1), 12.6, DECK + 1.25, -776.4), wood]);
+      for (const dx of [-1, 1]) P.push([tf(new BoxGeometry(0.1, 1.3, 0.1), 12.6 + dx, DECK + 0.65, -776.4), wood]);
+      for (let k = 0; k < 6; k++) P.push([tf(new BoxGeometry(0.08, 1.75, 0.025), 11.8 + k * 0.3, DECK + 0.9, -776.2, -0.12, 0, 0), ["#c02020", "#e8e8e8", "#2040a0"][k % 3]]);
+      P.push([tf(new CylinderGeometry(1.4, 1.4, 0.9, 20), 4, PAD_Y + 0.9, -771), wood]);
+      P.push([tf(new CylinderGeometry(1.45, 1.45, 0.12, 20), 4, PAD_Y + 1.4, -771), "#3a3a3e"]);
+      P.push([tf(new CylinderGeometry(1.3, 1.45, 0.14, 20), 4, PAD_Y + 1.52, -771), snowC]);
+      for (let k = 0; k < 90; k++) {
+        const x = 16.6 + rr() * 26.8, y = DECK + 0.25 + rr() * 2.9;
+        if (Math.abs(x - 30) < 1.6 && y < DECK + 2.8) continue;
+        const t = 0.62 + rr() * 0.3;
+        P.push([tf(new BoxGeometry(0.4 + rr() * 0.6, 0.22 + rr() * 0.2, 0.06), x, y, -777.98), "#" + new Color(stone).multiplyScalar(t + 0.25).getHexString()]);
+      }
+      for (const sx of [-1, 1]) {
+        P.push([tf(new BoxGeometry(1, 2.3, 0.08), 30 + sx * 0.55, DECK + 1.2, -777.86), "#4a2c18"]);
+        for (const y of [0.6, 1.7]) P.push([tf(new BoxGeometry(0.7, 0.6, 0.04), 30 + sx * 0.55, DECK + y, -777.8), "#5a3820"]);
+        P.push([tf(new BoxGeometry(0.08, 0.5, 0.3), 30 + sx * 1.7, DECK + 2.6, -777.8), iron]);
+      }
+      for (let k = 0; k < 12; k++) {
+        const x = 56 + k * 3.2;
+        P.push([tf(new BoxGeometry(3, 0.7 + rr() * 0.2, 0.7), x, PAD_Y + 0.35, -745.5 + k * 0.05, 0, rr() * 0.05), "#8c867e"]);
+        P.push([tf(new BoxGeometry(3.1, 0.18, 0.8), x, PAD_Y + 0.78, -745.5 + k * 0.05), snowC]);
+      }
+      for (let k = 0; k < 10; k++) {
+        const x = 84 + k * 9, z = -752 + k * 3.2, y = height(x, z);
+        P.push([tf(new CylinderGeometry(0.03, 0.03, 1.8, 5), x, y + 0.9, z), "#2a2a2a"]);
+        P.push([tf(new CylinderGeometry(0.035, 0.035, 0.4, 5), x, y + 1.6, z), "#ff6010"]);
+      }
+    }
     const villaMesh = mergedMesh(P, { rough: 0.85, emissive: "#2a1a12" });
     S2.add(villaMesh);
     const winGeo = [];
@@ -38429,6 +38912,65 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     fence.push([tf(new BoxGeometry(-66 - fx0, 1.8, 0.03), (fx0 - 66) / 2, 1.4, fz1), "#7b7b74"]);
     fence.push([tf(new BoxGeometry(fx1 + 54, 1.8, 0.03), (fx1 - 54) / 2, 1.4, fz1), "#7b7b74"]);
     P.push(...fence);
+    {
+      const rail = "#d2b23a", grate = "#4a4842";
+      for (let i = 0; i < 6; i++) {
+        const x = -200 + i * 34, z = -1030 + i % 2 * 6;
+        for (let k = 0; k < 22; k++) {
+          const a = 0.4 + k * 0.11, y = 0.6 + k * 0.66;
+          P.push([tf(new BoxGeometry(1, 0.1, 0.32), x + Math.cos(a) * 13.6, y, z + Math.sin(a) * 13.6, 0, -a, 0), grate]);
+          if (k % 2 === 0) P.push([tf(new CylinderGeometry(0.04, 0.04, 1.1, 4), x + Math.cos(a) * 14.15, y + 0.55, z + Math.sin(a) * 14.15), rail]);
+        }
+        P.push([tf(new TorusGeometry(12.6, 0.05, 4, 40), x, 15.9, z, Math.PI / 2), rail]);
+        P.push([tf(new TorusGeometry(13.2, 0.16, 4, 40), x, 11, z, Math.PI / 2), "#b8b2a6"]);
+        for (let k = 0; k < 3; k++) {
+          const a = k * 2.1 + 1;
+          P.push([tf(new CylinderGeometry(0.4, 0.4, 2.4, 10), x + Math.cos(a) * 13.6, 1.2, z + Math.sin(a) * 13.6, 0, 0, Math.PI / 2), steel]);
+          P.push([tf(new CylinderGeometry(0.62, 0.62, 0.12, 10), x + Math.cos(a) * 14.4, 1.2, z + Math.sin(a) * 14.4, 0, 0, Math.PI / 2), dark]);
+        }
+      }
+      P.push([tf(new BoxGeometry(200, 0.12, 1.2), -84, 7.2, -963.8), grate]);
+      for (let i = 0; i < 41; i++) {
+        const x = -184 + i * 5;
+        P.push([tf(new BoxGeometry(0.06, 1.05, 0.06), x, 7.8, -964.35), rail]);
+      }
+      P.push([tf(new BoxGeometry(200, 0.06, 0.06), -84, 8.3, -964.35), rail]);
+      P.push([tf(new BoxGeometry(200, 0.05, 0.05), -84, 7.75, -964.35), rail]);
+      for (let i = 0; i < 9; i++) P.push([tf(new BoxGeometry(6, 0.2, 0.2), -180 + i * 24, 6.4, -962), dark]);
+      for (let i = 0; i < 3; i++) {
+        const x = -96 + i * 13, z = -908.6;
+        P.push([tf(new CylinderGeometry(0.22, 0.22, 2.2, 10), x, 3.7, z), steel]);
+        P.push([tf(new TorusGeometry(0.5, 0.22, 8, 10, Math.PI / 2), x + 0.5, 4.8, z, 0, 0, Math.PI / 2), steel]);
+        for (const y of [2.9, 4.3]) P.push([tf(new CylinderGeometry(0.36, 0.36, 0.1, 12), x, y, z), dark]);
+        P.push([tf(new TorusGeometry(0.3, 0.035, 5, 14), x, 3.6, z + 0.35), "#c8a020"]);
+        P.push([tf(new CylinderGeometry(0.04, 0.04, 0.4, 6), x, 3.6, z + 0.2, Math.PI / 2), dark]);
+      }
+      for (let k = 0; k < 8; k++) P.push([tf(new CylinderGeometry(0.4, 0.4, 0.1, 12), -96 + k * 4, 4.9, -907, 0, 0, Math.PI / 2), dark]);
+      for (let k = 0; k < 6; k++) P.push([tf(new BoxGeometry(0.25, 4.9, 0.25), -98 + k * 6, 2.45, -906.6), dark]);
+      for (let i = 0; i < 3; i++) {
+        P.push([tf(new BoxGeometry(2.2, 1.2, 1.6), -14 + i * 6, 9, -883), "#d0ccc2"]);
+        P.push([tf(new CylinderGeometry(0.6, 0.6, 0.1, 14), -14 + i * 6, 9.65, -883), dark]);
+      }
+      P.push([tf(new SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, 1), 6, 9.6, -884, -0.9, 0.6, 0), "#e0e0dc"]);
+      P.push([tf(new CylinderGeometry(0.05, 0.05, 1.4, 6), 6, 9.1, -884), dark]);
+      for (let i = 0; i < 14; i++) P.push([tf(new BoxGeometry(0.05, 1, 0.05), -18.8 + i * 2, 9.9, -886.9), rail]);
+      P.push([tf(new BoxGeometry(26.4, 0.05, 0.05), -6, 10.4, -886.9), rail]);
+      P.push([tf(new BoxGeometry(4, 0.15, 1.8), -6, 3.4, -872.1, 0.12), "#7a6e5c"]);
+      P.push([tf(new BoxGeometry(1.4, 2.4, 0.08), -6, 1.2, -872.9), "#3a3530"]);
+      for (const [x, z, ry] of [[-110, -870, 0.1], [-122, -868, 0.1], [-40, -858, -0.2]]) {
+        P.push([tf(new BoxGeometry(6, 2.6, 2.6), x, 1.5, z, 0, ry), "#e2ded4"]);
+        P.push([tf(new BoxGeometry(6.2, 0.2, 2.8), x, 2.9, z, 0, ry), "#9a968c"]);
+        for (const dx of [-1.6, 1.4]) P.push([tf(new BoxGeometry(1.1, 0.8, 0.06), x + dx * Math.cos(ry), 1.7, z + 1.32 - dx * Math.sin(ry), 0, ry), "#28313a"]);
+        P.push([tf(new BoxGeometry(0.7, 0.6, 0.5), x + 2.4 * Math.cos(ry), 2, z + 1.5, 0, ry), "#bcb8ae"]);
+        for (const dx of [-2.6, 2.6]) P.push([tf(new BoxGeometry(0.3, 0.4, 2.4), x + dx * Math.cos(ry), 0.2, z - dx * Math.sin(ry), 0, ry), dark]);
+      }
+      P.push([tf(new BoxGeometry(4.2, 2.2, 1.8), -30, 1.3, -862), "#d8b020"]);
+      P.push([tf(new CylinderGeometry(0.12, 0.12, 1.6, 8), -28.6, 3, -862), dark]);
+      P.push([tf(new BoxGeometry(4.4, 0.3, 2), -30, 0.15, -862), dark]);
+      for (const [dx, dz] of [[-1.4, -1.4], [1.4, -1.4], [-1.4, 1.4], [1.4, 1.4]]) P.push([tf(new BoxGeometry(0.22, 10, 0.22), -150 + dx, 5, -900 + dz, dz * 0.02, 0, -dx * 0.02), dark]);
+      P.push([tf(new CylinderGeometry(2.4, 2.4, 3.2, 16), -150, 11.6, -900), "#b8b0a0"]);
+      P.push([tf(new ConeGeometry(2.5, 0.8, 16), -150, 13.6, -900), "#8a8070"]);
+    }
     const refMesh = mergedMesh(P, { rough: 0.7, metal: 0.15 });
     S2.add(refMesh);
     w.colliders.push(boxCollider(-6, 4, -880, 13, 4, 7, { name: "control building" }));
@@ -38581,6 +39123,204 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
   });
 
+  // src/story/story.js
+  function briefingLines(id) {
+    const f = BRIEF[id];
+    return f ? f(getSave().campaign || {}) : [];
+  }
+  function recordCampaign(M2, res) {
+    if (M2.kind === "range") return;
+    const s = getSave();
+    s.campaign = s.campaign || {};
+    if (res.failed) return;
+    const buyer = M2.byId?.buyer;
+    s.campaign[M2.def.id] = { alarm: M2.alarm === "alarm" || !!M2.alarmReason, case: !!M2.secondary?.case, truck: !!M2.secondary?.truck, accident: !!M2.targetKill?.accident, head: M2.targetKill?.zone === "head", buyerAlive: buyer ? buyer.alive : void 0, at: Date.now() };
+    save();
+  }
+  function campaignMods(id) {
+    const c = getSave().campaign || {};
+    return { extraPatrol: id === "refinery" && !!c.villa?.alarm, voskSchedule: id === "refinery" && !!c.villa?.case };
+  }
+  function debrief(M2, res) {
+    if (M2.kind === "range") return null;
+    const id = M2.def.id, ok = !res.failed, k = M2.targetKill || {}, loud = M2.alarm === "alarm";
+    const L = [];
+    let consequence = "", teaser = null;
+    if (!ok) {
+      L.push(["moth", res.failed === "civilian" ? "A civilian. That's not a contract any more, Echo, that's a manhunt. Pull out \u2014 we'll talk when you're clear." : res.failed === "escaped" ? "He's gone. Spooked targets don't come back to the same window. Reset and try it again." : "Window's closed. Get off the hill."]);
+      consequence = "The contract stays open \u2014 retry to move the story on.";
+    } else if (id === "villa") {
+      L.push(["moth", loud ? "Ravel's down, but the whole valley heard it. His guards were on the radio before he hit the deck." : k.accident ? "Ravel's down and it looks like an accident. Nobody is looking at the ridge." : "Ravel's down. Quiet, clean, nobody saw the ridge. That's the job."]);
+      if (M2.secondary?.case) L.push(["moth", "And the case \u2014 there's paper in that wreck. Shipment times, a refinery stamp... and Vosk's schedule."]);
+      else L.push(["moth", "The case drove off with the buyer. Whatever was inside reaches Vosk tonight."]);
+      L.push(["echo", "Sal-Khamar, then."]);
+      consequence = (loud ? "CONSEQUENCE \xB7 Vosk hears about the chalet: an extra patrol sweeps the refinery yard in Contract 02." : "CONSEQUENCE \xB7 Vosk suspects nothing: his guards stay relaxed in Contract 02.") + (M2.secondary?.case ? " Vosk's manifold inspection is revealed in the dossier." : "");
+    } else if (id === "refinery") {
+      L.push(["moth", k.accident ? "The fuel line went up with the Colonel next to it. An industrial accident, the papers will say." : loud ? "Vosk is dead. Loud \u2014 they're still shooting at the dunes \u2014 but dead." : "Vosk is dead and the convoy never leaves. The pipeline is cut."]);
+      L.push(["moth", "Echo... I ran the last page of the Ledger. The money for this contract came from the same account that bought the Kessel stock."]);
+      L.push(["echo", "Our client is the buyer."]);
+      L.push(["moth", "Our client is cleaning up. Ravel, Vosk... and there's one more name on that page. It's mine. Get somewhere I can find you."]);
+      consequence = "THE LEDGER IS CLOSED \u2014 but the client is tying off loose ends.";
+      teaser = { title: "CONTRACT 03 \u2014 THE LAST PAGE", sub: "Your handler is next on the list. Coming soon." };
+    }
+    return { lines: L, consequence, teaser };
+  }
+  function runDialogue(el2, lines, { cps = 52, gap = 650, onDone } = {}) {
+    clearTimeout(el2._dlg);
+    clearInterval(el2._tw);
+    el2.innerHTML = "";
+    el2.classList.add("dlg");
+    let i = 0;
+    const next = () => {
+      if (i >= lines.length) {
+        onDone && onDone();
+        return;
+      }
+      const [who, text] = lines[i++];
+      const row = document.createElement("div");
+      row.className = "dl " + who;
+      row.innerHTML = (WHO[who] ? `<b>${WHO[who]}</b>` : "") + "<span></span>";
+      el2.appendChild(row);
+      el2.scrollTop = el2.scrollHeight;
+      const sp = row.lastChild;
+      if (who !== "narr") radio();
+      const t0 = performance.now();
+      el2._tw = setInterval(() => {
+        const n = Math.min(text.length, Math.floor((performance.now() - t0) / 1e3 * cps));
+        sp.textContent = text.slice(0, n);
+        if (n % 4 === 0 && text[n - 1] && text[n - 1] !== " ") ui("type");
+        if (n >= text.length) {
+          clearInterval(el2._tw);
+          el2._dlg = setTimeout(next, gap + text.length * 8);
+        }
+      }, 30);
+    };
+    next();
+  }
+  function playPrologue(onEnd) {
+    if (document.getElementById("story")) return;
+    const ov = document.createElement("div");
+    ov.id = "story";
+    ov.className = "story";
+    ov.innerHTML = '<i class="lb t"></i><i class="lb b"></i><div class="scap"><b></b><span></span></div><div class="sdlg"><img src="assets/portrait_moth.jpg" alt=""><div><b class="sw"></b><p></p></div></div><button class="sskip">SKIP \u25B8</button><div class="sprog"></div>';
+    document.body.appendChild(ov);
+    const cap = ov.querySelector(".scap"), dl = ov.querySelector(".sdlg"), who = ov.querySelector(".sw"), p = ov.querySelector(".sdlg p"), img = ov.querySelector(".sdlg img"), prog = ov.querySelector(".sprog");
+    let i = -1, timer = 0, tw = 0, typing = false, full = "";
+    requestAnimationFrame(() => ov.classList.add("on"));
+    setMusicTheme && setMusicTheme("menu");
+    setIntensity && setIntensity(0.35);
+    const end = () => {
+      clearTimeout(timer);
+      clearInterval(tw);
+      ov.classList.remove("on");
+      ov.classList.add("off");
+      removeEventListener("keydown", key, true);
+      setTimeout(() => ov.remove(), 700);
+      const s = getSave();
+      s.seenPrologue = true;
+      save();
+      onEnd && onEnd();
+    };
+    const step = () => {
+      clearTimeout(timer);
+      clearInterval(tw);
+      if (typing) {
+        typing = false;
+        p.textContent = full;
+        timer = setTimeout(step, 1800);
+        return;
+      }
+      i++;
+      if (i >= PROLOGUE.length) {
+        end();
+        return;
+      }
+      prog.style.setProperty("--k", ((i + 1) / PROLOGUE.length).toFixed(3));
+      const s = PROLOGUE[i];
+      if (s.cap) {
+        dl.classList.remove("on");
+        cap.classList.remove("on");
+        void cap.offsetWidth;
+        cap.querySelector("b").textContent = s.cap;
+        cap.querySelector("span").textContent = s.sub || "";
+        cap.classList.add("on");
+        ui("whoosh");
+        timer = setTimeout(step, 3200);
+      } else {
+        cap.classList.remove("on");
+        dl.classList.add("on");
+        dl.className = "sdlg on " + s.who;
+        who.textContent = WHO[s.who] || "";
+        img.style.display = s.who === "moth" ? "" : "none";
+        if (s.who !== "narr") radio();
+        full = s.text;
+        typing = true;
+        const t0 = performance.now();
+        tw = setInterval(() => {
+          const n = Math.min(full.length, Math.floor((performance.now() - t0) / 1e3 * 46));
+          p.textContent = full.slice(0, n);
+          if (n % 4 === 0 && s.who !== "narr") ui("type");
+          if (n >= full.length) {
+            clearInterval(tw);
+            typing = false;
+            timer = setTimeout(step, 1600 + full.length * 22);
+          }
+        }, 30);
+      }
+    };
+    const key = (e) => {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        end();
+      } else if (e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        step();
+      }
+    };
+    addEventListener("keydown", key, true);
+    ov.addEventListener("click", (e) => {
+      if (e.target.classList.contains("sskip")) end();
+      else step();
+    });
+    setTimeout(step, 400);
+  }
+  var CAMPAIGN, PROLOGUE, BRIEF, WHO, shouldPlayPrologue;
+  var init_story = __esm({
+    "src/story/story.js"() {
+      init_state();
+      init_save();
+      init_audio();
+      CAMPAIGN = "THE SARNE LEDGER";
+      PROLOGUE = [
+        { cap: "WINTER \xB7 2026", sub: "Somewhere above the Sarne valley" },
+        { who: "narr", text: "They call you ECHO. Eleven years of mountain infantry, then a medical discharge nobody believed. Now you take one shot, for whoever can afford it." },
+        { who: "moth", text: "Echo, Moth. Wake up \u2014 we have a client. Two names, one week, paid up front." },
+        { cap: "THE LEDGER", sub: "Every buyer of the anti-armour stock stolen from the Kessel depot" },
+        { who: "moth", text: "Anton Ravel brokers it. Colonel Drazen Vosk moves it across the flats. Cut both ends and the pipeline dies before the spring offensive." },
+        { who: "echo", text: "And the client?" },
+        { who: "moth", text: "Pays in advance and doesn't want a name on anything. That's all I need to know. Rifle's packed. Chalet's at 790 metres." },
+        { cap: CAMPAIGN, sub: "Contract 01 \u2014 Mountain Villa" }
+      ];
+      BRIEF = {
+        villa: () => [
+          ["moth", "Ravel closes a deal tonight at his chalet. Foreign buyer, black case, five guards."],
+          ["echo", "Witnesses?"],
+          ["moth", "Guests on the terrace \u2014 civilians. You touch one and we both disappear. He smokes alone at the railing, and he takes his calls upstairs. Pick your window."],
+          ["moth", "Destroy the case if you can. Whatever is inside, Vosk is waiting for it."]
+        ],
+        refinery: (c) => [
+          ["moth", "The Ledger pointed us here. Sal-Khamar refinery \u2014 Vosk's depot on the eastern flats."],
+          c.villa?.case ? ["moth", "The case you shot open had his schedule in it: he inspects the fuel manifold himself, before the storm comes in."] : ["moth", "We never saw what was in Ravel's case. We go in blind on his schedule."],
+          c.villa?.alarm ? ["moth", "And after the noise at the chalet, Vosk doubled his patrols. Expect an extra sweep along the yard."] : ["moth", "He thinks Ravel died of bad luck. His guard is relaxed \u2014 keep it that way."],
+          ["echo", "The double?"],
+          ["moth", "Same uniform, same beret. The real Colonel limps on a cane. Watch them walk."]
+        ]
+      };
+      WHO = { moth: "MOTH", echo: "ECHO", narr: "", intercept: "INTERCEPT" };
+      shouldPlayPrologue = () => !getSave().seenPrologue && G.settings.intro !== false;
+    }
+  });
+
   // src/mission/missions.js
   function missionById(id) {
     return MISSIONS.find((m) => m.id === id);
@@ -38590,6 +39330,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     "src/mission/missions.js"() {
       init_villa();
       init_refinery();
+      init_story();
       hx = (h) => {
         if (!h) return null;
         const n = parseInt(h.slice(1), 16);
@@ -38608,8 +39349,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const c = hx(h);
         return !!c && Math.max(...c) - Math.min(...c) < 0.08 && c[0] > 0.4;
       };
-      TAC = (o = {}) => Object.assign({ skin: "#c89878", top: "#2d3330", bottom: "#25282a", vest: "#1a1d1a", hat: "beanie", hatColor: "#202422", rifle: true, gloves: "#151515", hair: "#2a2018" }, o);
-      SOL = (o = {}) => Object.assign({ skin: "#b98a66", top: "#55583e", bottom: "#4a4c36", vest: "#3a3d2a", hat: "cap", hatColor: "#4a4c36", rifle: true, shoes: "#3a2e20", hair: "#1a1410" }, o);
+      TAC = (o = {}) => Object.assign({ outfit: "tactical", hairStyle: "buzz", stub: true, skin: "#c89878", top: "#2d3330", bottom: "#25282a", vest: "#1a1d1a", hat: "beanie", hatColor: "#202422", rifle: true, gloves: "#151515", hair: "#2a2018" }, o);
+      SOL = (o = {}) => Object.assign({ outfit: "uniform", hairStyle: "buzz", skin: "#b98a66", top: "#55583e", bottom: "#4a4c36", vest: "#3a3d2a", hat: "cap", hatColor: "#4a4c36", rifle: true, shoes: "#3a2e20", hair: "#1a1410" }, o);
       nestFace = [0, 0];
       MISSIONS = [
         {
@@ -38658,6 +39399,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           timeline: [
             { t: 30, name: "SUV arrival", clock: true, do: (M2) => M2.drive("suv", "arrive", "suvArrived") },
             { t: 75, name: "Terrace meeting", clock: true },
+            { t: 112, name: "Smoke at the railing", clock: true },
             { t: 158, name: "Balcony phone call", clock: true },
             { t: 222, name: "Departure", clock: true }
           ],
@@ -38667,11 +39409,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             { on: "firstTag", who: "moth", text: "Good. Tagged contacts stay marked in your scope. Use the range finder on the terrace.", hint: "range" },
             { on: "firstRange", who: "moth", text: "Note the range. Your card in the intel panel gives the hold-over \u2014 that's how far above the target you aim.", hint: "intel" },
             { on: "suvArrived", who: "moth", text: "Black SUV just pulled in. That's him. Camel coat, red scarf. Don't confuse him with the guests." },
+            { t: 96, who: "intercept", text: 'RAVEL (phone, intercepted): "The Colonel gets his crates when I get paid. And tell our friend: no names. Not on paper, not anywhere."' },
             { t: 60, who: "moth", text: "Watch the red flag by the lawn and the chimney smoke. Wind's pushing left-to-right and it gusts.", hint: "wind" },
             { on: "meeting", who: "moth", text: "Meeting's on. Too many eyes on that terrace. He takes his calls upstairs \u2014 be patient." },
+            { on: "railSmoke", who: "moth", text: "He's stepped out to the railing for a smoke. Guests right behind him \u2014 if you take it, your line has to be perfect." },
             { on: "balcony", who: "moth", text: "There. Upper balcony, on the phone. Alone. That's your window. Hold your breath, squeeze.", hint: "breath" },
             { on: "alarm", who: "moth", text: "They're spooked! He'll run for the SUV \u2014 stop him before he reaches the road." },
-            { on: "targetDown", who: "moth", text: "Target down. Clean work, Echo. Finish what you need, then extract." },
+            { on: "targetDown", who: "moth", text: 'Target down. Clean work, Echo. "Our friend" \u2014 remember that line. Finish what you need, then extract.' },
             { on: "departure", who: "moth", text: "He's heading back to the car. Last chance before he's on the road." }
           ],
           npcs: (W) => {
@@ -38685,12 +39429,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 role: "target",
                 hidden: true,
                 start: [74, -759],
-                look: { coat: true, coatColor: "#a8845a", top: "#a8845a", bottom: "#3a3634", scarf: "#c3121c", hair: "#8f8a84", beard: "#77716b", skin: "#d6a585", briefcase: true, shoes: "#2a1a10" },
+                look: { coat: true, coatColor: "#a8845a", top: "#a8845a", bottom: "#3a3634", scarf: "#c3121c", hair: "#8f8a84", hairStyle: "slick", beard: "#77716b", skin: "#d6a585", briefcase: true, shoes: "#2a1a10", watch: true, eyes: "#5a6a78", stern: true },
                 routine: [
                   { type: "wait", flag: "suvArrived" },
                   { type: "show", at: [74, -759] },
                   { type: "goto", path: [[62, -758], [50, -762], [31, -762.6], [30, -765], [27.6, -768]] },
                   { type: "event", name: "meeting" },
+                  { type: "wait", until: 112, anim: "talk", face: [26, -770] },
+                  { type: "goto", path: [[22.5, -765.3]] },
+                  { type: "event", name: "railSmoke" },
+                  { type: "wait", until: 128, anim: "smoke", face: nestFace },
+                  { type: "goto", path: [[27.6, -768]] },
                   { type: "wait", until: 150, anim: "talk", face: [26, -770] },
                   { type: "goto", path: [[30, -777.4]] },
                   { type: "hide" },
@@ -38716,7 +39465,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 role: "guard",
                 hidden: true,
                 start: [76, -758],
-                look: TAC({ top: "#1e2022", vest: null, coat: true, coatColor: "#222428", hat: null, hairStyle: "short", hair: "#151110", glasses: true, rifle: false }),
+                look: TAC({ outfit: "suit", top: "#1e2022", vest: null, coat: true, coatColor: "#222428", hat: null, hairStyle: "buzz", hair: "#151110", glasses: "sun", earpiece: true, rifle: false, gloves: null, watch: true, build: 1.12, stern: true }),
                 routine: [{ type: "wait", flag: "suvArrived" }, { type: "wait", dur: 1.2 }, { type: "show", at: [76, -758] }, { type: "goto", path: [[63, -757], [50, -761], [33, -762.8], [32, -765.5]] }, { type: "wait", until: 151, anim: "idle", face: nestFace }, { type: "goto", path: [[31.6, -777.2]] }, { type: "wait", until: 223, anim: "idle", face: 0 }, { type: "goto", path: toCar }, { type: "car", car: "suv" }]
               },
               {
@@ -38724,7 +39473,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 name: "The Buyer",
                 role: "decoy",
                 start: [24.6, -771.6],
-                look: { coat: true, coatColor: "#1f2a44", top: "#1f2a44", bottom: "#202024", scarf: "#8d8f96", hair: "#1a1512", skin: "#c99c7c" },
+                look: { outfit: "coat", coat: true, coatColor: "#1f2a44", top: "#1f2a44", bottom: "#202024", scarf: "#8d8f96", hair: "#1a1512", hairStyle: "slick", skin: "#c99c7c", glasses: true, watch: true },
                 routine: [{ type: "wait", until: 152, anim: "talk", face: [26, -770] }, { type: "goto", path: [[20, -775]] }, { type: "wait", until: 999, anim: "smoke", face: nestFace }]
               },
               {
@@ -38732,7 +39481,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 name: "Guest",
                 role: "civilian",
                 start: [20.6, -767.4],
-                look: { coat: true, coatColor: "#b08c60", top: "#b08c60", bottom: "#2a2420", hairStyle: "long", hair: "#c9a46a", skin: "#e0b59a" },
+                look: { coat: true, coatColor: "#b08c60", top: "#b08c60", bottom: "#2a2420", hairStyle: "long", hair: "#c9a46a", skin: "#e0b59a", eyes: "#3a6a5a" },
                 idle: "talk",
                 routine: [{ type: "wait", until: 999, anim: "talk", face: [22.2, -766.3] }]
               },
@@ -38741,7 +39490,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 name: "Guest",
                 role: "civilian",
                 start: [22.2, -766.3],
-                look: { top: "#55585e", bottom: "#45484e", hair: "#5a4a3a", skin: "#d8a888" },
+                look: { outfit: "suit", top: "#55585e", bottom: "#45484e", hair: "#5a4a3a", skin: "#d8a888", tie: "#7a2030", stub: true },
                 routine: [{ type: "wait", until: 999, anim: "talk", face: [20.6, -767.4] }]
               },
               {
@@ -38749,7 +39498,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 name: "Waiter",
                 role: "civilian",
                 start: [30, -777],
-                look: { top: "#ecebe6", bottom: "#151515", hair: "#2a1a12", tray: true, skin: "#c48e6a" },
+                look: { top: "#ecebe6", bottom: "#151515", hair: "#2a1a12", hairStyle: "slick", tray: true, skin: "#c48e6a" },
                 routine: [{ type: "goto", path: [[27.6, -771.8]] }, { type: "wait", dur: 6, anim: "serve", face: [26, -770] }, { type: "goto", path: [[21.8, -768.6]] }, { type: "wait", dur: 4, anim: "serve" }, { type: "goto", path: [[30, -777.4]] }, { type: "wait", dur: 10, anim: "serve" }, { type: "loop" }]
               },
               {
@@ -38757,7 +39506,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 name: "Guest",
                 role: "civilian",
                 start: [36.2, -767.6],
-                look: { coat: true, coatColor: "#6b2f3a", top: "#6b2f3a", bottom: "#1c1a1c", hairStyle: "long", hair: "#2a1a14", skin: "#c99272", scarf: "#e8e0d0" },
+                look: { coat: true, coatColor: "#6b2f3a", top: "#6b2f3a", bottom: "#1c1a1c", hairStyle: "bun", female: true, hair: "#2a1a14", skin: "#c99272", scarf: "#e8e0d0" },
                 routine: [{ type: "wait", until: 999, anim: "drink", face: [37.8, -768.4] }]
               },
               {
@@ -38765,10 +39514,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 name: "Guest",
                 role: "civilian",
                 start: [37.8, -768.4],
-                look: { top: "#2e3e34", bottom: "#2a2a2e", hair: "#b8b2aa", skin: "#e2b498", glasses: true },
+                look: { outfit: "suit", top: "#2e3e34", bottom: "#2a2a2e", hair: "#b8b2aa", skin: "#e2b498", glasses: true, tie: "#c8b070", watch: true },
                 routine: [{ type: "wait", dur: 9, anim: "talk", face: [36.2, -767.6] }, { type: "wait", dur: 6, anim: "drink", face: [36.2, -767.6] }, { type: "loop" }]
               },
-              { id: "chef", name: "Cook", role: "civilian", start: [50.5, -776.4], look: { top: "#f2f2f0", bottom: "#30302e", hat: "beanie", hatColor: "#f2f2f0", skin: "#b88466" }, routine: [{ type: "wait", until: 999, anim: "smoke", face: nestFace }] },
+              { id: "chef", name: "Cook", role: "civilian", start: [50.5, -776.4], look: { outfit: "chef", top: "#f2f2f0", bottom: "#30302e", hat: "toque", hatColor: "#f2f2f0", skin: "#b88466", stub: true }, routine: [{ type: "wait", until: 999, anim: "smoke", face: nestFace }] },
               { id: "g1", name: "Guard", role: "guard", start: [14, -765.6], look: TAC(), routine: [{ type: "goto", path: [[46, -765.6]], speed: 1.1, anim: "walk" }, { type: "wait", dur: 7, anim: "radio", face: nestFace }, { type: "goto", path: [[14, -765.6]], speed: 1.1 }, { type: "wait", dur: 7, anim: "guard", face: nestFace }, { type: "loop" }] },
               { id: "g2", name: "Guard", role: "guard", start: [64, -754], look: TAC({ hat: "cap" }), routine: [{ type: "wait", dur: 14, anim: "smoke", face: nestFace }, { type: "goto", path: [[84, -752]], speed: 1 }, { type: "wait", dur: 9, anim: "guard" }, { type: "goto", path: [[64, -754]], speed: 1 }, { type: "loop" }] },
               { id: "g3", name: "Guard", role: "guard", start: [-8, -744], look: TAC(), routine: [{ type: "goto", path: [[-12, -788], [8, -799]], speed: 1.15 }, { type: "wait", dur: 6, anim: "guard" }, { type: "goto", path: [[-12, -788], [-8, -744]], speed: 1.15 }, { type: "wait", dur: 8, anim: "guard", face: nestFace }, { type: "loop" }] },
@@ -38848,13 +39597,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             { t: 178, who: "moth", text: "Sandstorm's rolling in from the west. Visibility's going and the wind will pick up hard." },
             { on: "roof", who: "moth", text: "He's up on the control roof, looking over his kingdom. Watch that parapet." },
             { on: "alarm", who: "moth", text: "Alarm! He'll head for the convoy. Stop that SUV \u2014 engine block, front of the car." },
-            { on: "targetDown", who: "moth", text: "Vosk is down. Good shooting, Echo." },
+            { t: 92, who: "intercept", text: 'VOSK (radio, intercepted): "Major \u2014 you walk the yard today. If someone shot Ravel, they want me. Let them shoot at you."' },
+            { on: "targetDown", who: "moth", text: "Vosk is down. Good shooting, Echo. Now we find out who was paying for all this." },
             { on: "departure", who: "moth", text: "Convoy's leaving. He's getting into the lead SUV." }
           ],
           npcs: (W) => {
             const toCar = [[-40, -899]];
             const footEscape = [{ type: "goto", path: [[-60, -830], [-60, -760], [-40, -600]], anim: "run", speed: 2.6 }, { type: "event", name: "escaped" }, { type: "hide" }];
-            const voskLook = { top: "#b5a078", bottom: "#9a8662", hat: "beret", hatColor: "#121212", glasses: true, beard: "#2a2018", hair: "#2a2018", cane: true, skin: "#c69a74", shoes: "#2a1a10", build: 1.08 };
+            const voskLook = { outfit: "officer", stern: true, hairStyle: "buzz", watch: true, top: "#b5a078", bottom: "#9a8662", hat: "beret", hatColor: "#121212", glasses: true, beard: "#2a2018", hair: "#2a2018", cane: true, skin: "#c69a74", shoes: "#2a1a10", build: 1.08 };
             return [
               {
                 id: "vosk",
@@ -38927,21 +39677,22 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               { id: "tower", name: "Tower guard", role: "guard", start: [-232, -835.5], y: 9.15, heading: 0, look: SOL(), routine: [{ type: "wait", until: 999, anim: "guard", face: 0.3 }] },
               { id: "gate1", name: "Gate guard", role: "guard", start: [-70, -822], look: SOL(), routine: [{ type: "wait", dur: 22, anim: "guard", face: nestFace }, { type: "wait", dur: 6, anim: "radio", face: nestFace }, { type: "loop" }] },
               { id: "gate2", name: "Gate guard", role: "guard", start: [-50, -822], look: SOL({ hat: "beanie" }), routine: [{ type: "wait", dur: 10, anim: "smoke" }, { type: "goto", path: [[-20, -828], [-20, -850]] }, { type: "wait", dur: 8, anim: "guard" }, { type: "goto", path: [[-20, -828], [-50, -822]] }, { type: "loop" }] },
+              ...campaignMods("refinery").extraPatrol ? [{ id: "patrol2", name: "Patrol", role: "guard", start: [-20, -960], look: SOL({ hat: "beanie", hatColor: "#3a3a2a" }), routine: [{ type: "goto", path: [[-130, -960], [-130, -925], [-20, -925]], speed: 1.25 }, { type: "wait", dur: 5, anim: "scan", face: nestFace }, { type: "goto", path: [[-20, -960]] }, { type: "wait", dur: 4, anim: "radio", face: nestFace }, { type: "loop" }] }] : [],
               { id: "patrol", name: "Patrol", role: "guard", start: [-200, -1e3], look: SOL(), routine: [{ type: "goto", path: [[-40, -1e3], [-40, -930], [-200, -930]], speed: 1.2 }, { type: "wait", dur: 6, anim: "guard" }, { type: "goto", path: [[-200, -1e3]] }, { type: "loop" }] },
               {
                 id: "manager",
                 name: "Plant manager",
                 role: "civilian",
                 start: [-86, -901],
-                look: { top: "#ecebe4", bottom: "#40444a", hat: "hardhat", hatColor: "#f4f4f0", skin: "#a8785a", phone: false },
+                look: { outfit: "manager", top: "#ecebe4", bottom: "#40444a", hat: "hardhat", hatColor: "#f4f4f0", skin: "#a8785a", phone: false, glasses: true, watch: true },
                 routine: [{ type: "wait", until: 140, anim: "talk", face: [-90, -906] }, { type: "goto", path: [[-60, -894], [-20, -873]] }, { type: "hide" }]
               },
-              { id: "w1", name: "Worker", role: "civilian", start: [-92, -906], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#9a6a4c" }, routine: [{ type: "wait", until: 118, anim: "inspect", face: [-96, -912] }, { type: "goto", path: [[-110, -890], [-130, -882]] }, { type: "hide" }] },
-              { id: "w2", name: "Worker", role: "civilian", start: [-70, -907], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#b5845e" }, routine: [{ type: "wait", until: 121, anim: "lean", face: [-70, -912] }, { type: "goto", path: [[-90, -888], [-128, -880]] }, { type: "hide" }] },
-              { id: "w3", name: "Worker", role: "civilian", start: [-180, -960], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#8a5a3c" }, routine: [{ type: "goto", path: [[-180, -1010], [-120, -1010]], speed: 1.1 }, { type: "wait", dur: 12, anim: "inspect" }, { type: "goto", path: [[-180, -960]] }, { type: "wait", dur: 10, anim: "lean" }, { type: "loop" }] },
-              { id: "w4", name: "Worker", role: "civilian", start: [30, -975], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#a87a58" }, routine: [{ type: "wait", dur: 15, anim: "inspect", face: [20, -990] }, { type: "goto", path: [[60, -975]] }, { type: "wait", dur: 12, anim: "inspect", face: [56, -990] }, { type: "goto", path: [[30, -975]] }, { type: "loop" }] },
-              { id: "w5", name: "Worker", role: "civilian", start: [-160, -882], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", hatColor: "#ffffff", skin: "#c49272" }, routine: [{ type: "wait", until: 999, anim: "sit", face: nestFace }] },
-              { id: "w6", name: "Worker", role: "civilian", start: [-24, -940], look: { top: "#e0641c", bottom: "#2c3440", hat: "hardhat", skin: "#7c5038", gloves: "#d9c27a" }, routine: [{ type: "wait", dur: 8, anim: "drink", face: nestFace }, { type: "wait", dur: 5, anim: "wave", face: [-60, -930] }, { type: "wait", dur: 10, anim: "inspect", face: [-30, -950] }, { type: "loop" }] }
+              { id: "w1", name: "Worker", role: "civilian", start: [-92, -906], look: { outfit: "worker", stub: true, gloves: "#c8b070", top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#9a6a4c" }, routine: [{ type: "wait", until: 118, anim: "inspect", face: [-96, -912] }, { type: "goto", path: [[-110, -890], [-130, -882]] }, { type: "hide" }] },
+              { id: "w2", name: "Worker", role: "civilian", start: [-70, -907], look: { outfit: "worker", stub: true, gloves: "#c8b070", top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#b5845e" }, routine: [{ type: "wait", until: 121, anim: "lean", face: [-70, -912] }, { type: "goto", path: [[-90, -888], [-128, -880]] }, { type: "hide" }] },
+              { id: "w3", name: "Worker", role: "civilian", start: [-180, -960], look: { outfit: "worker", stub: true, gloves: "#c8b070", top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#8a5a3c" }, routine: [{ type: "goto", path: [[-180, -1010], [-120, -1010]], speed: 1.1 }, { type: "wait", dur: 12, anim: "inspect" }, { type: "goto", path: [[-180, -960]] }, { type: "wait", dur: 10, anim: "lean" }, { type: "loop" }] },
+              { id: "w4", name: "Worker", role: "civilian", start: [30, -975], look: { outfit: "worker", stub: true, gloves: "#c8b070", top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#a87a58" }, routine: [{ type: "wait", dur: 15, anim: "inspect", face: [20, -990] }, { type: "goto", path: [[60, -975]] }, { type: "wait", dur: 12, anim: "inspect", face: [56, -990] }, { type: "goto", path: [[30, -975]] }, { type: "loop" }] },
+              { id: "w5", name: "Worker", role: "civilian", start: [-160, -882], look: { outfit: "worker", stub: true, gloves: "#c8b070", top: "#e0641c", bottom: "#e0641c", hat: "hardhat", hatColor: "#ffffff", skin: "#c49272" }, routine: [{ type: "wait", until: 999, anim: "sit", face: nestFace }] },
+              { id: "w6", name: "Worker", role: "civilian", start: [-24, -940], look: { outfit: "worker", top: "#e0641c", bottom: "#2c3440", hat: "hardhat", skin: "#7c5038", gloves: "#d9c27a" }, routine: [{ type: "wait", dur: 8, anim: "drink", face: nestFace }, { type: "wait", dur: 5, anim: "wave", face: [-60, -930] }, { type: "wait", dur: 10, anim: "inspect", face: [-30, -950] }, { type: "loop" }] }
             ];
           },
           cover: [[-60, -905], [-30, -895], [-150, -955], [-90, -895], [-20, -873], [-70, -820]],
@@ -38959,9 +39710,6 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/npcs/humanoid.js
-  function capsule(r, len, seg = 7) {
-    return new CapsuleGeometry(r, len, 3, seg);
-  }
   function part(geo, bone, color, tx = 0, ty = 0, tz = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
     const g = geo.index ? geo.toNonIndexed() : geo;
     const m = new Matrix4().compose(new Vector3(tx, ty, tz), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(sx, sy, sz));
@@ -38983,79 +39731,328 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (const k of Object.keys(g.attributes)) if (!["position", "normal", "uv", "color", "skinIndex", "skinWeight"].includes(k)) g.deleteAttribute(k);
     return g;
   }
-  function makeHumanoid(look) {
-    const L = Object.assign({ skin: "#d9a888", hair: "#3a2a20", hairStyle: "short", top: "#445566", bottom: "#2a2a30", shoes: "#1a1410", build: 1 }, look);
+  function headGeo(L, hi, fem) {
+    const W = hi ? 34 : 16, H = hi ? 26 : 12;
+    const geo = new SphereGeometry(1, W, H);
+    const p = geo.attributes.position, n = p.count;
+    const col = new Float32Array(n * 3);
+    const skin = new Color(L.skin), lip = new Color(fem ? "#a8484a" : L.skin).multiplyScalar(fem ? 1 : 0.8);
+    if (!fem) lip.lerp(new Color("#9a5a52"), 0.35);
+    const browC = new Color(L.brow || L.hair).multiplyScalar(0.85), stubC = new Color(L.skin).multiplyScalar(0.68).lerp(new Color(L.hair), 0.25);
+    const beardC = L.beard ? new Color(L.beard) : null, hairC = new Color(L.hair), cheekC = new Color(L.skin).lerp(new Color("#d0766a"), fem ? 0.22 : 0.1);
+    const bald = L.hairStyle === "bald" || L.hairStyle === "none";
+    const c = new Color();
+    for (let i = 0; i < n; i++) {
+      let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const front = Math.max(0, z);
+      let sx = 0.092 * (fem ? 0.97 : 1), sy = 0.118, sz = 0.105;
+      if (y < -0.1) {
+        const k = Math.min(1, (-y - 0.1) / 0.8);
+        sx *= 1 - k * (fem ? 0.32 : 0.24);
+        sz *= 1 - k * 0.12;
+      }
+      if (z < 0 && y > -0.3) sz *= 1.04;
+      let X = x * sx, Y = y * sy, Z = z * sz;
+      if (front > 0.35) {
+        const fx = x, fy = y;
+        Z += 9e-3 * g2(fx, fy - 0.34, 0.45, 0.09) * front;
+        Z -= 0.013 * (g2(fx - 0.36, fy - 0.12, 0.16, 0.12) + g2(fx + 0.36, fy - 0.12, 0.16, 0.12)) * front;
+        Z += 0.025 * g2(fx, fy + 0.12, 0.085, 0.2) * Math.max(0, Math.min(1, (0.25 - fy) * 2.2)) * front * (L.nose || 1);
+        Z += 6e-3 * (g2(fx - 0.55, fy + 0.08, 0.18, 0.12) + g2(fx + 0.55, fy + 0.08, 0.18, 0.12));
+        Z += 6e-3 * g2(fx, fy + 0.5, 0.26, 0.07) * front - 4e-3 * g2(fx, fy + 0.46, 0.24, 0.015);
+        Z += 0.012 * g2(fx, fy + 0.82, 0.24, 0.12) * front * (fem ? 0.6 : 1);
+      }
+      if (Math.abs(x) > 0.92 && Math.abs(y) < 0.25 && z > -0.3) X += Math.sign(x) * 4e-3;
+      p.setXYZ(i, X, Y, Z);
+      c.copy(skin);
+      if (front > 0.6) {
+        const lipM = g2(x, y + 0.5, 0.22, 0.055);
+        c.lerp(lip, Math.min(1, lipM * 1.4));
+        const brow = g2(x - 0.36, y - 0.33, 0.17, 0.035) + g2(x + 0.36, y - 0.33, 0.17, 0.035);
+        c.lerp(browC, Math.min(1, brow * 1.3));
+        c.lerp(cheekC, (g2(x - 0.5, y + 0.15, 0.2, 0.15) + g2(x + 0.5, y + 0.15, 0.2, 0.15)) * 0.6);
+        c.multiplyScalar(1 - 0.3 * g2(x, y + 0.3, 0.1, 0.04));
+        c.multiplyScalar(1 - 0.22 * (g2(x - 0.36, y - 0.1, 0.17, 0.08) + g2(x + 0.36, y - 0.1, 0.17, 0.08)));
+      }
+      if (y < -0.3 && z > -0.2) {
+        const jawM = Math.min(1, (-0.3 - y) / 0.25) * (1 - g2(x, y + 0.5, 0.2, 0.06));
+        if (beardC) c.lerp(beardC, jawM * 0.95);
+        else if (L.stub) c.lerp(stubC, jawM * 0.6);
+      }
+      if (!bald) {
+        const hl = y - (0.42 - 0.25 * Math.max(0, -z) - (Math.abs(x) > 0.7 ? 0.15 : 0));
+        if (hl > 0 || z < -0.2 && y > -0.35) c.lerp(hairC, Math.min(1, hl > 0 ? hl * 6 : 1));
+      }
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+    geo.computeVertexNormals();
+    geo.setAttribute("hcol", new BufferAttribute(col, 3));
+    const flat = geo.toNonIndexed(), hc = flat.attributes.hcol.array.slice();
+    const g = part(flat, B2.head, L.skin, 0, 1.63, 5e-3);
+    g.attributes.color.array.set(hc);
+    return g;
+  }
+  function outfitOf(L) {
+    if (L.outfit) return L.outfit;
+    if (L.tray) return "waiter";
+    if (L.hat === "hardhat") return /^#(e|d|f)[0-9a-f]6/i.test(L.top) || L.top === "#e0641c" ? "worker" : "manager";
+    if (L.vest && L.rifle) return L.hat === "cap" && !L.gloves ? "uniform" : "tactical";
+    if (L.hat === "beret") return "officer";
+    if (L.coat) return "coat";
+    return "casual";
+  }
+  function limbGeo(rt, rm, rb, h, f, seg) {
+    const pts = [], N = 12;
+    pts.push(new Vector2(1e-4, -h / 2 - rb * 0.6));
+    for (let i = 0; i <= 3; i++) {
+      const a = i / 3 * Math.PI / 2;
+      pts.push(new Vector2(Math.sin(a) * rb, -h / 2 - Math.cos(a) * rb * 0.6));
+    }
+    for (let i = 1; i < N; i++) {
+      const t = i / N, u = 1 - t;
+      const fromTop = 1 - t;
+      const r = fromTop < f ? rt + (rm - rt) * Math.sin(fromTop / f * Math.PI / 2) : rb + (rm - rb) * Math.pow(Math.cos((fromTop - f) / (1 - f) * Math.PI / 2), 0.8);
+      pts.push(new Vector2(r, -h / 2 + t * h));
+    }
+    for (let i = 0; i <= 3; i++) {
+      const a = (1 - i / 3) * Math.PI / 2;
+      pts.push(new Vector2(Math.sin(a) * rt, h / 2 + Math.cos(a) * rt * 0.6));
+    }
+    pts.push(new Vector2(1e-4, h / 2 + rt * 0.6));
+    return new LatheGeometry(pts, seg);
+  }
+  function buildBody(L, hi) {
     const parts = [];
-    const bw = L.build;
-    const fem = L.female ?? L.hairStyle === "long", shW = fem ? 0.9 : 1.06;
-    const prof2 = [[1e-3, 1], [0.135, 1.02], [0.15, 1.1], [0.158, 1.22], [0.17 * shW, 1.33], [0.165 * shW, 1.41], [0.12, 1.47], [0.06, 1.5], [1e-3, 1.505]].map(([x, y]) => new Vector2(x * bw, y - 1.25));
-    parts.push(part(new LatheGeometry(prof2, 12), B2.spine, L.top, 0, 1.25, 0, 0, 0, 0, 1, 1, 0.68));
-    parts.push(part(new CylinderGeometry(0.065, 0.075, 0.05, 10), B2.spine, L.top, 0, 1.48, 0, 0, 0, 0, 1, 1, 0.9));
-    for (const sx of [1, -1]) parts.push(part(new SphereGeometry(0.07 * bw, 8, 6), sx > 0 ? B2.uaL : B2.uaR, L.coat ? L.coatColor : L.top, 0.19 * sx * shW, 1.415, 0, 0, 0, 0, 1.05, 0.9, 1));
-    parts.push(part(new BoxGeometry(0.3 * bw, 0.045, 0.2), B2.root, "#15120e", 0, 1.02, 0, 0, 0, 0, 1, 1, 1));
-    if (fem) parts.push(part(new SphereGeometry(0.16 * bw, 10, 6), B2.root, L.bottom, 0, 0.92, -5e-3, 0, 0, 0, 1.06, 0.6, 0.78));
-    parts.push(part(capsule(0.15 * bw, 0.06, 8), B2.root, L.bottom, 0, 0.96, 0, 0, 0, 0, 1.05, 1, 0.75));
-    if (L.vest) parts.push(part(new BoxGeometry(0.34 * bw, 0.32, 0.27), B2.spine, L.vest, 0, 1.26, 0));
-    parts.push(part(new CylinderGeometry(0.05, 0.06, 0.1, 8), B2.head, L.skin, 0, 1.52, 0));
-    parts.push(part(new SphereGeometry(0.105, 14, 10), B2.head, L.skin, 0, 1.63, 5e-3, 0, 0, 0, 0.9, 1.12, 1));
-    parts.push(part(new ConeGeometry(0.018, 0.045, 5), B2.head, L.skin, 0, 1.625, 0.105, Math.PI / 2, 0, 0));
-    parts.push(part(new SphereGeometry(0.07, 10, 6), B2.head, L.skin, 0, 1.585, 0.03, 0, 0, 0, 0.95, 0.75, 1));
-    for (const sx of [1, -1]) {
-      parts.push(part(new SphereGeometry(0.022, 6, 4), B2.head, L.skin, 0.098 * sx, 1.625, -5e-3, 0, 0, 0, 0.5, 1.1, 0.9));
-      parts.push(part(new SphereGeometry(0.016, 6, 4), B2.head, "#efe8e0", 0.035 * sx, 1.638, 0.088, 0, 0, 0, 1.2, 0.7, 0.5));
-      parts.push(part(new SphereGeometry(9e-3, 5, 4), B2.head, "#1a120c", 0.035 * sx, 1.638, 0.095));
+    const bw = L.build, Q = hi ? 1 : 0.5, sg = (n) => Math.max(4, Math.round(n * Q));
+    const P = (geo2, bone, color, ...a) => parts.push(part(geo2, bone, color, ...a));
+    const sph = (r, w = 10, h = 8, ...a) => new SphereGeometry(r, sg(w), sg(h), ...a);
+    const cyl = (a, b, h, s = 10, open = false) => new CylinderGeometry(a, b, h, sg(s), 1, open);
+    const box = (x, y, z) => new BoxGeometry(x, y, z);
+    const O = outfitOf(L);
+    const fem = L.female ?? (L.hairStyle === "long" || L.hairStyle === "bun" || L.hairStyle === "ponytail"), shW = fem ? 0.9 : 1.06;
+    const dk = (c, k = 0.7) => "#" + new Color(c).multiplyScalar(k).getHexString();
+    const lt = (c, k = 0.25) => "#" + new Color(c).lerp(new Color("#ffffff"), k).getHexString();
+    const brow = L.brow || dk(L.hair === "#8f8a84" || L.hair === "#b8b2aa" ? L.hair : L.hair, 0.8);
+    const jacket = L.coat ? L.coatColor : L.top;
+    const shirt = O === "suit" || O === "coat" && !fem ? L.shirt || "#e9e6df" : L.top;
+    const prof2 = [[1e-3, 1], [0.135, 1.02], [0.148, 1.1], [0.155, 1.2], [0.165 * shW, 1.3], [0.172 * shW, 1.36], [0.165 * shW, 1.41], [0.13, 1.46], [0.07, 1.495], [1e-3, 1.505]].map(([x, y]) => new Vector2(x * bw * (fem && y > 1.18 && y < 1.36 ? 1.04 : 1), y - 1.25));
+    P(new LatheGeometry(prof2, sg(18)), B2.spine, jacket, 0, 1.25, 0, 0, 0, 0, 1, 1, 0.68);
+    if (fem) P(sph(0.07, 10, 8), B2.spine, jacket, 0, 1.3, 0.075, 0, 0, 0, 2, 0.9, 0.9);
+    P(cyl(0.062, 0.072, 0.06, 10), B2.spine, O === "tactical" || O === "uniform" ? L.top : shirt, 0, 1.48, 0, 0, 0, 0, 1, 1, 0.9);
+    for (const sx of [1, -1]) P(sph(0.072 * bw, 10, 8), sx > 0 ? B2.uaL : B2.uaR, jacket, 0.19 * sx * shW, 1.415, 0, 0, 0, 0, 1.08, 0.88, 1.02);
+    if (fem) P(sph(0.16 * bw, 12, 8), B2.root, L.bottom, 0, 0.92, -5e-3, 0, 0, 0, 1.06, 0.6, 0.78);
+    P(new CapsuleGeometry(0.15 * bw, 0.06, 3, sg(12)), B2.root, L.bottom, 0, 0.96, 0, 0, 0, 0, 1.05, 1, 0.75);
+    P(box(0.31 * bw, 0.045, 0.21), B2.root, O === "worker" ? "#2a2420" : "#15120e", 0, 1.02, 0);
+    if (hi) P(box(0.05, 0.035, 0.012), B2.root, "#b8b0a0", 0, 1.02, 0.106);
+    if (O === "suit" || O === "coat" || O === "officer" || O === "manager" || O === "casual") {
+      if (O === "suit" || O === "coat") {
+        P(box(0.085, 0.2, 0.02), B2.spine, shirt, 0, 1.39, 0.1, -0.12);
+        if (L.tie !== false && !L.scarf) {
+          P(box(0.035, 0.2, 0.012), B2.spine, L.tie || "#20242c", 0, 1.36, 0.113, -0.12);
+          P(box(0.04, 0.03, 0.02), B2.spine, L.tie || "#20242c", 0, 1.46, 0.1);
+        }
+        for (const sx of [1, -1]) P(box(0.05, 0.24, 0.016), B2.spine, dk(jacket, 0.8), 0.055 * sx, 1.37, 0.108, -0.12, 0, 0.32 * sx);
+        if (hi) for (const y of [1.2, 1.12]) P(sph(8e-3, 6, 4), B2.spine, dk(jacket, 0.5), 0, y, 0.108);
+        if (hi) for (const sx of [1, -1]) P(box(0.085, 0.012, 0.012), B2.spine, dk(jacket, 0.75), 0.09 * sx, 1.13, 0.1);
+      }
+      if (O === "officer" || O === "manager") {
+        for (const sx of [1, -1]) {
+          P(box(0.075, 0.075, 0.012), B2.spine, dk(L.top, 0.85), 0.075 * sx, 1.33, 0.098);
+          if (O === "officer") P(box(0.06, 0.012, 0.11), B2.spine, dk(L.top, 0.7), 0.15 * sx, 1.455, 0);
+        }
+        if (hi && O === "officer") {
+          P(box(0.06, 0.012, 0.01), B2.spine, "#b02020", -0.075, 1.38, 0.103);
+          P(box(0.06, 0.012, 0.01), B2.spine, "#d8b840", -0.075, 1.37, 0.103);
+        }
+        if (O === "manager") for (const sx of [1, -1]) {
+          P(box(0.11, 0.34, 0.02), B2.spine, "#d8e020", 0.085 * sx, 1.27, 0.088);
+          if (hi) P(box(0.11, 0.025, 0.022), B2.spine, "#d8d8d0", 0.085 * sx, 1.2, 0.09);
+        }
+      }
+      if (O === "casual" && hi) {
+        P(box(0.16, 0.02, 0.012), B2.spine, dk(L.top, 0.8), 0, 1.15, 0.103);
+      }
     }
-    parts.push(part(new BoxGeometry(0.04, 8e-3, 0.01), B2.head, fem ? "#9a4848" : "#7a4a40", 0, 1.588, 0.096));
-    parts.push(part(new BoxGeometry(0.03, 0.012, 0.01), B2.head, "#1b1410", 0.035, 1.655, 0.09));
-    parts.push(part(new BoxGeometry(0.03, 0.012, 0.01), B2.head, "#1b1410", -0.035, 1.655, 0.09));
-    if (L.beard) parts.push(part(new SphereGeometry(0.098, 12, 8, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.4), B2.head, L.beard, 0, 1.635, 0.012, 0, 0, 0, 0.93, 1.1, 1.04));
-    if (L.hairStyle === "short") parts.push(part(new SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.48), B2.head, L.hair, 0, 1.645, -8e-3, -0.25, 0, 0, 0.95, 1.05, 1.05));
-    if (L.hairStyle === "long") {
-      parts.push(part(new SphereGeometry(0.115, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hair, 0, 1.645, -0.01, -0.3, 0, 0, 0.98, 1.05, 1.08));
-      parts.push(part(new BoxGeometry(0.2, 0.22, 0.08), B2.head, L.hair, 0, 1.53, -0.07));
+    if (O === "tactical" || O === "uniform") {
+      const v3 = L.vest || dk(L.top, 0.7);
+      P(box(0.33 * bw, 0.3, 0.27), B2.spine, v3, 0, 1.27, 0);
+      for (let i = -1; i <= 1; i++) {
+        P(box(0.075, 0.1, 0.05), B2.spine, dk(v3, 0.85), i * 0.085, 1.18, 0.15);
+        if (hi) P(box(0.078, 0.02, 0.054), B2.spine, dk(v3, 0.65), i * 0.085, 1.225, 0.15);
+      }
+      for (const sx of [1, -1]) P(box(0.06, 0.03, 0.26), B2.spine, v3, 0.11 * sx, 1.43, 0);
+      P(box(0.05, 0.11, 0.04), B2.spine, "#151515", -0.12, 1.34, 0.14);
+      if (hi) P(cyl(4e-3, 4e-3, 0.12, 4), B2.spine, "#111111", -0.12, 1.44, 0.13);
+      P(box(0.06, 0.12, 0.06), B2.spine, dk(v3, 0.85), 0.16, 1.15, 0);
+      if (O === "tactical") for (const [th, sx] of [[B2.thL, 1], [B2.thR, -1]]) P(box(0.07, 0.08, 0.05), th, "#1a1a1a", 0.1 * sx, 0.52, 0.06);
+      P(box(0.05, 0.16, 0.08), B2.thR, "#151515", -0.18, 0.8, 0);
     }
-    if (L.glasses) parts.push(part(new BoxGeometry(0.15, 0.03, 0.02), B2.head, "#0a0a0c", 0, 1.64, 0.095));
-    if (L.hat === "beret") parts.push(part(new CylinderGeometry(0.12, 0.115, 0.05, 12), B2.head, L.hatColor || "#151515", 0.015, 1.735, -0.01, 0.15, 0, -0.2, 1, 1, 1.05));
+    if (O === "worker") {
+      for (const y of [1.3, 1.18]) P(cyl(0.168 * bw, 0.168 * bw, 0.028, 16, true), B2.spine, "#dcdcd4", 0, y, 0, 0, 0, 0, 1.02, 1, 0.71);
+      P(box(0.08, 0.1, 0.05), B2.root, "#3a2e22", 0.12, 0.95, 0.1);
+      P(box(0.07, 0.09, 0.05), B2.root, "#3a2e22", -0.13, 0.95, 0.08);
+      if (hi) P(cyl(0.012, 0.012, 0.16, 6), B2.root, "#888888", 0.15, 0.92, 0.12);
+    }
+    if (O === "waiter") {
+      P(box(0.3 * bw, 0.3, 0.215), B2.spine, "#18181a", 0, 1.26, 0);
+      P(box(0.07, 0.16, 0.012), B2.spine, shirt, 0, 1.38, 0.115, -0.12);
+      P(box(0.06, 0.025, 0.02), B2.spine, "#101010", 0, 1.465, 0.09);
+      P(box(0.3, 0.55, 0.02), B2.root, "#141414", 0, 0.74, 0.12);
+    }
+    if (O === "chef") {
+      for (const sx of [1, -1]) for (const y of [1.36, 1.28, 1.2]) P(sph(9e-3, 6, 4), B2.spine, "#3a3a3a", 0.05 * sx, y, 0.105);
+      P(box(0.3, 0.5, 0.02), B2.root, "#e8e6e0", 0, 0.76, 0.12);
+      P(cyl(0.06, 0.06, 0.08, 10), B2.spine, "#f4f4f0", 0, 1.49, 0);
+    }
+    if (L.vest && O !== "tactical" && O !== "uniform" && O !== "worker") P(box(0.34 * bw, 0.32, 0.27), B2.spine, L.vest, 0, 1.26, 0);
+    P(cyl(0.05, 0.06, 0.1, 10), B2.head, L.skin, 0, 1.52, 0);
+    if (hi && !fem) P(sph(0.014, 6, 4), B2.head, L.skin, 0, 1.515, 0.048);
+    parts.push(headGeo(L, hi, fem));
+    if (hi) {
+      for (const sx of [1, -1]) {
+        P(sph(0.0125, 10, 8), B2.head, "#ece6de", 0.034 * sx, 1.64, 0.0815);
+        P(sph(72e-4, 8, 6), B2.head, L.eyes || "#4a3220", 0.034 * sx, 1.64, 0.0905);
+        P(sph(36e-4, 6, 4), B2.head, "#060606", 0.034 * sx, 1.64, 0.0948);
+        P(sph(0.0135, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.42), B2.head, new Color(L.skin).multiplyScalar(0.86).getStyle(), 0.034 * sx, 1.6425, 0.0825, 0.5);
+        P(sph(0.02, 8, 6), B2.head, L.skin, 0.091 * sx, 1.625, -6e-3, 0, 0, 0, 0.4, 1.15, 0.75);
+        P(sph(9e-3, 6, 4), B2.head, new Color(L.skin).multiplyScalar(0.72).getStyle(), 0.096 * sx, 1.625, -3e-3, 0, 0, 0, 0.4, 1, 0.8);
+      }
+    } else for (const sx of [1, -1]) P(sph(0.013, 6, 4), B2.head, "#3a2a22", 0.034 * sx, 1.64, 0.08, 0, 0, 0, 1.2, 0.7, 0.6);
+    if (L.beard && hi) {
+      P(hairNoise(new SphereGeometry(0.1, 20, 10, 0, Math.PI * 2, Math.PI * 0.6, Math.PI * 0.32), 0.03, 3), B2.head, L.beard, 0, 1.63, 4e-3, 0, 0, 0, 0.9, 1.13, 1.06);
+      P(new CapsuleGeometry(6e-3, 0.04, 2, 6), B2.head, L.beard, 0, 1.592, 0.103, 0, 0, Math.PI / 2);
+    }
+    const hs = L.hat === "hardhat" || L.hat === "toque" ? L.hairStyle === "long" ? "long" : "buzz" : L.hairStyle;
+    const hair = L.hair, hairD = dk(hair, 0.82);
+    if (hs === "short" || hs === "slick" || hs === "long" || hs === "bun" || hs === "ponytail") {
+      P(hi ? hairNoise(new SphereGeometry(0.112, 26, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), 0.025, 1) : sph(0.112, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, hair, 0, 1.643, -0.012, -0.3, 0, 0, 0.88, 1.06, 1.04);
+      if (hi) for (const sx of [1, -1]) P(sph(0.05, 8, 6), B2.head, hairD, 0.085 * sx, 1.655, -0.02, 0, 0, 0, 0.5, 0.9, 1.4);
+      if (hs === "short" && hi) P(sph(0.06, 10, 6), B2.head, hair, 0.02, 1.725, 0.045, 0, 0, 0, 1.4, 0.45, 0.9);
+      if (hs === "slick") P(sph(0.1, 12, 8), B2.head, hair, 0, 1.66, -0.05, 0, 0, 0, 0.98, 0.9, 0.85);
+    }
+    if (hs === "buzz") P(sph(0.108, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.46), B2.head, dk(hair, 0.9), 0, 1.638, -5e-3, -0.22, 0, 0, 0.94, 1.05, 1.04);
+    if (hs === "long") {
+      P(sph(0.1, 12, 8), B2.head, hair, 0, 1.6, -0.06, 0, 0, 0, 1.12, 1.25, 0.8);
+      P(box(0.2, 0.2, 0.07), B2.spine, hairD, 0, 1.44, -0.09, 0.15);
+      if (hi) for (const sx of [1, -1]) P(new CapsuleGeometry(0.03, 0.14, 2, 6), B2.head, hair, 0.085 * sx, 1.56, 0, 0, 0, 0.1 * sx);
+    }
+    if (hs === "bun") P(sph(0.05, 10, 8), B2.head, hairD, 0, 1.69, -0.1);
+    if (hs === "ponytail") {
+      P(sph(0.03, 8, 6), B2.head, hairD, 0, 1.66, -0.11);
+      P(new CapsuleGeometry(0.028, 0.16, 2, 6), B2.head, hair, 0, 1.55, -0.13, 0.25);
+    }
+    if (L.glasses) {
+      const sun = L.glasses === "sun";
+      if (hi) {
+        for (const sx of [1, -1]) {
+          P(new TorusGeometry(0.019, 3e-3, 4, 12), B2.head, "#0a0a0c", 0.036 * sx, 1.639, 0.103);
+          if (sun) P(new CircleGeometry(0.019, 12), B2.head, "#08090c", 0.036 * sx, 1.639, 0.104);
+          P(box(4e-3, 4e-3, 0.09), B2.head, "#0a0a0c", 0.058 * sx, 1.643, 0.06, 0, 0.25 * sx, 0);
+        }
+        P(box(0.02, 4e-3, 4e-3), B2.head, "#0a0a0c", 0, 1.643, 0.105);
+      } else P(box(0.15, 0.03, 0.02), B2.head, "#0a0a0c", 0, 1.64, 0.095);
+    }
+    if (L.earpiece && hi) {
+      P(sph(8e-3, 6, 4), B2.head, "#1c1c1c", -0.1, 1.625, 0.01);
+      P(cyl(2e-3, 2e-3, 0.14, 4), B2.head, "#d8d8d8", -0.09, 1.55, -0.02, 0.3);
+    }
+    if (L.hat === "beret") {
+      P(cyl(0.12, 0.115, 0.05, 16), B2.head, L.hatColor || "#151515", 0.015, 1.735, -0.01, 0.15, 0, -0.2, 1, 1, 1.05);
+      if (hi) P(sph(0.014, 6, 4), B2.head, "#c8a040", -0.06, 1.72, 0.08);
+    }
     if (L.hat === "hardhat") {
-      parts.push(part(new SphereGeometry(0.125, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hatColor || "#f2c21b", 0, 1.67, 0));
-      parts.push(part(new CylinderGeometry(0.15, 0.15, 0.012, 14), B2.head, L.hatColor || "#f2c21b", 0, 1.675, 0.02));
+      P(sph(0.125, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hatColor || "#f2c21b", 0, 1.67, 0);
+      P(cyl(0.15, 0.15, 0.012, 18), B2.head, L.hatColor || "#f2c21b", 0, 1.675, 0.02);
+      if (hi) P(box(0.02, 0.06, 0.24), B2.head, L.hatColor || "#f2c21b", 0, 1.79, 0);
     }
     if (L.hat === "cap") {
-      parts.push(part(new SphereGeometry(0.115, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hatColor || "#2b3a2b", 0, 1.66, 0));
-      parts.push(part(new BoxGeometry(0.15, 0.012, 0.09), B2.head, L.hatColor || "#2b3a2b", 0, 1.665, 0.11));
+      P(sph(0.115, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hatColor || "#2b3a2b", 0, 1.66, 0);
+      P(box(0.15, 0.012, 0.09), B2.head, L.hatColor || "#2b3a2b", 0, 1.665, 0.11, -0.1);
     }
-    if (L.hat === "beanie") parts.push(part(new SphereGeometry(0.118, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), B2.head, L.hatColor || "#30343a", 0, 1.655, 0, 0, 0, 0, 1, 1.12, 1));
+    if (L.hat === "beanie") {
+      P(sph(0.118, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), B2.head, L.hatColor || "#30343a", 0, 1.655, 0, 0, 0, 0, 1, 1.12, 1);
+      if (hi) P(cyl(0.12, 0.12, 0.035, 16, true), B2.head, dk(L.hatColor || "#30343a", 0.85), 0, 1.66, 0, -0.12);
+    }
+    if (L.hat === "toque") {
+      P(cyl(0.1, 0.11, 0.07, 14), B2.head, "#f6f6f2", 0, 1.7, 0);
+      P(sph(0.115, 12, 8), B2.head, "#f6f6f2", 0, 1.79, 0, 0, 0, 0, 1, 0.7, 1);
+    }
     if (L.scarf) {
-      parts.push(part(new TorusGeometry(0.075, 0.035, 6, 12), B2.spine, L.scarf, 0, 1.47, 0.01, Math.PI / 2));
-      parts.push(part(new BoxGeometry(0.07, 0.24, 0.03), B2.spine, L.scarf, 0.05, 1.33, 0.13, 0.1, 0, 0.1));
+      P(new TorusGeometry(0.075, 0.035, sg(8), sg(14)), B2.spine, L.scarf, 0, 1.47, 0.01, Math.PI / 2);
+      P(box(0.07, 0.26, 0.03), B2.spine, L.scarf, 0.05, 1.33, 0.14, 0.1, 0, 0.1);
+      if (hi) P(box(0.06, 0.2, 0.03), B2.spine, dk(L.scarf, 0.85), -0.03, 1.36, 0.135, 0.05, 0, -0.15);
     }
-    const sleeve = L.coat ? L.coatColor : L.top;
+    const sleeve = jacket;
     for (const [ua, fa, sx] of [[B2.uaL, B2.faL, 1], [B2.uaR, B2.faR, -1]]) {
-      parts.push(part(capsule(0.055 * bw, 0.2), ua, sleeve, 0.205 * sx, 1.29, 0));
-      parts.push(part(capsule(0.046 * bw, 0.18), fa, sleeve, 0.205 * sx, 1.02, 0));
-      parts.push(part(new CylinderGeometry(0.05 * bw, 0.044, 0.04, 8), fa, L.coat ? L.coatColor : L.top, 0.205 * sx, 0.92, 0));
-      parts.push(part(new BoxGeometry(0.045, 0.1, 0.085), fa, L.gloves || L.skin, 0.205 * sx, 0.85, 0.01, 0, 0, 0, 1, 1, 1));
-      parts.push(part(new CapsuleGeometry(0.014, 0.035, 2, 5), fa, L.gloves || L.skin, 0.205 * sx - 0.012 * sx, 0.87, 0.05, 0.5));
+      P(limbGeo(0.06 * bw, 0.058 * bw, 0.046 * bw, 0.24, 0.35, sg(12)), ua, sleeve, 0.205 * sx, 1.29, 0, 0, 0, 0, 1, 1, 0.92);
+      if (hi) P(sph(0.05 * bw, 8, 6), fa, sleeve, 0.205 * sx, 1.15, -5e-3);
+      P(limbGeo(0.047 * bw, 0.05 * bw, 0.034, 0.22, 0.25, sg(12)), fa, sleeve, 0.205 * sx, 1.03, 0, 0, 0, 0, 1, 1, 0.88);
+      P(cyl(0.05 * bw, 0.045, 0.04, 10), fa, O === "suit" || O === "coat" ? shirt : dk(sleeve, 0.85), 0.205 * sx, 0.92, 0);
+      const hand = L.gloves || L.skin;
+      P(box(0.05, 0.085, 0.085), fa, hand, 0.205 * sx, 0.855, 8e-3);
+      P(box(0.044, 0.07, 0.078), fa, dk(hand, 0.94), 0.207 * sx, 0.785, 0.012, 0.15);
+      P(new CapsuleGeometry(0.014, 0.035, 2, 5), fa, hand, 0.205 * sx - 0.014 * sx, 0.865, 0.052, 0.5);
+      if (hi && L.watch && sx > 0) P(cyl(0.05, 0.05, 0.018, 10), fa, "#c0b8a8", 0.205, 0.905, 0);
     }
     for (const [th, sh, sx] of [[B2.thL, B2.shL, 1], [B2.thR, B2.shR, -1]]) {
-      parts.push(part(capsule(0.072 * bw, 0.3), th, L.bottom, 0.1 * sx, 0.7, 0));
-      parts.push(part(capsule(0.058, 0.32), sh, L.bottom, 0.1 * sx, 0.28, 0));
-      parts.push(part(new BoxGeometry(0.105, 0.075, 0.25), sh, L.shoes, 0.1 * sx, 0.038, 0.035));
-      parts.push(part(new CylinderGeometry(0.062, 0.066, 0.12, 8), sh, L.shoes, 0.1 * sx, 0.1, 0));
-      parts.push(part(new BoxGeometry(0.11, 0.025, 0.26), sh, "#0c0a08", 0.1 * sx, 0.012, 0.035));
+      P(limbGeo(0.09 * bw, 0.082 * bw, 0.058, 0.36, 0.25, sg(12)), th, L.bottom, 0.1 * sx, 0.7, 0, 0, 0, 0, 1, 1, 0.95);
+      if (hi) P(sph(0.06, 8, 6), sh, L.bottom, 0.1 * sx, 0.48, 0.01);
+      P(limbGeo(0.056, 0.062, 0.038, 0.38, 0.3, sg(12)), sh, L.bottom, 0.1 * sx, 0.28, 5e-3);
+      if (O === "worker") P(cyl(0.062, 0.062, 0.028, 12, true), sh, "#dcdcd4", 0.1 * sx, 0.3, 0);
+      const boots = O === "tactical" || O === "uniform" || O === "worker" || O === "officer";
+      P(box(0.1, 0.075, 0.24), sh, L.shoes, 0.1 * sx, 0.038, 0.035);
+      P(sph(0.052, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), sh, boots ? dk(L.shoes, 0.9) : lt(L.shoes, 0.08), 0.1 * sx, 0.035, 0.13, 0, 0, 0, 0.95, 0.75, 0.9);
+      if (boots) P(cyl(0.064, 0.068, 0.16, 10), sh, L.shoes, 0.1 * sx, 0.12, 0);
+      P(box(0.108, 0.025, 0.265), sh, "#0c0a08", 0.1 * sx, 0.012, 0.04);
     }
     if (L.coat) {
-      parts.push(part(new CylinderGeometry(0.19 * bw, 0.25 * bw, 0.5, 12, 1, true), B2.root, L.coatColor, 0, 0.74, 0, 0, 0, 0, 1, 1, 0.8));
-      parts.push(part(capsule(0.172 * bw, 0.26, 9), B2.spine, L.coatColor, 0, 1.25, -6e-3, 0, 0, 0, 1.04, 1.02, 0.76));
-      if (L.scarf) parts.push(part(new BoxGeometry(0.07, 0.24, 0.03), B2.spine, L.scarf, 0.05, 1.33, 0.14, 0.1, 0, 0.1));
+      P(cyl(0.19 * bw, 0.255 * bw, 0.52, 16, true), B2.root, L.coatColor, 0, 0.73, 0, 0, 0, 0, 1, 1, 0.8);
+      P(new CapsuleGeometry(0.173 * bw, 0.26, 3, sg(14)), B2.spine, L.coatColor, 0, 1.25, -6e-3, 0, 0, 0, 1.04, 1.02, 0.76);
+      P(cyl(0.085, 0.1, 0.07, 12, true), B2.spine, dk(L.coatColor, 0.85), 0, 1.47, -5e-3, -0.1);
+      if (hi) {
+        P(box(0.012, 0.5, 0.01), B2.root, dk(L.coatColor, 0.7), 0.03, 0.75, 0.2);
+        for (const y of [1.25, 1.15, 1.05]) P(sph(0.01, 6, 4), B2.spine, dk(L.coatColor, 0.5), 0.04, y, 0.13);
+      }
+      if (L.scarf) P(box(0.07, 0.24, 0.03), B2.spine, L.scarf, 0.05, 1.33, 0.14, 0.1, 0, 0.1);
+      if (O === "coat" && !L.scarf) P(box(0.07, 0.17, 0.02), B2.spine, shirt, 0, 1.4, 0.128, -0.12);
     }
-    if (L.briefcase) parts.push(part(new BoxGeometry(0.1, 0.3, 0.4), B2.faR, "#141210", -0.21, 0.74, 0));
-    if (L.cane) parts.push(part(new CylinderGeometry(0.012, 0.012, 0.85, 5), B2.faL, "#2a1a10", 0.215, 0.45, 0.06));
-    if (L.rifle) parts.push(part(new BoxGeometry(0.05, 0.09, 0.75), B2.faR, "#1d1f1c", -0.2, 0.9, 0.18, -0.3));
-    if (L.tray) parts.push(part(new CylinderGeometry(0.16, 0.16, 0.015, 12), B2.faL, "#c8c8c8", 0.22, 0.86, 0.12));
-    if (L.phone) parts.push(part(new BoxGeometry(0.02, 0.12, 0.06), B2.faR, "#080808", -0.19, 0.86, 0.02));
+    if (L.briefcase) {
+      P(box(0.1, 0.3, 0.4), B2.faR, "#141210", -0.21, 0.72, 0);
+      if (hi) {
+        P(box(0.03, 0.04, 0.12), B2.faR, "#3a3630", -0.21, 0.89, 0);
+        P(box(0.104, 0.02, 0.05), B2.faR, "#b8a878", -0.21, 0.84, 0.1);
+      }
+    }
+    if (L.cane) {
+      P(cyl(0.012, 0.012, 0.85, 6), B2.faL, "#2a1a10", 0.215, 0.45, 0.06);
+      P(sph(0.022, 8, 6), B2.faL, "#c0a060", 0.215, 0.87, 0.06);
+    }
+    if (L.rifle) {
+      P(box(0.05, 0.09, 0.42), B2.faR, "#1d1f1c", -0.2, 0.9, 0.18, -0.3);
+      P(box(0.04, 0.14, 0.05), B2.faR, "#141614", -0.2, 0.82, 0.2, -0.3);
+      P(cyl(0.012, 0.012, 0.3, 6), B2.faR, "#101210", -0.2, 1, 0.48, Math.PI / 2 - 0.3);
+      P(box(0.045, 0.1, 0.18), B2.faR, "#262824", -0.2, 0.86, -0.08, -0.3);
+      if (hi) P(cyl(0.02, 0.02, 0.1, 8), B2.faR, "#0c0c0c", -0.2, 0.98, 0.17, Math.PI / 2 - 0.3);
+    }
+    if (L.tray) {
+      P(cyl(0.16, 0.16, 0.015, 16), B2.faL, "#c8c8c8", 0.22, 0.86, 0.12);
+      if (hi) for (const [x, z] of [[0.05, 0.05], [-0.05, 0.08], [0, 0.18]]) P(cyl(0.025, 0.02, 0.1, 8), B2.faL, "#e8f0f0", 0.22 + x, 0.92, 0.12 + z - 0.06);
+    }
+    if (L.phone) P(box(0.02, 0.12, 0.06), B2.faR, "#080808", -0.19, 0.86, 0.02);
     const geo = mergeGeometries(parts, false);
-    geo.computeBoundingSphere();
+    const pos = geo.attributes.position, nor = geo.attributes.normal, col = geo.attributes.color;
+    for (let i = 0; i < pos.count; i++) {
+      const ny = nor.getY(i), y = pos.getY(i);
+      const k = (0.8 + 0.2 * (ny * 0.5 + 0.5)) * (y < 0.3 ? 0.86 + y * 0.45 : 1) * (y > 1 && y < 1.1 && Math.abs(pos.getX(i)) < 0.17 ? 0.92 : 1);
+      col.setXYZ(i, col.getX(i) * k, col.getY(i) * k, col.getZ(i) * k);
+    }
+    return geo;
+  }
+  function makeHumanoid(look) {
+    const L = Object.assign({ skin: "#d9a888", hair: "#3a2a20", hairStyle: "short", top: "#445566", bottom: "#2a2a30", shoes: "#1a1410", build: 1 }, look);
+    const geoHi = buildBody(L, true), geoLo = buildBody(L, false);
     const bones = PIV.map((p, i) => {
       const b = new Bone();
       b.name = Object.keys(B2)[i];
@@ -39067,18 +40064,26 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (PARENT[i] >= 0) bones[PARENT[i]].add(b);
     });
     const rim = { color: { value: new Color(0, 0, 0) }, amount: { value: 0 } };
-    const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0 });
+    const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 });
     hazeify(m, { rim });
-    const mesh = new SkinnedMesh(geo, m);
+    const mesh = new SkinnedMesh(geoLo, m);
     const holder = new Group();
     holder.add(bones[0]);
     holder.add(mesh);
     holder.updateMatrixWorld(true);
     mesh.bind(new Skeleton(bones));
     mesh.castShadow = true;
-    mesh.frustumCulled = false;
-    holder.userData = { bones, mesh, rim };
+    mesh.boundingSphere = new Sphere(new Vector3(0, 0.9, 0), 1.9);
+    mesh.frustumCulled = true;
+    holder.userData = { bones, mesh, rim, geoHi, geoLo, lod: 0 };
     return holder;
+  }
+  function humanoidLOD(h, px2) {
+    const ud = h.userData, want = ud.lod ? px2 > 34 : px2 > 46;
+    if (want !== !!ud.lod) {
+      ud.lod = want ? 1 : 0;
+      ud.mesh.geometry = want ? ud.geoHi : ud.geoLo;
+    }
   }
   function animate(h, pose, ph, sp, t, extra = {}) {
     const b = h.userData.bones;
@@ -39285,6 +40290,56 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           b[B2.faR].rotation.x = -1.25;
         }
         break;
+      case "flinch": {
+        const k = Math.min(1, t % 100 * 0 + 1);
+        r.position.y = 0.86;
+        b[B2.spine].rotation.x = 0.35 * k;
+        b[B2.thL].rotation.x = -0.45;
+        b[B2.thR].rotation.x = -0.3;
+        b[B2.shL].rotation.x = 0.7;
+        b[B2.shR].rotation.x = 0.5;
+        b[B2.uaL].rotation.set(-1.1, 0, 0.5);
+        b[B2.uaR].rotation.set(-1.1, 0, -0.5);
+        b[B2.faL].rotation.x = -1.9;
+        b[B2.faR].rotation.x = -1.9;
+        b[B2.head].rotation.set(-0.15, Math.sin(t * 2.3 + (extra.seed || 0)) * 0.6, 0);
+        break;
+      }
+      case "scan": {
+        const sw = Math.sin(t * 0.45 + (extra.seed || 0));
+        r.rotation.y = sw * 0.5;
+        b[B2.spine].rotation.y = sw * 0.25;
+        b[B2.spine].rotation.x = 0.06;
+        b[B2.uaR].rotation.set(-1.25, 0, -0.2);
+        b[B2.faR].rotation.x = -0.55;
+        b[B2.uaL].rotation.set(-1.4, 0, 0.45);
+        b[B2.faL].rotation.x = -0.35;
+        b[B2.head].rotation.set(0.05, sw * 0.15, 0);
+        b[B2.thL].rotation.x = -0.2;
+        b[B2.shL].rotation.x = 0.15;
+        b[B2.thR].rotation.x = 0.12;
+        if (!extra.rifle) {
+          b[B2.uaR].rotation.set(-0.4, 0, -0.5);
+          b[B2.faR].rotation.x = -2.2;
+          b[B2.uaL].rotation.set(-0.4, 0, 0.5);
+          b[B2.faL].rotation.x = -2.2;
+        }
+        break;
+      }
+      case "crouch": {
+        r.position.y = 0.55;
+        b[B2.spine].rotation.x = 0.5;
+        b[B2.thL].rotation.x = -1.5;
+        b[B2.shL].rotation.x = 1.5;
+        b[B2.thR].rotation.x = -0.3;
+        b[B2.shR].rotation.x = 2;
+        b[B2.uaL].rotation.x = -0.6;
+        b[B2.faL].rotation.x = -0.4;
+        b[B2.uaR].rotation.x = -0.8 + Math.sin(t * 1.3) * 0.1;
+        b[B2.faR].rotation.x = -0.6;
+        b[B2.head].rotation.set(0.35, Math.sin(t * 0.8) * 0.4, 0);
+        break;
+      }
       default:
         b[B2.head].rotation.y = Math.sin(t * 0.23 + (extra.seed || 0)) * 0.3;
         b[B2.thL].rotation.x = -0.03;
@@ -39369,7 +40424,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     out.length = HITBOXES.length;
     return out;
   }
-  var B2, PIV, PARENT, tmp3, HITBOXES, va, vb;
+  var B2, PIV, PARENT, g2, hairNoise, shadeC, tmp3, HITBOXES, va, vb;
   var init_humanoid = __esm({
     "src/npcs/humanoid.js"() {
       init_three_module();
@@ -39390,6 +40445,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         [-0.1, 0.48, 0]
       ];
       PARENT = [-1, 0, 1, 1, 3, 1, 5, 0, 7, 0, 9];
+      g2 = (x, y, sx, sy) => Math.exp(-(x * x) / (sx * sx) - y * y / (sy * sy));
+      hairNoise = (geo, amp, seed) => {
+        const p = geo.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+          const k = 1 + amp * (Math.sin(x * 61 + seed) * Math.sin(z * 53 - y * 37 + seed) * 0.6 + Math.sin(x * 23 + y * 31 + seed * 2) * 0.4);
+          p.setXYZ(i, x * k, y * k, z * k);
+        }
+        geo.computeVertexNormals();
+        return geo;
+      };
+      shadeC = new Color();
       tmp3 = new Vector3();
       HITBOXES = [
         [B2.head, 0, 0.1, 0.01, 0, 0.23, 0.01, 0.115, "head"],
@@ -39484,14 +40551,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const s = getSave(), r = s.records;
     const acc = r.shots ? Math.round(r.hits / r.shots * 100) : 0;
     const best = s.range[0]?.score || 0;
+    const done = MISSIONS.filter((m) => s.missions[m.id]?.best).length;
+    $("campaign").innerHTML = `<b>CAMPAIGN \xB7 ${CAMPAIGN}</b><span>${done} / ${MISSIONS.length} contracts closed${done >= MISSIONS.length ? " \xB7 Contract 03 \u201CThe Last Page\u201D coming soon" : ""}</span><i style="--k:${done / MISSIONS.length}"></i>`;
     $("records").innerHTML = `<div><b>${r.longest || 0} m</b><span>Longest kill</span></div><div><b>${acc}%</b><span>Accuracy</span></div><div><b>${best}</b><span>Range best</span></div>`;
   }
   function paintThumb(cv2, id) {
     const c = cv2.getContext("2d"), W = cv2.width, H = cv2.height, rng2 = mulberry32(id.length * 77);
     const sky = (stops) => {
-      const g2 = c.createLinearGradient(0, 0, 0, H);
-      stops.forEach(([o, col]) => g2.addColorStop(o, col));
-      c.fillStyle = g2;
+      const g3 = c.createLinearGradient(0, 0, 0, H);
+      stops.forEach(([o, col]) => g3.addColorStop(o, col));
+      c.fillStyle = g3;
       c.fillRect(0, 0, W, H);
     };
     const ridge = (y0, amp, col, f = 1) => {
@@ -39605,6 +40674,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     d.position.set(2, 3, 3);
     scene.add(d);
     const h = makeHumanoid(look);
+    humanoidLOD(h, 999);
     animate(h, "idle", 0.3, 0, 0);
     h.rotation.y = 0.35;
     scene.add(h);
@@ -39622,9 +40692,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const buf = new Uint8Array(W * H * 4);
     r.readRenderTargetPixels(rt, 0, 0, W, H, buf);
     rt.dispose();
-    h.traverse((o) => {
-      if (o.geometry) o.geometry.dispose();
-    });
+    h.userData.geoHi.dispose();
+    h.userData.geoLo.dispose();
     canvas.width = W;
     canvas.height = H;
     const c = canvas.getContext("2d");
@@ -39768,7 +40837,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     $("dzName").textContent = D2.target;
     $("dzAlias").textContent = D2.alias;
     $("dzDesc").textContent = D2.desc;
-    $("dzClues").innerHTML = D2.clues.map((c, i) => `<li style="--i:${i}"><mark>${esc(c)}</mark></li>`).join("");
+    const clues = D2.clues.concat(campaignMods(def.id).voskSchedule ? ["From Ravel's case: inspects the fuel manifold himself before the storm"] : []);
+    $("dzClues").innerHTML = clues.map((c, i) => `<li style="--i:${i}"><mark>${esc(c)}</mark></li>`).join("");
     const dz = document.querySelector("#briefing .dossier");
     dz.classList.remove("anim");
     void dz.offsetWidth;
@@ -39786,7 +40856,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     $("bPlace").textContent = def.place;
     $("bTime").textContent = def.time;
     $("bObjs").innerHTML = `<h4>Primary</h4><div class="obj p">\u25C9 ${esc(def.objectives.primary.text)}</div><h4>Secondary</h4>` + def.objectives.secondary.map((s) => `<div class="obj">\u25CB ${esc(s.text)}</div>`).join("") + "<h4>Challenges</h4>" + def.challenges.map((s) => `<div class="obj ch">\u2605 ${esc(s.text)}</div>`).join("") + "<h4>Timeline</h4>" + def.timeline.filter((t) => t.name).map((t) => `<div class="obj tl">${clockOf(def, t.t)} \xB7 ${esc(t.name)}</div>`).join("");
-    setTimeout(() => typewrite($("bMoth"), def.radio[0]?.text || ""), 900);
+    clearTimeout(renderBriefing._d);
+    const bl = briefingLines(def.id);
+    renderBriefing._d = setTimeout(() => bl.length ? runDialogue($("bMoth"), bl) : typewrite($("bMoth"), def.radio[0]?.text || ""), 900);
     $("bDiff").value = G.settings.difficulty;
   }
   function clockOf(def, t) {
@@ -39859,6 +40931,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     let h = 0;
     for (const ch of str) h = h * 31 + ch.charCodeAt(0) >>> 0;
     $("rShare").textContent = "LONG SHOT \xB7 " + str + "-" + (h % 9973).toString(36).toUpperCase();
+    const db = debrief(M2, res), dEl = $("rDebrief");
+    if (db) {
+      dEl.classList.remove("hidden");
+      dEl.innerHTML = `<h4>DEBRIEF</h4><div class="dlog"></div><div class="dcons">${esc(db.consequence)}</div>` + (db.teaser ? `<div class="dteaser"><b>${esc(db.teaser.title)}</b><span>${esc(db.teaser.sub)}</span></div>` : "");
+      clearTimeout(renderResults._db);
+      renderResults._db = setTimeout(() => runDialogue(dEl.querySelector(".dlog"), db.lines, { cps: 60, gap: 500 }), 2400);
+    } else dEl.classList.add("hidden");
     $("rNext").textContent = M2.kind === "range" ? "AGAIN" : M2.def.num < 2 && ok ? "NEXT CONTRACT" : "CONTRACTS";
   }
   function renderOptions(onChange) {
@@ -39908,6 +40987,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_score();
       init_rng();
       init_audio();
+      init_story();
       $ = (id) => document.getElementById(id);
       SCREENS = ["title", "contracts", "briefing", "results", "options", "help"];
       esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -40040,10 +41120,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             this.holder.visible = false;
             this.next();
           } else if (t.type === "loop") {
-            this.ti = t.to || 0;
+            if (this.reaction) this.ri = t.to || 0;
+            else this.ti = t.to || 0;
             this.taskT = 0;
             this.pathI = 0;
             this.begin();
+          } else if (t.type === "fn") {
+            t.f(this);
+            if (this.current() === t) this.next();
           } else if (t.type === "event") {
             emit("npcEvent", { npc: this, name: t.name });
             this.next();
@@ -40062,7 +41146,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             this.next();
           }
         }
+        /** temporary behaviour (investigate, flinch…) after which the normal routine resumes */
+        interrupt(list) {
+          if (this.state === "alarm" || this.reaction && !this.resume) return false;
+          this.resume = true;
+          this.setReaction(list);
+          return true;
+        }
         setReaction(list) {
+          this.resume = false;
           this.reaction = list;
           this.ri = 0;
           this.taskT = 0;
@@ -40092,6 +41184,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             return;
           }
           this.stateT += dt;
+          if (this.reaction && this.reactionDone && this.resume) {
+            this.reaction = null;
+            this.resume = false;
+            this.taskT = 0;
+            this.pathI = 0;
+            this.begin();
+          }
           const t = this.current();
           this.speed = 0;
           if (!t) {
@@ -40449,14 +41548,35 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             if (this.lastShotHeard != null && this.mt - this.lastShotHeard < 15) this.raiseAlarm("shots");
             else {
               if (this.alarm !== "incident") this.alarm = "suspicious";
-              this.suspicionUntil = this.mt + 6;
-              for (const n of this.npcs) if (n.alive && n.state === "calm") {
+              this.suspicionUntil = this.mt + 9;
+              const nest = [G.world.nest.pos.x, G.world.nest.pos.z];
+              for (const n of this.npcs) {
+                if (!n.alive || n.state !== "calm" || !n.visible) continue;
                 n.state = "suspicious";
                 n.stateT = 0;
+                if (n.role === "guard") n.interrupt([{ type: "wait", dur: 4 + n.seed % 3, anim: n.fixedY != null || n.seed % 2 > 1 ? "scan" : "look", face: nest }]);
+                else if (n.role === "civilian") n.interrupt([{ type: "wait", dur: 1.2 + n.seed % 1, anim: "flinch" }, { type: "wait", dur: 2.5, anim: "look", face: nest }]);
               }
             }
           }
           this.lastShotHeard = this.mt;
+        }
+        /** guards walk to an impact / noise and search the area; nearby civilians flinch */
+        investigate(pt) {
+          if (this.alarm === "alarm") return;
+          if (this.alarm === "calm") this.alarm = "suspicious";
+          this.suspicionUntil = Math.max(this.suspicionUntil, this.mt + 22);
+          const nest = [G.world.nest.pos.x, G.world.nest.pos.z];
+          const guards = this.npcs.filter((n) => n.alive && n.visible && !n.inCar && n.role === "guard" && n.fixedY == null && n.pos.distanceTo(pt) < 70).sort((a, b) => a.pos.distanceTo(pt) - b.pos.distanceTo(pt));
+          guards.slice(0, 2).forEach((g, i) => {
+            const a = g.seed * 2 + i * 2.4, at = [pt.x + Math.sin(a) * 1.6, pt.z + Math.cos(a) * 1.6];
+            g.state = "suspicious";
+            g.resume = false;
+            if (g.reaction && !g.reactionDone) g.reaction = null;
+            g.interrupt([{ type: "goto", path: [at], anim: "walk", speed: 1.9 }, { type: "wait", dur: 2.5, anim: "crouch", face: [pt.x, pt.z] }, { type: "wait", dur: 5, anim: "scan", face: nest }, { type: "wait", dur: 2, anim: "radio", face: nest }]);
+          });
+          for (const n of this.npcs) if (n.alive && n.visible && n.role === "civilian" && n.pos.distanceTo(pt) < 15) n.interrupt([{ type: "wait", dur: 1.5, anim: "flinch" }, { type: "wait", dur: 3, anim: "look", face: [pt.x, pt.z] }]);
+          if (guards.length) this.radio({ who: "moth", text: "They heard that impact. Guard's moving to check it \u2014 let him look, stay still." });
         }
         /** Rough seconds until the target gets away (null if not fleeing / unknown). */
         escapeETA() {
@@ -40503,6 +41623,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         raiseAlarm(reason) {
           if (this.alarm === "alarm" || this.ended) return;
+          this.bodyAlarmAt = null;
           this.alarm = "alarm";
           this.alarmT = 0;
           this.alarmReason = reason;
@@ -40526,15 +41647,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const near2 = (pts) => pts.reduce((b, p) => !b || Math.hypot(p[0] - n.pos.x, p[1] - n.pos.z) < Math.hypot(b[0] - n.pos.x, b[1] - n.pos.z) ? p : b, null);
           if (n.role === "guard") {
             if (n.fixedY != null) {
-              n.setReaction([{ type: "wait", until: 1e9, anim: "aim", face: [0, 0] }]);
+              const nest2 = [G.world.nest.pos.x, G.world.nest.pos.z];
+              n.setReaction([{ type: "wait", dur: 5, anim: "aim", face: nest2 }, { type: "wait", dur: 3, anim: "scan", face: nest2 }, { type: "loop" }]);
               return;
             }
-            const c = near2(this.def.cover);
-            n.setReaction([{ type: "goto", path: [c], anim: "run" }, { type: "wait", until: 1e9, anim: "aim", face: [0, 0] }]);
+            const c = near2(this.def.cover), nest = [G.world.nest.pos.x, G.world.nest.pos.z];
+            n.setReaction([{ type: "goto", path: [c], anim: "run" }, { type: "wait", dur: 3 + n.seed % 2, anim: "cover" }, { type: "wait", dur: 4, anim: "aim", face: nest }, { type: "wait", dur: 3, anim: "scan", face: nest }, { type: "loop", to: 1 }]);
           } else {
             const s = near2(this.def.safe);
             if (n.fixedY != null || Math.hypot(s[0] - n.pos.x, s[1] - n.pos.z) > 45) n.setReaction([{ type: "wait", until: 1e9, anim: (n.seed || 0) % 2 > 1 ? "cover" : "cower" }]);
-            else n.setReaction([{ type: "goto", path: [s], anim: "run" }, { type: "hide" }]);
+            else n.setReaction([{ type: "wait", dur: 0.3 + n.seed % 1 * 0.6, anim: "flinch" }, { type: "goto", path: [s], anim: "run" }, { type: "hide" }]);
           }
         }
         panic(center, radius) {
@@ -40571,9 +41693,23 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             if (c.object && !c.object.destroyed) this.destroyObject(c.object, shot2);
           }
           if (!res.killed) {
-            for (const n of this.npcs) if (n.alive && n.visible && n.pos.distanceTo(hit.point) < 3.2 && !(hit.collider && hit.collider.object && !hit.collider.object.explosive && !hit.collider.object.chain && this.primaryDone)) {
-              this.raiseAlarm("nearMiss");
-              break;
+            const benign = hit.collider && hit.collider.object && !hit.collider.object.explosive && !hit.collider.object.chain && this.primaryDone;
+            let close = null, cd = 1e9;
+            for (const n of this.npcs) if (n.alive && n.visible && !n.inCar) {
+              const d = n.pos.distanceTo(hit.point);
+              if (d < 3.2 && d < cd) {
+                cd = d;
+                close = n;
+              }
+            }
+            if (close && !benign) {
+              const again = this.lastNearMiss != null && this.mt - this.lastNearMiss < 25;
+              this.lastNearMiss = this.mt;
+              if (close.role === "target" || cd < 1.4 || again) this.raiseAlarm("nearMiss");
+              else this.investigate(hit.point);
+            } else if (!benign && res.kind !== "ground") {
+              const near2 = this.npcs.some((n) => n.alive && n.visible && n.pos.distanceTo(hit.point) < 14);
+              if (near2) this.investigate(hit.point);
             }
           }
           return res;
@@ -40706,6 +41842,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             for (const n of this.npcs) if (n.state === "suspicious") n.state = "calm";
           }
           if (this.alarm !== "alarm") this.checkBodies(dt);
+          if (this.bodyAlarmAt != null && mt >= this.bodyAlarmAt) {
+            this.bodyAlarmAt = null;
+            this.raiseAlarm("body");
+          }
           if (this.alarm === "alarm") {
             this.alarmT += dt;
             this.fireT -= dt;
@@ -40740,7 +41880,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               b.seen = (b.seen || 0) + dt;
               if (b.seen > 1) {
                 b.found = true;
-                this.raiseAlarm("body");
+                this.bodyAlarmAt = this.mt + 9;
+                this.radio({ who: "moth", text: "Someone's spotted the body. You have seconds before they call it in." });
+                n.state = "suspicious";
+                n.resume = false;
+                n.reaction = null;
+                n.setReaction([{ type: "goto", path: [[b.pos.x + 0.9, b.pos.z + 0.6]], anim: "run" }, { type: "wait", dur: 2.2, anim: "crouch", face: [b.pos.x, b.pos.z] }, { type: "fn", f: () => this.raiseAlarm("body") }]);
                 return;
               }
             }
@@ -41463,9 +42608,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             }
             if (this.boltReady) this._ejected = false;
           }
-          const kick = this.kickT * this.kickT;
-          this.fp.position.set(0.2 + kick * 0.01, -0.235 + o.swayY * 3 - lift * 0.01, -0.58 + kick * 0.11 + reach * 0.015);
-          this.fp.rotation.set(0.05 + kick * 0.22 + o.swayY * 4 + lift * 0.03, 0.1 + o.swayX * 4 - kick * 0.03, -kick * 0.06 - reach * 0.08);
+          const kick2 = this.kickT * this.kickT;
+          this.fp.position.set(0.2 + kick2 * 0.01, -0.235 + o.swayY * 3 - lift * 0.01, -0.58 + kick2 * 0.11 + reach * 0.015);
+          this.fp.rotation.set(0.05 + kick2 * 0.22 + o.swayY * 4 + lift * 0.03, 0.1 + o.swayX * 4 - kick2 * 0.03, -kick2 * 0.06 - reach * 0.08);
           this.boltBob = (lift * 35e-4 + draw * 2e-3) * (this.view === "scope" ? 1 : 0);
           for (const b of this.brass) {
             b.v.y -= 9.8 * dt;
@@ -41917,6 +43062,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_particles();
       init_fx();
       init_world();
+      init_humanoid();
+      init_story();
       init_villa();
       init_humanoid();
       init_common();
@@ -41948,6 +43095,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       var endTimer = null;
       window.LS = G;
       G.Raycaster = Raycaster;
+      G.SFX = audio_exports;
       function setLoading(p, t) {
         $2("loadbar").style.width = Math.round(p * 100) + "%";
         if (t) $2("loadtxt").textContent = t;
@@ -41980,8 +43128,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           initAudio();
           applyVolumes();
         };
-        addEventListener("pointerdown", unlock, { once: false });
-        addEventListener("keydown", unlock, { once: false });
+        for (const ev of ["pointerdown", "pointerup", "touchstart", "touchend", "click", "keydown"]) addEventListener(ev, unlock, { passive: true, capture: true });
+        G.audioState = audioState;
+        G.audioBank = () => audio.bankState && audio.bankState();
         wireUI();
         setLoading(0.3, "Raising the mountains\u2026");
         await nextFrame();
@@ -42082,7 +43231,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           else if (g === "contracts") {
             renderCards(openBriefing);
             show("contracts");
-          } else if (g === "range") startRange();
+            if (shouldPlayPrologue()) playPrologue();
+          } else if (g === "story") playPrologue();
+          else if (g === "range") startRange();
           else if (g === "options") {
             optionsBack = "title";
             renderOptions(onSetting);
@@ -42140,7 +43291,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           radio();
           typewrite($2("hRadioTxt"), r.text, 60, false);
           $2("hRadioWho").textContent = (r.who || "moth").toUpperCase();
-          $2("hRadio").classList.remove("hidden");
+          $2("hRadio").className = "hradio " + (r.who || "moth");
+          $2("hRadioImg").style.display = (r.who || "moth") === "moth" ? "" : "none";
           radioT = 6 + r.text.length * 0.035;
           if (r.hint) showHint(r.hint);
         });
@@ -42371,6 +43523,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       function showResults(M2) {
         if (G.mission !== M2) return;
         const res = M2.results();
+        recordCampaign(M2, res);
         let rec = null;
         if (M2.kind === "range") {
           const s = getSave();
@@ -42579,6 +43732,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             const d = _an.length();
             const inView = _an.dot(_ad) > d * cosLim;
             const full = optics && inView;
+            humanoidLOD(n.holder, G.debugCam ? 999 : inView ? G.H * 1.8 / (2 * Math.max(0.5, d) * Math.tan(cam.fov * Math.PI / 360)) : 0);
             if (full || (frameN + (n.seed * 10 | 0) & 3) === 0) n.pose(G.simTime);
           }
         }
@@ -42588,7 +43742,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         if (M2.storm > 1e-3) {
           const st = M2.storm;
-          HAZE.uHazeDensity.value = M2.world.preset.hazeDensity * (1 + st * (G.view === "scope" ? 7 : 14));
+          HAZE.uHazeDensity.value = M2.world.preset.hazeDensity * (1 + st * (G.view === "scope" ? 3.2 : 14));
           HAZE.uHazeColor.value.set(M2.world.preset.haze).lerp(STORM_C, st);
           M2.world.sky.userData.u.uStorm.value = st * 0.85;
           M2.world.sun.intensity = M2.world.preset.sunI * (1 - st * 0.55);
@@ -42706,7 +43860,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uContrast.value = tint.contrast ?? 1;
         L.uExpo.value = (tint.expo ?? 1) * (G.quality.hdr ? 1 : 1.25);
         L.uHeat.value = (w.heat || 0) * (1 - (G.mission?.storm || 0));
-        L.uDust.value = (G.mission?.storm || 0) * 0.32;
+        L.uDust.value = (G.mission?.storm || 0) * (view === "scope" ? 0.1 : 0.32);
         L.uOffset.value.set(view === "scope" && player ? player.optics.swayX * 10 : 0, view === "scope" && player ? player.optics.swayY * 10 : 0);
         L.uBlur.value = view === "bulletcam" ? 1 : 0;
         L.uVig.value = view === "eye" ? 0.45 : 0.25;
