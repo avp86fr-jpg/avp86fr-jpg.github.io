@@ -292,3 +292,13 @@ body.tzones #tStick::before, body.tzones #tStick::after { content: '\25C0'; posi
 body.tzones #tStick::after { content: '\25B6'; left: auto; right: 24%; }
 body.tzones #tStick { background: linear-gradient(90deg, transparent 49.6%, rgba(255,244,214,.18) 49.6%, rgba(255,244,214,.18) 50.4%, transparent 50.4%); }
 body.tzones #tStick[data-z="-1"]::before, body.tzones #tStick[data-z="1"]::after { color: #ffd24a; transform: scale(1.15); }
+/* pass 12: comic speed lines + impact frame */
+#speedLines { position: absolute; inset: -10%; pointer-events: none; opacity: 0; z-index: 3; transition: opacity .25s;
+  background: repeating-conic-gradient(from 0deg at 50% 46%, rgba(255,250,236,.0) 0deg 4.2deg, rgba(255,250,236,.55) 4.4deg 4.9deg, rgba(255,250,236,0) 5.1deg 9.6deg);
+  -webkit-mask: radial-gradient(ellipse 46% 40% at 50% 46%, transparent 62%, #000 100%); mask: radial-gradient(ellipse 46% 40% at 50% 46%, transparent 62%, #000 100%); }
+#speedLines.spin { animation: slSpin .18s steps(2) infinite; } @keyframes slSpin { to { transform: rotate(3deg); } }
+#impactFrame { position: absolute; inset: 0; pointer-events: none; z-index: 4; opacity: 0; mix-blend-mode: multiply;
+  background: radial-gradient(ellipse at 50% 60%, transparent 30%, rgba(29,22,18,.0) 31%), repeating-conic-gradient(from 2deg at 50% 62%, rgba(29,22,18,.85) 0deg 1.4deg, transparent 1.6deg 7deg);
+  -webkit-mask: radial-gradient(ellipse 40% 34% at 50% 62%, transparent 55%, #000 90%); mask: radial-gradient(ellipse 40% 34% at 50% 62%, transparent 55%, #000 90%); }
+#impactFrame.on { animation: impF .32s ease-out; } @keyframes impF { 0% { opacity: 1; transform: scale(1.06); } 100% { opacity: 0; transform: scale(1); } }
+body:not(.comic) #speedLines, body:not(.comic) #impactFrame { display: none; }
