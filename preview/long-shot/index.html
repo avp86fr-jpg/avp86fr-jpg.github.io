@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<title>LONG SHOT</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+
+<div id="loading" class="show"><div class="logo">L<span class="o">O</span>NG SHOT</div><div class="lbar"><div id="loadbar"></div></div><div id="loadtxt">Loading…</div></div>
+
+<section id="title" class="screen hidden">
+  <div class="tleft">
+    <div class="logo big">L<span class="o">O</span>NG SHOT</div>
+    <div class="tag">One shot. Every variable.</div>
+    <nav class="menu">
+      <button data-go="contracts" class="primary">CONTRACTS</button>
+      <button data-go="range">SHOOTING RANGE</button>
+      <button data-go="options">OPTIONS</button>
+      <button data-go="help">CONTROLS</button>
+    </nav>
+    <div id="records" class="records"></div>
+  </div>
+  <div class="tfoot">M1 build · offline · all names and places fictional</div>
+</section>
+
+<section id="contracts" class="screen hidden">
+  <header class="shead"><button data-go="title" class="back">‹ BACK</button><h2>CONTRACTS</h2></header>
+  <div id="cards" class="cards"></div>
+</section>
+
+<section id="briefing" class="screen hidden">
+  <header class="shead"><button data-go="contracts" class="back">‹ CONTRACTS</button><h2><span id="bNum"></span> · <span id="bTitle"></span></h2></header>
+  <div class="brief">
+    <div class="dossier">
+      <div class="dzhead"><span id="dzRef"></span><span class="stamp">CLASSIFIED</span></div>
+      <div class="dzbody">
+        <canvas id="dzPhoto" width="256" height="320"></canvas>
+        <div class="dztext">
+          <div id="dzName" class="dzname"></div><div id="dzAlias" class="dzalias"></div>
+          <p id="dzDesc"></p>
+          <h4>Identification</h4><ul id="dzClues"></ul>
+          <h4>Handler notes</h4><p id="dzNotes"></p>
+          <p id="dzWarn" class="warn"></p>
+        </div>
+      </div>
+    </div>
+    <div class="bside">
+      <div class="bmeta"><div id="bPlace"></div><div id="bTime"></div></div>
+      <canvas id="bMap" width="360" height="240"></canvas>
+      <div id="bObjs" class="bobjs"></div>
+      <div class="bmoth"><img src="assets/portrait_moth.jpg" alt=""><div><b>MOTH</b><p id="bMoth"></p></div></div>
+      <div class="bstart">
+        <label>Difficulty <select id="bDiff"><option value="recruit">Recruit — wind gauge, impact hint, auto-ID</option><option value="marksman">Marksman — wind gauge only</option><option value="ghost">Ghost — no aids, spin drift</option></select></label>
+        <button id="bStart" class="primary big">DEPLOY</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="ghud" class="hidden">
+  <div class="htop">
+    <div id="hMission" class="hmission"></div>
+    <div id="hClock" class="hclock"></div>
+    <div id="hAlarm" class="alarm calm">CALM</div>
+    <div id="hFF" class="hff hidden">⏩ ×4</div>
+  </div>
+  <div id="hTimeline" class="htl"></div>
+  <div id="hObj" class="hobj"></div>
+  <div id="hRadio" class="hradio hidden"><img id="hRadioImg" src="assets/portrait_moth.jpg" alt=""><div><b id="hRadioWho">MOTH</b><p id="hRadioTxt"></p></div></div>
+  <div id="hToast" class="htoast hidden"></div>
+  <div id="hHint" class="hhint hidden"></div>
+  <div id="hExfil" class="hexfil hidden"><button id="exfilBtn" class="primary">EXTRACT ▸</button></div>
+  <div id="hKeys" class="hkeys">
+    <b>RMB</b> scope · <b>Wheel</b> zoom · <b>LMB</b> fire · <b>Shift</b> hold breath · <b>B</b> binoculars · <b>T</b> tag · <b>R</b> range · <b>Q/E</b> windage · <b>↑/↓</b> elevation · <b>Tab</b> intel · <b>Space</b> fast-forward · <b>Esc</b> pause
+  </div>
+  <div class="touchui">
+    <div class="tl-btns"><button data-act="intel">INTEL</button><button data-act="pause">II</button></div>
+    <div class="lt-btns"><button data-act="bino">BINO</button><button data-act="tag">TAG</button><button data-act="range">RANGE</button><button data-hold="ffwd">⏩</button></div>
+    <div class="dial"><button data-act="elevUp">▲</button><div><button data-act="windL">◀</button><button data-act="windR">▶</button></div><button data-act="elevDn">▼</button></div>
+    <div class="rt-btns"><button data-act="zoomIn">＋</button><button data-act="zoomOut">－</button><button data-act="scope">SCOPE</button></div>
+    <button class="fire" data-act="fire">FIRE</button>
+    <button class="breath" data-hold="breath">BREATH</button>
+  </div>
+</div>
+
+<section id="intel" class="panel hidden">
+  <header><h3>INTEL</h3><button id="iClose">✕</button></header>
+  <div class="intelgrid">
+    <div><h4>Objectives</h4><div id="iObj"></div><h4>Challenges</h4><div id="iCh"></div><h4>Timeline</h4><div id="iTime"></div></div>
+    <div><h4>Dossier</h4><div id="iDoss"></div></div>
+    <div><h4>Dope card</h4><div id="iDope" class="dope"></div></div>
+  </div>
+</section>
+
+<section id="pause" class="panel small hidden">
+  <h3>PAUSED</h3>
+  <button id="pResume" class="primary">RESUME</button><button id="pRestart">RESTART</button><button id="pOptions">OPTIONS</button><button id="pQuit">QUIT TO TITLE</button>
+</section>
+
+<section id="results" class="screen hidden">
+  <div class="res">
+    <div id="rStatus" class="rstatus"></div>
+    <h2 id="rTitle"></h2>
+    <div class="rgrid">
+      <div id="rLines" class="rlines"></div>
+      <div class="rright">
+        <div class="rrank"><span>RANK</span><b id="rRank"></b></div>
+        <div class="rtotal"><span>TOTAL</span><b id="rTotal"></b></div>
+        <div id="rBest" class="rbest"></div>
+        <div id="rChk" class="rchk"></div>
+        <div id="rShare" class="rshare"></div>
+      </div>
+    </div>
+    <div class="rbtns"><button id="rRetry">RETRY</button><button id="rNext" class="primary">NEXT</button><button id="rMenu">MENU</button></div>
+  </div>
+</section>
+
+<section id="options" class="screen hidden">
+  <header class="shead"><button id="oBack" class="back">‹ BACK</button><h2>OPTIONS</h2></header>
+  <div id="optsForm" class="opts"></div>
+</section>
+
+<section id="help" class="screen hidden">
+  <header class="shead"><button data-go="title" class="back">‹ BACK</button><h2>CONTROLS</h2></header>
+  <div class="help">
+    <div><h4>PC</h4><table>
+      <tr><td>Mouse</td><td>Aim</td></tr><tr><td>Right mouse / F</td><td>Scope in / out</td></tr><tr><td>Wheel / 1 2 3 / Z</td><td>Zoom 4× / 8× / 12×</td></tr>
+      <tr><td>Left mouse</td><td>Fire</td></tr><tr><td>Shift (hold)</td><td>Hold breath</td></tr><tr><td>B</td><td>Binoculars</td></tr><tr><td>T</td><td>Tag (again: mark suspect)</td></tr>
+      <tr><td>R</td><td>Laser range finder</td></tr><tr><td>Q / E</td><td>Windage turret ±0.1 mil</td></tr><tr><td>↑ / ↓</td><td>Elevation turret ±0.1 mil</td></tr><tr><td>X</td><td>Reset turrets</td></tr>
+      <tr><td>Tab</td><td>Intel / dope card</td></tr><tr><td>Space (hold)</td><td>Fast-forward time ×4</td></tr><tr><td>Esc / P</td><td>Pause</td></tr><tr><td>Gamepad</td><td>Sticks aim, RT fire, LT scope, LB breath</td></tr>
+    </table></div>
+    <div><h4>Mobile</h4><table>
+      <tr><td>Drag</td><td>Aim (optional gyro)</td></tr><tr><td>SCOPE · ＋ －</td><td>Scope and zoom</td></tr><tr><td>BREATH (hold)</td><td>Steady the scope</td></tr><tr><td>FIRE</td><td>Fire</td></tr>
+      <tr><td>BINO · TAG · RANGE</td><td>Recon</td></tr><tr><td>▲▼◀▶</td><td>Turrets</td></tr><tr><td>⏩ (hold)</td><td>Fast-forward</td></tr><tr><td>INTEL · II</td><td>Intel, pause</td></tr>
+    </table></div>
+    <div><h4>The shot</h4><p>Bullets drop and drift. Lase the range, read the dope card for the hold, watch flags and smoke for the wind, then hold your breath and squeeze. Tag people in the binoculars to keep them marked. Civilians are never targets.</p></div>
+  </div>
+</section>
+
+<div id="ctxlost" class="hidden"><div>Graphics context lost — restoring…</div></div>
+<pre id="dbg" class="hidden"></pre>
+<script src="game.js"></script>
+</body>
+</html>
