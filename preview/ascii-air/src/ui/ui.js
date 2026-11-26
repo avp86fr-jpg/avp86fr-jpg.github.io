@@ -246,7 +246,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   }
   function closeOverlay() { overlay.classList.add("hidden"); state.menuItems = []; }
 
-  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail" };
+  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail", storm: "Storm", night: "Night Mail", rescue: "Rescue" };
   const CLASS_FR = { beginner: "Beginner", pro: "Pro", ace: "Ace" };
 
   function showMissions(save) {
@@ -602,7 +602,7 @@ time  ${formatTime(result.time || 0)}
         lines.push("> Best: " + best);
         lines.push("> Wind: " + windLine);
         if (m.weather || weather.id === "storm") lines.push("> Weather: " + (weather.id === "storm" ? "STORM" : "CLEAR"));
-      } else if (m.activity === "landing") {
+      } else if (m.activity === "landing" || (m.activity === "night" && m.target && !m.stops)) {
         const rwy = (m.target && m.target.heading > 2) ? "27" : "09";
         const typ = (m.target && m.target.type === "runway") ? rwy : String((m.target && m.target.type) || "").toUpperCase();
         lines.push("LANDING  (" + (klass || "PRO") + ")");
@@ -613,15 +613,15 @@ time  ${formatTime(result.time || 0)}
       } else if (m.activity === "balloons") {
         lines.push(m.title);
         lines.push("> " + mission.popped + "/" + mission.balloons.length + "   " + formatTime(Math.max(0, (m.timeLimit || 90) - mission.t)));
-      } else if (m.activity === "photo") {
+      } else if (m.activity === "photo" || (m.activity === "night" && m.subject)) {
         lines.push(m.title);
         lines.push(mission.photoReady ? "> IN FRAME — ACTION" : "> find the framing ring");
-      } else if (m.activity === "mail") {
+      } else if (m.activity === "mail" || m.activity === "night" && m.stops) {
         const stops = m.stops || [];
         const cur = stops[mission.next] || stops[stops.length - 1];
         const done = Math.max(0, (mission.next || 0) - 1);
         const drops = stops.filter((s) => s.type === "drop").length;
-        lines.push("MAIL LINE  (" + (klass || "PRO") + ")");
+        lines.push((m.activity === "night" ? "NIGHT MAIL" : "MAIL LINE") + "  (" + (klass || "PRO") + ")");
         if (!mission.mailHasBag && cur && cur.type === "pickup") {
           lines.push("> Pick up the bag at the " + cur.name);
         } else if (cur) {
@@ -631,17 +631,47 @@ time  ${formatTime(result.time || 0)}
         lines.push("> Time: " + formatTime(mission.t));
         if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
+      } else if (m.activity === "storm") {
+        const stops = m.stops || [];
+        const cur = stops[mission.next];
+        const done = mission.next || 0;
+        lines.push("STORM CROSSING  (" + (klass || "PRO") + ")");
+        if (cur) lines.push("> Beacon: " + cur.name);
+        else if (m.target) lines.push("> Land on the ridge strip");
+        lines.push("> Beacons: " + done + " / " + stops.length);
+        lines.push("> Time: " + formatTime(mission.t));
+        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        lines.push("> Wind: " + windLine);
+        lines.push("> Weather: STORM");
+      } else if (m.activity === "rescue") {
+        const stops = m.stops || [];
+        const cur = stops[mission.next];
+        const done = mission.next || 0;
+        lines.push((m.mode === "race" ? "CAPE RACE" : "RESCUE") + "  (" + (klass || "PRO") + ")");
+        if (cur) lines.push("> " + (cur.type === "raft" ? "Drop a raft at " : "Pylon: ") + cur.name);
+        lines.push("> Marks: " + done + " / " + stops.length);
+        lines.push("> Time: " + formatTime(mission.t));
+        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        lines.push("> Wind: " + windLine);
       } else {
         lines.push(m.title);
       }
       if (touch) {
         if (m.activity === "rings") miss.textContent = "Rings " + mission.ringsPassed + "/" + m.rings.length;
-        else if (m.activity === "landing") miss.textContent = "Landing";
+        else if (m.activity === "landing" || (m.activity === "night" && m.target && !m.stops)) miss.textContent = "Landing";
         else if (m.activity === "balloons") miss.textContent = (m.title || "Balloons") + "  " + mission.popped + "/" + (mission.balloons && mission.balloons.length || 0);
-        else if (m.activity === "mail") {
+        else if (m.activity === "mail" || (m.activity === "night" && m.stops)) {
           const stops = m.stops || [];
           const cur = stops[mission.next];
           miss.textContent = cur ? ((cur.type === "pickup" ? "Pick up: " : "Drop: ") + cur.name) : "Mail";
+        }
+        else if (m.activity === "storm") {
+          const cur = (m.stops || [])[mission.next];
+          miss.textContent = cur ? ("Beacon: " + cur.name) : (m.target ? "Land: Ridge" : "Storm");
+        }
+        else if (m.activity === "rescue") {
+          const cur = (m.stops || [])[mission.next];
+          miss.textContent = cur ? ((cur.type === "raft" ? "Raft: " : "Pylon: ") + cur.name) : "Rescue";
         }
         else miss.textContent = m.title || "Mission";
       } else miss.textContent = lines.join("\n");
@@ -653,7 +683,7 @@ time  ${formatTime(result.time || 0)}
       miss.textContent = "FREE FLIGHT\n> " + hourToClock(hour) + "\n> Wind: " + windLine + "\n> Weather: " + (weather.id === "storm" ? "STORM" : "CLEAR");
     }
 
-    const landing = mission && mission.active && mission.active.activity === "landing" && !mission.result;
+    const landing = mission && mission.active && (mission.active.activity === "landing" || (mission.active.activity === "night" && mission.active.target && !mission.active.stops) || (mission.active.activity === "storm" && mission.active.target && mission.next >= (mission.active.stops || []).length)) && !mission.result;
     const stormy = weather.id === "storm" || (mission && mission.active && mission.active.weather === "storm");
     const vitEl = flight.querySelector("#g-vit");
     const altEl = flight.querySelector("#g-alt");
@@ -680,7 +710,7 @@ time  ${formatTime(result.time || 0)}
     } else mmap.classList.add("hidden");
 
     const plate = !touch && mission && mission.active && mission.active.id === "showcase";
-    const showPhoto = !touch && mission && mission.active && mission.active.activity === "photo" && !mission.result;
+    const showPhoto = !touch && mission && mission.active && (mission.active.activity === "photo" || (mission.active.activity === "night" && mission.active.subject)) && !mission.result;
     if (showPhoto) {
       photo.classList.remove("hidden");
       aux.classList.add("hidden");

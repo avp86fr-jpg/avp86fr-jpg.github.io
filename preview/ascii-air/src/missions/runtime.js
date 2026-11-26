@@ -108,6 +108,9 @@ export function createMissionSystem(scene, world, audio) {
     if (m.activity === "balloons") setupBalloons(m);
     if (m.activity === "photo") setupPhoto(m);
     if (m.activity === "mail") setupMail(m);
+    if (m.activity === "storm") setupStorm(m);
+    if (m.activity === "night") setupNight(m);
+    if (m.activity === "rescue") setupRescue(m);
     return m;
   }
 
@@ -142,6 +145,19 @@ export function createMissionSystem(scene, world, audio) {
       p.position.set(t.x - fx * t.len * 0.4 + px * s, world.heightAt(t.x, t.z) + 1, t.z - fz * t.len * 0.4 + pz * s);
       add(p);
     }
+    if (m.flares) {
+      for (let i = 0; i < 10; i++) {
+        const d = t.len * 0.1 + i * Math.max(22, t.len * 0.08);
+        for (const s of [-t.wid * 0.55, t.wid * 0.55]) {
+          const col = i % 2 === 0 ? 0xffee88 : 0xff4a2a;
+          const p = markerPole(col);
+          const x = t.x - fx * d + px * s;
+          const z = t.z - fz * d + pz * s;
+          p.position.set(x, world.heightAt(x, z) + 1, z);
+          add(p);
+        }
+      }
+    }
   }
 
   function setupBalloons(m) {
@@ -171,6 +187,28 @@ export function createMissionSystem(scene, world, audio) {
     state.popped = 0;
   }
 
+  function setupStorm(m) {
+    state.mailHasBag = false;
+    state.mailStops = [];
+    (m.stops || []).forEach((s, i) => {
+      const ground = world.heightAt(s.x, s.z);
+      const y = s.y != null ? s.y : ground + 28;
+      const mesh = ringMesh(s.r || 20);
+      mesh.traverse((o) => {
+        if (o.material && o.material.color && !o.material.transparent) o.material.color.set(0x9ad8ff);
+      });
+      mesh.position.set(s.x, y, s.z);
+      mesh.userData.stop = { ...s, y, r: s.r || 20 };
+      mesh.userData.index = i;
+      add(mesh);
+      state.mailStops.push(mesh);
+      const pole = markerPole(0x9ad8ff);
+      pole.position.set(s.x, ground + 1, s.z);
+      add(pole);
+    });
+    if (m.target) setupLanding(m);
+  }
+
   function setupMail(m) {
     state.mailHasBag = false;
     state.mailStops = [];
@@ -193,6 +231,34 @@ export function createMissionSystem(scene, world, audio) {
     });
   }
 
+  function setupNight(m) {
+    if (m.stops) setupMail(m);
+    if (m.target) setupLanding(m);
+    if (m.subject) setupPhoto(m);
+  }
+
+  function setupRescue(m) {
+    state.mailHasBag = false;
+    state.mailStops = [];
+    (m.stops || []).forEach((s, i) => {
+      const ground = world.heightAt(s.x, s.z);
+      const y = s.y != null ? s.y : ground + (s.type === "raft" ? 16 : 26);
+      const mesh = ringMesh(s.r || 20);
+      const col = s.type === "raft" ? 0xffe14a : (m.mode === "race" ? 0xff7a3a : 0x7ad0ff);
+      mesh.traverse((o) => {
+        if (o.material && o.material.color && !o.material.transparent) o.material.color.set(col);
+      });
+      mesh.position.set(s.x, y, s.z);
+      mesh.userData.stop = { ...s, y, r: s.r || 20 };
+      mesh.userData.index = i;
+      add(mesh);
+      state.mailStops.push(mesh);
+      const pole = markerPole(col);
+      pole.position.set(s.x, ground + 1, s.z);
+      add(pole);
+    });
+  }
+
   function setupPhoto(m) {
     const p = markerPole(0x88ddff);
     p.position.set(m.subject.x, m.subject.y, m.subject.z);
@@ -201,7 +267,9 @@ export function createMissionSystem(scene, world, audio) {
     const r = ringMesh(10);
     r.position.set(m.view.x, m.view.y, m.view.z);
     r.lookAt(m.subject.x, m.subject.y, m.subject.z);
-    r.material.color.set(0xffb056);
+    r.traverse((o) => {
+      if (o.material && o.material.color && !o.material.transparent) o.material.color.set(0xffb056);
+    });
     add(r);
   }
 
@@ -326,7 +394,7 @@ export function createMissionSystem(scene, world, audio) {
       if (state.t > lim + 8 && !state.result) finish(0, { line: "OVER TIME" });
     }
 
-    if (m.activity === "landing") {
+    if (m.activity === "landing" || (m.activity === "night" && m.target && !m.stops)) {
       if (craft.crashed) finish(0, { line: "CRASHED" });
       else if ((craft.onGround || craft.waterborne) && craft.groundedTime > 0.9 && craft.airspeed < 6) {
         const g = gradeLanding(craft, m);
@@ -364,7 +432,7 @@ export function createMissionSystem(scene, world, audio) {
       }
     }
 
-    if (m.activity === "mail") {
+    if (m.activity === "mail" || m.activity === "storm" || m.activity === "rescue" || (m.activity === "night" && m.stops)) {
       const cur = state.mailStops[state.next];
       if (cur) {
         cur.rotation.z = time * 0.55;
@@ -375,17 +443,23 @@ export function createMissionSystem(scene, world, audio) {
           state.next++;
           audio?.play("ring");
           cur.visible = false;
-          if (state.next >= state.mailStops.length) {
+          if (state.next >= state.mailStops.length && !m.target) {
             const stars = starsFromTime(m, state.t);
             finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });
           }
         }
+      } else if (m.activity === "storm" && m.target && state.next >= state.mailStops.length) {
+        if (craft.crashed) finish(0, { line: "CRASHED" });
+        else if ((craft.onGround || craft.waterborne) && craft.groundedTime > 0.9 && craft.airspeed < 8) {
+          const g = gradeLanding(craft, m);
+          finish(g.stars, g);
+        }
       }
       const lim = m.timeLimits ? m.timeLimits[0] : 180;
-      if (state.t > lim + 8 && !state.result) finish(0, { line: "OVER TIME" });
+      if (state.t > lim + 12 && !state.result) finish(0, { line: "OVER TIME" });
     }
 
-    if (m.activity === "photo") {
+    if (m.activity === "photo" || (m.activity === "night" && m.subject)) {
       const q = photoQuality(craft, cam, m);
       state.photoReady = q.score > 0.45 && q.dot > 0.2;
       state.photoScore = q.score;
