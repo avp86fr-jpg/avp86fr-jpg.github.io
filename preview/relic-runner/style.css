@@ -330,3 +330,4 @@ body.portrait #title .exps { max-width: 92vw; } body.portrait #title .exp { widt
 .vehs { display: flex; gap: 10px; justify-content: center; margin: 6px 0 10px; } .veh { padding: 8px 12px; border: 3px solid #1a1008; border-radius: 10px; background: #f4ead2; color: #2a1c10; box-shadow: 3px 3px 0 #1a1008; cursor: pointer; min-width: 180px; }
 .veh b { display: block; font: 900 14px/1.1 'Trebuchet MS', system-ui, sans-serif; } .veh small { font-size: 11px; opacity: .8; } .veh.on { background: #ffc93c; }
 @media (max-height: 820px) { #title .logo .l2, #title .logo .tag { display: none; } #title .exp span { font-size: 10px; } }
+#zone .zch { margin-top: 6px; color: #ffc93c; letter-spacing: .12em; font-weight: 800; }
