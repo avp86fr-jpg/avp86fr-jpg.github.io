@@ -351,3 +351,6 @@ body.touch.short .sfxw { font-size: min(9vw, 13vh, 80px); margin-top: -10vh; }
 #title .exp .sw { display: flex; height: 22px; margin: -2px -4px 6px; border: 2px solid #1a1008; border-radius: 6px; overflow: hidden; text-decoration: none; }
 #title .exp .sw em { flex: 1; } #title .exp .sw em + em { border-left: 2px solid #1a1008; }
 @media (max-height: 520px) { #title .exp .sw { height: 12px; margin-bottom: 4px; } }
+/* pass 13y: portrait phones — speedometer sits above the steering buttons (it was hidden under them); sound words ride higher */
+body.portrait.touch #speedo { bottom: calc(var(--s,1) * 150px); width: calc(var(--s,1) * 138px); height: calc(var(--s,1) * 120px); }
+body.portrait .sfxw { font-size: min(12vw, 64px); margin-top: -13vh; }
