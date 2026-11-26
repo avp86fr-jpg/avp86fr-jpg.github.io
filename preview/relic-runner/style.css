@@ -202,3 +202,23 @@ html, body, #game { background: #120c06; }
 .opt.steerPrev { flex-wrap: wrap; } .opt.steerPrev canvas { width: 300px; max-width: 100%; height: 96px; border-radius: 8px; touch-action: none; border: 1px solid rgba(232,192,96,.35); }
 body.portrait .opt.steerPrev canvas { width: 100%; }
 .opt input[type=range]{accent-color:#c9902e}
+
+/* pass 8: cinematic intro card, countdown, zone reveal */
+#cine { position: absolute; inset: 0; pointer-events: none; z-index: 4; opacity: 0; transition: opacity .4s; } #cine.on { opacity: 1; }
+#cine .tcard { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; color: #f8e6b0; text-shadow: 0 3px 0 #4a2808, 0 0 30px rgba(0,0,0,.85); animation: tcIn 1.6s ease-out both .5s; transition: opacity .9s, transform .9s; }
+#cine .tcard.out { animation: tcOut .9s ease-in forwards; }
+@keyframes tcOut { 0% { opacity: 1; } 100% { opacity: 0; transform: translateY(-62%); filter: blur(4px); } }
+#cine .t1 { font-family: 'Cinzel'; font-weight: 900; font-size: min(10vw, 84px); letter-spacing: .08em; line-height: 1; }
+#cine .t2 { margin-top: 12px; font-family: 'Oswald'; font-size: min(4.2vw, 22px); letter-spacing: 6px; color: #ffd36a; }
+#cine .t3 { margin-top: 6px; font-family: 'Zilla'; font-style: italic; font-size: min(3.8vw, 19px); letter-spacing: 2px; color: #fff; opacity: .9; }
+@keyframes tcIn { 0% { opacity: 0; letter-spacing: .4em; filter: blur(6px); } 100% { opacity: 1; filter: blur(0); } }
+#cine .skip { position: absolute; right: max(18px, env(safe-area-inset-right)); bottom: calc(12vh + 14px); font-family: 'Oswald'; font-size: 14px; letter-spacing: 3px; color: #f4dca0; opacity: .75; animation: blink 1s infinite alternate; }
+#cine .count { position: absolute; left: 0; right: 0; top: 38%; text-align: center; font-family: 'Cinzel'; font-weight: 900; font-size: min(22vw, 150px); color: #ffe08a; text-shadow: 0 4px 0 #5a3208, 0 0 40px rgba(0,0,0,.8); animation: cnt .8s ease-out both; }
+@keyframes cnt { 0% { opacity: 0; transform: scale(1.9); } 25% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: scale(.85); } }
+#zone { position: absolute; inset: 0; pointer-events: none; z-index: 3; } #zone .zc { position: absolute; left: 0; right: 0; top: 22%; text-align: center; animation: zIn 3.6s ease-out both; }
+#zone .zl { width: min(60vw, 420px); height: 2px; margin: 8px auto; background: linear-gradient(90deg, transparent, #ffd36a, transparent); }
+#zone .zn { font-family: 'Cinzel'; font-weight: 900; font-size: min(8vw, 54px); letter-spacing: .12em; color: #f8e6b0; text-shadow: 0 3px 0 #4a2808, 0 0 26px rgba(0,0,0,.8); }
+#zone .zs { font-family: 'Zilla'; font-style: italic; font-size: min(3.8vw, 18px); letter-spacing: 3px; color: #fff; text-shadow: 0 2px 6px #000; }
+#zone .zk { font-family: 'Oswald'; font-size: min(3.2vw, 13px); letter-spacing: 6px; color: #ffd36a; }
+@keyframes zIn { 0% { opacity: 0; transform: translateY(-14px); letter-spacing: .3em; } 14% { opacity: 1; transform: none; } 78% { opacity: 1; } 100% { opacity: 0; } }
+#letter.zone::before, #letter.zone::after { height: 7vh !important; }

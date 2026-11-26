@@ -1,0 +1,305 @@
+{
+"eng_900_on": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 900
+},
+"eng_900_off": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 900
+},
+"eng_1700_on": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 1700
+},
+"eng_1700_off": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 1700
+},
+"eng_2900_on": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 2900
+},
+"eng_2900_off": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 2900
+},
+"eng_4300_on": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 4300
+},
+"eng_4300_off": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 4300
+},
+"eng_6000_on": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 6000
+},
+"eng_6000_off": {
+"loop": true,
+"len": 2.0,
+"pad": 0.25,
+"rpm": 6000
+},
+"tyre_dirt": {
+"loop": true,
+"len": 3.0,
+"pad": 0.25
+},
+"tyre_stone": {
+"loop": true,
+"len": 3.0,
+"pad": 0.25
+},
+"tyre_mud": {
+"loop": true,
+"len": 3.0,
+"pad": 0.25
+},
+"tyre_water": {
+"loop": true,
+"len": 3.0,
+"pad": 0.25
+},
+"tyre_plank": {
+"loop": true,
+"len": 3.0,
+"pad": 0.25
+},
+"skid": {
+"loop": true,
+"len": 3.0,
+"pad": 0.25
+},
+"wind": {
+"loop": true,
+"len": 4.0,
+"pad": 0.25
+},
+"boulder": {
+"loop": true,
+"len": 4.0,
+"pad": 0.25
+},
+"amb_jungle": {
+"loop": true,
+"len": 8.0,
+"pad": 0.25
+},
+"amb_wind": {
+"loop": true,
+"len": 8.0,
+"pad": 0.25
+},
+"amb_river": {
+"loop": true,
+"len": 8.0,
+"pad": 0.25
+},
+"amb_ruins": {
+"loop": true,
+"len": 8.0,
+"pad": 0.25
+},
+"mus_run_a": {
+"loop": true,
+"len": 13.521133786848072,
+"pad": 0.25,
+"bpm": 142
+},
+"mus_run_b": {
+"loop": true,
+"len": 13.521133786848072,
+"pad": 0.25,
+"bpm": 142
+},
+"mus_run_c": {
+"loop": true,
+"len": 13.521133786848072,
+"pad": 0.25,
+"bpm": 142
+},
+"mus_title": {
+"loop": true,
+"len": 21.818185941043083,
+"pad": 0.25
+},
+"sfx_coin": {
+"loop": false,
+"len": 2.292108843537415,
+"pad": 0
+},
+"sfx_relic": {
+"loop": false,
+"len": 3.381292517006803,
+"pad": 0
+},
+"sfx_nitro": {
+"loop": false,
+"len": 2.6182766439909297,
+"pad": 0
+},
+"sfx_land": {
+"loop": false,
+"len": 1.9970975056689342,
+"pad": 0
+},
+"sfx_impact": {
+"loop": false,
+"len": 2.1964625850340136,
+"pad": 0
+},
+"sfx_crash": {
+"loop": false,
+"len": 2.479705215419501,
+"pad": 0
+},
+"sfx_clang": {
+"loop": false,
+"len": 2.441473922902494,
+"pad": 0
+},
+"sfx_crack": {
+"loop": false,
+"len": 2.369795918367347,
+"pad": 0
+},
+"sfx_slam": {
+"loop": false,
+"len": 2.841201814058957,
+"pad": 0
+},
+"sfx_smash": {
+"loop": false,
+"len": 2.339795918367347,
+"pad": 0
+},
+"sfx_shatter": {
+"loop": false,
+"len": 2.3484126984126985,
+"pad": 0
+},
+"sfx_scrape": {
+"loop": false,
+"len": 2.1395918367346938,
+"pad": 0
+},
+"sfx_snap": {
+"loop": false,
+"len": 2.1503174603174604,
+"pad": 0
+},
+"sfx_swoosh": {
+"loop": false,
+"len": 2.468707482993197,
+"pad": 0
+},
+"sfx_splash": {
+"loop": false,
+"len": 2.5769160997732428,
+"pad": 0
+},
+"sfx_rumble": {
+"loop": false,
+"len": 3.514421768707483,
+"pad": 0
+},
+"sfx_shift": {
+"loop": false,
+"len": 0.06,
+"pad": 0
+},
+"sfx_ui": {
+"loop": false,
+"len": 2.2494557823129253,
+"pad": 0
+},
+"sfx_mission": {
+"loop": false,
+"len": 2.9225396825396825,
+"pad": 0
+},
+"sfx_perfect": {
+"loop": false,
+"len": 2.7800453514739227,
+"pad": 0
+},
+"sfx_gameover": {
+"loop": false,
+"len": 3.993151927437642,
+"pad": 0
+},
+"sfx_radio": {
+"loop": false,
+"len": 1.818140589569161,
+"pad": 0
+},
+"sfx_grunt_dusty": {
+"loop": false,
+"len": 2.3041950113378684,
+"pad": 0
+},
+"sfx_whoa_dusty": {
+"loop": false,
+"len": 2.4443310657596373,
+"pad": 0
+},
+"sfx_grunt_penny": {
+"loop": false,
+"len": 2.339251700680272,
+"pad": 0
+},
+"sfx_whoa_penny": {
+"loop": false,
+"len": 2.4827210884353743,
+"pad": 0
+},
+"sfx_st_start": {
+"loop": false,
+"len": 3.000748299319728,
+"pad": 0
+},
+"sfx_st_biome": {
+"loop": false,
+"len": 4.246916099773243,
+"pad": 0
+},
+"sfx_st_set": {
+"loop": false,
+"len": 3.1274603174603173,
+"pad": 0
+},
+"sfx_st_success": {
+"loop": false,
+"len": 3.173605442176871,
+"pad": 0
+},
+"sfx_st_danger": {
+"loop": false,
+"len": 2.76297052154195,
+"pad": 0
+},
+"sfx_st_intro": {
+"loop": false,
+"len": 6.862585034013605,
+"pad": 0
+}
+}
