@@ -1,4 +1,4 @@
-RELIC RUNNER 4x4 - Milestone 1 (Jungle Temple)
+RELIC RUNNER 4x4 - Milestone 1 (Jungle Temple) - premium pass
 ==============================================
 Open index.html in Chrome, Edge, Firefox or Safari. Everything is bundled locally (three.js r170, fonts, procedural textures and audio), so it works offline and straight from the zip. The single exception is gyro steering on iOS, which needs the page served over https.
 
@@ -17,4 +17,4 @@ URL PARAMETERS (testing)
 OPTIONS
 Driving assist (full / light / off), auto-accelerate, difficulty (Explorer / Adventurer / Legend), steering sensitivity,
 camera distance, touch steering mode, motion comfort, reduce flashing, colorblind hazard markers, subtitle size,
-music & effects volume, quality (auto / low / medium / high), 60/30 fps cap. Progress is saved in localStorage.
+controller rumble, music & effects volume, quality (auto / low / medium / high), 60/30 fps cap. Progress is saved in localStorage.
