@@ -71,6 +71,7 @@
       <div class="bmoth"><img src="assets/portrait_moth.jpg" alt=""><div><b>MOTH</b><p id="bMoth"></p></div></div>
       <div class="bstart">
         <label>Difficulty <select id="bDiff"><option value="recruit">Recruit — wind gauge, impact hint, auto-ID</option><option value="marksman">Marksman — wind gauge only</option><option value="ghost">Ghost — no aids, spin drift</option></select></label>
+        <label class="bload">Loadout <select id="bSup"><option value="0">Muzzle brake — full velocity, loud</option><option value="1">Suppressor — quiet, 10% slower round (more drop)</option></select></label>
         <button id="bStart" class="primary big">DEPLOY</button>
       </div>
     </div>
@@ -95,12 +96,12 @@
   <div id="hEscape" class="hescape hidden"><b></b><span></span><i></i></div>
   <div id="hExfil" class="hexfil hidden"><button id="exfilBtn" class="primary">EXTRACT ▸</button></div>
   <div id="hKeys" class="hkeys">
-    <b>RMB</b> scope · <b>Wheel</b> zoom · <b>LMB</b> fire · <b>Shift</b> hold breath · <b>C</b> fine aim · <b>B</b> binoculars · <b>T</b> tag · <b>R</b> range · <b>Q/E</b> windage · <b>↑/↓</b> elevation · <b>Tab</b> intel · <b>Space</b> fast-forward · <b>Esc</b> pause
+    <b>RMB</b> scope · <b>Wheel</b> zoom · <b>LMB</b> fire · <b>Shift</b> hold breath · <b>C</b> fine aim · <b>B</b> binoculars · <b>T</b> tag · <b>R</b> range · <b>Q/E</b> windage · <b>↑/↓</b> elevation · <b>Tab</b> intel · <b class="kt">N</b><span class="kt"> thermal ·</span> <b class="ks">G</b><span class="ks"> spotter ·</span> <b>Space</b> fast-forward · <b>Esc</b> pause
   </div>
   <button class="hfs" data-fs="icon" title="Full screen (F)" aria-label="Full screen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <div class="touchui">
     <div class="tr-btns"><button data-act="scope" class="scopebtn">SCOPE</button><button data-act="intel">INTEL</button><button data-act="pause" aria-label="Pause">II</button><button data-fs="icon" class="fsi" aria-label="Full screen"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-    <div class="lt-btns"><button data-act="bino">BINO</button><button data-act="tag">TAG</button><button data-act="range">RANGE</button><button data-act="dial" class="dialbtn">DIAL</button><button data-hold="ffwd" aria-label="Fast-forward">⏩</button></div>
+    <div class="lt-btns"><button data-act="bino">BINO</button><button data-act="tag">TAG</button><button data-act="range">RANGE</button><button data-act="dial" class="dialbtn">DIAL</button><button data-act="therm" class="thermbtn">THERM</button><button data-act="spot" class="spotbtn">SPOT</button><button data-hold="ffwd" aria-label="Fast-forward">⏩</button></div>
     <div class="dialpad"><div id="dialVal" class="dialval">ELEV +0.0 · WIND R 0.0</div><div class="dgrid"><button data-act="windL" aria-label="Windage left">◀</button><button data-act="elevUp" aria-label="Elevation up">▲</button><button data-act="windR" aria-label="Windage right">▶</button><button data-act="dope" class="zero" id="dopeBtn">ZERO</button><button data-act="elevDn" aria-label="Elevation down">▼</button><button data-act="dial" aria-label="Close dial">✕</button></div></div>
     <div id="zoomRail" class="zoomrail" data-zi="1"><span>30×</span><span>20×</span><span>10×</span><span>5×</span><i class="knob"></i></div>
     <button class="fire" data-act="fire">FIRE</button>
