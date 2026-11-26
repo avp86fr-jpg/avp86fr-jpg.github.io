@@ -33659,7 +33659,7 @@ void main() {
 
   // src/render/materials.js
   function hazeify(mat2, opts = {}) {
-    const key = "hz" + (opts.detail ? "d" : "") + (opts.sway ? "s" + opts.sway : "") + (opts.flag ? "f" + opts.flag : "") + (opts.rim ? "r" : "") + (opts.snowCap ? "c" : "");
+    const key = "hz" + (opts.detail ? "d" : "") + (opts.sway ? "s" + opts.sway : "") + (opts.flag ? "f" + opts.flag : "") + (opts.rim ? "r" : "") + (opts.snowCap ? "c" : "") + (opts.wdetail ? "w" : "");
     mat2.customProgramCacheKey = () => key;
     mat2.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, HAZE);
@@ -33697,6 +33697,11 @@ void main() {
         ${opts.detail ? `{ vec2 q = vHzWorld.xz * ${opts.detail.toFixed(4)};
           float n = hzFbm(q) * 0.65 + hzNoise(q*7.3) * 0.35;
           diffuseColor.rgb *= 0.78 + 0.44 * n; }` : ""}
+        ${opts.wdetail ? `{ vec3 wp = vHzWorld; // structures: world-space grime + course/plank lines on vertical faces, faded out before they can shimmer
+          float g = hzNoise(wp.xz * 0.6 + wp.y * 0.45) * 0.55 + hzNoise(vec2(wp.x + wp.z, wp.y) * 2.7) * 0.45;
+          float ly = wp.y * 2.5, fw = fwidth(ly), vert = clamp(length(vec2(dFdx(wp.y), dFdy(wp.y))) / (length(dFdx(wp.xz)) + length(dFdy(wp.xz)) + 1e-4) * 1.5, 0.0, 1.0);
+          float course = smoothstep(0.86, 0.97, abs(fract(ly) - 0.5) * 2.0);
+          diffuseColor.rgb *= (0.84 + 0.3 * g) * (1.0 - 0.22 * course * vert * (1.0 - smoothstep(0.12, 0.35, fw))); }` : ""}
         ${opts.snowCap ? `{ float up = clamp((vHzWorld.y - ${opts.snowCap.toFixed(1)}), 0.0, 1.0); }` : ""}`).replace("#include <dithering_fragment>", `
         ${opts.rim ? `{ vec3 vdir = normalize(vViewPosition); float fr = pow(1.0 - abs(dot(normalize(normal), vdir)), 2.0);
             gl_FragColor.rgb += uRimColor * uRimAmt * (0.35 + 1.6*fr); }` : ""}
@@ -37532,7 +37537,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       return q;
     });
     const g = mergeGeometries(geos, false);
-    const m = mat("#ffffff", { vc: true, rough: o.rough ?? 0.8, metal: o.metal ?? 0, patch: o.patch, emissive: o.emissive, flat: o.flat });
+    const wd = o.wdetail ?? !(G.quality && G.quality.name === "low" && G.quality.mobile);
+    const m = mat("#ffffff", { vc: true, rough: o.rough ?? 0.8, metal: o.metal ?? 0, patch: wd ? Object.assign({ wdetail: 1 }, o.patch || {}) : o.patch, emissive: o.emissive, flat: o.flat });
     const mesh = new Mesh(g, m);
     mesh.castShadow = o.cast ?? true;
     mesh.receiveShadow = o.receive ?? true;
@@ -39515,7 +39521,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const s = 1 + rnd() * 4;
       rocks.push([tf(rockGeometry(i, 1, { warm: true }), x, height2(x, z) - s * 0.2, z, 0, rnd() * 3, 0, s, s * 0.6, s), rnd() < 0.5 ? "#a8673f" : "#8f5a3a"]);
     }
-    const rockMesh = mergedMesh(rocks, { rough: 0.95, cast: false });
+    const rockMesh = mergedMesh(rocks, { rough: 0.95, cast: false, wdetail: false });
     S2.add(rockMesh);
     {
       const B3 = [];
@@ -40510,10 +40516,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       sunEl: 20,
       sunAz: 34,
       sunColor: "#f0f2ff",
-      sunI: 2.6,
+      sunI: 2.45,
       hemiSky: "#b9c9e2",
       hemiGround: "#8e949c",
-      hemiI: 1.05,
+      hemiI: 0.85,
       sky: { zenith: "#6c84a6", horizon: "#d8dfe8", ground: "#cfd6de", sunColor: "#ffffff", sunSize: 0.9993, cloudColor: "#f2f4f8", cloudShade: "#9aa4b2", cloudCover: 0.82, cloudScale: 0.9, glow: 0.35, horizonHaze: 1, stormColor: "#d0d6e0" }
     });
     w.height = height4;
@@ -40550,7 +40556,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const d = -z;
         c.set("#e2e8f0").multiplyScalar((0.86 + 0.14 * vnoise(x / 20, z / 20, 3)) * (1 - Math.min(0.32, slope * 0.55)) * (0.93 + 0.07 * fbm(x / 90, z / 90, 2, 7)));
         const rock = new Color("#5d5c5a").lerp(new Color("#7b766e"), fbm(x / 30, z / 30 + h / 20, 3, 4));
-        rock.multiplyScalar(0.78);
+        rock.multiplyScalar(0.62);
         c.lerp(rock, smoothstep2(0.24, 0.46, slope + (fbm(x / 45, z / 45, 2, 8) - 0.5) * 0.25));
         const rd = Math.abs(d - 700);
         if (rd >= 6 && rd < 8.5) c.set("#9aa0a8").lerp(new Color("#d8dee6"), smoothstep2(6, 8.5, rd));
@@ -40620,8 +40626,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     for (const cx2 of [376, 384]) box(0.25, 4, 6.1, cx2, RY + 2, RZ - 14.5, "#4a3020");
     box(1.1, 2.1, 0.1, 381.5, RY + 1.05, RZ - 11.45, "#2a1c14");
-    box(1.2, 0.9, 0.08, 377.5, RY + 2, RZ - 11.45, "#4a3a28");
-    box(1.2, 0.9, 0.08, 384.5, RY + 2, RZ - 11.45, "#4a3a28");
+    {
+      const hw = mergedMesh([[tf(new BoxGeometry(1.2, 0.9, 0.08), 377.5, RY + 2, RZ - 11.45), "#ffffff"], [tf(new BoxGeometry(1.2, 0.9, 0.08), 384.5, RY + 2, RZ - 11.45), "#ffffff"]], { wdetail: false });
+      hw.material = mat("#3a2410", { emissive: "#ff9440", ei: 0.75 });
+      hw.castShadow = false;
+      S2.add(hw);
+    }
+    lights.push([377.5, RY + 2, RZ - 11.2, 1.4, "#ffb060"], [384.5, RY + 2, RZ - 11.2, 1.4, "#ffb060"]);
     box(8.6, 0.5, 0.15, 380, RY + 3.2, RZ - 11.3, "#3a2a1c");
     P.push([tf(new CylinderGeometry(0.01, 6.2, 2.4, 4, 1), 380, RY + 5.2, RZ - 14.5, 0, Math.PI / 4, 0, 1, 1, 0.8), "#e8edf3"]);
     const N = [];
@@ -40640,13 +40651,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (sl < 1.2) continue;
         const sc = 2 + rr() * (d > 700 ? 5 : 3.5);
         k++;
-        RK.push([tf(rockGeometry(30 + i, 1, { topTint: [1.4, 1.42, 1.48] }), x, h - sc * 0.25, z, rr(), rr() * 6, rr() * 0.4, sc * (1 + rr() * 0.6), sc * (0.6 + rr() * 0.5), sc), "#5a5856"]);
+        RK.push([tf(rockGeometry(30 + i, 1, { topTint: [1.4, 1.42, 1.48] }), x, h - sc * 0.25, z, rr(), rr() * 6, rr() * 0.4, sc * (1 + rr() * 0.6), sc * (0.6 + rr() * 0.5), sc), "#3e3d3c"]);
       }
-      const rm = mergedMesh(RK, { rough: 0.95 });
+      const rm = mergedMesh(RK, { rough: 0.95, wdetail: false });
       rm.castShadow = false;
       S2.add(rm);
     }
-    const nm = mergedMesh(N, { rough: 0.9 });
+    const nm = mergedMesh(N, { rough: 0.9, wdetail: false });
     nm.castShadow = false;
     S2.add(nm);
     S2.add(mergedMesh(P, { rough: 0.75, metal: 0.25 }));
@@ -40654,7 +40665,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     em.material = mat("#ffe2b0", { emissive: "#ffd090", ei: 1.8 });
     S2.add(em);
     S2.add(lightPoints(lights, { intensity: 1.2 }));
-    const pine = pineGeometry(0.45, 0.3, { lite: tier.name !== "high", leaf: "#11201a" });
+    const pine = pineGeometry(0.3, 0.3, { lite: tier.name !== "high", leaf: "#11201a" });
     const eye = w.nest.pos, LOFT = [];
     for (let x = -600; x <= 920; x += 20) LOFT.push([x, RY + 1.4, RZ], [x, RY + 3, RZ - 5]);
     const lofOK = (x, z, y2, s) => !blocksLOF(x, z, y2 + 12.8 * s, 2.8 * s, eye, LOFT);
@@ -40671,7 +40682,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const s = 0.8 + rnd() * 0.9, sy = 0.9 + rnd() * 0.4;
       if (d > 30 && d < 760 && !lofOK(x, z, h, s)) return null;
       return { x, y: h, z, r: rnd() * 6.28, s, sy };
-    }, { cast: false, sway: 0.2, impTint: "#a9b4b0", isNear: mob ? (p) => Math.abs(-p.z - 700) < 70 && Math.abs(p.x - 300) < 380 || -p.z < 90 : (p) => Math.abs(-p.z - 700) < 200 || -p.z < 360 }));
+    }, { cast: false, sway: 0.2, impTint: "#7c8a86", isNear: mob ? (p) => Math.abs(-p.z - 700) < 70 && Math.abs(p.x - 300) < 380 || -p.z < 90 : (p) => Math.abs(-p.z - 700) < 200 || -p.z < 360 }));
     addWindMarkers(S2, w, height4, [[-40, -240], [60, -480]], { color: "#d83a2a", color2: "#f2f2f2", pole: 6, drift: false });
     const flag = makeFlag(2.4, 1.5, "#2a4a7a", { emblem: "#f2f2f2", amp: 1 });
     flag.position.set(905 + 8, RY + 7, RZ - 10);
@@ -41673,8 +41684,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (Math.hypot(x - HIDE[0], z - HIDE[1]) < 3.2 || r < 24 && Math.sin(a) > -0.3) continue;
       RK.push([tf(rockGeometry(60 + i, 1, {}), x, height6(x, z) - s * 0.2, z, rr(), rr() * 6, 0, s * 1.3, s * 0.8, s), "#77777a"]);
     }
-    RK.push([tf(rockGeometry(9, 1, {}), HIDE[0] - 2.6, HY + 0.1, HIDE[1] - 0.6, 0, 1, 0, 1.6, 1, 1.5), "#6e6a62"], [tf(rockGeometry(10, 1, {}), HIDE[0] + 2.4, HY, HIDE[1] - 0.4, 0, 2, 0, 1.5, 0.9, 1.4), "#757168"], [tf(rockGeometry(11, 1, {}), HIDE[0], HY + 0.3, HIDE[1] - 3.5, 0, 3, 0, 3.5, 2.2, 2.5), "#6a665e"]);
-    S2.add(mergedMesh(RK, { rough: 0.95 }));
+    RK.push([tf(rockGeometry(9, 1, {}), HIDE[0] - 2.6, HY + 0.1, HIDE[1] - 0.6, 0, 1, 0, 1.6, 1, 1.5), "#6e6a62"], [tf(rockGeometry(10, 1, {}), HIDE[0] + 2.4, HY, HIDE[1] - 0.4, 0, 2, 0, 1.5, 0.9, 1.4), "#757168"], [tf(rockGeometry(11, 1, {}), HIDE[0], HY + 0.2, HIDE[1] - 3.2, 0, 3, 0, 4.2, 2.6, 2.4), "#2e302a"], [tf(rockGeometry(12, 1, {}), HIDE[0] - 1.2, HY + 0.1, HIDE[1] - 2.2, 0, 1, 0, 2.2, 1.9, 1.6), "#34362e"]);
+    S2.add(mergedMesh(RK, { rough: 0.95, wdetail: false }));
     const N = [...sandbagWall(-1.6, 1.7, nestY - 0.32, -1, 2, 0, ["#6a6858", "#76745f", "#5c5a4c"])];
     for (const [x, z, sx, sz] of [[-3.4, 2.2, 0.7, 3], [3.4, 2.2, 0.7, 3], [0, 3.8, 7.4, 0.7]]) N.push([tf(new BoxGeometry(sx, 0.9, sz), x, nestY + 0.1, z), "#8a8478"]);
     S2.add(mergedMesh(N, { rough: 0.95 }));
@@ -41702,7 +41713,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     S2.add(flag);
     w.flag = flag;
     S2.add(mergedMesh([[tf(new CylinderGeometry(0.07, 0.07, 5, 6), HX + 5, CY + 8.5, DZ - 1), "#ccc"]]));
-    w.glint = glow("#fff4d8", 2.2, HIDE[0] + 0.6, HY + 0.9, HIDE[1] + 0.9, 3);
+    {
+      const fx = 0.54, fz = 0.84, ax = HIDE[0] + fx * 0.75, ay = HY + 1.52, az = HIDE[1] + 0.4 + fz * 0.75, yaw = Math.atan2(fx, fz);
+      const sc = mergedMesh([[tf(new CylinderGeometry(0.045, 0.06, 0.42, 8).rotateX(Math.PI / 2), ax, ay + 0.06, az, 0, yaw), "#101010"]], { wdetail: false });
+      sc.castShadow = false;
+      S2.add(sc);
+    }
+    w.glint = glow("#fff4d8", 2.2, HIDE[0] + 0.54 * 0.98, HY + 1.54, HIDE[1] + 0.4 + 0.84 * 0.98, 3);
     w.glint.visible = false;
     S2.add(w.glint);
     w.cars = {};

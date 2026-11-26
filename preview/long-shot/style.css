@@ -443,3 +443,9 @@ body.has-detect .hdetect{display:block}
 .hdetect i::after{content:'';position:absolute;inset:0;transform-origin:left;transform:scaleX(var(--k,0));background:linear-gradient(90deg,#e8c070,#ff6a3a);transition:transform .15s linear}
 .hdetect.hot{color:#ff8a5a;animation:detp .5s infinite alternate}.hdetect.done{opacity:.35}
 @keyframes detp{to{opacity:.55}}
+/* phone landscape declutter: radio is a slim top-centre bar between the clock and the top-right buttons; nothing overlaps the readout panel */
+body.touch:not(.portrait) .hradio { top: calc(var(--st) + 4px); bottom: auto; left: calc(var(--sl) + 150px); right: calc(var(--sr) + 258px); max-width: 560px; margin: 0 auto; transform: none; padding: 4px 9px; gap: 8px; line-height: 1.25; font-size: calc(11px * var(--sub)); background: rgba(6,8,10,0.66); box-sizing: border-box; }
+body.touch:not(.portrait) .hradio p { margin: 0; }
+body.touch:not(.portrait) .hradio b { font-size: 9px; }
+body.touch:not(.portrait) .hradio img { width: 26px; height: 26px; }
+body.touch .hdetect { top: calc(var(--st) + 56px); width: min(240px, 40vw); }
