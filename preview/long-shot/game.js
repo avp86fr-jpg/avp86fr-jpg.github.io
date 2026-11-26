@@ -35468,7 +35468,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_audio();
       EYE_FOV = 60;
       BINO_ZOOM = 8;
-      ZOOMS_DESK = [4, 8, 12, 20];
+      ZOOMS_DESK = [4, 8, 16, 28];
       ZOOMS_TOUCH = [5, 10, 20, 30];
       isTouch = () => typeof document !== "undefined" && document.body.classList.contains("touch");
       Optics = class {
@@ -36232,7 +36232,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const rr = P.lastRange;
     const rtxt = rr && rr.dist ? Math.round(rr.dist).toLocaleString("en-US") + " m" : "---- m";
     const a0 = Math.PI * 0.72, a1 = Math.PI * 1.28;
-    if (!touchUI) {
+    if (false) {
       cx.lineWidth = 5;
       cx.strokeStyle = "rgba(255,255,255,0.15)";
       cx.beginPath();
@@ -41022,7 +41022,62 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       }
     });
     S2.add(terr);
-    const P = [], NE = { m: [], c: [], a: [] }, pts = [], R = mulberry32(505);
+    const P = [], NE = { m: [], c: [], a: [] }, pts = [], R = mulberry32(505), FAC = [];
+    const facTex = (() => {
+      const N2 = 512, c = document.createElement("canvas"), e = document.createElement("canvas");
+      c.width = e.width = N2;
+      c.height = e.height = N2;
+      const g = c.getContext("2d"), h = e.getContext("2d"), r2 = mulberry32(9);
+      g.fillStyle = "#2a2e3a";
+      g.fillRect(0, 0, N2, N2);
+      h.fillStyle = "#000";
+      h.fillRect(0, 0, N2, N2);
+      for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) {
+        const x = i * 64 + 9, y = j * 64 + 12, lit = r2() < 0.24, warm = r2() < 0.7;
+        g.fillStyle = "#3a3f4c";
+        g.fillRect(i * 64, j * 64 + 58, 64, 6);
+        g.fillStyle = lit ? warm ? "#e8b878" : "#a8c4e8" : "#0c1018";
+        g.fillRect(x + 4, y + 4, 38, 30);
+        if (lit) {
+          h.fillStyle = warm ? "#ffcf8a" : "#bcd8ff";
+          h.globalAlpha = 0.6 + r2() * 0.4;
+          h.fillRect(x + 4, y + 4, 38, 30);
+          h.globalAlpha = 1;
+          if (r2() < 0.5) {
+            h.fillStyle = "#000";
+            h.fillRect(x + 8 + r2() * 20, y + 8, 6, 32);
+          }
+        }
+        g.fillStyle = "#20242e";
+        g.fillRect(x + 22, y + 4, 3, 30);
+        g.fillStyle = "#323846";
+        g.fillRect(i * 64 + 2, j * 64, 3, 64);
+      }
+      g.fillStyle = "#20242e";
+      g.fillRect(0, 0, 6, 6);
+      const mk = (cv2) => {
+        const t = new CanvasTexture(cv2);
+        t.wrapS = t.wrapT = RepeatWrapping;
+        t.anisotropy = mob ? 2 : 8;
+        t.colorSpace = SRGBColorSpace;
+        return t;
+      };
+      return [mk(c), mk(e)];
+    })();
+    const facade = (x, z, sx, sz, h) => {
+      const g = new BoxGeometry(sx, h, sz);
+      g.translate(x, h / 2, z);
+      const p = g.attributes.position, uv = g.attributes.uv, n = g.attributes.normal, o = R() * 8, ov = Math.floor(R() * 8) / 8;
+      for (let i = 0; i < p.count; i++) {
+        const ny = Math.abs(n.getY(i)) > 0.5, nx = Math.abs(n.getX(i)) > 0.5;
+        if (ny) {
+          uv.setXY(i, 4e-3, 0.996);
+          continue;
+        }
+        uv.setXY(i, (nx ? p.getZ(i) : p.getX(i)) / 3.2 / 8 + o, p.getY(i) / 3.4 / 8 + ov);
+      }
+      FAC.push(g);
+    };
     const box = (sx, sy, sz, x, y, z, col) => P.push([tf(new BoxGeometry(sx, sy, sz), x, y, z), col]);
     const eye = w.nest.pos, segs = [[TER.x0 + 23, TY, -615], [LZ[0], LY, LZ[1]]];
     const capAt = (x, z, hw, hd) => {
@@ -41036,15 +41091,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       return cap;
     };
     const tower = (x, z, sx, sz, h, col, lit = 0.25, cap = true) => {
-      box(sx, h, sz, x, h / 2, z, col);
+      facade(x, z, sx, sz, h);
       if (cap) box(sx + 0.6, 0.8, sz + 0.6, x, h + 0.4, z, "#202228");
       if (Math.abs(x) < 360 && -z < 1e3) w.colliders.push(boxCollider(x, h / 2, z, sx / 2, h / 2, sz / 2, { name: "building" }));
       if (-z > 1100) lit *= 0.45;
-      const fl = Math.floor(h / 3.4), cols = Math.floor(sx / 3.2), cz = Math.floor(sz / 3.2), wc = R() < 0.6 ? "#ffd9a0" : R() < 0.5 ? "#b8d8ff" : "#ffe8c8";
-      for (let f = 1; f < fl; f++) {
-        for (let i = 0; i < cols; i++) if (R() < lit) pts.push([x - sx / 2 + 1.6 + i * 3.2, f * 3.4, z + sz / 2 + 0.15, 1.3, wc]);
-        const fx = x > 0 ? x - sx / 2 - 0.15 : x + sx / 2 + 0.15;
-        for (let i = 0; i < cz; i++) if (R() < lit * 0.8) pts.push([fx, f * 3.4, z - sz / 2 + 1.6 + i * 3.2, 1.3, wc]);
+      if (lit < 0) {
+        const fl = Math.floor(h / 3.4), cols = Math.floor(sx / 3.2), cz = Math.floor(sz / 3.2), wc = R() < 0.6 ? "#ffd9a0" : R() < 0.5 ? "#b8d8ff" : "#ffe8c8";
+        for (let f = 1; f < fl; f++) {
+          for (let i = 0; i < cols; i++) if (R() < lit) pts.push([x - sx / 2 + 1.6 + i * 3.2, f * 3.4, z + sz / 2 + 0.15, 1.3, wc]);
+          const fx = x > 0 ? x - sx / 2 - 0.15 : x + sx / 2 + 0.15;
+          for (let i = 0; i < cz; i++) if (R() < lit * 0.8) pts.push([fx, f * 3.4, z - sz / 2 + 1.6 + i * 3.2, 1.3, wc]);
+        }
       }
     };
     for (let bx = -588; bx <= 588; bx += 56) for (let bz = -60; bz >= -1350; bz -= 56) {
@@ -41078,11 +41135,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       box(46, 6, 12, tx, TY + 3, -628 - 6 + 1, "#0e1620");
       pts.push(...Array.from({ length: 10 }, (_, i) => [tx - 20 + i * 4.4, TY + 4.6, -626.9, 1.5, "#ffd6a0"]));
       box(46, 0.08, 26, tx, TY + 0.04, -615, "#3a3028");
-      box(46, 1.05, 0.08, tx, TY + 0.55, -601.8, "#9aa8b8");
+      box(46, 0.07, 0.1, tx, TY + 1.05, -601.8, "#8a96a4");
+      box(46, 0.05, 0.06, tx, TY + 0.12, -601.8, "#8a96a4");
+      for (let i = 0; i <= 23; i++) box(0.05, 1, 0.05, tx - 23 + i * 2, TY + 0.55, -601.8, "#6a7684");
       box(10, 0.75, 1.4, tx, TY + 0.38, -612, "#4a3424");
       for (let i = 0; i < 12; i++) pts.push([tx - 22 + i * 4, TY + 3.8 + Math.sin(i) * 0.2, -603, 0.45, "#ffcf7a"]);
       w.colliders.push(boxCollider(tx, TY + 3, -633, 23, 3, 6, { name: "penthouse glass" }), boxCollider(tx, TY + 0.38, -612, 5, 0.38, 0.7, { name: "table" }));
-      NE.m.push([tf(new BoxGeometry(14, 2.4, 0.3), tx, TY - 4, -597.5), "#ffffff"]);
+      NE.c.push([tf(new BoxGeometry(9, 1.2, 0.25), tx, TY - 5, -597.6), "#ffffff"]);
     }
     {
       tower(LZ[0], LZ[1], 40, 40, LY, "#1e2026", 0.3);
@@ -41108,13 +41167,31 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       pts.push([x, 0.8, lane ? -316 : -324, 1.1, lane ? "#fff2d8" : "#ff3a2a"]);
     }
     S2.add(mergedMesh(P, { rough: 0.55, metal: 0.2 }));
+    {
+      const fm = mat("#ffffff", { emissive: "#ffffff", ei: 0.85, rough: 0.6, unique: true });
+      fm.map = facTex[0];
+      fm.emissiveMap = facTex[1];
+      fm.needsUpdate = true;
+      const m = new Mesh(mergeGeometries(FAC), fm);
+      m.castShadow = false;
+      S2.add(m);
+    }
+    {
+      const RF = [];
+      for (let x = -700; x <= 700; x += 30) {
+        RF.push(tf(new PlaneGeometry(1.1, 14).rotateX(-Math.PI / 2), x, 0.07, -313));
+        RF.push(tf(new PlaneGeometry(1.1, 14).rotateX(-Math.PI / 2), x + 15, 0.07, -327));
+      }
+      const rm = new Mesh(mergeGeometries(RF), new MeshBasicMaterial({ color: "#ffb060", transparent: true, opacity: 0.22, blending: AdditiveBlending, depthWrite: false }));
+      S2.add(rm);
+    }
     const nm = (list, col) => {
       if (!list.length) return;
       const m = mergedMesh(list, {});
-      m.material = mat(col, { emissive: col, ei: 3.2 });
+      m.material = mat(col, { emissive: col, ei: 1.35 });
       S2.add(m);
     };
-    nm(NE.m, "#ff2fb0");
+    nm(NE.m, "#d0309a");
     nm(NE.c, "#2fe8ff");
     nm(NE.a, "#ffb02f");
     S2.add(lightPoints(pts, { intensity: 1.6 }));
@@ -41132,6 +41209,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       w.cars[id] = { mesh: m, yaw: -Math.PI / 2 };
     }
     w.routes = { exit: [[0, -316], [-700, -316]] };
+    {
+      const pl = new PointLight("#ffd0a0", 260, 60, 1.6);
+      pl.position.set(45, TY + 5, -610);
+      S2.add(pl);
+      const p2 = new PointLight("#a0ffc0", 120, 40, 1.6);
+      p2.position.set(LZ[0], LY + 6, LZ[1]);
+      S2.add(p2);
+    }
     setupShadow(w, new Vector3(0, TY, -600), 300, tier);
     w.titleCam = { pos: new Vector3(-3, NY + 2, 4), look: new Vector3(45, TY, -615) };
     w.mapInfo = { center: [0, -400], size: 1e3, label: "VARO \xB7 OLD CITY" };
@@ -41146,6 +41231,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_terrain();
       init_materials();
       init_rng();
+      init_BufferGeometryUtils();
       init_common();
       NY = 62;
       TY = 66;
@@ -45768,7 +45854,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (M2.kind !== "range" && G.player) {
           const fd = M2.world.focusDist || 700;
           if (IN.touch) G.player.autoZoom(fd);
-          else G.player.optics.zi = fd > 600 ? 2 : 1;
+          else G.player.optics.zi = fd > 560 ? 3 : fd > 350 ? 2 : 1;
         }
         G.thermal = false;
         document.body.classList.toggle("has-therm", !!M2.world.night);
