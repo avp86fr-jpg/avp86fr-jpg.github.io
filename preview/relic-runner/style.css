@@ -347,3 +347,7 @@ body.zoneOn .popups { top: 47%; transition: top .2s; }
 body.zoneOn .banOn .popups { top: 47%; bottom: auto; flex-direction: column; }
 /* pass 13s: on short phone screens the comic sound words sit higher and smaller so they never hide the jeep */
 body.touch.short .sfxw { font-size: min(9vw, 13vh, 80px); margin-top: -10vh; }
+/* pass 13v: expedition horizon swatch */
+#title .exp .sw { display: flex; height: 22px; margin: -2px -4px 6px; border: 2px solid #1a1008; border-radius: 6px; overflow: hidden; text-decoration: none; }
+#title .exp .sw em { flex: 1; } #title .exp .sw em + em { border-left: 2px solid #1a1008; }
+@media (max-height: 520px) { #title .exp .sw { height: 12px; margin-bottom: 4px; } }
