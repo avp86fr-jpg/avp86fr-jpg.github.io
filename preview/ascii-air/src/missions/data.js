@@ -15,6 +15,7 @@ export const ACTIVITIES = [
   { id: "landing", name: "LANDINGS", blurb: "Bring her in clean. Graded on speed, line and stop." },
   { id: "balloons", name: "BALLOON POP", blurb: "Burst the drifting balloons before the clock runs out." },
   { id: "photo", name: "PHOTO FLIGHTS", blurb: "Frame the landmark and take the shot." },
+  { id: "mail", name: "THE MAIL LINE", blurb: "Pick up a bag at the hangar and drop it at the island posts." },
 ];
 
 export const CLASSES = ["beginner", "pro"];
@@ -339,6 +340,102 @@ export const MISSIONS = [
     start: { x: 150, y: 90, z: -1900, heading: 1.5708, speed: 36 },
     subject: { x: 80, y: 80, z: -200, name: "The Island" },
     view: { x: 150, y: 78, z: -1620, maxDist: 400, minDist: 80, facingDot: 0.35 },
+  },
+
+  // ---------- MAIL BEGINNER (M2 The Mail Line) ----------
+  {
+    id: "mail-b1", activity: "mail", klass: "beginner", title: "First Bag",
+    brief: "Pick up the mail bag at the hangar and drop it over Harbor Town. A short, gentle first run.",
+    hour: 10, plane: "trainer",
+    start: { x: -80, y: 28, z: -1100, heading: 0, speed: 40 },
+    timeLimits: [80, 60, 45],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
+      { type: "drop", name: "Harbor Town", x: L.town.x, z: L.town.z, r: 22 },
+    ],
+  },
+  {
+    id: "mail-b2", activity: "mail", klass: "beginner", title: "Mill Post",
+    brief: "Collect the bag at the hangar and deliver it to the mill hills.",
+    hour: 10, plane: "trainer",
+    start: { x: -80, y: 28, z: -1100, heading: 0, speed: 42 },
+    timeLimits: [90, 70, 52],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
+      { type: "drop", name: "Mill Hills", x: L.windmills.x, z: L.windmills.z, r: 24 },
+    ],
+  },
+  {
+    id: "mail-b3", activity: "mail", klass: "beginner", title: "Cape Letter",
+    brief: "A bag for Cinder Cape Light. Pick up at the hangar, follow the coast, and drop at the lighthouse.",
+    hour: 9, plane: "trainer",
+    start: { x: 40, y: 30, z: -1100, heading: Math.PI, speed: 42 },
+    timeLimits: [100, 78, 58],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
+      { type: "drop", name: "Cinder Cape Light", x: L.lighthouse.x, z: L.lighthouse.z, r: 24 },
+    ],
+  },
+  {
+    id: "mail-b4", activity: "mail", klass: "beginner", title: "Castle Post",
+    brief: "Take the bag from the hangar all the way to the cliff ruins. Climb steadily and watch the ridge.",
+    hour: 11, plane: "trainer",
+    start: { x: -80, y: 32, z: -1100, heading: 0, speed: 44 },
+    timeLimits: [120, 95, 72],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
+      { type: "drop", name: "Cliff Ruins", x: L.castle.x, z: L.castle.z, r: 26 },
+    ],
+  },
+  // ---------- MAIL PRO ----------
+  {
+    id: "mail-p1", activity: "mail", klass: "pro", title: "Town and Mills",
+    brief: "One bag, two drops: Harbor Town then the mill hills. Keep the throttle honest.",
+    hour: 10, plane: "trainer",
+    start: { x: -80, y: 30, z: -1100, heading: 0, speed: 44 },
+    timeLimits: [100, 78, 60],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 18 },
+      { type: "drop", name: "Harbor Town", x: L.town.x, z: L.town.z, r: 20 },
+      { type: "drop", name: "Mill Hills", x: L.windmills.x, z: L.windmills.z, r: 22 },
+    ],
+  },
+  {
+    id: "mail-p2", activity: "mail", klass: "pro", title: "Two Coasts",
+    brief: "Hangar pickup, drop at the lighthouse, then back east to Harbor Town.",
+    hour: 16, plane: "trainer",
+    start: { x: 40, y: 32, z: -1100, heading: Math.PI, speed: 44 },
+    timeLimits: [120, 95, 75],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 18 },
+      { type: "drop", name: "Cinder Cape Light", x: L.lighthouse.x, z: L.lighthouse.z, r: 22 },
+      { type: "drop", name: "Harbor Town", x: L.town.x, z: L.town.z, r: 20 },
+    ],
+  },
+  {
+    id: "mail-p3", activity: "mail", klass: "pro", title: "Castle Express",
+    brief: "A fast bag to the cliff ruins. Tight times — climb early and cut the corners.",
+    hour: 11, plane: "trainer",
+    start: { x: 0, y: 40, z: -1180, heading: 0.6, speed: 46 },
+    timeLimits: [90, 70, 52],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 18 },
+      { type: "drop", name: "Cliff Ruins", x: L.castle.x, z: L.castle.z, r: 22 },
+    ],
+  },
+  {
+    id: "mail-p4", activity: "mail", klass: "pro", title: "The Mail Line",
+    brief: "The full run: hangar pickup, then drops at town, mills, the lighthouse and the castle. This is the Line.",
+    hour: 11, plane: "trainer",
+    start: { x: -80, y: 32, z: -1100, heading: 0, speed: 44 },
+    timeLimits: [180, 145, 115],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 18 },
+      { type: "drop", name: "Harbor Town", x: L.town.x, z: L.town.z, r: 20 },
+      { type: "drop", name: "Mill Hills", x: L.windmills.x, z: L.windmills.z, r: 22 },
+      { type: "drop", name: "Cinder Cape Light", x: L.lighthouse.x, z: L.lighthouse.z, r: 22 },
+      { type: "drop", name: "Cliff Ruins", x: L.castle.x, z: L.castle.z, r: 24 },
+    ],
   },
 ];
 

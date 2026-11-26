@@ -1,6 +1,6 @@
 import { TITLE, PLANES, STAR_UNLOCKS } from "../core/config.js";
 import { hourToClock, formatTime, pad, isIOS, isStandalone, isMobileUA, safeInsets } from "../core/utils.js";
-import { ACTIVITIES, CLASSES, missionsBy, MISSIONS } from "../missions/data.js";
+import { ACTIVITIES, CLASSES, missionsBy, MISSIONS, MISSION_COUNT } from "../missions/data.js";
 import { totalStars } from "../save/save.js";
 import { createMobileLayer, iosFullscreenHint } from "./mobile.js";
 
@@ -246,7 +246,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   }
   function closeOverlay() { overlay.classList.add("hidden"); state.menuItems = []; }
 
-  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos" };
+  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail" };
   const CLASS_FR = { beginner: "Beginner", pro: "Pro", ace: "Ace" };
 
   function showMissions(save) {
@@ -616,6 +616,21 @@ time  ${formatTime(result.time || 0)}
       } else if (m.activity === "photo") {
         lines.push(m.title);
         lines.push(mission.photoReady ? "> IN FRAME — ACTION" : "> find the framing ring");
+      } else if (m.activity === "mail") {
+        const stops = m.stops || [];
+        const cur = stops[mission.next] || stops[stops.length - 1];
+        const done = Math.max(0, (mission.next || 0) - 1);
+        const drops = stops.filter((s) => s.type === "drop").length;
+        lines.push("MAIL LINE  (" + (klass || "PRO") + ")");
+        if (!mission.mailHasBag && cur && cur.type === "pickup") {
+          lines.push("> Pick up the bag at the " + cur.name);
+        } else if (cur) {
+          lines.push("> Drop at " + cur.name);
+        }
+        lines.push("> Drops: " + Math.max(0, done) + " / " + drops);
+        lines.push("> Time: " + formatTime(mission.t));
+        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        lines.push("> Wind: " + windLine);
       } else {
         lines.push(m.title);
       }
@@ -623,6 +638,11 @@ time  ${formatTime(result.time || 0)}
         if (m.activity === "rings") miss.textContent = "Rings " + mission.ringsPassed + "/" + m.rings.length;
         else if (m.activity === "landing") miss.textContent = "Landing";
         else if (m.activity === "balloons") miss.textContent = (m.title || "Balloons") + "  " + mission.popped + "/" + (mission.balloons && mission.balloons.length || 0);
+        else if (m.activity === "mail") {
+          const stops = m.stops || [];
+          const cur = stops[mission.next];
+          miss.textContent = cur ? ((cur.type === "pickup" ? "Pick up: " : "Drop: ") + cur.name) : "Mail";
+        }
         else miss.textContent = m.title || "Mission";
       } else miss.textContent = lines.join("\n");
     } else if (mission && mission.result) {

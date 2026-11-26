@@ -1,1 +1,2 @@
-/** M2: deliveries, stunts. */\nexport const ACTIVITIES_M2 = ["delivery","stunts"];
+/** M2 The Mail Line. M3–M5 follow. */
+export const ACTIVITIES_M2 = ["mail"];

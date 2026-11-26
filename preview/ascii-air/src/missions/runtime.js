@@ -55,6 +55,8 @@ export function createMissionSystem(scene, world, audio) {
     balloons: [],
     message: "",
     starsAwarded: 0,
+    mailStops: [],
+    mailHasBag: false,
   };
 
   function clear() {
@@ -78,6 +80,8 @@ export function createMissionSystem(scene, world, audio) {
     state.ringsPassed = 0;
     state.landing = null;
     state.starsAwarded = 0;
+    state.mailStops = [];
+    state.mailHasBag = false;
   }
 
   function add(o) { group.add(o); state.objects.push(o); return o; }
@@ -103,6 +107,7 @@ export function createMissionSystem(scene, world, audio) {
     if (m.activity === "landing") setupLanding(m);
     if (m.activity === "balloons") setupBalloons(m);
     if (m.activity === "photo") setupPhoto(m);
+    if (m.activity === "mail") setupMail(m);
     return m;
   }
 
@@ -164,6 +169,28 @@ export function createMissionSystem(scene, world, audio) {
       state.balloons.push(b);
     });
     state.popped = 0;
+  }
+
+  function setupMail(m) {
+    state.mailHasBag = false;
+    state.mailStops = [];
+    (m.stops || []).forEach((s, i) => {
+      const ground = world.heightAt(s.x, s.z);
+      const y = s.y != null ? s.y : ground + (s.type === "pickup" ? 18 : 22);
+      const mesh = ringMesh(s.r || 18);
+      const col = s.type === "pickup" ? 0xffe14a : 0xf0d8a8;
+      mesh.traverse((o) => {
+        if (o.material && o.material.color && !o.material.transparent) o.material.color.set(col);
+      });
+      mesh.position.set(s.x, y, s.z);
+      mesh.userData.stop = { ...s, y, r: s.r || 18 };
+      mesh.userData.index = i;
+      add(mesh);
+      state.mailStops.push(mesh);
+      const pole = markerPole(s.type === "pickup" ? 0xffe14a : 0xc01418);
+      pole.position.set(s.x, ground + 1, s.z);
+      add(pole);
+    });
   }
 
   function setupPhoto(m) {
@@ -335,6 +362,27 @@ export function createMissionSystem(scene, world, audio) {
         const stars = frac >= 0.85 ? 2 : frac >= 0.6 ? 1 : 0;
         finish(stars, { line: `${state.popped} / ${state.balloons.length}` });
       }
+    }
+
+    if (m.activity === "mail") {
+      const cur = state.mailStops[state.next];
+      if (cur) {
+        cur.rotation.z = time * 0.55;
+        const stop = cur.userData.stop;
+        const d = craft.pos.distanceTo(cur.position);
+        if (d < stop.r + 6) {
+          if (stop.type === "pickup") state.mailHasBag = true;
+          state.next++;
+          audio?.play("ring");
+          cur.visible = false;
+          if (state.next >= state.mailStops.length) {
+            const stars = starsFromTime(m, state.t);
+            finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });
+          }
+        }
+      }
+      const lim = m.timeLimits ? m.timeLimits[0] : 180;
+      if (state.t > lim + 8 && !state.result) finish(0, { line: "OVER TIME" });
     }
 
     if (m.activity === "photo") {
