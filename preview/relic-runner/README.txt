@@ -23,3 +23,13 @@ OPTIONS
 Driving assist (full / light / off), auto-accelerate, difficulty (Explorer / Adventurer / Legend), steering sensitivity,
 camera distance, touch steering mode, motion comfort, reduce flashing, colorblind hazard markers, subtitle size,
 controller rumble, music & effects volume, quality (auto / low / medium / high), 60/30 fps cap. Progress is saved in localStorage.
+
+
+PASS 5 - FULL SCREEN + MOBILE PORTRAIT/LANDSCAPE
+- Full screen: button on the title screen, in the pause menu, and a HUD icon (under pause). F key on desktop.
+  Landscape phones also try to lock the orientation (fails silently where unsupported).
+- iPhone Safari has no Fullscreen API: an "Add to Home Screen" hint is shown instead; installed as a
+  home-screen app (manifest.webmanifest, display: fullscreen) it runs without browser bars.
+- The canvas, pixel ratio and HUD rescale on resize, rotation and full-screen changes.
+- Portrait is fully playable (its own camera framing and HUD, controls in the bottom third). Pick
+  "PLAY IN PORTRAIT" or the Options toggle and the choice is remembered.

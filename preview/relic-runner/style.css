@@ -155,3 +155,41 @@ body.portrait .scoreBox { display: flex; align-items: center; gap: 6px; } body.p
 @media (max-height: 500px) and (orientation: landscape) { .logo { top: 3vh; } .logo .l1 { font-size: min(9vw, 17vh); } .logo .l2 { font-size: min(5vw, 9vh); padding: 2px 18px; margin-top: 2px; } .logo .tag { margin-top: 6px; font-size: .8rem; }
   #title { padding-bottom: 3vh; } #title .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; } #title .menu .btn { min-width: 0; width: 34vw; max-width: 300px; padding: 8px 12px; font-size: .9rem; } .foot { margin-top: 8px; font-size: .72rem; } }
 .rng { display: inline-flex; align-items: center; gap: 8px; } .rng output { font-family: 'Oswald'; min-width: 2.6em; text-align: right; }
+/* ---------------- Pass 5: fullscreen controls + mobile thumb-zone polish */
+#fsBtn { position: absolute; top: calc(var(--s,1) * 12px); right: 10px; width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--brass); background: rgba(40,24,12,.75); color: #f4dca0; display: grid; place-items: center; pointer-events: auto; touch-action: manipulation; z-index: 2; transition: transform .08s; }
+#fsBtn::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; }
+#fsBtn:active, #pauseBtn:active { transform: scale(.88); background: rgba(200,130,50,.9); }
+body.fs #fsBtn svg path { d: path("M9 3v6H3M21 9h-6V3M15 21v-6h6M3 15h6v6"); }
+body.nofs:not(.iosfs) #fsBtn { display: none; }
+body:not(.touch) .scoreBox { right: calc(var(--s,1) * 14px + 60px); }
+body.nofs:not(.iosfs):not(.touch) .scoreBox { right: calc(var(--s,1) * 16px); }
+body.touch #pauseBtn { width: 54px; height: 54px; font-size: 20px; right: 8px; top: calc(var(--s,1) * 10px); }
+body.touch #fsBtn { right: 12px; top: calc(var(--s,1) * 10px + 64px); }
+body.touch .scoreBox { right: calc(var(--s,1) * 14px + 66px); }
+.fsCorner { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); font-family: 'Oswald'; font-size: .95rem; letter-spacing: 1px; color: #f4dca0; padding: 10px 16px; min-height: 48px; border: 2px solid var(--brass); border-radius: 26px; background: rgba(30,18,8,.7); cursor: pointer; touch-action: manipulation; }
+.fsCorner:active { transform: scale(.94); background: rgba(200,130,50,.85); }
+.fsHint { margin-top: 10px; font-size: .85rem; text-align: center; opacity: .85; } #title .fsHint { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 0; right: 0; color: #f4e6c0; text-shadow: 0 1px 3px #000; }
+/* touch: thumb-sized menu targets, safe-area aware screens */
+.screen { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+body.touch .btn { min-height: 56px; }
+body.touch .tab { min-height: 48px; display: inline-flex; align-items: center; }
+body.touch .opt { min-height: 52px; } body.touch .opt input[type=checkbox] { width: 26px; height: 26px; } body.touch .opt select { min-height: 40px; font-size: 1rem; } body.touch .opt input[type=range] { height: 32px; }
+.tbtn::after { inset: -8px; }
+#tHB { right: calc(var(--t) * 152px); }
+/* landscape phones: compact HUD hugging the edges so the road stays clear */
+body.touch.short:not(.portrait) .danger { height: 30vh; top: 46%; }
+body.touch.short:not(.portrait) #speedo { width: calc(var(--s,1) * 176px); height: calc(var(--s,1) * 153px); }
+body.touch.short:not(.portrait) .bark { bottom: auto; top: calc(var(--s,1) * 84px); max-width: 54vw; }
+@media (max-height: 500px) and (orientation: landscape) { .screen .panel { max-height: 94vh; padding: 12px 18px; } .panel h1 { font-size: 1.5rem; margin: 2px 0 8px; } .rank { font-size: 2.6rem; } }
+/* portrait: menus stack, controls own the bottom third */
+body.portrait .panel { width: 94vw; padding: 16px 14px; max-height: 88vh; }
+body.portrait .panel h1 { font-size: 1.45rem; }
+body.portrait #title .menu { display: flex; flex-direction: column; gap: 10px; } body.portrait #title .menu .btn { width: 78vw; min-width: 0; }
+body.portrait #title .logo { top: 12vh; } body.portrait .logo .l1 { font-size: 15vw; }
+body.portrait .controls { grid-template-columns: 1fr; gap: 2px; } body.portrait .controls .k { margin-top: 6px; }
+body.portrait .tabs { flex-wrap: wrap; }
+body.portrait.touch #tStick { height: 42%; }
+@media (max-height: 500px) and (orientation: landscape) { .fsCorner { top: auto; bottom: max(10px, env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); } }
+body.portrait .res { grid-template-columns: 1fr !important; gap: 0 !important; }
+body.portrait #results .row, body.portrait #results .menu { flex-direction: column; align-items: stretch; gap: 8px; }
+html, body, #game { background: #120c06; }

@@ -1,7 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta name="robots" content="noindex,nofollow"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#120c06"><title>RELIC RUNNER 4×4</title>
+<meta name="theme-color" content="#120c06">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Relic Runner">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>RELIC RUNNER 4×4</title>
 <link rel="stylesheet" href="style.css"></head>
 <body>
 <canvas id="game"></canvas>
@@ -10,6 +13,7 @@
   <div id="hud" class="hidden"></div>
   <div id="touch" class="hidden"><div id="tStick"></div><div id="tBase"><div id="tKnob"></div></div>
     <div class="tbtn" id="tNitro"><i>🔥</i><b>NITRO</b></div><div class="tbtn" id="tHB"><i>↻</i><b>DRIFT</b></div><div class="tbtn" id="tBrake"><b>BRAKE</b><small>HOLD · REVERSE</small></div><button id="pauseBtn" aria-label="Pause">❚❚</button></div>
+  <button id="fsBtn" class="hidden" aria-label="Toggle full screen" title="Full screen (F)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
   <div id="tut" class="hidden"></div>
   <div id="rotate" class="hidden"><div class="rbox"><div class="phone"></div><h2>TURN YOUR PHONE SIDEWAYS</h2><p>Old Bessie handles best in landscape.</p><button class="btn alt" id="bRotOk">PLAY IN PORTRAIT</button></div></div>
   <div id="screens"></div>
