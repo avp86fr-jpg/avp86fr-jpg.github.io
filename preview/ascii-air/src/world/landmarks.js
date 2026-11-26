@@ -57,24 +57,21 @@ function makeHangar() {
   g.name = "hangar";
   // Cream hall, barrel roof running east-west so the arched profile faces the south (hero)
   add(g, box(36, 10, 26, 0xe8d8b0, MAT.BUILDING), 0, 5, 0);
-  const hall = cyl(16, 16, 38, 20, 0xf0d8a8, MAT.ROOF);
+  // Top-half barrel only (a full cylinder plus two arched walls read as cat-ears from the runway)
+  const hallGeo = new THREE.CylinderGeometry(16, 16, 38, 22, 1, false, -Math.PI / 2, Math.PI);
+  const hall = mesh(hallGeo, 0xf0d8a8, MAT.ROOF);
   hall.rotation.z = Math.PI / 2;
   hall.position.set(0, 11, 0);
   g.add(hall);
-  // Arched south façade (shape with door cut) so the curve is obvious
   const face = new THREE.Shape();
-  face.moveTo(-20, 0); face.lineTo(-20, 11); face.absarc(0, 11, 20, Math.PI, 0, true); face.lineTo(20, 0); face.closePath();
+  face.moveTo(-20, 0); face.lineTo(-20, 11); face.absarc(0, 11, 16, Math.PI, 0, true); face.lineTo(20, 0); face.closePath();
   const door = new THREE.Path();
   door.moveTo(-7, 0); door.lineTo(-7, 8); door.absarc(0, 8, 7, Math.PI, 0, true); door.lineTo(7, 0); door.closePath();
   face.holes.push(door);
   const faceGeo = new THREE.ExtrudeGeometry(face, { depth: 1.2, bevelEnabled: false });
   faceGeo.translate(0, 0, 12.6);
-  const faceMesh = mesh(faceGeo, 0xe4d2a4, MAT.BUILDING);
-  g.add(faceMesh);
-  // rear wall
-  const back = mesh(faceGeo.clone(), 0xdccaa0, MAT.BUILDING);
-  back.position.z = -26.4;
-  g.add(back);
+  g.add(mesh(faceGeo, 0xe4d2a4, MAT.BUILDING));
+  add(g, box(40, 14, 1.2, 0xdccaa0, MAT.BUILDING), 0, 7, -13.2);
   // envelope emblem
   add(g, box(6.2, 4.2, 0.4, 0xf4ead0, MAT.BUILDING), 0, 16.2, 15.0);
   add(g, box(6.2, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 16.2, 15.2);

@@ -38,6 +38,7 @@ uniform vec3 uSky;
 uniform float uTime;
 uniform float uMatId;
 uniform float uChop;
+uniform float uNight;
 float sat(float x){ return clamp(x, 0.0, 1.0); }
 void main() {
   vec3 N = normalize(vN);
@@ -59,11 +60,12 @@ void main() {
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
   // Sparkle highlights
   float glitter = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 1.6) * 43758.5));
-  vec3 col = water + uSky * fres * 0.10 + uSunCol * sp * (0.28 + shoreBand * 0.25);
-  col += uSunCol * glitter * 0.20 * (0.22 + shoreBand * 0.5);
+  float day = 1.0 - sat(uNight);
+  vec3 col = water + uSky * fres * 0.10 * (0.25 + 0.75 * day) + uSunCol * sp * (0.28 + shoreBand * 0.25) * day;
+  col += uSunCol * glitter * 0.20 * (0.22 + shoreBand * 0.5) * day;
   // Soft ripple highlights, not dark streak lines
   float ripple = smoothstep(0.82, 0.98, fract(vWorld.x * 0.045 + vWorld.z * 0.04 + vWave * 1.6));
-  col = mix(col, vec3(0.70, 0.93, 0.98), ripple * 0.12);
+  col = mix(col, vec3(0.70, 0.93, 0.98), ripple * 0.12 * day);
   // Ink-line wave strokes, album style
   float wstroke = abs(fract(vWorld.x * 0.016 + vWorld.z * 0.021 + uTime * 0.04) - 0.5);
   float inkLine = (1.0 - smoothstep(0.0, 0.035, wstroke)) * (0.35 + 0.4 * nearIsle);
@@ -72,11 +74,11 @@ void main() {
   col = mix(col, vec3(0.10, 0.18, 0.32), inkLine * 0.55 * (1.0 - shoreBand * 0.7));
   float surf = shoreBand * sat(0.35 + vWave * 1.4) * 0.85;
   float foamLine = sat(1.0 - abs(foamZone - 0.30) * 14.0);
-  col = mix(col, vec3(1.0, 1.0, 1.0), foamLine * 0.92 + surf * 0.15);
+  col = mix(col, mix(vec3(0.35, 0.42, 0.50), vec3(1.0, 1.0, 1.0), day), (foamLine * 0.92 + surf * 0.15) * (0.25 + 0.75 * day));
   float crest = sat(vWave * uChop - 0.85);
   float crestThin = crest * (1.0 - sat((vWave * uChop - 1.25) * 2.4));
   float foamAmt = crestThin * sat(uChop - 1.35);
-  col = mix(col, vec3(0.96, 0.98, 1.0), max(surf, foamAmt * 0.85));
+  col = mix(col, vec3(0.96, 0.98, 1.0), max(surf, foamAmt * 0.85) * day);
   float foamEdge = sat((foamAmt - 0.35) * 12.0) * (1.0 - sat((foamAmt - 0.62) * 14.0));
   col = mix(col, vec3(0.14, 0.16, 0.20), foamEdge * 0.5);
   if (uChop > 2.0) {
@@ -103,6 +105,7 @@ export function createWater() {
       uSky: { value: new THREE.Color(0x2a5a90) },
       uMatId: { value: 1.0 },
       uChop: { value: 1.0 },
+      uNight: { value: 0 },
     },
     vertexShader: VERT,
     fragmentShader: FRAG,
@@ -162,6 +165,17 @@ export function createWater() {
         mat.uniforms.uSunCol.value.copy(sky.sunColor);
         mat.uniforms.uSky.value.copy(sky.horizonColor);
         lakeMat.uniforms.uSunCol.value.copy(sky.sunColor);
+        const night = sky.night || 0;
+        if (!this._deepDay) {
+          this._deepDay = new THREE.Color(0x0e4aa8);
+          this._shalDay = new THREE.Color(0x3adfc8);
+          this._deepNight = new THREE.Color(0x061828);
+          this._shalNight = new THREE.Color(0x163048);
+        }
+        mat.uniforms.uDeep.value.copy(this._deepDay).lerp(this._deepNight, night);
+        mat.uniforms.uShallow.value.copy(this._shalDay).lerp(this._shalNight, night);
+        if (mat.uniforms.uNight) mat.uniforms.uNight.value = night;
+        if (lakeMat.uniforms.uNight) lakeMat.uniforms.uNight.value = night;
       } else if (sky) {
         mat.uniforms.uSunDir.value.copy(sky.sunDir);
         lakeMat.uniforms.uSunDir.value.copy(sky.sunDir);
