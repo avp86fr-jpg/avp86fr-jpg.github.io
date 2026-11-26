@@ -321,10 +321,20 @@ export function computeHeight(x, z) {
     }
   }
 
-  // Vegetated east-coast shelf (hero left foreground), not a sand waste
-  if (x > 50 && x < 320 && z > -1400 && z < -1180) {
-    const shelf = smoothstep(50, 110, x) * smoothstep(320, 250, x) * smoothstep(-1400, -1320, z) * smoothstep(-1180, -1240, z);
-    h = Math.max(h, lerp(h, 6 + 8 * fbm(x * 0.02, z * 0.02, 3, 9), shelf * 0.85));
+  // Rocky east-coast headland (hero left): beach at the water, ochre cliffs, a vegetated top — not a lawn.
+  if (x > 40 && x < 340 && z > -1420 && z < -1170) {
+    const shelf = smoothstep(40, 90, x) * smoothstep(340, 260, x) * smoothstep(-1420, -1330, z) * smoothstep(-1170, -1230, z);
+    const n = fbm(x * 0.018, z * 0.018, 4, 9);
+    const distW = Math.abs(z + 1340) * 0.02 + Math.max(0, 80 - x) * 0.015;
+    // Beach terrace ~2 m, then a rocky rise to 14–22 m with irregular lips
+    const beach = 1.4 + 0.8 * n;
+    const cliff = 12 + 12 * n + 7 * fbm(x * 0.04, z * 0.04, 3, 21);
+    // Steep south face: only a thin beach strip, then a rocky rise
+    const fromWater = saturate((z + 1400) / 50);
+    const top = lerp(beach, cliff, smoothstep(0.12, 0.55, fromWater * shelf));
+    const cove = smoothstep(50, 85, x) * smoothstep(130, 95, x) * smoothstep(-1365, -1335, z) * smoothstep(-1288, -1320, z);
+    const target = lerp(top, beach, cove * 0.7);
+    h = Math.max(h, lerp(h, target, shelf * 0.92));
   }
 
   return h;
@@ -353,8 +363,12 @@ export function computeMaterial(x, z, h, slope) {
   // lagoon sand + the one small cove; south coast is rock
   if (h < 3.5 && dist2(x, z, -740, -1120) < 260) return MAT.SAND;
   if (h < 4.2 && dist2(x, z, 20, -1210) < 90) return MAT.SAND;
-  // East-coast foreground shelf stays grassy (hero left)
-  if (x > 50 && x < 320 && z > -1400 && z < -1185 && h > 3.5) return (h > 14 ? MAT.FOREST : MAT.GRASS);
+  // East-coast headland: sand at the water, rock on the face, pines/grass only on top
+  if (x > 40 && x < 340 && z > -1420 && z < -1175) {
+    if (h < 3.2) return MAT.SAND;
+    if (slope > 0.28 || h < 9.5) return MAT.ROCK;
+    return (h > 14 ? MAT.FOREST : MAT.GRASS);
+  }
   if (h < 4.5 && dist2(x, z, LANDMARKS.lighthouse.x + 40, LANDMARKS.lighthouse.z + 40) < 80) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
   // Coastal cliffs only — steep faces near the water, not the whole south slope.

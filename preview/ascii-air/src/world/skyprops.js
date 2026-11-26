@@ -31,7 +31,7 @@ export function createSkyProps(scene, quality = "medium") {
     flatShading: false,
   }));
   const clouds = new THREE.Group();
-  const nCloud = Math.floor(28 * q.clouds);
+  const nCloud = Math.floor(40 * q.clouds);
   const puff = cloudPuff(cloudMat);
   puff.updateMatrixWorld(true);
   // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
@@ -52,9 +52,14 @@ export function createSkyProps(scene, quality = "medium") {
     cloudGeo = mergeSimple(geos, MAT.CLOUD);
   }
   const heroSpots = [
-    [-420, 280, -900, 36], [360, 300, -720, 32], [-80, 340, -400, 40],
-    [500, 260, -1000, 28], [-560, 300, -600, 30], [220, 320, -200, 34],
+    [-420, 280, -900, 36], [-400, 340, -880, 24],
+    [360, 300, -720, 32], [340, 370, -700, 22],
+    [-80, 340, -400, 40], [-40, 410, -420, 26],
+    [500, 260, -1000, 28], [-560, 300, -600, 30],
+    [220, 320, -200, 34], [200, 390, -180, 22],
     [-280, 290, -200, 32], [80, 360, 200, 38],
+    [140, 300, -1100, 30], [-200, 310, -1050, 28],
+    [80, 250, -800, 22], [80, 310, -820, 16],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -103,6 +108,25 @@ export function createSkyProps(scene, quality = "medium") {
   }
   cloudInst.count = nCloud + heroSpots.length;
   group.add(cloudInst);
+  // Ink outline hulls (back-face, slightly larger) so cumulus read as ligne-claire volumes
+  const inkMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+    color: 0x3a342c,
+    side: THREE.BackSide,
+    fog: true,
+  }));
+  inkMat.userData.matId = MAT.CLOUD;
+  const cloudInk = new THREE.InstancedMesh(cloudGeo, inkMat, nCloud + heroSpots.length);
+  const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _m = new THREE.Matrix4();
+  for (let i = 0; i < cloudInst.count; i++) {
+    cloudInst.getMatrixAt(i, _m);
+    _m.decompose(_p, _q, _s);
+    _s.multiplyScalar(1.035);
+    _m.compose(_p, _q, _s);
+    cloudInk.setMatrixAt(i, _m);
+  }
+  cloudInk.count = cloudInst.count;
+  cloudInk.instanceMatrix.needsUpdate = true;
+  group.add(cloudInk);
 
   // Balloons — one instanced mesh (ambient; mission balloons stay separate)
   const balloonProto = makeBalloon(0xe06a4f);

@@ -699,8 +699,8 @@ time  ${formatTime(result.time || 0)}
     const vsEl = flight.querySelector("#g-vs");
     const flEl = flight.querySelector("#g-flaps");
     const geEl = flight.querySelector("#g-gear");
-    if (vitEl) vitEl.innerHTML = '<div class="g-lab">SPEED</div><div class="g-val">' + String(spd).padStart(3, " ") + '</div><div class="g-unit">km/h</div>';
-    if (altEl) altEl.innerHTML = '<div class="g-lab">ALT</div><div class="g-val">' + String(altM).padStart(4, " ") + '</div><div class="g-unit">m</div>';
+    if (vitEl) vitEl.innerHTML = '<div class="g-lab">SPEED</div><div class="g-row">' + gaugeBars(spd, 200, 8) + '<div class="g-num"><div class="g-val">' + String(spd).padStart(3, " ") + '</div><div class="g-unit">km/h</div></div></div>';
+    if (altEl) altEl.innerHTML = '<div class="g-lab">ALT</div><div class="g-row">' + gaugeBars(altM, 1200, 8) + '<div class="g-num"><div class="g-val">' + String(altM).padStart(4, " ") + '</div><div class="g-unit">m</div></div></div>';
     if (vsEl) vsEl.innerHTML = '<div class="g-lab">V/S</div><div class="g-val">' + vsS + '</div><div class="g-unit">m/s</div>';
     if (flEl) {
       const ticks = [0, 1, 2, 3].map((n) => '<span class="' + (n === flapN ? "on" : "") + '">' + n + "</span>").join(" ");
@@ -755,6 +755,15 @@ time  ${formatTime(result.time || 0)}
   }
 
 
+  function gaugeBars(value, max, steps) {
+    const filled = Math.max(0, Math.min(steps, Math.round((value / max) * steps)));
+    let html = '<div class="g-bars" aria-hidden="true">';
+    for (let i = 0; i < steps; i++) {
+      html += '<i class="' + (i < filled ? "on" : "") + '"></i>';
+    }
+    return html + "</div>";
+  }
+
   function drawHorizon(cv, craft) {
     if (!cv || !cv.getContext) return;
     const ctx = cv.getContext("2d");
@@ -780,8 +789,22 @@ time  ${formatTime(result.time || 0)}
     ctx.beginPath(); ctx.arc(w/2, h/2, w/2 - 2, 0, Math.PI * 2); ctx.stroke();
     ctx.strokeStyle = "#c01418";
     ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(10, h/2); ctx.lineTo(w - 10, h/2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(w/2, h/2); ctx.lineTo(w/2 + 8, h/2 + 6); ctx.lineTo(w/2 - 8, h/2 + 6); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8, h/2); ctx.lineTo(w * 0.32, h/2); ctx.moveTo(w * 0.68, h/2); ctx.lineTo(w - 8, h/2); ctx.stroke();
+    ctx.fillStyle = "#e8b01a";
+    ctx.strokeStyle = "#1a140c";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(w/2 - 16, h/2);
+    ctx.lineTo(w/2 - 4, h/2);
+    ctx.lineTo(w/2, h/2 - 3);
+    ctx.lineTo(w/2 + 4, h/2);
+    ctx.lineTo(w/2 + 16, h/2);
+    ctx.lineTo(w/2 + 4, h/2 + 3);
+    ctx.lineTo(w/2, h/2 + 5);
+    ctx.lineTo(w/2 - 4, h/2 + 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   }
 
   function compassStrip(hdg, deg) {

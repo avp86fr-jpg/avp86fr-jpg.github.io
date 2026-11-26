@@ -48,7 +48,11 @@ vec3 aces(vec3 x) {
 
 void main() {
   vec2 px = 1.0 / uRes;
-  vec3 src = texture2D(tColor, vUv).rgb;
+  vec4 src4 = texture2D(tColor, vUv);
+  vec3 src = src4.rgb;
+  float matId = src4.a * 255.0;
+  // Plane (10), hero (11), wood struts (12), metal/engine (14) — not roof (13)
+  float isPlane = min(1.0, step(9.5, matId) * step(matId, 12.6) + step(13.5, matId) * step(matId, 14.6));
   vec3 col = aces(src * uExposure);
   float L = luma(col);
   col = mix(vec3(L), col, uSat);
@@ -79,11 +83,12 @@ void main() {
   float jump2 = dMax2 - d;
   float farCut = uNearFar.y * 0.96;
   float notSky = step(d, farCut);
-  float expected = (0.018 * d + 0.75) * uOutline;
-  float onNear = step(d - dMin, expected * 0.45 + 1.2);
+  // Cap outline thickness on the plane so a rounded tail never becomes a black ring.
+  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.38, isPlane);
+  float onNear = step(d - dMin, expected * 0.45 + mix(1.2, 0.35, isPlane));
   float sil = step(expected, jump) * onNear * notSky;
   float onNear2 = step(d - dMin2, expected * 0.5 + 1.6);
-  float silFar = step(expected * 1.2, jump2) * onNear2 * notSky * step(180.0, d);
+  float silFar = step(expected * 1.2, jump2) * onNear2 * notSky * step(180.0, d) * (1.0 - isPlane);
   sil = max(sil, silFar);
 
   vec3 cL = texture2D(tColor, vUv + vec2(-o1.x, 0.0)).rgb;
@@ -92,11 +97,12 @@ void main() {
   vec3 cD = texture2D(tColor, vUv + vec2(0.0, -o1.y)).rgb;
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
   float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
-  float colEdge = step(0.20, gCol) * step(minN, 0.14) * notSky;
+  // Colour edges are too thick on the near plane (red/cream bands, tail cap).
+  float colEdge = step(mix(0.20, 0.38, isPlane), gCol) * step(minN, mix(0.14, 0.08, isPlane)) * notSky * mix(1.0, 0.35, isPlane);
 
   float ink = max(sil, colEdge);
   vec3 inkCol = vec3(0.09, 0.07, 0.05);
-  col = mix(col, inkCol, ink * 0.94);
+  col = mix(col, inkCol, ink * mix(0.94, 0.70, isPlane));
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;

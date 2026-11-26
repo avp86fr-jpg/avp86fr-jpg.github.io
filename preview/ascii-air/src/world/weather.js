@@ -172,8 +172,9 @@ function makeBolt() {
   merged.computeVertexNormals();
   retagGeometry(merged, MAT.LIGHT, 1);
   const mesh = new THREE.Mesh(merged, patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0xe8d0ff, toneMapped: false,
+    color: 0xf6f2ff, toneMapped: false, fog: false,
   })));
   mesh.name = "lightning";
+  mesh.scale.setScalar(2.4);
   return mesh;
 }

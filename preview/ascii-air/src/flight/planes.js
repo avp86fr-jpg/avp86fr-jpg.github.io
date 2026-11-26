@@ -52,11 +52,12 @@ function buildTrainer(s) {
   const red = s.body, cream = s.accent, dark = s.dark;
 
   // Builder space: +Z is the nose (prop), -Z is the tail. Flipped later to flight -Z.
-  // Fat cowling at the nose, tapering to a slim tail cone.
-  add(g, new THREE.CylinderGeometry(0.86, 0.40, 6.2, 14), red, MAT.PLANE, 0, 0.28, 0.05, Math.PI / 2, 0, 0);
-  add(g, new THREE.SphereGeometry(0.86, 12, 10), red, MAT.PLANE, 0, 0.28, 3.05);
-  add(g, new THREE.ConeGeometry(0.28, 1.15, 8), red, MAT.PLANE, 0, 0.32, -3.55, -Math.PI / 2, 0, 0);
-  add(g, new THREE.BoxGeometry(0.95, 0.14, 5.6), cream, MAT.PLANE, 0, -0.22, 0.2);
+  // Fat cowling, mid cockpit, then a slim tail boom — never a rear disc.
+  add(g, new THREE.CylinderGeometry(0.80, 0.66, 2.15, 14), red, MAT.PLANE, 0, 0.28, 2.20, Math.PI / 2, 0, 0);
+  add(g, new THREE.SphereGeometry(0.80, 12, 10), red, MAT.PLANE, 0, 0.28, 3.28);
+  add(g, new THREE.CylinderGeometry(0.66, 0.34, 2.05, 14), red, MAT.PLANE, 0, 0.28, 0.10, Math.PI / 2, 0, 0);
+  add(g, new THREE.CylinderGeometry(0.34, 0.11, 3.55, 12), red, MAT.PLANE, 0, 0.30, -2.60, Math.PI / 2, 0, 0);
+  add(g, new THREE.BoxGeometry(0.80, 0.12, 5.0), cream, MAT.PLANE, 0, -0.16, 0.35);
 
   // Radial engine + cowling rings, clearly at the FRONT
   add(g, new THREE.CylinderGeometry(0.92, 0.92, 0.22, 16), dark, MAT.METAL, 0, 0.28, 3.22, Math.PI / 2);
@@ -106,12 +107,15 @@ function buildTrainer(s) {
     wire(g, dark, side * 4.20, 1.70, 0.85, side * 2.45, 0.08, -0.55);
   }
 
-  // Cream tail at the BACK — tall fin so the rear reads as a tail, not a red ball
-  add(g, new THREE.BoxGeometry(0.16, 2.95, 1.90), cream, MAT.PLANE, 0, 1.70, -3.35);
-  add(g, new THREE.BoxGeometry(0.18, 2.95, 0.14), red, MAT.PLANE, 0, 1.70, -2.45);
-  const rudder = add(g, new THREE.BoxGeometry(0.14, 2.15, 0.70), cream, MAT.PLANE, 0, 1.55, -4.15);
-  add(g, new THREE.BoxGeometry(4.40, 0.14, 1.50), cream, MAT.PLANE, 0, 0.42, -3.35);
-  const elev = add(g, new THREE.BoxGeometry(4.00, 0.12, 0.55), cream, MAT.PLANE, 0, 0.42, -4.05);
+  // Cream vertical fin + red rudder stripe and leading edge; slim so it never reads as a disc
+  add(g, new THREE.BoxGeometry(0.08, 2.55, 1.90), cream, MAT.PLANE, 0, 1.62, -3.95);
+  add(g, new THREE.BoxGeometry(0.09, 2.55, 0.22), red, MAT.PLANE, 0, 1.62, -4.82);
+  add(g, new THREE.BoxGeometry(0.09, 2.55, 0.14), red, MAT.PLANE, 0, 1.62, -3.05);
+  const rudder = add(g, new THREE.BoxGeometry(0.08, 2.10, 0.50), cream, MAT.PLANE, 0, 1.48, -5.05);
+  add(g, new THREE.BoxGeometry(4.55, 0.10, 1.40), cream, MAT.PLANE, 0, 0.38, -4.05);
+  const elev = add(g, new THREE.BoxGeometry(4.15, 0.09, 0.42), cream, MAT.PLANE, 0, 0.38, -4.75);
+  add(g, new THREE.BoxGeometry(0.16, 0.12, 1.40), red, MAT.PLANE, 1.95, 0.46, -4.05);
+  add(g, new THREE.BoxGeometry(0.16, 0.12, 1.40), red, MAT.PLANE, -1.95, 0.46, -4.05);
 
   // Gear under the forward fuselage
   add(g, new THREE.BoxGeometry(0.08, 1.25, 0.08), dark, MAT.METAL, 1.12, -0.62, 0.85);
@@ -130,7 +134,7 @@ function buildTrainer(s) {
   add(prop, new THREE.CylinderGeometry(0.12, 0.12, 0.42, 8), dark, MAT.METAL, 0, 0, 0.08, Math.PI / 2);
   add(prop, new THREE.SphereGeometry(0.20, 8, 6), cream, MAT.PLANE, 0, 0, 0.30);
   const discMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0xf0e6c8, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
+    color: 0xf0e6c8, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
   }));
   const disc = new THREE.Mesh(new THREE.CircleGeometry(1.05, 24), discMat);
   disc.name = "prop-blur";

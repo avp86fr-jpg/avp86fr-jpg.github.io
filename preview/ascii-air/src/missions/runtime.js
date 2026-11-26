@@ -237,7 +237,25 @@ export function createMissionSystem(scene, world, audio) {
     if (m.subject) setupPhoto(m);
   }
 
+  function makeRaft() {
+    const g = new THREE.Group();
+    const wood = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xc4a06a, flatShading: true }));
+    const tube = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xe24a22, flatShading: true, emissive: 0x6a1808, emissiveIntensity: 0.25 }));
+    const flag = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xffee66, flatShading: true, emissive: 0xaa8800, emissiveIntensity: 0.35 }));
+    const deck = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.35, 10), wood);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.45, 6, 12), tube);
+    rim.rotation.x = Math.PI / 2;
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 5), wood);
+    mast.position.y = 1.7;
+    const fl = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.08), flag);
+    fl.position.set(0.6, 2.6, 0);
+    g.add(deck, rim, mast, fl);
+    g.traverse((o) => { if (o.isMesh) { o.userData.matId = 12; } });
+    return g;
+  }
+
   function setupRescue(m) {
+
     state.mailHasBag = false;
     state.mailStops = [];
     (m.stops || []).forEach((s, i) => {
@@ -256,6 +274,12 @@ export function createMissionSystem(scene, world, audio) {
       const pole = markerPole(col);
       pole.position.set(s.x, ground + 1, s.z);
       add(pole);
+      if (s.type === "raft") {
+        const raft = makeRaft();
+        raft.scale.setScalar(2.1);
+        raft.position.set(s.x, Math.max(0.6, ground + 0.5), s.z);
+        add(raft);
+      }
     });
   }
 

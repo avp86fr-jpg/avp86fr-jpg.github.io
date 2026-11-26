@@ -742,8 +742,8 @@ function heroShot(opts = {}) {
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
-  craft.roll = 0;
-  craft.pitch = 0;
+  craft.roll = 0.18;
+  craft.pitch = -0.04;
   flyCam.snap(craft, false);
   paused = true;
   if (opts.showcase !== false) showcaseRings("pro", 3, 12, 27.346, null);
@@ -877,6 +877,13 @@ function exposeAPI() {
     clearLook() { camOverride = null; },
     launch: (spd) => launchCraft(craft, spd, 2),
     setThrottle: (v) => { input.resetThrottleLever?.(v); craft.throttle = v; },
+    faceToward(x, z) {
+      const hdg = headingFromXZ(x - craft.pos.x, z - craft.pos.z);
+      resetCraft(craft, { x: craft.pos.x, y: craft.pos.y, z: craft.pos.z, heading: hdg }, hdg, craft.id);
+      launchCraft(craft, Math.max(28, craft.airspeed || 40), 0);
+      flyCam.hardSnap ? flyCam.hardSnap(craft, false) : flyCam.snap(craft, false);
+      syncPlaneMesh();
+    },
     setAutopilot: (on, target, opts) => { autoPilotOn = !!on; autoPilotTarget = target; autoPilotOpts = opts || {}; },
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,

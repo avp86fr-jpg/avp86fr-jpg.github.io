@@ -122,7 +122,8 @@ export function createFlora(scene, terrain, quality = "medium") {
         palms.push({ x: jx, y: h, z: jz, s: 0.9 + n * 0.45, r: n * 6 });
       } else if (m === MAT.FOREST || (m === MAT.GRASS && n > (z < -200 && z > -1000 ? 0.18 : 0.26) && h > 5)) {
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
-        trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: n > 0.48 });
+        const eastHead = jx > 40 && jz < -1180;
+        trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: eastHead ? n > 0.28 : n > 0.48 });
       }
     }
   }
@@ -151,6 +152,13 @@ export function createFlora(scene, terrain, quality = "medium") {
       if (h < 4.5 || h > 150) continue;
       if (z < -1180 && h < 10 && x < 40) continue;
       if (Math.abs(z + 1100) < 95 && Math.abs(x) < 520) continue;
+      // On the hero-left headland, plant pines / cypress — not a lawn of green blobs
+      if (x > 40 && z < -1180) {
+        if (h < 8) continue;
+        const bucket = i % 3;
+        trees[bucket].push({ x, y: h, z, s: 0.95 + (i % 4) * 0.25, r: a, cone: i % 2 === 0 });
+        continue;
+      }
       blobs.push({ x, y: h + 1.2, z, s: 1.6 + (i % 4) * 0.45, r: a });
     }
   }

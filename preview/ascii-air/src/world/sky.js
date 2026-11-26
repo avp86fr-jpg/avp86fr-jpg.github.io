@@ -89,20 +89,21 @@ export function createSky(scene) {
   sGeo.setAttribute("color", new THREE.BufferAttribute(sCol, 3));
   sGeo.setAttribute("aId", new THREE.BufferAttribute(sId, 2));
   const stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
-    size: 8, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0, depthWrite: false,
+    size: 18, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0,
+    depthWrite: false, fog: false, toneMapped: false,
   }));
   stars.frustumCulled = false;
 
   // Moon
   const moon = new THREE.Mesh(
     new THREE.SphereGeometry(40, 12, 10),
-    new THREE.MeshBasicMaterial({ color: 0xe8e4d0 })
+    new THREE.MeshBasicMaterial({ color: 0xe8e4d0, fog: false, toneMapped: false })
   );
   tagMesh(moon, MAT.SNOW, 0);
 
   scene.add(skyMesh, hemi, sun, amb, stars, moon);
 
-  const fog = new THREE.Fog(0xb8e4f8, 1100, 4800);
+  const fog = new THREE.Fog(0xb4d8f4, 2000, 5600);
   scene.fog = fog;
 
   const state = {
@@ -121,11 +122,11 @@ export function createSky(scene) {
     const h = ((hour % 24) + 24) % 24;
     // keyframes: 0 night, 5 pre-dawn, 6.5 sunrise, 9 morning, 12 noon, 17 golden, 19 dusk, 21 night
     const keys = [
-      { t: 0,  z: 0x04061a, ho: 0x12182c, g: 0x0c1018, s: 0xb0c4ff, i: 0.08, si: 0.0, hc: 0x222a3c, ac: 0x12141e, fog: 0x0c1220 },
-      { t: 5,  z: 0x0a1230, ho: 0x2a2048, g: 0x100818, s: 0xffc8a0, i: 0.12, si: 0.05, hc: 0x3a2858, ac: 0x120818, fog: 0x1a1430 },
+      { t: 0,  z: 0x0a1430, ho: 0x1a2a48, g: 0x101820, s: 0xc8d8ff, i: 0.16, si: 0.0, hc: 0x2a3850, ac: 0x1a2030, fog: 0x101828 },
+      { t: 5,  z: 0x121838, ho: 0x3a2860, g: 0x141020, s: 0xffc8a0, i: 0.2,  si: 0.05, hc: 0x3a2858, ac: 0x1a1428, fog: 0x1a1430 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
-      { t: 9,  z: 0x4ab8ff, ho: 0xd2f0ff, g: 0x86d070, s: 0xfff8dc, i: 1.32, si: 0.8,  hc: 0xe8f6ff, ac: 0x6ab050, fog: 0xc8eefc },
-      { t: 12, z: 0x4eb8ff, ho: 0xd8f4ff, g: 0x8cd478, s: 0xfffae0, i: 1.38, si: 0.85, hc: 0xeef8ff, ac: 0x6ab050, fog: 0xd0f2ff },
+      { t: 9,  z: 0x4ab8ff, ho: 0xd2f0ff, g: 0x86d070, s: 0xfff8dc, i: 1.32, si: 0.8,  hc: 0xe8f6ff, ac: 0x6ab050, fog: 0xb8d8f0 },
+      { t: 12, z: 0x4eb8ff, ho: 0xd8f4ff, g: 0x8cd478, s: 0xfffae0, i: 1.38, si: 0.85, hc: 0xeef8ff, ac: 0x6ab050, fog: 0xb8d8f0 },
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
       { t: 20.5,z:0x050818, ho: 0x14182c, g: 0x08060c, s: 0xc0d0ff, i: 0.08, si: 0.02, hc: 0x1a2238, ac: 0x0a0c18, fog: 0x0c101c },
@@ -179,14 +180,14 @@ export function createSky(scene) {
     hemi.intensity = pal.hemiInt;
     sun.color.copy(pal.sun);
     sun.intensity = pal.sunInt;
-    amb.intensity = 0.38 + (1 - night) * 0.42;
+    amb.intensity = 0.50 + (1 - night) * 0.38;
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 700 : 2800;
-    fog.far = night > 0.6 ? 3200 : 8200;
+    fog.near = night > 0.6 ? 700 : 2000;
+    fog.far = night > 0.6 ? 3200 : 5600;
     scene.fog = fog;
 
-    stars.material.opacity = saturate((night - 0.35) * 2);
+    stars.material.opacity = saturate((night - 0.2) * 1.8);
     stars.visible = night > 0.2;
 
     // moon opposite the sun

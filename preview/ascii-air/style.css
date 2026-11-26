@@ -469,28 +469,47 @@ body.touch-ui .hud-ico { width: 14px; height: 14px; flex-basis: 14px; }
 #hud-flight.flight-bar {
   position: absolute;
   left: 50%;
-  bottom: 14px;
+  bottom: 12px;
   transform: translateX(-50%);
   display: flex;
-  align-items: stretch;
-  gap: 10px;
-  padding: 10px 16px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 10px;
   z-index: 6;
   white-space: normal;
 }
 .gauge-box {
-  min-width: 96px;
+  min-width: 88px;
   text-align: center;
   border-right: 3px solid rgba(20,16,10,0.3);
-  padding: 0 12px;
+  padding: 0 10px;
 }
 .gauge-box:last-child { border-right: 0; }
-.g-lab { font-size: 14px; letter-spacing: 0.12em; opacity: 0.8; }
-.g-val { font-family: Itim, "Patrick Hand", cursive; font-size: 32px; line-height: 1.1; }
-.g-unit { font-size: 14px; }
+.g-lab { font-size: 13px; letter-spacing: 0.14em; opacity: 0.8; }
+.g-val { font-family: Itim, "Patrick Hand", cursive; font-size: 30px; line-height: 1.05; }
+.g-unit { font-size: 13px; }
+.g-row { display: flex; align-items: flex-end; justify-content: center; gap: 8px; }
+.g-num { text-align: left; }
+.g-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+.g-bars i {
+  width: 5px;
+  height: 6px;
+  background: rgba(26,20,12,0.18);
+  display: block;
+  border-radius: 1px;
+}
+.g-bars i:nth-child(1) { height: 6px; }
+.g-bars i:nth-child(2) { height: 9px; }
+.g-bars i:nth-child(3) { height: 12px; }
+.g-bars i:nth-child(4) { height: 15px; }
+.g-bars i:nth-child(5) { height: 18px; }
+.g-bars i:nth-child(6) { height: 21px; }
+.g-bars i:nth-child(7) { height: 24px; }
+.g-bars i:nth-child(8) { height: 28px; }
+.g-bars i.on { background: #1a140c; }
 .g-val.flaps span { padding: 0 3px; opacity: 0.45; }
 .g-val.flaps span.on { opacity: 1; outline: 2px solid #1a140c; }
-#g-horizon { width: 84px; height: 84px; border-radius: 50%; display: block; border: 3px solid #14100a; }
+#g-horizon { width: 96px; height: 96px; border-radius: 50%; display: block; border: 3px solid #14100a; background: #fff; }
 #hud-photo, #hud-aux {
   position: absolute;
   right: 14px;
@@ -684,6 +703,8 @@ body.touch-ui #hud-flight.flight-bar {
   box-shadow: 2px 2px 0 #1a140c;
 }
 body.touch-ui .gauge-box { min-width: 44px; padding: 0 4px; }
+body.touch-ui .g-bars, body.touch-ui .g-unit { display: none; }
+body.touch-ui #g-horizon { width: 40px; height: 40px; }
 body.touch-ui .g-val { font-size: 15px; }
 body.touch-ui .g-lab { font-size: 9px; }
 body.touch-ui #hud-msg { font-size: 14px; top: 18%; max-width: 50vw; }

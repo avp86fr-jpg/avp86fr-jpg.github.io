@@ -221,12 +221,12 @@ export const KEYS = {
 export const HERO_VIEW = {
   // South-east vantage, looking north-north-west so the coast runs
   // left-foreground (airport) to right-background (cape).
-  plane: { x: 90, y: 52, z: -1505 },
+  plane: { x: 70, y: 48, z: -1488 },
   look:  { x: -30, y: 42, z: -800 },
-  dist: 30,
-  height: 8.2,
-  side: 14.0,
-  fov: 50,
+  dist: 31,
+  height: 9.8,
+  side: 11.5,
+  fov: 48,
 };
 
 export const SPAWN = {

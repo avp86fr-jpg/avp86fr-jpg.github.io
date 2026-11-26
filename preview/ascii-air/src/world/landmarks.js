@@ -97,14 +97,20 @@ function makeHangar() {
 function makeTower() {
   const g = new THREE.Group();
   g.name = "tower";
-  add(g, box(7.2, 30, 7.2, 0xf7f1e4, MAT.BUILDING), 0, 15, 0);
-  add(g, box(7.6, 1.2, 7.6, 0xb08c5c, MAT.ROCK), 0, 8, 0);
-  add(g, box(7.6, 1.2, 7.6, 0xb08c5c, MAT.ROCK), 0, 16, 0);
-  add(g, box(11, 6, 11, 0xf7f1e4, MAT.BUILDING), 0, 33, 0);
-  add(g, box(9, 3.1, 0.3, 0x2a2420, MAT.METAL), 0, 33, 5.6);
-  add(g, box(0.3, 3.1, 9, 0x2a2420, MAT.METAL), 5.6, 33, 0);
-  add(g, box(12, 0.6, 12, 0x8a3a2a, MAT.ROOF), 0, 36.2, 0);
-  add(g, cyl(0.15, 0.15, 8, 6, 0x333333, MAT.METAL), 0, 40.2, 0);
+  // Slim white shaft with a dark window strip and a readable cab — not a pale stacked keep
+  add(g, box(4.4, 24, 4.4, 0xfffaf4, MAT.BUILDING), 0, 12, 0);
+  for (const y of [6, 11, 16]) {
+    add(g, box(1.6, 2.2, 0.35, 0x1a2230, MAT.METAL), 0, y, 2.3);
+    add(g, box(0.35, 2.2, 1.6, 0x1a2230, MAT.METAL), 2.3, y, 0);
+  }
+  add(g, box(4.8, 0.8, 4.8, 0x8a3a2a, MAT.ROOF), 0, 24.4, 0);
+  add(g, box(7.6, 5.2, 7.6, 0xfffaf4, MAT.BUILDING), 0, 27.4, 0);
+  add(g, box(6.4, 2.8, 0.28, 0x1a3048, MAT.METAL), 0, 27.4, 3.9);
+  add(g, box(0.28, 2.8, 6.4, 0x1a3048, MAT.METAL), 3.9, 27.4, 0);
+  add(g, box(6.4, 2.8, 0.28, 0x1a3048, MAT.METAL), 0, 27.4, -3.9);
+  add(g, box(0.28, 2.8, 6.4, 0x1a3048, MAT.METAL), -3.9, 27.4, 0);
+  add(g, box(8.2, 0.5, 8.2, 0x8a3a2a, MAT.ROOF), 0, 30.2, 0);
+  add(g, cyl(0.12, 0.12, 6, 6, 0x333333, MAT.METAL), 0, 33.4, 0);
   return g;
 }
 
@@ -848,10 +854,17 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   group.add(windsock);
 
   const tower = makeTower();
-  tower.scale.setScalar(2.15);
+  tower.scale.setScalar(1.65);
   tower.position.set(LANDMARKS.hangar.x - 8, H(LANDMARKS.hangar.x - 8, LANDMARKS.hangar.z - 42), LANDMARKS.hangar.z - 42);
   group.add(tower);
-  sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xffe2a0, 4, 80);
+  sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xffe2a0, 6, 140);
+  // Hangar apron + runway threshold lamps so Night Mail has a lit path
+  sky.addLamp(new THREE.Vector3(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z) + 14, LANDMARKS.hangar.z), 0xffe2a0, 5, 120);
+  for (const x of [-200, -80, 40, 160, 280]) {
+    sky.addLamp(new THREE.Vector3(x, H(x, -1100) + 2.4, -1100 - 22), 0xffc070, 2.4, 36);
+    sky.addLamp(new THREE.Vector3(x, H(x, -1100) + 2.4, -1100 + 22), 0xffc070, 2.4, 36);
+  }
+
 
 
   // Mount Glyph: glowing crater, lava and smoke
@@ -955,14 +968,16 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     boats.push(b);
   }
 
-  // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
+  // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(-36, 0.9, -1488);
-  steamer.rotation.y = -0.7;
-  steamer.scale.setScalar(1.85);
+  steamer.position.set(-80, 0.9, -1310);
+  steamer.rotation.y = -0.55;
+  steamer.scale.setScalar(2.35);
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[-24, -1522, 0x2a6cb6], [-48, -1460, 0xe8e0c8], [18, -1510, 0xc05030], [4, -1534, 0xc08020], [-62, -1440, 0xf4ead0]];
+  const coastal = [
+    [130, -1410, 0x2a6cb6], [20, -1335, 0xe8e0c8], [-40, -1270, 0xc05030],
+  ];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
@@ -1074,7 +1089,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     const bulb = box(0.5, 0.5, 0.5, 0xffe8a0, MAT.LIGHT, 1);
     bulb.position.set(p.x + 3, lamp.position.y + 3, p.z);
     group.add(bulb);
-    sky.addLamp(bulb.position.clone(), 0xffc878, 2.2, 28);
+    sky.addLamp(bulb.position.clone(), 0xffc878, 4.0, 70);
   }
 
   mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock"]));
