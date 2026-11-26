@@ -44,16 +44,19 @@ void main() {
   vec3 V = normalize(cameraPosition - vWorld);
   float fres = pow(1.0 - sat(dot(N, V)), 3.0);
   float ndl = sat(dot(N, normalize(uSunDir)));
-  // depth cue from absolute y around 0 is useless; use distance from origin-ish
-  float radial = length(vWorld.xz);
-  float nearIsle = sat(1.0 - (radial - 650.0) / 1100.0);
-  vec3 water = mix(uDeep, uShallow, nearIsle * 0.45 + 0.10 * ndl);
+  // Layered water: deep ocean, mid teal, a thin coastal shallow — not a huge pale disk.
+  float radial = length(vWorld.xz - vec2(0.0, -200.0));
+  float mid = sat(1.0 - (radial - 700.0) / 1600.0);
+  float shore = sat(1.0 - abs(radial - 1080.0) / 160.0);
+  vec3 midCol = mix(uDeep, uShallow, 0.38);
+  vec3 water = mix(uDeep, midCol, mid * 0.28 + 0.06 * ndl);
+  water = mix(water, uShallow, shore * 0.35);
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 64.0);
-  vec3 col = water + uSky * fres * 0.06 + uSunCol * sp * 0.18 * nearIsle;
-  float stroke = step(0.97, fract(vWorld.x * 0.08 + vWorld.z * 0.07 + vWave * 2.2));
-  col = mix(col, vec3(0.93, 0.96, 0.80), stroke * 0.5 * nearIsle);
-  // white surf on the shallows + thin outlined foam crests and spray in a blow
-  float surf = sat((nearIsle - 0.78) / 0.22) * sat(vWave * 1.8) * 0.35;
+  vec3 col = water + uSky * fres * 0.07 + uSunCol * sp * 0.22 * (0.35 + shore * 0.65);
+  float stroke = step(0.96, fract(vWorld.x * 0.07 + vWorld.z * 0.06 + vWave * 2.0));
+  col = mix(col, vec3(0.78, 0.93, 0.90), stroke * (0.18 + 0.35 * shore));
+  // Thin foam only in a narrow shore band
+  float surf = shore * sat(vWave * 1.8) * 0.42;
   float crest = sat(vWave * uChop - 0.85);
   float crestThin = crest * (1.0 - sat((vWave * uChop - 1.25) * 2.4));
   float foamAmt = crestThin * sat(uChop - 1.35);
@@ -69,7 +72,7 @@ void main() {
 `;
 
 export function createWater() {
-  const geo = new THREE.PlaneGeometry(WORLD.size * 1.6, WORLD.size * 1.6, 80, 80);
+  const geo = new THREE.PlaneGeometry(WORLD.size * 1.6, WORLD.size * 1.6, 160, 160);
   geo.rotateX(-Math.PI / 2);
   retagGeometry(geo, MAT.SEA, 0);
   // deep water further out: we still use SEA id; color shader handles it
@@ -77,7 +80,7 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x147a8a) },
+      uDeep: { value: new THREE.Color(0x0d5e6c) },
       uShallow: { value: new THREE.Color(0x3bb8b0) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
@@ -129,8 +132,8 @@ export function createWater() {
         mat.uniforms.uShallow.value.setHex(0x4a7a9a);
         mat.uniforms.uSky.value.setHex(0x6a8498);
       } else {
-        mat.uniforms.uDeep.value.setHex(0x147a8a);
-        mat.uniforms.uShallow.value.setHex(0x3bb8b0);
+        mat.uniforms.uDeep.value.setHex(0x0d5e6c);
+        mat.uniforms.uShallow.value.setHex(0x3ab0a8);
         mat.uniforms.uSky.value.setHex(0xa8e0f4);
       }
     },

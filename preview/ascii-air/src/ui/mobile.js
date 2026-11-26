@@ -12,26 +12,37 @@ export function createMobileLayer(root, input, hooks) {
   const el = document.createElement("div");
   el.id = "mobile-layer";
   el.innerHTML = `
-    <div id="rotate-prompt" class="rotate-prompt" hidden>Tournez l'appareil en paysage</div>
-    <div class="stick-base" id="stick" aria-label="Manche">
+    <div id="rotate-prompt" class="rotate-prompt" hidden>Rotate your device to landscape</div>
+    <div class="stick-base" id="stick" aria-label="Stick">
       <div class="stick-knob" id="stick-knob"></div>
-      <div class="ctrl-label">MANCHE</div>
+      <div class="ctrl-label">STICK</div>
+    </div>
+    <div id="thr" class="thr-lever" aria-label="Throttle">
+      <div class="thr-track"><div class="thr-knob" id="thr-knob"></div></div>
+      <div class="ctrl-label">THROTTLE</div>
     </div>
     <button type="button" class="album-btn boost-btn" id="btn-action">BOOST</button>
-    <button type="button" class="album-btn brake-btn" id="btn-brake">BRAKE</button>
     <button type="button" class="album-btn pause-btn" id="btn-pause">II</button>
   `;
   root.appendChild(el);
 
   const stick = el.querySelector("#stick");
   const knob = el.querySelector("#stick-knob");
+  const thr = el.querySelector("#thr");
+  const thrKnob = el.querySelector("#thr-knob");
   const btnAction = el.querySelector("#btn-action");
-  const btnBrake = el.querySelector("#btn-brake");
   const btnPause = el.querySelector("#btn-pause");
   const rotate = el.querySelector("#rotate-prompt");
 
   let stickId = null;
+  let thrId = null;
+  let orbitId = null;
+  let lastTap = 0;
   const opts = { passive: false };
+
+  function isControl(t) {
+    return !!(t && t.closest && t.closest("#stick, #thr, #btn-action, #btn-pause, #rotate-prompt, button, .album-cta, .album-btn"));
+  }
 
   function stickAt(cx, cy) {
     const r = stick.getBoundingClientRect();
@@ -48,6 +59,20 @@ export function createMobileLayer(root, input, hooks) {
     input.setStick(0, 0, false);
     stickId = null;
   }
+
+  function thrAt(cy) {
+    const r = thr.getBoundingClientRect();
+    const v = 1 - ((cy - r.top) / Math.max(8, r.height));
+    const t = Math.max(0, Math.min(1, v));
+    input.setThrottleSlider(t);
+    paintThr(t);
+  }
+  function paintThr(t) {
+    const y = (1 - t) * 100;
+    thrKnob.style.top = `calc(${y}% - 14px)`;
+    thr.dataset.v = t.toFixed(2);
+  }
+  paintThr(0);
 
   function bindPtr(node, onDown, onMove, onUp) {
     node.addEventListener("pointerdown", onDown, opts);
@@ -70,11 +95,24 @@ export function createMobileLayer(root, input, hooks) {
     if (e.pointerId === stickId) stickEnd();
   });
 
+  bindPtr(thr, (e) => {
+    try { thr.setPointerCapture(e.pointerId); } catch {}
+    thrId = e.pointerId;
+    thrAt(e.clientY);
+    e.preventDefault();
+    e.stopPropagation();
+  }, (e) => {
+    if (e.pointerId === thrId) { thrAt(e.clientY); e.preventDefault(); }
+  }, (e) => {
+    if (e.pointerId === thrId) thrId = null;
+  });
+
   const downBoost = (e) => {
     input.setTouchAction(true);
     input.setTouchBoost?.(true);
     btnAction.classList.add("lit");
     e.preventDefault();
+    e.stopPropagation();
   };
   const endBoost = (e) => {
     input.setTouchAction(false);
@@ -88,23 +126,42 @@ export function createMobileLayer(root, input, hooks) {
   btnAction.addEventListener("touchstart", downBoost, opts);
   btnAction.addEventListener("touchend", endBoost, opts);
 
-  const downBrake = (e) => {
-    input.setTouchBrake?.(true);
-    btnBrake.classList.add("lit");
-    e.preventDefault();
-  };
-  const endBrake = (e) => {
-    input.setTouchBrake?.(false);
-    btnBrake.classList.remove("lit");
-    if (e) e.preventDefault();
-  };
-  btnBrake.addEventListener("pointerdown", downBrake, opts);
-  btnBrake.addEventListener("pointerup", endBrake, opts);
-  btnBrake.addEventListener("pointercancel", endBrake, opts);
-  btnBrake.addEventListener("touchstart", downBrake, opts);
-  btnBrake.addEventListener("touchend", endBrake, opts);
+  btnPause.addEventListener("pointerdown", (e) => { hooks.onPause?.(); e.preventDefault(); e.stopPropagation(); }, opts);
 
-  btnPause.addEventListener("pointerdown", (e) => { hooks.onPause?.(); e.preventDefault(); }, opts);
+  // Orbit: one finger on empty centre / right, outside the flight controls.
+  let lastX = 0, lastY = 0;
+  el.addEventListener("pointerdown", (e) => {
+    if (isControl(e.target)) return;
+    const now = performance.now();
+    if (now - lastTap < 280) {
+      hooks.onOrbitReset?.();
+      lastTap = 0;
+      e.preventDefault();
+      return;
+    }
+    lastTap = now;
+    orbitId = e.pointerId;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    try { el.setPointerCapture(e.pointerId); } catch {}
+    e.preventDefault();
+  }, opts);
+  el.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== orbitId) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    hooks.onOrbitDrag?.(dx, dy);
+    e.preventDefault();
+  }, opts);
+  const endOrbit = (e) => {
+    if (e.pointerId !== orbitId) return;
+    orbitId = null;
+    hooks.onOrbitRelease?.();
+  };
+  el.addEventListener("pointerup", endOrbit, opts);
+  el.addEventListener("pointercancel", endOrbit, opts);
 
   let askedFs = false;
   el.addEventListener("pointerdown", () => {
@@ -138,24 +195,29 @@ export function createMobileLayer(root, input, hooks) {
     if (portrait) {
       const stickN = Math.min(132, Math.max(108, Math.floor(w * 0.28)));
       stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:${stickN}px;height:${stickN}px;`;
-      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:88px;height:88px;border-radius:50%;`;
-      btnBrake.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + 100}px;min-width:72px;height:48px;`;
+      const thrH = Math.min(180, Math.max(120, Math.floor(h * 0.22)));
+      thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + 64}px;width:40px;height:${thrH}px;`;
+      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:56px;height:56px;border-radius:50%;font-size:11px;`;
       btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT + 36}px;min-width:44px;min-height:44px;`;
     } else {
       const stickN = Math.min(120, Math.max(96, Math.floor(Math.min(h * 0.38, w * 0.16))));
-      const boostN = Math.min(80, Math.max(64, Math.floor(h * 0.22)));
+      const thrH = Math.min(160, Math.max(110, Math.floor(h * 0.42)));
       stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:${stickN}px;height:${stickN}px;`;
-      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:${boostN}px;height:${boostN}px;border-radius:50%;`;
-      btnBrake.style.cssText = `position:absolute;right:${padR + boostN + 8}px;bottom:${padB}px;min-width:64px;height:48px;`;
+      thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:36px;height:${thrH}px;`;
+      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + thrH + 8}px;width:52px;height:52px;border-radius:50%;font-size:11px;`;
       btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:44px;min-height:44px;z-index:7;`;
     }
   }
 
-  function setThrottle() { /* arcade: no slider */ }
+  function setThrottle(v) {
+    if (v == null) return;
+    input.setThrottleSlider(v);
+    paintThr(v);
+  }
 
   return {
-    el, layout, setThrottle, isTouchUI,
-    buttons: { btnAction, btnBrake, btnPause },
+    el, layout, setThrottle, isTouchUI, paintThr,
+    buttons: { btnAction, btnPause, thr },
   };
 }
 

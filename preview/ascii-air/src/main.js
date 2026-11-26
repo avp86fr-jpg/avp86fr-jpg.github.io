@@ -45,6 +45,9 @@ const ui = createUI(uiRoot, {
   onRestart: () => restartCurrent(),
   onQuit: () => backToTitle(),
   onNextMission: () => nextMission(),
+  onOrbitDrag: (dx, dy) => flyCam.orbitDrag(dx, dy),
+  onOrbitRelease: () => flyCam.orbitRelease(),
+  onOrbitReset: () => flyCam.orbitReset(),
 });
 hooks.onFreeFlight = () => startFreeFlight();
 hooks.onStartMission = (id) => startMission(id);
@@ -60,6 +63,9 @@ hooks.onFullscreen = () => toggleFullscreen();
 hooks.onRestart = () => restartCurrent();
 hooks.onQuit = () => backToTitle();
 hooks.onNextMission = () => nextMission();
+hooks.onOrbitDrag = (dx, dy) => flyCam.orbitDrag(dx, dy);
+hooks.onOrbitRelease = () => flyCam.orbitRelease();
+hooks.onOrbitReset = () => flyCam.orbitReset();
 
 const renderer = new THREE.WebGLRenderer({
   canvas, antialias: false, alpha: false, powerPreference: "high-performance",
@@ -182,6 +188,7 @@ function startFreeFlight() {
   mode = "fly";
   paused = false;
   autoPilotOn = false;
+  input.resetThrottleLever?.(0);
   markLast("free");
   autoPilotTarget = null;
   ui.showHUD();
@@ -210,6 +217,7 @@ function startMission(id) {
   paused = false;
   pendingResult = null;
   markLast("mission", id);
+  input.resetThrottleLever?.(0.75);
   ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
 }
@@ -347,7 +355,16 @@ function syncPlaneMesh() {
   planeMesh.position.copy(craft.pos);
   planeMesh.quaternion.copy(craft.quat);
   if (planeMesh.userData.prop && craft.def.engine) {
-    planeMesh.userData.prop.rotation.z += (0.4 + craft.throttle * 2.2 + craft.airspeed * 0.03);
+    const rpm = 0.4 + craft.throttle * 2.6 + craft.airspeed * 0.035;
+    planeMesh.userData.prop.rotation.z += rpm;
+    const blur = planeMesh.userData.propBlur;
+    if (blur && blur.material) {
+      const k = Math.min(1, craft.throttle * 0.7 + craft.airspeed / 90);
+      blur.material.opacity = 0.1 + k * 0.28;
+      blur.visible = k > 0.12;
+    }
+    const blades = planeMesh.userData.propBlades;
+    if (blades) for (const b of blades) if (b.material) b.material.opacity = Math.max(0.08, 0.6 - (craft.throttle * 0.45));
   }
   const ud = planeMesh.userData;
   if (ud.elevator) ud.elevator.rotation.x = Math.max(-0.35, Math.min(0.35, -(craft.pitch || 0) * 0.45));
@@ -437,6 +454,10 @@ function renderFrame(time) {
   }
 
   look.uniforms.uTime.value = time;
+  if (look.uniforms.uSpeed) {
+    const k = Math.max(0, Math.min(1, ((craft.airspeed || 0) - 28) / 48));
+    look.uniforms.uSpeed.value = (mode === "fly" && !paused && !flyCam.state.hero && !camOverride) ? k : 0;
+  }
 
   renderer.setRenderTarget(colorRT);
   renderer.clear();
@@ -497,21 +518,47 @@ function bindKeys() {
   // UI nav when menus open — handled in step() as edge triggers
 }
 
+// PC orbit: right or middle mouse drag on the game view. Left button is unused (no conflict with flight keys).
+let orbitPtr = null, orbitX = 0, orbitY = 0;
+canvas.addEventListener("contextmenu", (e) => { if (mode === "fly" && !paused) e.preventDefault(); });
+canvas.addEventListener("pointerdown", (e) => {
+  if (mode !== "fly" || paused) return;
+  if (e.button !== 1 && e.button !== 2) return;
+  orbitPtr = e.pointerId; orbitX = e.clientX; orbitY = e.clientY;
+  try { canvas.setPointerCapture(e.pointerId); } catch {}
+  e.preventDefault();
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (e.pointerId !== orbitPtr) return;
+  flyCam.orbitDrag(e.clientX - orbitX, e.clientY - orbitY);
+  orbitX = e.clientX; orbitY = e.clientY;
+});
+const endOrbit = (e) => {
+  if (e.pointerId !== orbitPtr) return;
+  orbitPtr = null;
+  flyCam.orbitRelease();
+};
+canvas.addEventListener("pointerup", endOrbit);
+canvas.addEventListener("pointercancel", endOrbit);
+
+
 function step(now) {
   const dtRaw = Math.min(0.05, (now - lastT) / 1000);
   lastT = now;
   const cap = settings.fpsCap === 30 ? 30 : 60;
   // we still raf; physics is fixed
 
-  const inp = input.update(settings);
+  const inp = input.update(settings, dtRaw);
   if (inp.debug) dbg.on = !dbg.on;
   if (inp.fullscreen && mode !== "boot") toggleFullscreen();
   if (inp.pause && mode === "fly") togglePause();
   if (inp.camera && mode === "fly") flyCam.cycle();
+  if (mode === "fly" && flyCam.setLookBack) flyCam.setLookBack(!!inp.lookBack);
 
   const menuOpen = mode === "title" || (ui.overlay && !ui.overlay.classList.contains("hidden")) || paused;
   if (menuOpen) {
-    const dir = inp.pitch > 0.5 || inp.roll > 0.5 ? 1 : inp.pitch < -0.5 || inp.roll < -0.5 ? -1 : 0;
+    const keyNav = input.keys && input.keys.size > 0;
+    const dir = keyNav ? 0 : (inp.pitch > 0.5 || inp.roll > 0.5 ? 1 : inp.pitch < -0.5 || inp.roll < -0.5 ? -1 : 0);
     if (dir && dir !== menuAxis) ui.menuMove(dir);
     menuAxis = dir;
     const onField = typeof document !== "undefined" && document.activeElement && document.activeElement.closest && document.activeElement.closest("button, input, textarea, select, a");
@@ -645,11 +692,11 @@ function hudShot() {
 }
 
 function heroShot(opts = {}) {
-  const x = opts.x ?? 150;
+  const x = opts.x ?? -80;
   const y = opts.y ?? 78;
   const z = opts.z ?? -1620;
-  const tx = opts.tx ?? 20;
-  const ty = opts.ty ?? 40;
+  const tx = opts.tx ?? -20;
+  const ty = opts.ty ?? 55;
   const tz = opts.tz ?? -180;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
@@ -663,6 +710,7 @@ function heroShot(opts = {}) {
   craft.gearDown = false;
   craft.onGround = false;
   craft.throttle = 0.78;
+  input.resetThrottleLever?.(0.78);
   rebuildPlane("trainer");
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
@@ -801,6 +849,7 @@ function exposeAPI() {
     },
     clearLook() { camOverride = null; },
     launch: (spd) => launchCraft(craft, spd, 2),
+    setThrottle: (v) => { input.resetThrottleLever?.(v); craft.throttle = v; },
     setAutopilot: (on, target, opts) => { autoPilotOn = !!on; autoPilotTarget = target; autoPilotOpts = opts || {}; },
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,
@@ -808,7 +857,7 @@ function exposeAPI() {
     advance(seconds) {
       const steps = Math.max(1, Math.round(seconds / PHYS.dt));
       for (let i = 0; i < steps; i++) {
-        const stepInp = input.update(settings);
+        const stepInp = input.update(settings, PHYS.dt);
         if (weather) weather.applyToCraft(craft, PHYS.dt);
         stepCraft(craft, stepInp, island, PHYS.dt, settings);
         handleCraftEvents();

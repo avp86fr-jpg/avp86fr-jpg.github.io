@@ -112,8 +112,8 @@ export function createAudio() {
     if (!unlocked) return;
     const def = craft.def;
     if (def.engine && !craft.crashed) {
-      const rpm = 0.7 + craft.throttle * 0.5 + craft.airspeed / 200;
-      const vol = 0.08 + craft.throttle * 0.35 + (craft.onGround ? 0.05 : 0);
+      const rpm = 0.55 + craft.throttle * 0.9 + craft.airspeed * 0.006;
+      const vol = 0.07 + craft.throttle * 0.42 + (craft.onGround ? 0.04 : 0);
       loop(def.engineSound, { gain: vol, playbackRate: rpm });
     } else if (def.engineSound) {
       const L = loops.get(def.engineSound);

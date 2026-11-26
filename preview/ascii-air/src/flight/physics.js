@@ -136,13 +136,14 @@ export function stepCraft(c, input, world, dt, settings) {
     return;
   }
 
-  const boost = !!(input.boost || input.actionHeld || (input.throttle || 0) > 0.4
-    || (input.throttleSet != null && input.throttleSet > 0.7));
-  const brake = !!(input.brake || (input.throttle || 0) < -0.4);
+  const boost = !!(input.boost || input.actionHeld);
+  const brake = !!(input.brake);
 
   if (def.engine) {
-    if (c.onGround || c.waterborne) c.throttle = boost ? 1 : 0;
-    else c.throttle = boost ? 1 : brake ? 0.12 : 0.72;
+    let lever = input.throttleSet;
+    if (lever == null) lever = c.throttle || 0;
+    if (boost) lever = 1;
+    c.throttle = clamp(lever, 0, 1);
   } else {
     c.throttle = 0;
   }
@@ -157,50 +158,71 @@ export function stepCraft(c, input, world, dt, settings) {
   const turn = clamp(((input.roll || 0) + (input.yaw || 0)) * sens, -1, 1);
   const inPitch = clamp((input.pitch || 0) * inv * sens, -1, 1);
 
-  const maxPitch = 35 * Math.PI / 180;
-  const maxBank = 42 * Math.PI / 180;
+  const maxPitch = 38 * Math.PI / 180;
+  const maxBank = 48 * Math.PI / 180;
   const yawRate = 2.05;
 
   const takeoffSpd = Math.max(16, (def.stallSpeed || 22) * 0.68);
+  const minSpd = Math.max(16, (def.stallSpeed || 22) * 0.85);
+  const cruise = def.cruise || 46;
+  const maxSpd = def.maxSpeed || 68;
+
+  // Coordinated bank-to-turn with slight inertia and light auto-level.
+  if (c._turn == null) c._turn = 0;
+  c._turn = damp(c._turn, turn, 3.4, dt);
 
   if (c.onGround || c.waterborne) {
-    const targetPitch = boost && c.airspeed > takeoffSpd * 0.75 ? 0.16 : 0;
+    const targetPitch = c.throttle > 0.95 && c.airspeed > takeoffSpd * 0.75 ? 0.16 : 0;
     pitch = damp(pitch, targetPitch, 8, dt);
     roll = damp(roll, 0, 10, dt);
-    if (Math.abs(turn) > 0.15 && c.airspeed > 4) yaw -= turn * yawRate * 0.35 * dt;
+    if (Math.abs(c._turn) > 0.15 && c.airspeed > 4) yaw -= c._turn * yawRate * 0.35 * dt;
   } else {
-    const targetPitch = Math.abs(inPitch) < 0.08 ? (boost ? 0.08 : 0) : inPitch * maxPitch;
-    pitch = damp(pitch, clamp(targetPitch, -maxPitch, maxPitch), 7, dt);
+    let targetPitch;
+    if (Math.abs(inPitch) < 0.08) {
+      // Light auto-level; a hint of climb at high power.
+      targetPitch = c.throttle > 0.85 ? 0.06 : 0;
+    } else {
+      targetPitch = inPitch * maxPitch;
+    }
+    // Gentle mush near min speed: nose wants to drop, no stall.
+    const mush = c.airspeed < minSpd * 1.05 ? saturate((minSpd * 1.05 - c.airspeed) / (minSpd * 0.35)) : 0;
+    if (mush > 0) targetPitch = lerp(targetPitch, Math.min(targetPitch, -0.06), mush);
+    pitch = damp(pitch, clamp(targetPitch, -maxPitch, maxPitch), 6.2, dt);
     pitch = clamp(pitch, -maxPitch, maxPitch);
-    yaw -= turn * yawRate * dt;
-    roll = damp(roll, clamp(-turn * maxBank, -maxBank, maxBank), 8, dt);
+    const targetBank = clamp(-c._turn * maxBank, -maxBank, maxBank);
+    roll = damp(roll, targetBank, 4.2, dt);
     roll = clamp(roll, -maxBank, maxBank);
+    // Yaw follows bank, with a little extra stick for agility.
+    yaw += (roll / maxBank) * yawRate * dt;
+    yaw -= c._turn * yawRate * 0.18 * dt;
   }
 
-  c.angVel.set(0, -turn * yawRate, 0);
-  c.yawRate = -turn * yawRate;
+  c.angVel.set(0, (roll / Math.max(0.01, maxBank)) * yawRate, 0);
+  c.yawRate = (roll / Math.max(0.01, maxBank)) * yawRate;
   _euler.set(pitch, yaw, roll, "YXZ");
   c.quat.setFromEuler(_euler);
   axes(c);
 
-  const cruise = def.cruise || 46;
-  const boostSpd = Math.min(def.maxSpeed || 68, cruise * 1.38);
-  const brakeSpd = cruise * 0.52;
-
   const horiz = Math.hypot(c.vel.x, c.vel.z);
   let spd;
   if (c.onGround || c.waterborne) {
-    const accel = boost ? 20 : (brake ? -30 : -10);
+    const accel = c.throttle > 0.08 ? c.throttle * 22 - 2 : (brake ? -32 : -12);
     spd = Math.max(0, horiz + accel * dt);
-    if (!boost && horiz < 1.2) spd = 0;
+    if (c.throttle < 0.08 && horiz < 1.2) spd = 0;
   } else if (!def.engine) {
-    // Glider: pitch sets speed, with a gentle baseline
-    const dive = clamp(-pitch, -0.4, 0.4);
-    const want = clamp(32 + dive * 50, 16, 62);
-    spd = damp(horiz, brake ? want * 0.7 : want, 1.6, dt);
+    const dive = Math.sin(pitch);
+    const want = clamp(32 - dive * 48, 16, 64);
+    spd = damp(Math.hypot(c.vel.x, c.vel.y, c.vel.z) || horiz, want, 1.5, dt);
   } else {
-    const want = brake ? brakeSpd : boost ? boostSpd : cruise;
-    spd = damp(horiz < 2 ? cruise * 0.8 : horiz, want, 2.4, dt);
+    // Speed from throttle plus gravity: diving gains speed, climbing loses it.
+    // Full power still climbs strongly (bleed shrinks as throttle rises).
+    const wantLevel = minSpd + c.throttle * (maxSpd - minSpd);
+    const bleed = (26 - 12 * c.throttle) * Math.sin(pitch);
+    let want = wantLevel - bleed;
+    if (boost && c.throttle > 0.95) want += 6;
+    want = clamp(want, minSpd * 0.82, maxSpd + 8);
+    const cur = Math.hypot(c.vel.x, c.vel.y, c.vel.z) || horiz;
+    spd = damp(cur, want, 1.7, dt);
   }
 
   const wantY = _fwd.y * Math.max(spd, 1);
@@ -210,7 +232,7 @@ export function stepCraft(c, input, world, dt, settings) {
   const surf = world.landingSurface ? world.landingSurface(c.pos.x, c.pos.z) : "";
   const pad = surf === "runway" || surf === "grass" || surf === "beach"
     || (def.waterCapable && (surf === "lagoon" || surf === "water"));
-  const flaring = !c.onGround && !c.waterborne && pad && c.agl < 55 && !boost && inPitch < 0.15;
+  const flaring = !c.onGround && !c.waterborne && pad && c.agl < 55 && c.throttle < 0.92 && !boost && inPitch < 0.15;
 
   if ((c.onGround || c.waterborne) && !(boost && spd >= takeoffSpd)) {
     c.vel.y = 0;

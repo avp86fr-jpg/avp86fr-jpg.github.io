@@ -30,9 +30,9 @@ export function paintWordmark() {
     ${pilotSvg()}
     <div class="title-copy">
       <h1 class="title-wordmark">${TITLE}</h1>
-      <p class="title-tag">Des avions-poste au-dessus d'une île ensoleillée</p>
+      <p class="title-tag">Airmail planes over a sunlit island</p>
     </div>
-    <div class="speech-balloon title-balloon">Prêt au départ !</div>
+    <div class="speech-balloon title-balloon">Ready for takeoff!</div>
   `;
   return el;
 }
@@ -48,7 +48,7 @@ export function createUI(root, hooks) {
   loading.innerHTML = `<div class="logo-slot"></div>
     <div class="hint">AEROPOSTALE AIR</div>
     <div class="bar"><span id="load-bar"></span></div>
-    <div id="load-msg" class="hint" style="margin-top:10px">on chauffe le moteur…</div>`;
+    <div id="load-msg" class="hint" style="margin-top:10px">warming up the engine…</div>`;
   wrap.appendChild(loading);
 
   const title = document.createElement("div");
@@ -87,7 +87,7 @@ export function createUI(root, hooks) {
     <div class="album-panel hidden" id="hud-photo"></div>
     <div class="album-panel hidden" id="hud-aux"></div>
     <div class="speech-balloon hidden" id="hud-hint"></div>
-    <button type="button" class="album-btn hidden" id="hud-fs">PLEIN ÉCRAN</button>
+    <button type="button" class="album-btn hidden" id="hud-fs">FULL SCREEN</button>
   `;
   wrap.appendChild(hud);
 
@@ -103,6 +103,9 @@ export function createUI(root, hooks) {
     onPause: () => hooks.onPause?.(),
     onGear: () => hooks.onGear?.(),
     onFullscreen: () => hooks.onFullscreen?.(),
+    onOrbitDrag: (dx, dy) => hooks.onOrbitDrag?.(dx, dy),
+    onOrbitRelease: () => hooks.onOrbitRelease?.(),
+    onOrbitReset: () => hooks.onOrbitReset?.(),
   });
 
   const state = { screen: "loading", menuIndex: 0, menuItems: [], activity: "rings", klass: "beginner" };
@@ -131,7 +134,7 @@ export function createUI(root, hooks) {
     const canContinue = !!(save.lastMode || save.lastMission || stars);
     const items = [
       {
-        label: canContinue ? "Continuer" : "JOUER",
+        label: canContinue ? "Continue" : "PLAY",
         primary: true,
         fn: () => {
           if (canContinue && save.lastMode === "mission" && save.lastMission) hooks.onStartMission?.(save.lastMission);
@@ -139,15 +142,15 @@ export function createUI(root, hooks) {
         },
       },
       { label: "Missions", fn: () => showMissions(save) },
-      { label: "Vol libre", fn: () => hooks.onFreeFlight?.() },
+      { label: "Free Flight", fn: () => hooks.onFreeFlight?.() },
       { label: "Options", fn: () => showOptions(save, "title") },
-      { label: "Crédits", fn: () => showCredits(save) },
+      { label: "Credits", fn: () => showCredits(save) },
     ];
     renderMenu(title.querySelector("#title-menu"), items, save);
     const hint = title.querySelector("#ios-hint");
     if (iosFullscreenHint()) {
       hint.classList.remove("hidden");
-      hint.textContent = "iPhone Safari can't go full screen here. Share → Add to Home Screen, puis ouvrez AEROPOSTALE AIR comme une application.";
+      hint.textContent = "iPhone Safari can't go full screen here. Share → Add to Home Screen, then open AEROPOSTALE AIR as an app.";
     } else hint.classList.add("hidden");
     mobile.layout(isPortrait(), false);
   }
@@ -163,7 +166,7 @@ export function createUI(root, hooks) {
     el.classList.add("album-nav");
     el.innerHTML = items.map((it, i) =>
       `<button type="button" class="album-cta${it.primary ? " primary" : ""}${i === 0 ? " active" : ""}" data-i="${i}">${it.label}</button>`
-    ).join("") + (opts.hideHint ? "" : `<div class="nav-hint">★ ${stars} · ${isMobileUA() || (typeof window !== "undefined" && window.innerWidth < 1100) ? "Touchez un bouton" : "↑↓  Entrée"}</div>`);
+    ).join("") + (opts.hideHint ? "" : `<div class="nav-hint">★ ${stars} · ${isMobileUA() || (typeof window !== "undefined" && window.innerWidth < 1100) ? "Tap a button" : "↑↓  Enter"}</div>`);
     el.querySelectorAll(".album-cta").forEach((n) => {
       n.addEventListener("click", (e) => {
         e.preventDefault();
@@ -243,8 +246,8 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   }
   function closeOverlay() { overlay.classList.add("hidden"); state.menuItems = []; }
 
-  const ACT_FR = { rings: "Anneaux", landing: "Atterrissages", balloons: "Ballons", photo: "Photos" };
-  const CLASS_FR = { beginner: "Débutant", pro: "Pro", ace: "As" };
+  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos" };
+  const CLASS_FR = { beginner: "Beginner", pro: "Pro", ace: "Ace" };
 
   function showMissions(save) {
     state.screen = "missions";
@@ -258,7 +261,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       </button>`;
     }).join("");
     const p = openOverlay(`<div class="album-sheet">
-      <h2>Carte des missions</h2>
+      <h2>Mission Map</h2>
       <div class="mission-map">${cards}</div>
       <div id="mlist" class="album-nav"></div>
     </div>`);
@@ -266,7 +269,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       btn.addEventListener("click", (e) => { e.preventDefault(); showClass(save, btn.dataset.act); });
     });
     renderMenu(p.querySelector("#mlist"), [
-      { label: "Retour", fn: () => { closeOverlay(); showTitle(save); } },
+      { label: "Back", fn: () => { closeOverlay(); showTitle(save); } },
     ], save, { hideHint: true });
   }
 
@@ -276,7 +279,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       const got = list.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
       return { label: `${CLASS_FR[k] || k}  ★ ${got}/${list.length * 3}`, fn: () => showMissionList(save, activity, k) };
     });
-    items.push({ label: "Retour", fn: () => showMissions(save) });
+    items.push({ label: "Back", fn: () => showMissions(save) });
     const p = openOverlay(`<div class="album-sheet">
       <h2>${ACT_FR[activity] || activity}</h2>
       <div id="mlist" class="album-nav"></div>
@@ -293,7 +296,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       label: `${m.title}  ${starsStr(save.stars[m.id] | 0)}`,
       fn: () => showBrief(save, m),
     }));
-    items.push({ label: "Retour", fn: () => showClass(save, activity) });
+    items.push({ label: "Back", fn: () => showClass(save, activity) });
     const p = openOverlay(`<div class="album-sheet">
       <h2>${ACT_FR[activity] || activity} · ${CLASS_FR[klass] || klass}</h2>
       <div id="mlist" class="album-nav"></div>
@@ -307,13 +310,13 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     const planeName = PLANES[m.plane || "trainer"].name;
     const p = openOverlay(`<div class="album-sheet">
       <h2>${m.title}</h2>
-      <p class="sheet-meta">${CLASS_FR[m.klass] || m.klass} · ${ACT_FR[m.activity] || m.activity} · ${planeName}${lockedPlane ? "  (il faut " + need + " ★)" : ""}</p>
+      <p class="sheet-meta">${CLASS_FR[m.klass] || m.klass} · ${ACT_FR[m.activity] || m.activity} · ${planeName}${lockedPlane ? "  (needs " + need + " ★)" : ""}</p>
       <p class="sheet-brief">${m.brief}</p>
       <div id="mlist" class="album-nav"></div>
     </div>`);
     const items = [];
-    if (!lockedPlane) items.push({ label: "En vol !", primary: true, fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
-    items.push({ label: "Retour", fn: () => showMissionList(save, m.activity, m.klass) });
+    if (!lockedPlane) items.push({ label: "Take off!", primary: true, fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
+    items.push({ label: "Back", fn: () => showMissionList(save, m.activity, m.klass) });
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
@@ -326,14 +329,14 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         fn: () => { if (un) { hooks.onSelectPlane?.(p.id); closeOverlay(); showTitle(save); } },
       };
     });
-    items.push({ label: "Retour", fn: () => showOptions(save, "title") });
+    items.push({ label: "Back", fn: () => showOptions(save, "title") });
     const p = openOverlay(`<div class="album-sheet"><h2>Hangar</h2><div id="mlist" class="album-nav"></div></div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
   function showAlbum(save) {
     const photos = save.photos || [];
-    const body = photos.length ? "" : "<p class='hint'>Pas encore de photographie. Tentez une mission photo.</p>";
+    const body = photos.length ? "" : "<p class='hint'>No photographs yet. Try a photo mission.</p>";
     const p = openOverlay(`<div class="album-sheet"><h2>Album</h2>${body}<div id="photos" class="photo-row"></div><div id="mlist" class="album-nav"></div></div>`);
     const box = p.querySelector("#photos");
     photos.forEach((ph) => {
@@ -351,7 +354,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       d.appendChild(cap);
       box.appendChild(d);
     });
-    renderMenu(p.querySelector("#mlist"), [{ label: "Retour", fn: () => { closeOverlay(); showTitle(save); } }], save, { hideHint: true });
+    renderMenu(p.querySelector("#mlist"), [{ label: "Back", fn: () => { closeOverlay(); showTitle(save); } }], save, { hideHint: true });
   }
 
   function showOptions(save, back) {
@@ -360,35 +363,35 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     const p = openOverlay(`<div class="album-sheet options-sheet">
       <h2>Options</h2>
       <div class="opt-groups">
-        <section><h3>Commandes</h3><div id="opts-controls" class="opt-list"></div></section>
-        <section><h3>Graphismes</h3><div id="opts-gfx" class="opt-list"></div></section>
-        <section><h3>Son</h3><div id="opts-sound" class="opt-list"></div></section>
+        <section><h3>Controls</h3><div id="opts-controls" class="opt-list"></div></section>
+        <section><h3>Graphics</h3><div id="opts-gfx" class="opt-list"></div></section>
+        <section><h3>Sound</h3><div id="opts-sound" class="opt-list"></div></section>
       </div>
       <div id="mlist" class="album-nav"></div>
     </div>`);
     const groups = {
       controls: [
-        ["Aide au vol", "assist", ["full", "light", "off"], { full: "Complète", light: "Légère", off: "Off" }],
-        ["Inverser le cabré", "invertPitch", "bool"],
-        ["Sensibilité", "sensitivity", "slider"],
+        ["Flight assist", "assist", ["full", "light", "off"], { full: "Full", light: "Light", off: "Off" }],
+        ["Invert pitch", "invertPitch", "bool"],
+        ["Sensitivity", "sensitivity", "slider"],
         ["Gyro", "gyroEnabled", "gyro"],
-        ["Sensibilité gyro", "gyroSensitivity", "slider"],
+        ["Gyro sensitivity", "gyroSensitivity", "slider"],
       ],
       gfx: [
-        ["Qualité", "quality", ["low", "medium", "high"], { low: "Basse", medium: "Moyenne", high: "Haute" }],
-        ["Limite d'images", "fpsCap", [30, 60]],
-        ["Confort visuel", "motionComfort", "bool"],
-        ["Contraste élevé", "highContrast", "bool"],
+        ["Quality", "quality", ["low", "medium", "high"], { low: "Low", medium: "Medium", high: "High" }],
+        ["Frame cap", "fpsCap", [30, 60]],
+        ["Motion comfort", "motionComfort", "bool"],
+        ["High contrast", "highContrast", "bool"],
       ],
       sound: [
-        ["Volume général", "masterVol", "slider"],
-        ["Musique", "musicVol", "slider"],
-        ["Effets", "sfxVol", "slider"],
+        ["Master volume", "masterVol", "slider"],
+        ["Music", "musicVol", "slider"],
+        ["Effects", "sfxVol", "slider"],
       ],
     };
     function labelVal(kind, val, names) {
       if (kind === "slider") return Math.round(val * 100) + " %";
-      if (kind === "bool" || kind === "gyro") return val ? "Oui" : "Non";
+      if (kind === "bool" || kind === "gyro") return val ? "Yes" : "No";
       if (names && names[val] != null) return names[val];
       return String(val).toUpperCase();
     }
@@ -429,37 +432,37 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     renderMenu(p.querySelector("#mlist"), [
       { label: "Hangar", fn: () => showHangar(save) },
       { label: "Album", fn: () => showAlbum(save) },
-      { label: "Retour", fn: backFn },
+      { label: "Back", fn: backFn },
     ], save);
   }
 
   function showCredits(save) {
     const p = openOverlay(`<div class="album-sheet credits-sheet">
-      <h2>Crédits</h2>
-      <p><strong>AEROPOSTALE AIR</strong> est un jeu d'aviation original.</p>
-      <p>Île, avions et interface dessinés en ligne claire. Aucune marque ni aucun personnage licencié.</p>
-      <p>Le <em>Courrier C-14</em> est un avion postal imaginaire.</p>
-      <p>Polices Itim et Patrick Hand, SIL Open Font License.</p>
-      <p>Merci de voler avec nous.</p>
+      <h2>Credits</h2>
+      <p><strong>AEROPOSTALE AIR</strong> is an original aviation game.</p>
+      <p>Island, aircraft and interface drawn in ligne claire. No licensed trademarks or characters.</p>
+      <p>The <em>Courrier C-14</em> is an imaginary airmail plane.</p>
+      <p>Fonts: Itim and Patrick Hand, SIL Open Font License.</p>
+      <p>Thank you for flying with us.</p>
       <div id="mlist" class="album-nav"></div>
     </div>`);
     renderMenu(p.querySelector("#mlist"), [
-      { label: "Retour", fn: () => { closeOverlay(); showTitle(save); } },
+      { label: "Back", fn: () => { closeOverlay(); showTitle(save); } },
     ], save, { hideHint: true });
   }
 
   function showPause(save) {
     state.screen = "pause";
     state.optionsBack = "pause";
-    const gearLabel = hooks.gearDown?.() === false ? "Train  (rentré)" : "Train  (sorti)";
+    const gearLabel = hooks.gearDown?.() === false ? "Gear  (up)" : "Gear  (down)";
     const p = openOverlay(`<div class="album-sheet"><h2>Pause</h2><div id="mlist" class="album-nav"></div></div>`);
     renderMenu(p.querySelector("#mlist"), [
-      { label: "Reprendre", primary: true, fn: () => { closeOverlay(); hooks.onResume?.(); } },
-      { label: "Plein écran", fn: () => hooks.onFullscreen?.() },
+      { label: "Resume", primary: true, fn: () => { closeOverlay(); hooks.onResume?.(); } },
+      { label: "Fullscreen", fn: () => hooks.onFullscreen?.() },
       { label: gearLabel, fn: () => { hooks.onGear?.(); showPause(save); } },
-      { label: "Caméra", fn: () => hooks.onCamera?.() },
+      { label: "Camera", fn: () => hooks.onCamera?.() },
       { label: "Options", fn: () => showOptions(save, "pause") },
-      { label: "Recommencer", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
+      { label: "Restart", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
       { label: "Menu", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
     ], save);
   }
@@ -473,8 +476,8 @@ ${"★".repeat(stars)}${"☆".repeat(3 - stars)}   ${result.line || ""}
 time  ${formatTime(result.time || 0)}
 </pre><div id="mlist"></div>`);
     renderMenu(p.querySelector("#mlist"), [
-      { label: "Réessayer", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
-      { label: "Suivant", primary: true, fn: () => { closeOverlay(); hooks.onNextMission?.(); } },
+      { label: "Retry", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
+      { label: "Next", primary: true, fn: () => { closeOverlay(); hooks.onNextMission?.(); } },
       { label: "Missions", fn: () => { closeOverlay(); hooks.onQuit?.(); showMissions(save); } },
     ], save);
   }
@@ -492,7 +495,7 @@ time  ${formatTime(result.time || 0)}
     if (!h) return;
     try { if (localStorage.getItem("apa_flyhint")) return; } catch {}
     h.classList.remove("hidden");
-    h.textContent = "Maintenez BOOST ou Espace : l'avion décolle tout seul. Le manche (ou WASD) tourne et cabre. Relâchez pour se stabiliser.";
+    h.textContent = "Hold BOOST or Space: the plane takes off on its own. Arrow keys (or the stick) turn and pitch. W/S or Shift/Ctrl set the throttle. Right-drag, or drag an empty area, to orbit the camera. V looks back. Release the stick to level out.";
     const hide = () => {
       h.classList.add("hidden");
       try { localStorage.setItem("apa_flyhint", "1"); } catch {}
@@ -575,14 +578,14 @@ time  ${formatTime(result.time || 0)}
     } else {
       stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span><span class="stats-wings" aria-hidden="true">✉</span></div>'
         + '<div class="stat-row">★ ' + String(stars).padStart(3) + " / 180 " + sbar(stars, 180) + "</div>"
-        + '<div class="stat-row">○ ' + String(photos).padStart(2) + " / 50 (Trésors) " + sbar(photos, 50) + "</div>"
-        + '<div class="stat-row">✈ ' + planeName + "  Niv.2</div>";
+        + '<div class="stat-row">○ ' + String(photos).padStart(2) + " / 50 (Treasures) " + sbar(photos, 50) + "</div>"
+        + '<div class="stat-row">✈ ' + planeName + "  Lvl.2</div>";
     }
     comp.textContent = compassStrip(craft.heading, hdg);
 
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";
     const windKmh = Math.round((weather.windKt || 0) * 1.852);
-    const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° à " + windKmh + " km/h";
+    const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° at " + windKmh + " km/h";
 
     miss.style.display = "";
     if (mission && mission.active && !mission.result) {
@@ -590,23 +593,23 @@ time  ${formatTime(result.time || 0)}
       const klass = (m.klass || "").toUpperCase();
       const lines = [];
       if (m.activity === "rings") {
-        lines.push("PARCOURS D'ANNEAUX  (" + (klass || "PRO") + ")");
-        lines.push("> Franchir les " + m.rings.length + " anneaux");
-        lines.push("> Anneaux : " + mission.ringsPassed + " / " + m.rings.length);
-        lines.push("> Temps : " + formatTime(mission.t));
-        if (m.timeLimits && m.timeLimits[0]) lines.push("> Temps cible : " + formatTime(m.timeLimits[0]));
+        lines.push("RING COURSE  (" + (klass || "PRO") + ")");
+        lines.push("> Fly the " + m.rings.length + " rings");
+        lines.push("> Rings: " + mission.ringsPassed + " / " + m.rings.length);
+        lines.push("> Time: " + formatTime(mission.t));
+        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         const best = (save.best && save.best[m.id]) ? formatTime(save.best[m.id]) : "—";
-        lines.push("> Meilleur : " + best);
-        lines.push("> Vent : " + windLine);
-        if (m.weather || weather.id === "storm") lines.push("> Météo : " + (weather.id === "storm" ? "ORAGE" : "CLAIR"));
+        lines.push("> Best: " + best);
+        lines.push("> Wind: " + windLine);
+        if (m.weather || weather.id === "storm") lines.push("> Weather: " + (weather.id === "storm" ? "STORM" : "CLEAR"));
       } else if (m.activity === "landing") {
         const rwy = (m.target && m.target.heading > 2) ? "27" : "09";
         const typ = (m.target && m.target.type === "runway") ? rwy : String((m.target && m.target.type) || "").toUpperCase();
-        lines.push("ATTERRISSAGE  (" + (klass || "PRO") + ")");
-        lines.push("> Se poser à l'aérodrome.");
-        lines.push("> Piste : " + typ);
-        lines.push("> Vent : " + windLine);
-        lines.push("> Note : " + (mission.message || "—"));
+        lines.push("LANDING  (" + (klass || "PRO") + ")");
+        lines.push("> Land at the airfield.");
+        lines.push("> Runway: " + typ);
+        lines.push("> Wind: " + windLine);
+        lines.push("> Notes: " + (mission.message || "—"));
       } else if (m.activity === "balloons") {
         lines.push(m.title);
         lines.push("> " + mission.popped + "/" + mission.balloons.length + "   " + formatTime(Math.max(0, (m.timeLimit || 90) - mission.t)));
@@ -617,17 +620,17 @@ time  ${formatTime(result.time || 0)}
         lines.push(m.title);
       }
       if (touch) {
-        if (m.activity === "rings") miss.textContent = "Anneaux " + mission.ringsPassed + "/" + m.rings.length;
-        else if (m.activity === "landing") miss.textContent = "Atterrissage";
-        else if (m.activity === "balloons") miss.textContent = (m.title || "Ballons") + "  " + mission.popped + "/" + (mission.balloons && mission.balloons.length || 0);
+        if (m.activity === "rings") miss.textContent = "Rings " + mission.ringsPassed + "/" + m.rings.length;
+        else if (m.activity === "landing") miss.textContent = "Landing";
+        else if (m.activity === "balloons") miss.textContent = (m.title || "Balloons") + "  " + mission.popped + "/" + (mission.balloons && mission.balloons.length || 0);
         else miss.textContent = m.title || "Mission";
       } else miss.textContent = lines.join("\n");
     } else if (mission && mission.result) {
       miss.textContent = mission.message || "";
     } else if (touch) {
-      miss.textContent = weather.id === "storm" ? "Vol libre · Orage" : "Vol libre";
+      miss.textContent = weather.id === "storm" ? "Free Flight · Storm" : "Free Flight";
     } else {
-      miss.textContent = "VOL LIBRE\n> " + hourToClock(hour) + "\n> Vent : " + windLine + "\n> Météo : " + (weather.id === "storm" ? "ORAGE" : "CLAIR");
+      miss.textContent = "FREE FLIGHT\n> " + hourToClock(hour) + "\n> Wind: " + windLine + "\n> Weather: " + (weather.id === "storm" ? "STORM" : "CLEAR");
     }
 
     const landing = mission && mission.active && mission.active.activity === "landing" && !mission.result;
@@ -637,32 +640,37 @@ time  ${formatTime(result.time || 0)}
     const vsEl = flight.querySelector("#g-vs");
     const flEl = flight.querySelector("#g-flaps");
     const geEl = flight.querySelector("#g-gear");
-    if (vitEl) vitEl.innerHTML = '<div class="g-lab">VIT</div><div class="g-val">' + String(spd).padStart(3, " ") + '</div><div class="g-unit">km/h</div>';
+    if (vitEl) vitEl.innerHTML = '<div class="g-lab">SPEED</div><div class="g-val">' + String(spd).padStart(3, " ") + '</div><div class="g-unit">km/h</div>';
     if (altEl) altEl.innerHTML = '<div class="g-lab">ALT</div><div class="g-val">' + String(altM).padStart(4, " ") + '</div><div class="g-unit">m</div>';
     if (vsEl) vsEl.innerHTML = '<div class="g-lab">V/S</div><div class="g-val">' + vsS + '</div><div class="g-unit">m/s</div>';
     if (flEl) {
       const ticks = [0, 1, 2, 3].map((n) => '<span class="' + (n === flapN ? "on" : "") + '">' + n + "</span>").join(" ");
-      flEl.innerHTML = '<div class="g-lab">VOLETS</div><div class="g-val flaps">' + ticks + "</div>";
+      flEl.innerHTML = '<div class="g-lab">FLAPS</div><div class="g-val flaps">' + ticks + "</div>";
     }
-    if (geEl) geEl.innerHTML = '<div class="g-lab">TRAIN</div><div class="g-val gear">' + (craft.gearDown ? "▼" : "▲") + "</div>";
+    if (geEl) geEl.innerHTML = '<div class="g-lab">GEAR</div><div class="g-val gear">' + (craft.gearDown ? "▼" : "▲") + "</div>";
     drawHorizon(flight.querySelector("#g-horizon"), craft);
 
-    msg.textContent = craft.crashed ? "REPRISE…" : ((mission && mission.result) ? mission.message : "");
+    msg.textContent = craft.crashed ? "RECOVERING…" : ((mission && mission.result) ? mission.message : "");
     if (state._hideHint && !craft.onGround && (craft.altitude || 0) > 8) state._hideHint();
 
 
     if (!touch && !portrait && window.innerWidth > 900 && window.innerHeight > 560) {
       mmap.classList.remove("hidden");
-      mmap.textContent = "CARTE          N\n" + drawMini(craft) + "\n         3 km";
+      mmap.textContent = "MAP            N\n" + drawMini(craft) + "\n         3 km";
     } else mmap.classList.add("hidden");
 
+    const plate = !touch && mission && mission.active && mission.active.id === "showcase";
     const showPhoto = !touch && mission && mission.active && mission.active.activity === "photo" && !mission.result;
     if (showPhoto) {
       photo.classList.remove("hidden");
       aux.classList.add("hidden");
       const sub = (mission.active.subject && mission.active.subject.name) || "subject";
       photo.classList.toggle("ready", !!mission.photoReady);
-      photo.textContent = "MISSION PHOTO\n┌────────────┐\n│ " + String(sub).slice(0, 10).padEnd(10) + " │\n│ " + (mission.photoReady ? "  CADRÉ !   " : "  chercher  ") + " │\n└────────────┘";
+      photo.textContent = "PHOTO MISSION\n┌────────────┐\n│ " + String(sub).slice(0, 10).padEnd(10) + " │\n│ " + (mission.photoReady ? "  FRAMED!   " : "  search    ") + " │\n└────────────┘";
+    } else if (plate) {
+      photo.classList.remove("hidden");
+      aux.classList.add("hidden");
+      photo.textContent = "PHOTO MISSION\n> Frame the castle\n  from the south-east\n  (range and angle)";
     } else if (landing && !touch) {
       photo.classList.add("hidden");
       aux.classList.remove("hidden");
@@ -670,13 +678,13 @@ time  ${formatTime(result.time || 0)}
       const glideS = (a.glide >= 0 ? "+" : "") + a.glide.toFixed(1);
       const latS = (a.lat >= 0 ? "+" : "") + a.lat.toFixed(1);
       const etaS = a.eta > 0 ? (Math.round(a.eta) + " s") : "—";
-      aux.textContent = "AIDE À L'ATTERRISSAGE\n> Plané : " + glideS + "°\n> Axe : " + latS + " m\n> Vitesse : " + Math.round(a.spd) + " km/h\nTOUCHER    ~" + etaS;
+      aux.textContent = "LANDING AID\n> Glide: " + glideS + "°\n> Line: " + latS + " m\n> Speed: " + Math.round(a.spd) + " km/h\nTOUCHDOWN  ~" + etaS;
     } else if (stormy && !portrait && !touch) {
       photo.classList.add("hidden");
       aux.classList.remove("hidden");
-      const turb = weather.turbulence > 0.55 ? "élevée" : weather.turbulence > 0.2 ? "moyenne" : "faible";
-      const rain = weather.rain > 0.6 ? "forte" : weather.rain > 0.2 ? "légère" : "aucune";
-      aux.textContent = "MÉTÉO : ORAGE\n> Pluie : " + rain + "\n> Visibilité : " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence : " + turb;
+      const turb = weather.turbulence > 0.55 ? "high" : weather.turbulence > 0.2 ? "medium" : "light";
+      const rain = weather.rain > 0.6 ? "heavy" : weather.rain > 0.2 ? "light" : "none";
+      aux.textContent = "WEATHER: STORM\n> Rain: " + rain + "\n> Visibility: " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence: " + turb;
     } else {
       photo.classList.add("hidden");
       aux.classList.add("hidden");

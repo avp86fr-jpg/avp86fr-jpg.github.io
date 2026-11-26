@@ -1,4 +1,4 @@
-import { KEYS } from "../core/config.js";
+import { KEYS, PHYS } from "../core/config.js";
 import { clamp, isMobileUA } from "../core/utils.js";
 
 export function createInput(root) {
@@ -23,6 +23,8 @@ export function createInput(root) {
     usingGyro: false,
     gyroCal: { b: 0, g: 0 },
     stick: { x: 0, y: 0, active: false },
+    throttleLever: 0,
+    lookBack: false,
   };
 
   let actionWas = false;
@@ -67,7 +69,7 @@ export function createInput(root) {
 
   function any(list) { return list.some((k) => keys.has(k)); }
 
-  function update(settings) {
+  function update(settings, dt = PHYS.dt) {
     const gp = readGamepad();
     let pitch = 0, roll = 0, yaw = 0, throttle = 0, throttleSet = null;
     if (any(KEYS.pitchUp)) pitch += 1;
@@ -78,8 +80,11 @@ export function createInput(root) {
     if (any(KEYS.yawRight)) yaw += 1;
     if (any(KEYS.throttleUp)) throttle += 1;
     if (any(KEYS.throttleDown)) throttle -= 1;
-    const boostHeld = any(KEYS.throttleUp) || state.touchBoost || false;
-    const brakeHeld = any(KEYS.throttleDown) || any(KEYS.brake || []) || state.touchBrake || false;
+    if (state.throttleLever == null) state.throttleLever = 0;
+    if (throttle > 0.4) state.throttleLever = Math.min(1, state.throttleLever + 1.8 * dt);
+    if (throttle < -0.4) state.throttleLever = Math.max(0, state.throttleLever - 1.8 * dt);
+    const boostHeld = !!state.touchBoost;
+    const brakeHeld = any(KEYS.brake || []) || !!state.touchBrake;
 
     if (state.stick.active) {
       roll = state.stick.x;
@@ -97,13 +102,20 @@ export function createInput(root) {
       if (gp.action) state.actionHeld = true;
     }
 
-    if (state.throttleSlider != null) throttleSet = state.throttleSlider;
+    if (state.throttleSlider != null) {
+      throttleSet = state.throttleSlider;
+      state.throttleLever = throttleSet;
+    } else {
+      throttleSet = state.throttleLever;
+    }
 
     const actionHeld = any(KEYS.action) || state.touchAction || !!(gp && gp.action);
     const actionPressed = actionHeld && !actionWas;
     actionWas = actionHeld;
     const boost = boostHeld || actionHeld;
     const brake = brakeHeld && !boost;
+    if (boost) state.throttleLever = Math.max(state.throttleLever, 1);
+    const lookBack = any(KEYS.look || []) || !!state.lookHeld;
 
     const out = {
       pitch, roll, yaw, throttle, throttleSet,
@@ -118,6 +130,7 @@ export function createInput(root) {
       fullscreen: pulses.fullscreen,
       debug: pulses.debug,
       confirm: pulses.confirm,
+      lookBack,
       autoThrottle: settings?.autoThrottle,
     };
     pulses.camera = pulses.pause = pulses.gearToggle = pulses.map = pulses.fullscreen = pulses.debug = pulses.confirm = false;
@@ -137,6 +150,8 @@ export function createInput(root) {
   function setTouchAction(v) { state.touchAction = v; }
   function setTouchBoost(v) { state.touchBoost = v; }
   function setTouchBrake(v) { state.touchBrake = v; }
+  function setLookBack(v) { state.lookHeld = !!v; }
+  function resetThrottleLever(v = 0) { state.throttleLever = v; state.throttleSlider = v == null ? null : v; }
 
   let gyroOn = false;
   function setGyro(on) {
@@ -174,5 +189,5 @@ export function createInput(root) {
     state.gyroPitch = 0;
   }
 
-  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setGyro, disableGyro, calibrateGyro, state, keys };
+  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setLookBack, resetThrottleLever, setGyro, disableGyro, calibrateGyro, state, keys };
 }

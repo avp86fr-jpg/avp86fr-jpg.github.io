@@ -881,3 +881,48 @@ body.touch-portrait #hud-mission { top: 36px; }
   .title-cover .logo-slot .title-balloon { display: none; }
   .nav-hint { display: none; }
 }
+
+/* Vertical throttle lever (mobile) */
+#thr.thr-lever {
+  pointer-events: auto;
+  z-index: 6;
+  touch-action: none;
+}
+#thr .thr-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #fffaf0;
+  border: 3px solid #1a140c;
+  box-shadow: 2px 2px 0 #1a140c;
+  border-radius: 16px;
+}
+#thr .thr-knob {
+  position: absolute;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  background: #c01418;
+  border: 3px solid #1a140c;
+  border-radius: 50%;
+  box-shadow: 1px 1px 0 #1a140c;
+  top: calc(100% - 14px);
+}
+#thr .ctrl-label, #stick .ctrl-label {
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  transform: translateX(-50%);
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #1a140c;
+  text-shadow: 0 1px 0 #fffaf0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#mobile-layer .boost-btn {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}

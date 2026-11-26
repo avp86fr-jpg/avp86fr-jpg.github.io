@@ -43,8 +43,8 @@ export function createIsland(scene, quality = "medium") {
     if (Math.abs(z + 1100) < 30 && Math.abs(x) < 450 && h > 1.5 && h < 12) return "runway";
     if (Math.abs(z - 1120) < 18 && Math.abs(x + 820) < 150 && h > 80) return "grass";
     const dLag = Math.hypot(x + 740, z + 1120);
-    const dSunny = Math.hypot(x + 40, z + 1220);
-    const dCape = Math.hypot(x - 620, z + 1140);
+    const dSunny = Math.hypot(x - 40, z + 1220);
+    const dCape = Math.hypot(x + 260, z + 1280);
     if (dLag < 220 && h < 2.2) return "lagoon";
     if (h < 0.35) return "water";
     if (dSunny < 110 && h < 6) return "beach";

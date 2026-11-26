@@ -24,6 +24,7 @@ uniform float uBloom;
 uniform float uRain;
 uniform float uFlash;
 uniform float uContrast;
+uniform float uSpeed;
 
 float linDepth(float d) {
   float zN = uNearFar.x;
@@ -112,6 +113,17 @@ void main() {
     col = mix(col, vec3(0.78, 0.84, 0.92), line * dash * 0.62 * uRain);
     col *= 1.0 - 0.07 * uRain;
   }
+  if (uSpeed > 0.12) {
+    vec2 ruv = vUv * uRes;
+    float axis = ruv.x * 0.18 + ruv.y;
+    float id = floor(axis / 19.0);
+    float phase = fract(axis / 19.0);
+    float dash = fract(ruv.y * 0.02 + uTime * (1.4 + uSpeed * 2.2) + id * 0.37);
+    float line = step(phase, 0.045 + 0.04 * uSpeed) * step(0.35, dash) * step(dash, 0.92);
+    // Keep streaks out of the very center so the plane stays clean.
+    float rim = smoothstep(0.18, 0.55, distance(vUv, vec2(0.5, 0.52)));
+    col = mix(col, vec3(0.95, 0.96, 0.92), line * rim * 0.45 * uSpeed);
+  }
   // Brief cool-white screen flash; the bolt mesh itself carries the purple-white colour
   col += vec3(0.85, 0.88, 1.0) * uFlash * 0.22;
 
@@ -134,6 +146,7 @@ export function createLigneClaire() {
     uRain: { value: 0 },
     uFlash: { value: 0 },
     uContrast: { value: 1.06 },
+    uSpeed: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms,

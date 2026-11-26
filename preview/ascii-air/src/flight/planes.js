@@ -51,91 +51,106 @@ function buildTrainer(s) {
   const g = new THREE.Group();
   const red = s.body, cream = s.accent, dark = s.dark;
 
-  // fuselage
-  add(g, new THREE.CylinderGeometry(0.52, 0.74, 5.8, 14), red, MAT.PLANE, 0, 0.22, -0.15, Math.PI / 2, 0, 0);
-  add(g, new THREE.SphereGeometry(0.74, 12, 10), red, MAT.PLANE, 0, 0.24, 2.55);
-  add(g, new THREE.SphereGeometry(0.4, 10, 8), red, MAT.PLANE, 0, 0.3, -3.0);
-  add(g, new THREE.BoxGeometry(0.9, 0.14, 5.4), cream, MAT.PLANE, 0, -0.28, 0.15);
-  add(g, new THREE.TorusGeometry(0.4, 0.055, 6, 14), dark, MAT.METAL, 0, 0.78, 0.18, Math.PI / 2, 0, 0);
+  // Builder space: +Z is the nose (prop), -Z is the tail. Flipped later to flight -Z.
+  // Fat cowling at the nose, tapering to a slim tail cone.
+  add(g, new THREE.CylinderGeometry(0.86, 0.40, 6.2, 14), red, MAT.PLANE, 0, 0.28, 0.05, Math.PI / 2, 0, 0);
+  add(g, new THREE.SphereGeometry(0.86, 12, 10), red, MAT.PLANE, 0, 0.28, 3.05);
+  add(g, new THREE.SphereGeometry(0.40, 10, 8), red, MAT.PLANE, 0, 0.32, -3.15);
+  add(g, new THREE.BoxGeometry(0.95, 0.14, 5.6), cream, MAT.PLANE, 0, -0.22, 0.2);
 
-  // upper wing + envelope insignia
-  add(g, new THREE.BoxGeometry(11.6, 0.14, 1.9), red, MAT.PLANE, 0, 1.62, 0.12);
-  add(g, new THREE.CylinderGeometry(0.95, 0.95, 0.14, 12), red, MAT.PLANE, 5.8, 1.62, 0.12, 0, 0, Math.PI / 2);
-  add(g, new THREE.CylinderGeometry(0.95, 0.95, 0.14, 12), red, MAT.PLANE, -5.8, 1.62, 0.12, 0, 0, Math.PI / 2);
-  envelopeDecal(g, cream, dark, 2.65, 1.72, 0.12);
-  envelopeDecal(g, cream, dark, -2.65, 1.72, 0.12);
-
-  // lower wing + ailerons
-  add(g, new THREE.BoxGeometry(10.3, 0.13, 1.7), red, MAT.PLANE, 0, -0.06, 0.32);
-  add(g, new THREE.CylinderGeometry(0.85, 0.85, 0.13, 12), red, MAT.PLANE, 5.15, -0.06, 0.32, 0, 0, Math.PI / 2);
-  add(g, new THREE.CylinderGeometry(0.85, 0.85, 0.13, 12), red, MAT.PLANE, -5.15, -0.06, 0.32, 0, 0, Math.PI / 2);
-  const ailL = add(g, new THREE.BoxGeometry(2.3, 0.08, 0.42), red, MAT.PLANE, 2.9, -0.06, 1.08);
-  const ailR = add(g, new THREE.BoxGeometry(2.3, 0.08, 0.42), red, MAT.PLANE, -2.9, -0.06, 1.08);
-
-  // struts, cabane, wires
-  for (const side of [1, -1]) {
-    for (const z of [0.55, -0.18]) {
-      add(g, new THREE.BoxGeometry(0.07, 1.72, 0.07), cream, MAT.WOOD, side * 2.45, 0.78, z);
-      add(g, new THREE.BoxGeometry(0.07, 1.72, 0.07), cream, MAT.WOOD, side * 4.25, 0.78, z);
-    }
-    add(g, new THREE.BoxGeometry(0.07, 1.2, 0.07), cream, MAT.WOOD, side * 0.55, 1.08, 0.5, 0, 0, side * 0.28);
-    add(g, new THREE.BoxGeometry(0.07, 1.2, 0.07), cream, MAT.WOOD, side * 0.55, 1.08, -0.12, 0, 0, side * 0.28);
-    wire(g, dark, side * 2.45, 1.55, 0.55, side * 4.25, 0.0, -0.18);
-    wire(g, dark, side * 4.25, 1.55, 0.55, side * 2.45, 0.0, -0.18);
-  }
-
-  // radial engine
-  add(g, new THREE.CylinderGeometry(0.64, 0.64, 0.72, 14), dark, MAT.METAL, 0, 0.22, 3.1, Math.PI / 2);
+  // Radial engine + cowling rings, clearly at the FRONT
+  add(g, new THREE.CylinderGeometry(0.92, 0.92, 0.22, 16), dark, MAT.METAL, 0, 0.28, 3.22, Math.PI / 2);
+  add(g, new THREE.TorusGeometry(0.78, 0.06, 6, 16), dark, MAT.METAL, 0, 0.28, 3.12, Math.PI / 2, 0, 0);
+  add(g, new THREE.TorusGeometry(0.72, 0.05, 6, 16), dark, MAT.METAL, 0, 0.28, 3.32, Math.PI / 2, 0, 0);
+  add(g, new THREE.CylinderGeometry(0.70, 0.70, 0.70, 14), dark, MAT.METAL, 0, 0.28, 3.38, Math.PI / 2);
   for (let i = 0; i < 9; i++) {
     const a = (i / 9) * Math.PI * 2;
-    add(g, new THREE.CylinderGeometry(0.15, 0.15, 0.48, 8), dark, MAT.METAL,
-      Math.cos(a) * 0.58, 0.22 + Math.sin(a) * 0.58, 3.1, 0, 0, Math.PI / 2 - a);
+    add(g, new THREE.CylinderGeometry(0.16, 0.16, 0.52, 8), dark, MAT.METAL,
+      Math.cos(a) * 0.62, 0.28 + Math.sin(a) * 0.62, 3.38, 0, 0, Math.PI / 2 - a);
   }
-  add(g, new THREE.SphereGeometry(0.4, 10, 8), dark, MAT.METAL, 0, 0.22, 3.22);
+  add(g, new THREE.SphereGeometry(0.36, 10, 8), dark, MAT.METAL, 0, 0.28, 3.48);
 
-  // cream tail + control surfaces
-  add(g, new THREE.BoxGeometry(0.1, 1.6, 1.2), cream, MAT.PLANE, 0, 1.08, -3.2);
-  add(g, new THREE.BoxGeometry(0.12, 1.6, 0.1), red, MAT.PLANE, 0, 1.08, -2.65);
-  const rudder = add(g, new THREE.BoxGeometry(0.08, 1.25, 0.42), cream, MAT.PLANE, 0, 1.08, -3.78);
-  add(g, new THREE.BoxGeometry(3.15, 0.1, 0.95), cream, MAT.PLANE, 0, 0.36, -3.25);
-  const elev = add(g, new THREE.BoxGeometry(2.85, 0.08, 0.4), cream, MAT.PLANE, 0, 0.36, -3.75);
+  // Cockpit rim behind the engine; pilot sits here
+  add(g, new THREE.TorusGeometry(0.42, 0.055, 6, 14), dark, MAT.METAL, 0, 0.92, 0.85, Math.PI / 2, 0, 0);
+  add(g, new THREE.BoxGeometry(0.7, 0.08, 0.22), cream, MAT.PLANE, 0, 1.08, 1.35, 0.35, 0, 0);
 
-  // gear
-  add(g, new THREE.BoxGeometry(0.08, 1.2, 0.08), dark, MAT.METAL, 1.1, -0.68, 0.72);
-  add(g, new THREE.BoxGeometry(0.08, 1.2, 0.08), dark, MAT.METAL, -1.1, -0.68, 0.72);
-  add(g, new THREE.BoxGeometry(2.3, 0.08, 0.08), dark, MAT.METAL, 0, -1.08, 0.72);
-  const wL = add(g, new THREE.CylinderGeometry(0.44, 0.44, 0.2, 14), dark, MAT.METAL, 1.18, -1.25, 0.72, 0, 0, Math.PI / 2);
-  const wR = add(g, new THREE.CylinderGeometry(0.44, 0.44, 0.2, 14), dark, MAT.METAL, -1.18, -1.25, 0.72, 0, 0, Math.PI / 2);
-  add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.12, 10), cream, MAT.PLANE, 1.18, -1.25, 0.72, 0, 0, Math.PI / 2);
-  add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.12, 10), cream, MAT.PLANE, -1.18, -1.25, 0.72, 0, 0, Math.PI / 2);
-  add(g, new THREE.BoxGeometry(0.07, 0.72, 0.07), dark, MAT.METAL, 0, -0.32, -2.75, 0.5, 0, 0);
-  const wT = add(g, new THREE.CylinderGeometry(0.16, 0.16, 0.1, 8), dark, MAT.METAL, 0, -0.72, -2.9, 0, 0, Math.PI / 2);
+  // Stagger: UPPER wing slightly AHEAD of the lower wing (classic biplane).
+  // Dihedral: each panel tilts up at the tip.
+  const zU = 0.62, zL = -0.08;
+  for (const side of [1, -1]) {
+    const diU = side * -0.07;
+    const diL = side * -0.10;
+    add(g, new THREE.BoxGeometry(5.7, 0.15, 2.05), red, MAT.PLANE, side * 2.90, 1.78, zU, 0, 0, diU);
+    add(g, new THREE.CylinderGeometry(1.02, 1.02, 0.15, 12), red, MAT.PLANE, side * 5.75, 1.78 + Math.sin(Math.abs(diU)) * 2.9, zU, 0, 0, Math.PI / 2);
+    add(g, new THREE.BoxGeometry(5.15, 0.13, 1.80), red, MAT.PLANE, side * 2.60, 0.02, zL, 0, 0, diL);
+    add(g, new THREE.CylinderGeometry(0.90, 0.90, 0.13, 12), red, MAT.PLANE, side * 5.15, 0.02 + Math.sin(Math.abs(diL)) * 2.6, zL, 0, 0, Math.PI / 2);
+  }
+  envelopeDecal(g, cream, dark, 2.7, 1.90, zU);
+  envelopeDecal(g, cream, dark, -2.7, 1.90, zU);
 
-  // spinning translucent prop disc (no frozen black-X in stills)
+  // Ailerons on the TRAILING edge of the lower wing (toward the tail, -Z)
+  const ailZ = zL - 1.02;
+  const ailL = add(g, new THREE.BoxGeometry(2.35, 0.08, 0.42), red, MAT.PLANE, 2.7, 0.02, ailZ);
+  const ailR = add(g, new THREE.BoxGeometry(2.35, 0.08, 0.42), red, MAT.PLANE, -2.7, 0.02, ailZ);
+
+  // Struts, cabane, wires between the staggered wings
+  for (const side of [1, -1]) {
+    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 2.45, 0.90, 0.42);
+    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 2.45, 0.90, -0.05);
+    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 4.20, 0.90, 0.42);
+    add(g, new THREE.BoxGeometry(0.07, 1.78, 0.07), cream, MAT.WOOD, side * 4.20, 0.90, -0.05);
+    add(g, new THREE.BoxGeometry(0.07, 1.25, 0.07), cream, MAT.WOOD, side * 0.55, 1.18, 0.70, 0, 0, side * 0.26);
+    add(g, new THREE.BoxGeometry(0.07, 1.25, 0.07), cream, MAT.WOOD, side * 0.55, 1.18, 0.10, 0, 0, side * 0.26);
+    wire(g, dark, side * 2.45, 1.70, 0.85, side * 4.20, 0.08, -0.55);
+    wire(g, dark, side * 4.20, 1.70, 0.85, side * 2.45, 0.08, -0.55);
+  }
+
+  // Cream tail at the BACK: fin, rudder, stab, elevator
+  add(g, new THREE.BoxGeometry(0.10, 1.85, 1.35), cream, MAT.PLANE, 0, 1.18, -3.15);
+  add(g, new THREE.BoxGeometry(0.12, 1.85, 0.10), red, MAT.PLANE, 0, 1.18, -2.52);
+  const rudder = add(g, new THREE.BoxGeometry(0.08, 1.45, 0.48), cream, MAT.PLANE, 0, 1.18, -3.82);
+  add(g, new THREE.BoxGeometry(3.35, 0.10, 1.05), cream, MAT.PLANE, 0, 0.38, -3.20);
+  const elev = add(g, new THREE.BoxGeometry(3.05, 0.08, 0.42), cream, MAT.PLANE, 0, 0.38, -3.78);
+
+  // Gear under the forward fuselage
+  add(g, new THREE.BoxGeometry(0.08, 1.25, 0.08), dark, MAT.METAL, 1.12, -0.62, 0.85);
+  add(g, new THREE.BoxGeometry(0.08, 1.25, 0.08), dark, MAT.METAL, -1.12, -0.62, 0.85);
+  add(g, new THREE.BoxGeometry(2.35, 0.08, 0.08), dark, MAT.METAL, 0, -1.10, 0.85);
+  const wL = add(g, new THREE.CylinderGeometry(0.46, 0.46, 0.22, 14), dark, MAT.METAL, 1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
+  const wR = add(g, new THREE.CylinderGeometry(0.46, 0.46, 0.22, 14), dark, MAT.METAL, -1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
+  add(g, new THREE.CylinderGeometry(0.24, 0.24, 0.14, 10), cream, MAT.PLANE, 1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
+  add(g, new THREE.CylinderGeometry(0.24, 0.24, 0.14, 10), cream, MAT.PLANE, -1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
+  add(g, new THREE.BoxGeometry(0.07, 0.78, 0.07), dark, MAT.METAL, 0, -0.28, -2.70, 0.5, 0, 0);
+  const wT = add(g, new THREE.CylinderGeometry(0.16, 0.16, 0.10, 8), dark, MAT.METAL, 0, -0.70, -2.88, 0, 0, Math.PI / 2);
+
+  // Prop at the very front, with a blur disc for high RPM
   const prop = new THREE.Group();
   prop.name = "prop";
   add(prop, new THREE.CylinderGeometry(0.12, 0.12, 0.42, 8), dark, MAT.METAL, 0, 0, 0.08, Math.PI / 2);
-  add(prop, new THREE.SphereGeometry(0.18, 8, 6), cream, MAT.PLANE, 0, 0, 0.28);
+  add(prop, new THREE.SphereGeometry(0.20, 8, 6), cream, MAT.PLANE, 0, 0, 0.30);
   const discMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0xd8c8a0, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
+    color: 0xd8c8a0, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
   }));
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.35, 28), discMat);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.45, 28), discMat);
+  disc.name = "prop-blur";
   prop.add(disc);
-  const bladeMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x5a4030, transparent: true, opacity: 0.16, depthWrite: false,
+  const bladeMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0x4a3424, transparent: true, opacity: 0.55, depthWrite: false,
   }));
-  const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.5, 0.04), bladeMat);
+  const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.6, 0.05), bladeMat);
   const b2 = b1.clone();
   b2.rotation.z = Math.PI / 2;
   prop.add(b1, b2);
-  prop.position.set(0, 0.22, 3.5);
+  prop.position.set(0, 0.28, 3.82);
   g.add(prop);
 
   const pilot = seatPilot(g);
-  pilot.position.set(0, 0.55, 0.12);
+  pilot.position.set(0, 0.62, 0.85);
   pilot.scale.setScalar(1.08);
 
   g.userData.prop = prop;
+  g.userData.propBlur = disc;
+  g.userData.propBlades = [b1, b2];
   g.userData.wheels = [wL, wR, wT];
   g.userData.elevator = elev;
   g.userData.rudder = rudder;

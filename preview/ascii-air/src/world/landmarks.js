@@ -136,7 +136,7 @@ function makeLighthouse() {
   const beamMat = new THREE.MeshBasicMaterial({
     color: 0xfff2c0,
     transparent: true,
-    opacity: 0.38,
+    opacity: 0.52,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
@@ -637,7 +637,7 @@ export function createLandmarks(scene, terrain, sky) {
   const spots = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < 56; i++) {
     const a = rnd() * Math.PI * 2;
     const r = 20 + rnd() * 140;
     const x = LANDMARKS.town.x + Math.cos(a) * r;
@@ -678,11 +678,11 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(420, 0.9, -1480);
+  steamer.position.set(-300, 0.9, -1500);
   steamer.rotation.y = -0.9;
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[280, -1500, 0x2a6cb6], [520, -1400, 0xe8e0c8], [640, -1280, 0xc05030], [360, -1360, 0xc08020], [200, -1550, 0xf4ead0]];
+  const coastal = [[-220, -1500, 0x2a6cb6], [-340, -1420, 0xe8e0c8], [-400, -1360, 0xc05030], [-180, -1460, 0xc08020], [60, -1560, 0xf4ead0]];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
@@ -710,20 +710,19 @@ export function createLandmarks(scene, terrain, sky) {
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(1.8, 1.4, 1.6);
-  bridge.position.set(bx, 26, bz);
-  // river goes roughly (720,640)->(780,520)->(980,440) so at bridge toward SE
-  bridge.rotation.y = -0.6;
+  bridge.scale.set(2.6, 1.8, 2.1);
+  bridge.position.set(bx, 28, bz);
+  bridge.rotation.y = 0.9;
   group.add(bridge);
 
   const castle = makeCastle();
-  castle.scale.setScalar(1.45);
+  castle.scale.setScalar(2.05);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
   group.add(castle);
 
   const mills = [];
   const millSpots = [
-    [-400, -180], [-480, -40], [-360, 40], [-520, 80], [-420, 140],
+    [520, -860], [600, -800], [460, -780], [580, -920], [440, -900],
   ];
   for (const [x, z] of millSpots) {
     const m = makeWindmill();
@@ -734,8 +733,8 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   const arch = makeArch();
-  arch.scale.setScalar(1.35);
-  arch.position.set(LANDMARKS.arch.x, 0, LANDMARKS.arch.z);
+  arch.scale.setScalar(2.05);
+  arch.position.set(LANDMARKS.arch.x, 2, LANDMARKS.arch.z);
   arch.rotation.y = -0.5;
   group.add(arch);
 
@@ -746,8 +745,10 @@ export function createLandmarks(scene, terrain, sky) {
 
   const falls = makeWaterfall();
   // sheet hangs down from ~88 to ~16, center at ~52
-  falls.position.set(LANDMARKS.waterfall.x, 52, LANDMARKS.waterfall.z);
-  falls.rotation.y = -0.8;
+  const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
+  falls.scale.set(1.15, 1.05, 1.15);
+  falls.position.set(wx, 50, wz);
+  falls.rotation.y = 0.35;
   group.add(falls);
 
   // Roads

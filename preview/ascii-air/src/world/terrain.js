@@ -47,8 +47,8 @@ export function computeHeight(x, z) {
   const radius = islandRadius(ang) + ncoast;
 
   // Extra capes
-  const capeSE = dist2(x, z, 720, -1020);
-  const capePush = smoothstep(380, 80, capeSE) * 220;
+  const capeSE = dist2(x, z, -260, -1280);
+  const capePush = smoothstep(160, 40, capeSE) * 90;
   const r = radius + capePush;
 
   let mask = smoothstep(r + 90, r - 70, dist);
@@ -61,29 +61,36 @@ export function computeHeight(x, z) {
   // Force landing pads and the airport to stay on dry land
   const airportPad = Math.max(0, 1 - Math.max(Math.abs(z + 1100) / 170, Math.abs(x) / 560));
   const grassPad = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 48, Math.abs(x + 820) / 190));
-  const coveSunny = smoothstep(90, 28, dist2(x, z, -40, -1220));
-  const beachCape = smoothstep(200, 50, dist2(x, z, 620, -1140));
+  const coveSunny = smoothstep(90, 28, dist2(x, z, 40, -1220));
+  const beachCape = smoothstep(80, 24, dist2(x, z, -260, -1280));
   mask = Math.max(mask, airportPad, grassPad, coveSunny, beachCape);
 
   // Arch rock islet
   const archD = dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z);
   mask = Math.max(mask, smoothstep(70, 22, archD));
 
-  // Seabed
-  const bed = -6 - 22 * (1 - smoothstep(r - 40, r + 700, dist)) - 4 * fbm(x * 0.002, z * 0.002, 3, 3);
+  // Keep the postcard water in front of the south coast deep and clear.
+  if (z < -1450) {
+    const open = smoothstep(-1450, -1580, z);
+    mask *= 1 - open * 0.96;
+  }
 
-  // Base land
+  // Seabed
+  const bed = -8 - 26 * (1 - smoothstep(r - 40, r + 700, dist)) - 4 * fbm(x * 0.002, z * 0.002, 3, 3);
+
+  // Base land. Off the island, drop to a deep seabed so the water is never a pale sand sheet.
   let h = 6 + 28 * fbm(x * 0.0009, z * 0.0009, 5, 1) + 10 * fbm(x * 0.0024, z * 0.0024, 3, 5);
-  h *= mask;
+  h = lerp(bed, h, saturate(mask));
 
   // Volcano — Mount Glyph at (0, 200)
   const vx = 0, vz = 200;
   const vd = dist2(x, z, vx, vz);
-  const cone = Math.pow(saturate(1 - vd / 500), 1.12) * 305;
-  const crater = smoothstep(120, 38, vd) * 78;
+  const cone = Math.pow(saturate(1 - vd / 520), 1.08) * 318;
+  const crater = smoothstep(135, 28, vd) * 96;
   let volc = cone - crater;
-  // gentle lava-rock shoulders
-  volc += ridge(x * 0.004, z * 0.004, 3, 8) * 18 * smoothstep(480, 80, vd);
+  // Rugged lava-rock shoulders and a broken lip
+  volc += ridge(x * 0.0045, z * 0.0045, 4, 8) * 26 * smoothstep(500, 70, vd);
+  volc += ridge(x * 0.012, z * 0.01, 2, 3) * 10 * smoothstep(200, 40, vd);
   h = Math.max(h, volc * Math.max(mask, smoothstep(520, 200, vd)));
 
   // Rolling foothills between the south coast and the cone (keeps runway flat)
@@ -93,12 +100,12 @@ export function computeHeight(x, z) {
   }
 
   // West mill hills
-  const hd = dist2(x, z, -480, 80);
+  const hd = dist2(x, z, 520, -860);
   const hills = smoothstep(620, 80, hd) * (58 + 22 * fbm(x * 0.003, z * 0.003, 4, 21));
   h = Math.max(h, hills * mask);
 
   // Castle cliff plateau (east of the cone, visible in the hero vista)
-  const cd = dist2(x, z, 380, 520);
+  const cd = dist2(x, z, -340, 80);
   let plateau = smoothstep(360, 110, cd) * 96;
   if (z > 860) plateau *= smoothstep(1040, 860, z);
   if (x > 420) plateau *= smoothstep(560, 420, x);
@@ -110,12 +117,12 @@ export function computeHeight(x, z) {
   h = Math.max(h, ridgeH * mask);
 
   // Lighthouse cape height
-  const ld = dist2(x, z, 620, -1140);
+  const ld = dist2(x, z, -260, -1280);
   const capeH = smoothstep(340, 36, ld) * (28 + 22 * ridge(x * 0.01, z * 0.01, 3, 4));
   h = Math.max(h, capeH * Math.max(mask, smoothstep(380, 90, ld)));
 
   // Small sandy cove only — the rest of the south coast is a cliff
-  const cove = smoothstep(90, 28, dist2(x, z, -40, -1220));
+  const cove = smoothstep(90, 28, dist2(x, z, 40, -1220));
   h = flatten(h, 1.8, cove * 0.9);
 
   // Ochre sea-cliffs along the south coast, with noisy inlets
@@ -129,6 +136,16 @@ export function computeHeight(x, z) {
     h = lerp(h, -1.2, along * cut * 0.7 * notAirport);
   }
 
+  // Ochre sea-cliffs ringing the whole coast, with noisy inlets, sparing the runway.
+  {
+    const ring = smoothstep(0.12, 0.42, mask) * smoothstep(0.92, 0.62, mask);
+    const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 130, Math.abs(x) / 500)), 1.2);
+    const inlet = fbm(x * 0.0042, z * 0.0042, 3, 29);
+    const cut = smoothstep(0.70, 0.88, inlet);
+    const cliffH = 18 + 36 * fbm(x * 0.003, z * 0.003, 3, 17) + 12 * ridge(x * 0.011, z * 0.01, 2, 5);
+    h = Math.max(h, cliffH * ring * notAirport * (1 - cut * 0.7));
+  }
+
   // Airport flatten (runway east-west at z=-1100, y=4)
   const ap = Math.max(
     0,
@@ -138,7 +155,7 @@ export function computeHeight(x, z) {
   h = flatten(h, 4.2, ap2);
 
   // Town terrace slightly above airport
-  const td = dist2(x, z, -260, -980);
+  const td = dist2(x, z, 280, -980);
   const townF = smoothstep(220, 60, td);
   h = flatten(h, 8.5, townF * 0.85);
 
@@ -153,14 +170,14 @@ export function computeHeight(x, z) {
 
   // River carve: volcano NE slope → waterfall → bridge → east sea
   const riverPts = [
-    [80, 300, 16, 0],
-    [180, 400, 16, 0],
-    [280, 480, 14, 0],
-    [320, 480, 14, 0], // falls
-    [400, 400, 14, 1],
-    [520, 360, 18, 0],
-    [700, 280, 22, 0],
-    [980, 200, 26, 0],
+    [20, 80, 16, 0],
+    [30, -300, 16, 0],
+    [30, -600, 14, 0],
+    [20, -820, 14, 0], // falls
+    [0, -870, 14, 1],
+    [-20, -920, 18, 0], // viaduct
+    [0, -1000, 22, 0],
+    [20, -1080, 26, 0],
   ];
   for (let i = 0; i < riverPts.length - 1; i++) {
     const a = riverPts[i], b = riverPts[i + 1];
@@ -175,18 +192,40 @@ export function computeHeight(x, z) {
     h = lerp(h, Math.min(h, target), carve * (i === 3 ? 0.35 : 0.9));
   }
 
-  const up = capsuleDist(x, z, 180, 400, 320, 480);
-  const down = capsuleDist(x, z, 320, 480, 400, 400);
-  if (up < 40) h = Math.max(h, 72);
-  if (down < 36 && dist2(x, z, 400, 400) < 80) h = Math.min(h, 22);
+  const up = capsuleDist(x, z, 30, -300, 20, -820);
+  const down = capsuleDist(x, z, 20, -820, -20, -920);
+  if (up < 40) h = Math.max(h, 70);
+  if (down < 36 && dist2(x, z, 0, -870) < 90) h = Math.min(h, 22);
 
   // Grass strip flatten
   const gs = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 28, Math.abs(x + 820) / 160));
   h = flatten(h, 90, Math.pow(gs, 1.2) * 0.95);
 
+  // Mistfall: a high lip and a hard drop so the sheet reads as a waterfall, not a floating tower
+  {
+    const wd = dist2(x, z, 20, -820);
+    if (wd < 90) {
+      const lip = smoothstep(90, 18, wd);
+      if (z >= -820) h = Math.max(h, lerp(h, 82, lip));
+      else h = lerp(h, 18, lip * 0.9);
+    }
+    const bd = dist2(x, z, -20, -920);
+    if (bd < 60) {
+      const bank = smoothstep(60, 18, bd);
+      const span = (Math.abs(x + 20) < 16) && (Math.abs(z + 920) < 20);
+      if (span) h = lerp(h, 8, bank);
+      else h = Math.max(h, 24 * bank);
+    }
+  }
+
   // Mix in islet height
   if (islet < 100) h = Math.max(h, smoothstep(90, 20, islet) * (2.5 + 1.5 * fbm(x * 0.05, z * 0.05, 2, 9)));
-  if (archD < 80) h = Math.max(h, smoothstep(70, 15, archD) * 8);
+  if (archD < 80) {
+    const feet = smoothstep(70, 22, archD) * 16;
+    h = Math.max(h, feet);
+    // keep the opening wet so the arch reads as a hole
+    if (archD < 14) h = Math.min(h, -1.2);
+  }
 
   // Shore clamp: no vertical walls at the waterline
   if (mask < 0.99 && mask > 0.01) {
@@ -198,12 +237,12 @@ export function computeHeight(x, z) {
   // Re-assert pads after the shore clamp so the runway cannot fall into the sea
   const airportPad2 = Math.max(0, 1 - Math.max(Math.abs(z + 1100) / 170, Math.abs(x) / 560));
   const grassPad2 = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 48, Math.abs(x + 820) / 190));
-  const cove2 = smoothstep(90, 28, dist2(x, z, -40, -1220));
-  const beachCape2 = smoothstep(200, 50, dist2(x, z, 620, -1140));
+  const cove2 = smoothstep(90, 28, dist2(x, z, 40, -1220));
+  const beachCape2 = smoothstep(80, 24, dist2(x, z, -260, -1280));
   h = flatten(h, 4.2, Math.pow(saturate(airportPad2), 1.15));
   h = flatten(h, 90, Math.pow(saturate(grassPad2), 1.2) * 0.95);
   h = flatten(h, 1.8, cove2 * 0.9);
-  h = Math.max(h, (18 + 16 * fbm(x * 0.01, z * 0.01, 2, 4)) * beachCape2);
+  h = Math.max(h, (22 + 18 * ridge(x * 0.02, z * 0.02, 2, 4)) * beachCape2);
 
   // South-east ochre sea-cliffs
   if (x > 280 && x < 1000 && z < -680 && z > -1400) {
@@ -225,6 +264,11 @@ export function computeHeight(x, z) {
     h = lerp(h, terr, 0.52);
   }
 
+  // Never leave a y=0 sea sheet — it z-fights the water and reads as a pale patch.
+  const nearLag = dist2(x, z, -740, -1120) < 280;
+  const nearCove = dist2(x, z, 40, -1220) < 120;
+  if (h < 0.45 && !nearLag && !nearCove && mask < 0.55) h = Math.min(h, bed);
+
   return h;
 }
 
@@ -245,12 +289,13 @@ export function computeMaterial(x, z, h, slope) {
   if (Math.abs(z - 1120) < 16 && Math.abs(x + 820) < 140) return MAT.RUNWAY;
   // lagoon sand + the one small cove; south coast is rock
   if (h < 3.5 && dist2(x, z, -740, -1120) < 260) return MAT.SAND;
-  if (h < 3.2 && dist2(x, z, -40, -1220) < 100) return MAT.SAND;
-  if (h < 2.2) return MAT.SAND;
+  if (h < 3.2 && dist2(x, z, 40, -1220) < 90) return MAT.SAND;
+  if (h < 1.15) return MAT.SAND;
   // lighthouse cape and south sea-cliffs
-  if (dist2(x, z, 620, -1140) < 260 && (slope > 0.22 || h > 6)) return MAT.ROCK;
-  if (z < -1080 && h > 2 && (slope > 0.22 || h > 8)) return MAT.ROCK;
-  if (h > 3 && h < 55 && slope > 0.38 && (z < -700 || x > 420)) return MAT.ROCK;
+  if (dist2(x, z, -260, -1280) < 180 && h > 1.4) return MAT.ROCK;
+  if (slope > 0.28 && h > 2 && h < 70 && dist > 400) return MAT.ROCK;
+  if (z < -1000 && h > 2 && (slope > 0.18 || h > 7)) return MAT.ROCK;
+  if (h > 3 && h < 60 && slope > 0.32) return MAT.ROCK;
   // forest belts
   const forestN = fbm(x * 0.0022, z * 0.0022, 4, 44);
   if (h > 12 && h < 95 && slope < 0.42 && forestN > 0.40 && vd > 240) return MAT.FOREST;
@@ -294,8 +339,8 @@ export function createTerrain() {
   const matColor = (m, h, x, z) => {
     const n = fbm(x * 0.02, z * 0.02, 2, 3);
     switch (m) {
-      case MAT.SEA: return [0.16, 0.62 + n * 0.08, 0.88];
-      case MAT.WATER_DEEP: return [0.10, 0.36, 0.70];
+      case MAT.SEA: return [0.07, 0.32 + n * 0.04, 0.40];
+      case MAT.WATER_DEEP: return [0.06, 0.22, 0.30];
       case MAT.SAND: return [0.96, 0.88, 0.62 + n * 0.06];
       case MAT.GRASS: return [0.48 + n * 0.16, 0.82 + n * 0.12, 0.22 + n * 0.06];
       case MAT.FOREST: return [0.18, 0.52 + n * 0.10, 0.16];
@@ -354,15 +399,16 @@ export function createTerrain() {
     if (vd < 48 && hgt > 175) {
       col[o*3] = 1.0; col[o*3+1] = 0.38 + streak * 0.32; col[o*3+2] = 0.06;
       aid[o*2] = MAT.LIGHT; aid[o*2+1] = 1;
-    } else if (vd < 210 && hgt > 100 && streak > 0.46) {
-      col[o*3] = 0.98; col[o*3+1] = 0.22 + (streak - 0.46) * 0.7; col[o*3+2] = 0.05;
+    } else if (vd < 230 && hgt > 85 && (streak > 0.38 || (z < 120 && streak > 0.30))) {
+      col[o*3] = 0.98; col[o*3+1] = 0.22 + (streak - 0.30) * 0.65; col[o*3+2] = 0.05;
       aid[o*2] = MAT.LIGHT; aid[o*2+1] = 1;
     } else {
       let sh = 0.78 + 0.34 * ndl;
       const slope = 1 - nrm[o*3+1];
-      if (slope > 0.32 && hgt > 1.5) {
-        const hatch = Math.sin(x * 0.55 + hgt * 0.7) * Math.sin(z * 0.16 + x * 0.08);
-        if (hatch > 0.72) sh *= 0.78;
+      if (slope > 0.24 && hgt > 1.2) {
+        const hatch = Math.sin(x * 0.62 + hgt * 0.8) * Math.sin(z * 0.2 + x * 0.1);
+        if (hatch > 0.55) sh *= 0.82;
+        if (hatch > 0.82) sh *= 0.8;
       }
       if (sh < 0.72) sh = 0.72;
       if (sh > 1.12) sh = 1.12;
