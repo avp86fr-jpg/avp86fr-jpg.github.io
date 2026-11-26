@@ -280,3 +280,9 @@ body.comic #cine .skip { font-family: 'Bangers', sans-serif; color: var(--paper)
   28% { transform: translate(-50%, -50%) rotate(var(--r)) scale(1); } 78% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(var(--r)) scale(1.08) translateY(-12px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sfxw { animation: none; } }
 #sfxLayer { position: fixed; inset: 0; pointer-events: none; z-index: 7; overflow: hidden; }
+body.comic .tbtn { background: var(--paper) !important; color: var(--ink); border: 3px solid var(--ink) !important; box-shadow: 3px 3px 0 var(--ink) !important; font-family: 'Bangers', sans-serif; letter-spacing: 1px; text-shadow: none; }
+body.comic .tbtn b { font-weight: 400; } body.comic .tbtn small { font-family: 'ComicNeue', sans-serif; font-weight: 700; }
+body.comic #tBrake { background: var(--cr) !important; color: #fff; } body.comic #tNitro { background: var(--cy) !important; }
+body.comic .tbtn.down { background: var(--cb) !important; color: #fff; box-shadow: 1px 1px 0 var(--ink) !important; }
+body.comic .missions { top: 7.9em; } body.comic.touch .bark { bottom: calc(var(--s,1) * 198px); }
+body.comic.portrait .bark { bottom: auto; } body.comic.touch.short:not(.portrait) .bark { bottom: auto; }
