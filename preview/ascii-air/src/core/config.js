@@ -28,7 +28,7 @@ export const CAM = {
   near: 0.8,
   far: 6200,
   chaseDist: 26,
-  chaseHeight: 8.0,
+  chaseHeight: 9.5,
   chaseLag: 4.2,
 };
 

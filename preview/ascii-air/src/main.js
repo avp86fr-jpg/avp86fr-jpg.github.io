@@ -184,11 +184,14 @@ function startFreeFlight() {
   if (clock.hour < 6 || clock.hour > 20) clock.set(10);
   flyCam.state.mode = "chase";
   flyCam.state.hero = false;
+  camOverride = null;
+  flyCam.orbitReset();
   if (weather) weather.set("clear");
   mode = "fly";
   paused = false;
   autoPilotOn = false;
   input.resetThrottleLever?.(0);
+  flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
   markLast("free");
   autoPilotTarget = null;
   ui.showHUD();
@@ -211,6 +214,8 @@ function startMission(id) {
   clock.frozen = true;
   flyCam.state.mode = "chase";
   flyCam.state.hero = false;
+  camOverride = null;
+  flyCam.orbitReset();
   if (weather) weather.set(m.weather || "clear");
   if (m.activity === "landing") { craft.flaps = 1; }
   mode = "fly";
@@ -218,6 +223,7 @@ function startMission(id) {
   pendingResult = null;
   markLast("mission", id);
   input.resetThrottleLever?.(0.75);
+  flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
   ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
 }
@@ -429,7 +435,7 @@ function createContrail(sc) {
   };
 }
 
-function renderFrame(time) {
+function renderFrame(time, camDt = 1 / 60) {
   renderer.info.reset();
   const cssW = canvas.clientWidth || window.innerWidth;
   const cssH = canvas.clientHeight || window.innerHeight;
@@ -443,14 +449,10 @@ function renderFrame(time) {
     camera.updateProjectionMatrix();
   } else if (mode === "title") {
     flyCam.state.mode = "title";
-    flyCam.update(1 / 60, craft, portrait);
+    flyCam.update(camDt, craft, portrait);
   } else {
     if (flyCam.state.mode === "title") flyCam.state.mode = "chase";
-    flyCam.update(1 / 60, craft, portrait);
-    if (island) {
-      const h = island.heightAt(camera.position.x, camera.position.z);
-      if (camera.position.y < h + 2) camera.position.y = h + 2;
-    }
+    flyCam.update(camDt, craft, portrait);
   }
 
   look.uniforms.uTime.value = time;
@@ -630,7 +632,7 @@ function step(now) {
     }
   }
 
-  renderFrame(now / 1000);
+  renderFrame(now / 1000, dtRaw);
 
   frameMs = dtRaw * 1000;
   fpsN++; fpsAcc += dtRaw;
@@ -653,6 +655,18 @@ async function boot() {
 
   ui.setLoad(0.5, "raising the island…");
   island = createIsland(scene, settings.quality || "medium");
+  {
+    const meshes = [];
+    if (island.terrain && island.terrain.mesh) meshes.push(island.terrain.mesh);
+    const lg = island.landmarks && island.landmarks.group;
+    if (lg) {
+      const merged = lg.getObjectByName("landmarks-merged");
+      const cliffs = lg.getObjectByName("cliffs");
+      if (merged) meshes.push(merged);
+      if (cliffs) meshes.push(cliffs);
+    }
+    flyCam.setWorld(island, meshes);
+  }
   flattenLook(scene);
   ensureShadow();
   weather = createWeather(scene, island.sky, island.water);
@@ -853,6 +867,30 @@ function exposeAPI() {
     setAutopilot: (on, target, opts) => { autoPilotOn = !!on; autoPilotTarget = target; autoPilotOpts = opts || {}; },
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,
+    render: () => {
+      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save }); } catch {}
+      renderFrame(performance.now() / 1000, 1 / 60);
+    },
+    getCamInfo() {
+      const r = {
+        mode: flyCam.state.mode,
+        hero: flyCam.state.hero,
+        orbitActive: flyCam.state.orbitActive,
+        orbitYaw: flyCam.state.orbitYaw,
+        orbitPitch: flyCam.state.orbitPitch,
+        lockView: flyCam.state.lockView,
+        hasPose: flyCam.state.hasPose,
+        camOverride: !!camOverride,
+        cam: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        plane: { x: craft.pos.x, y: craft.pos.y, z: craft.pos.z },
+      };
+      const dx = camera.position.x - craft.pos.x;
+      const dy = camera.position.y - craft.pos.y;
+      const dz = camera.position.z - craft.pos.z;
+      r.dist = Math.hypot(dx, dy, dz);
+      r.behindY = dy;
+      return r;
+    },
     // Step live input (held keys / touch) through physics without waiting on the renderer.
     advance(seconds) {
       const steps = Math.max(1, Math.round(seconds / PHYS.dt));

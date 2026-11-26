@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { CAM } from "../core/config.js";
+import { CAM, LANDMARKS as LM } from "../core/config.js";
 import { clamp, lerp, wrapAngle } from "../core/utils.js";
 
 const _fwd = new THREE.Vector3();
@@ -7,6 +7,9 @@ const _up = new THREE.Vector3();
 const _right = new THREE.Vector3();
 const _pos = new THREE.Vector3();
 const _look = new THREE.Vector3();
+const _ray = new THREE.Raycaster();
+const _from = new THREE.Vector3();
+const _dir = new THREE.Vector3();
 
 export function createFlightCamera(camera) {
   const state = {
@@ -23,7 +26,71 @@ export function createFlightCamera(camera) {
     orbitHold: 0,
     lockView: null, // null | "side" | "front"
     lookBack: false,
+    world: null,
+    colliders: [],
+    hasPose: false,
   };
+
+  function setWorld(world, meshes) {
+    state.world = world || null;
+    state.colliders = (meshes || []).filter((m) => m && m.isObject3D);
+  }
+
+  function collide(pos, look) {
+    const world = state.world;
+    if (world && typeof world.heightAt === "function") {
+      const h = world.heightAt(pos.x, pos.z);
+      if (Number.isFinite(h) && pos.y < h + 4.5) pos.y = h + 4.5;
+    }
+    const meshes = state.colliders;
+    if (!meshes.length) return;
+    _from.copy(look);
+    _dir.copy(pos).sub(_from);
+    const dist = _dir.length();
+    if (dist < 1.5) return;
+    _dir.multiplyScalar(1 / dist);
+    _ray.set(_from, _dir);
+    _ray.near = 1.2;
+    _ray.far = Math.max(1.4, dist - 0.8);
+    const hits = _ray.intersectObjects(meshes, true);
+    if (hits && hits.length) {
+      const hit = hits[0];
+      const pull = 2.6;
+      pos.copy(hit.point).addScaledVector(_dir, -pull);
+    }
+    // Side clearance vs the big airport buildings (a look-to-cam ray misses these).
+    const ground = (world && world.heightAt) ? world.heightAt.bind(world) : () => 0;
+    const boxes = [
+      { x: (LM.hangar && LM.hangar.x) || 120, z: (LM.hangar && LM.hangar.z) || -1040, hx: 38, hz: 28, y1: 34 },
+      { x: (LM.tower && LM.tower.x) || 220, z: (LM.tower && LM.tower.z) || -1048, hx: 16, hz: 16, y1: 58 },
+      { x: (LM.church && LM.church.x) || 330, z: (LM.church && LM.church.z) || -940, hx: 16, hz: 16, y1: 42 },
+    ];
+    const pad = 10;
+    for (const b of boxes) {
+      const y0 = (ground(b.x, b.z) || 0) - 1;
+      const y1 = y0 + b.y1;
+      const cx = Math.min(Math.max(pos.x, b.x - b.hx), b.x + b.hx);
+      const cy = Math.min(Math.max(pos.y, y0), y1);
+      const cz = Math.min(Math.max(pos.z, b.z - b.hz), b.z + b.hz);
+      const dx = pos.x - cx, dy = pos.y - cy, dz = pos.z - cz;
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 < pad * pad) {
+        if (d2 < 1e-5) {
+          pos.z += (pos.z <= b.z ? -pad : pad);
+        } else {
+          const d = Math.sqrt(d2);
+          const k = (pad - d) / d;
+          pos.x += dx * k;
+          pos.y += dy * k;
+          pos.z += dz * k;
+        }
+      }
+    }
+    if (world && typeof world.heightAt === "function") {
+      const h = world.heightAt(pos.x, pos.z);
+      if (Number.isFinite(h) && pos.y < h + 4.5) pos.y = h + 4.5;
+    }
+  }
 
   function cycle() {
     // chase -> side -> front -> chase
@@ -70,6 +137,14 @@ export function createFlightCamera(camera) {
     state.orbitYaw = 0;
     state.orbitPitch = 0.22;
     state.orbitHold = 8;
+  }
+
+  function hardSnap(craft, portrait = false) {
+    state.hero = false;
+    if (state.mode === "title") state.mode = "chase";
+    orbitReset();
+    state.hasPose = false;
+    snap(craft, portrait);
   }
 
   function setLookBack(on) {
@@ -136,7 +211,7 @@ export function createFlightCamera(camera) {
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
     const height = CAM.chaseHeight + (portrait ? 2 : 0);
-    _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, 3.2);
+    _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -2.4);
     _look.copy(craft.pos).addScaledVector(_fwd, 18).add(new THREE.Vector3(0, 0.2, 0));
     const up = new THREE.Vector3(Math.sin((craft.roll || 0) * 0.18), 1, 0).normalize();
     return { pos: _pos, look: _look, up };
@@ -198,10 +273,22 @@ export function createFlightCamera(camera) {
 
     if (state.mode === "cockpit" || state.hero) {
       camera.position.copy(r.pos);
+      state.hasPose = true;
     } else {
-      const lag = CAM.chaseLag * (0.72 + 0.28 * (1 - k));
-      camera.position.lerp(r.pos, 1 - Math.exp(-lag * dt));
+      const err = camera.position.distanceTo(r.pos);
+      // Snap when the camera is left behind (mission start, teleport, long
+      // physics burst without a render, or a leftover title/orbit pose).
+      if (!state.hasPose || err > 28) {
+        camera.position.copy(r.pos);
+        state.hasPose = true;
+      } else {
+        let lag = CAM.chaseLag * (0.85 + 0.15 * (1 - k));
+        if (err > 12) lag *= 2.6;
+        const step = Math.max(0, dt || 1 / 60);
+        camera.position.lerp(r.pos, 1 - Math.exp(-lag * step));
+      }
     }
+    collide(camera.position, r.look);
     camera.up.copy(r.up);
     camera.lookAt(r.look);
 
@@ -225,11 +312,13 @@ export function createFlightCamera(camera) {
     if (state.mode === "title") state.mode = "chase";
     const r = rig(craft, portrait);
     camera.position.copy(r.pos);
+    collide(camera.position, r.look);
     camera.up.copy(r.up);
     camera.lookAt(r.look);
     camera.fov = state.hero ? 50 : (portrait ? CAM.fovPortrait : CAM.fov);
     camera.updateProjectionMatrix();
+    state.hasPose = true;
   }
 
-  return { state, update, cycle, bump, snap, camera, orbitDrag, orbitRelease, orbitReset, setLookBack };
+  return { state, update, cycle, bump, snap, hardSnap, setWorld, camera, orbitDrag, orbitRelease, orbitReset, setLookBack };
 }
