@@ -51,8 +51,10 @@ export function createSkyProps(scene, quality = "medium") {
     cloudGeo = mergeSimple(geos, MAT.CLOUD);
   }
   const heroSpots = [
-    [-380, 210, -1180, 34], [340, 230, -1100, 30], [-40, 250, -860, 36],
-    [560, 200, -1320, 26], [-620, 230, -980, 28], [180, 260, -1400, 22],
+    [-320, 230, -1200, 38], [280, 250, -1080, 34], [-20, 270, -820, 42],
+    [420, 220, -1280, 30], [-480, 250, -960, 32], [140, 280, -1360, 26],
+    [-180, 240, -700, 36], [80, 300, -500, 40], [-70, 220, -1500, 24],
+    [200, 210, -200, 28],
   ];
   const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nCloud + heroSpots.length);
   const dummy = new THREE.Object3D();

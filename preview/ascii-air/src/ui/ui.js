@@ -378,7 +378,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         ["Gyro sensitivity", "gyroSensitivity", "slider"],
       ],
       gfx: [
-        ["Quality", "quality", ["low", "medium", "high"], { low: "Low", medium: "Medium", high: "High" }],
+        ["Quality", "quality", ["low", "medium", "high"], { low: "Performance", medium: "Medium", high: "High" }],
         ["Frame cap", "fpsCap", [30, 60]],
         ["Motion comfort", "motionComfort", "bool"],
         ["High contrast", "highContrast", "bool"],
@@ -707,7 +707,7 @@ time  ${formatTime(result.time || 0)}
 
     if (!touch && !portrait && window.innerWidth > 900 && window.innerHeight > 560) {
       mmap.classList.remove("hidden");
-      mmap.textContent = "MAP            N\n" + drawMini(craft) + "\n         3 km";
+      drawMini(craft);
     } else mmap.classList.add("hidden");
 
     const plate = !touch && mission && mission.active && mission.active.id === "showcase";
@@ -777,24 +777,23 @@ time  ${formatTime(result.time || 0)}
   }
 
   function compassStrip(hdg, deg) {
-    const n = wrapPos(headingToNorth(hdg) / (Math.PI * 2));
+    // Clean tape of whole tokens: SO  O  NO  N  NE  E  SE  S
+    const labels = [[0, "N"], [45, "NE"], [90, "E"], [135, "SE"], [180, "S"], [225, "SO"], [270, "O"], [315, "NO"]];
+    const center = ((headingToNorth(hdg) * 180 / Math.PI) + 360) % 360;
+    const span = 280;
     const width = 29;
-    const span = 120;
-    let s = "";
-    for (let i = 0; i < width; i++) {
-      const ang = ((n * 360 - span / 2) + (i / (width - 1)) * span + 360) % 360;
-      const near = (d) => Math.min(Math.abs(ang - d), 360 - Math.abs(ang - d)) < (span / width) * 0.7;
-      if (near(0)) s += "N";
-      else if (near(45)) s += "NE";
-      else if (near(90)) s += "E";
-      else if (near(135)) s += "SE";
-      else if (near(180)) s += "S";
-      else if (near(225)) s += "SO";
-      else if (near(270)) s += "O";
-      else if (near(315)) s += "NO";
-      else s += (i % 2 === 0) ? "·" : " ";
+    const cells = Array(width).fill(" ");
+    for (const [d, lab] of labels) {
+      let delta = d - center;
+      while (delta > 180) delta -= 360;
+      while (delta < -180) delta += 360;
+      const mid = (delta / span + 0.5) * (width - 1);
+      const start = Math.round(mid - (lab.length - 1) / 2);
+      if (start >= 0 && start + lab.length <= width) {
+        for (let k = 0; k < lab.length; k++) cells[start + k] = lab[k];
+      }
     }
-    return `⟨${s}⟩  ${String(deg).padStart(3, "0")}° ${compass(hdg)}`;
+    return "⟨ " + cells.join("") + " ⟩  " + String(deg).padStart(3, "0") + "° " + compass(hdg);
   }
 
   function attitude(craft) {
@@ -833,25 +832,89 @@ time  ${formatTime(result.time || 0)}
   }
   function clamp01(t) { return t < 0 ? 0 : t > 1 ? 1 : t; }
 
+  let miniSpec = null;
+  function setMiniMap(spec) { miniSpec = spec; }
+
+  function ensureMiniCanvas() {
+    const mmap = hud.querySelector("#hud-minimap");
+    if (!mmap) return null;
+    let c = mmap.querySelector("canvas");
+    if (!c) {
+      mmap.textContent = "";
+      const cap = document.createElement("div");
+      cap.className = "mini-cap";
+      cap.innerHTML = "<strong>MAP</strong><span>N ↑</span>";
+      c = document.createElement("canvas");
+      c.width = 220;
+      c.height = 220;
+      c.setAttribute("aria-label", "Island map");
+      const sc = document.createElement("div");
+      sc.className = "mini-scale";
+      sc.textContent = "3 km";
+      mmap.appendChild(cap);
+      mmap.appendChild(c);
+      mmap.appendChild(sc);
+    }
+    return c;
+  }
+
   function drawMini(craft) {
-    const W = 16, H = 14;
-    const rows = [];
-    const sx = (x) => Math.round((x + 1500) / 3000 * (W - 1));
-    const sz = (z) => Math.round((1 - (z + 1500) / 3000) * (H - 1));
-    const g = Array.from({ length: H }, () => Array.from({ length: W }, () => "·"));
-    const mark = (x, z, ch) => {
-      const i = sx(x), j = sz(z);
-      if (i >= 0 && i < W && j >= 0 && j < H) g[j][i] = ch;
-    };
-    mark(0, -1100, "A");
-    mark(720, -1020, "L");
-    mark(0, 200, "^");
-    mark(280, 780, "C");
-    mark(-480, 80, "W");
-    mark(320, 480, "F");
-    mark(820, -620, "n");
-    mark(craft.pos.x, craft.pos.z, "@");
-    return g.map((r) => r.join(" ")).join("\n");
+    const c = ensureMiniCanvas();
+    if (!c) return;
+    const ctx = c.getContext("2d");
+    const S = c.width;
+    const W = (miniSpec && miniSpec.world) || 3000;
+    const n = (miniSpec && miniSpec.S) || 0;
+    const data = miniSpec && miniSpec.data;
+    if (data && n) {
+      const img = ctx.createImageData(S, S);
+      for (let y = 0; y < S; y++) {
+        for (let x = 0; x < S; x++) {
+          const i = Math.min(n - 1, Math.floor(x / S * n));
+          const j = Math.min(n - 1, Math.floor(y / S * n));
+          const h = data[j * n + i];
+          const o = (y * S + x) * 4;
+          if (h > 0) {
+            const k = h / 255;
+            img.data[o] = Math.round(72 + k * 90);
+            img.data[o + 1] = Math.round(150 + k * 50);
+            img.data[o + 2] = Math.round(52);
+            img.data[o + 3] = 255;
+          } else {
+            img.data[o] = 100;
+            img.data[o + 1] = 176;
+            img.data[o + 2] = 214;
+            img.data[o + 3] = 255;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    } else {
+      ctx.fillStyle = "#7eb8d8";
+      ctx.fillRect(0, 0, S, S);
+    }
+    ctx.strokeStyle = "#14100a";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, S - 4, S - 4);
+    const toX = (x) => ((x + W / 2) / W) * S;
+    const toY = (z) => (1 - (z + W / 2) / W) * S;
+    const px = toX(craft.pos.x), py = toY(craft.pos.z);
+    const ang = headingToNorth(craft.heading);
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(ang);
+    ctx.fillStyle = "#c01418";
+    ctx.strokeStyle = "#14100a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -10);
+    ctx.lineTo(7, 9);
+    ctx.lineTo(0, 4);
+    ctx.lineTo(-7, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   function isPortrait() { return window.innerHeight > window.innerWidth; }
@@ -862,7 +925,7 @@ time  ${formatTime(result.time || 0)}
 
   return {
     setLoad, showTitle, showHUD, showPause, showResult, showMissions, showHangar, showOptions, showAlbum, showBrief, showCredits,
-    updateHUD, closeOverlay, menuMove, menuOk, isPortrait, state, wrap, loading, hud, overlay, mobile,
+    updateHUD, closeOverlay, menuMove, menuOk, isPortrait, setMiniMap, state, wrap, loading, hud, overlay, mobile,
     elements() {
       // all visible interactive + hud boxes for overlap tests
       const els = [];

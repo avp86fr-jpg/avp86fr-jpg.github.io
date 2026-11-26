@@ -77,9 +77,15 @@ function buildTrainer(s) {
   // Stagger: UPPER wing slightly AHEAD of the lower wing (classic biplane).
   // Flat, thin, straight panels — no dihedral curl, no bulbous tips.
   const zU = 0.62, zL = -0.08;
-  // Single full-span panels so the wings read as straight, thin and flat.
-  add(g, new THREE.BoxGeometry(12.6, 0.09, 1.95), red, MAT.PLANE, 0, 1.78, zU);
-  add(g, new THREE.BoxGeometry(11.4, 0.08, 1.72), red, MAT.PLANE, 0, 0.02, zL);
+  // Cream wings, red leading/trailing stripes, straight thin panels.
+  add(g, new THREE.BoxGeometry(12.6, 0.09, 1.95), cream, MAT.PLANE, 0, 1.78, zU);
+  add(g, new THREE.BoxGeometry(12.6, 0.07, 0.48), red, MAT.PLANE, 0, 1.88, zU + 0.74);
+  add(g, new THREE.BoxGeometry(12.6, 0.07, 0.40), red, MAT.PLANE, 0, 1.88, zU - 0.78);
+  add(g, new THREE.BoxGeometry(1.35, 0.07, 1.7), red, MAT.PLANE, 4.4, 1.88, zU);
+  add(g, new THREE.BoxGeometry(1.35, 0.07, 1.7), red, MAT.PLANE, -4.4, 1.88, zU);
+  add(g, new THREE.BoxGeometry(11.4, 0.08, 1.72), cream, MAT.PLANE, 0, 0.02, zL);
+  add(g, new THREE.BoxGeometry(11.4, 0.06, 0.40), red, MAT.PLANE, 0, 0.10, zL + 0.66);
+  add(g, new THREE.BoxGeometry(11.4, 0.06, 0.34), red, MAT.PLANE, 0, 0.10, zL - 0.70);
   envelopeDecal(g, cream, dark, 2.7, 1.90, zU);
   envelopeDecal(g, cream, dark, -2.7, 1.90, zU);
 
@@ -280,7 +286,7 @@ export function createPlaneMesh(id, colors) {
   // Builders place the nose at +Z; flight/camera forward is -Z, so flip the visual.
   visual.name = "plane-visual";
   visual.rotation.y = Math.PI;
-  visual.scale.setScalar(0.98);
+  visual.scale.setScalar(1.12);
   const g = new THREE.Group();
   g.name = "plane-" + id;
   g.add(visual);

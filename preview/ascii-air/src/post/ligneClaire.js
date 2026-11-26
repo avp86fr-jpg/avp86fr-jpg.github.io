@@ -55,7 +55,7 @@ void main() {
   col = mix(vec3(0.5), col, uContrast);
 
   // Two-tone album shading, then thin ink only — never fill a slope or the horizon.
-  col = mix(col, floor(col * 6.0 + 0.5) / 6.0, 0.22);
+  col = mix(col, floor(col * 5.0 + 0.5) / 5.0, 0.28);
 
   float d  = linDepth(texture2D(tDepth, vUv).r);
   vec2 o1 = px * 1.6;
@@ -79,7 +79,7 @@ void main() {
   float jump2 = dMax2 - d;
   float farCut = uNearFar.y * 0.96;
   float notSky = step(d, farCut);
-  float expected = (0.022 * d + 0.9) * uOutline;
+  float expected = (0.018 * d + 0.75) * uOutline;
   float onNear = step(d - dMin, expected * 0.45 + 1.2);
   float sil = step(expected, jump) * onNear * notSky;
   float onNear2 = step(d - dMin2, expected * 0.5 + 1.6);
@@ -92,11 +92,11 @@ void main() {
   vec3 cD = texture2D(tColor, vUv + vec2(0.0, -o1.y)).rgb;
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
   float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
-  float colEdge = step(0.28, gCol) * step(minN, 0.12) * notSky;
+  float colEdge = step(0.20, gCol) * step(minN, 0.14) * notSky;
 
   float ink = max(sil, colEdge);
   vec3 inkCol = vec3(0.09, 0.07, 0.05);
-  col = mix(col, inkCol, ink * 0.88);
+  col = mix(col, inkCol, ink * 0.94);
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;
@@ -139,13 +139,13 @@ export function createLigneClaire() {
     uRes: { value: new THREE.Vector2(1920, 1080) },
     uNearFar: { value: new THREE.Vector2(0.8, 6200) },
     uTime: { value: 0 },
-    uExposure: { value: 1.12 },
-    uSat: { value: 1.22 },
-    uOutline: { value: 1.0 },
+    uExposure: { value: 1.20 },
+    uSat: { value: 1.32 },
+    uOutline: { value: 1.15 },
     uBloom: { value: 0.55 },
     uRain: { value: 0 },
     uFlash: { value: 0 },
-    uContrast: { value: 1.06 },
+    uContrast: { value: 1.12 },
     uSpeed: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({

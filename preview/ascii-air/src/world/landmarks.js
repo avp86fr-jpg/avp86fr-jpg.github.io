@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { MAT, LANDMARKS } from "../core/config.js";
+import { MAT, LANDMARKS, QUALITY } from "../core/config.js";
 import { tagMesh, retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
 const _col = new THREE.Color();
@@ -55,14 +55,26 @@ function house(w, d, h, roofH, wall, roof, bodyId = MAT.BUILDING, roofId = MAT.R
 function makeHangar() {
   const g = new THREE.Group();
   g.name = "hangar";
-  // Art-deco curved-roof hall in cream stone, envelope emblem on the façade
-  add(g, box(40, 12, 28, 0xd4c4a0, MAT.BUILDING), 0, 6, 0);
-  const hall = cyl(14, 14, 40, 16, 0xc4b48c, MAT.ROOF);
+  // Cream hall, barrel roof running east-west so the arched profile faces the south (hero)
+  add(g, box(36, 10, 26, 0xe8d8b0, MAT.BUILDING), 0, 5, 0);
+  const hall = cyl(16, 16, 38, 20, 0xf0d8a8, MAT.ROOF);
   hall.rotation.z = Math.PI / 2;
-  hall.position.set(0, 12, 0);
+  hall.position.set(0, 11, 0);
   g.add(hall);
-  add(g, box(40, 14, 1.4, 0xcfbf98, MAT.BUILDING), 0, 7, 14.2);
-  add(g, box(16, 10, 0.6, 0x3a3428, MAT.WOOD), 0, 5, 14.85);
+  // Arched south façade (shape with door cut) so the curve is obvious
+  const face = new THREE.Shape();
+  face.moveTo(-20, 0); face.lineTo(-20, 11); face.absarc(0, 11, 20, Math.PI, 0, true); face.lineTo(20, 0); face.closePath();
+  const door = new THREE.Path();
+  door.moveTo(-7, 0); door.lineTo(-7, 8); door.absarc(0, 8, 7, Math.PI, 0, true); door.lineTo(7, 0); door.closePath();
+  face.holes.push(door);
+  const faceGeo = new THREE.ExtrudeGeometry(face, { depth: 1.2, bevelEnabled: false });
+  faceGeo.translate(0, 0, 12.6);
+  const faceMesh = mesh(faceGeo, 0xe4d2a4, MAT.BUILDING);
+  g.add(faceMesh);
+  // rear wall
+  const back = mesh(faceGeo.clone(), 0xdccaa0, MAT.BUILDING);
+  back.position.z = -26.4;
+  g.add(back);
   // envelope emblem
   add(g, box(6.2, 4.2, 0.4, 0xf4ead0, MAT.BUILDING), 0, 16.2, 15.0);
   add(g, box(6.2, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 16.2, 15.2);
@@ -76,14 +88,14 @@ function makeHangar() {
 function makeTower() {
   const g = new THREE.Group();
   g.name = "tower";
-  add(g, box(7.2, 26, 7.2, 0xc4a070, MAT.BUILDING), 0, 13, 0);
+  add(g, box(7.2, 30, 7.2, 0xf2e6c8, MAT.BUILDING), 0, 15, 0);
   add(g, box(7.6, 1.2, 7.6, 0xb08c5c, MAT.ROCK), 0, 8, 0);
   add(g, box(7.6, 1.2, 7.6, 0xb08c5c, MAT.ROCK), 0, 16, 0);
-  add(g, box(11, 6, 11, 0xd0b888, MAT.BUILDING), 0, 29, 0);
-  add(g, box(9, 3.1, 0.3, 0x2a2420, MAT.METAL), 0, 29.2, 5.6);
-  add(g, box(0.3, 3.1, 9, 0x2a2420, MAT.METAL), 5.6, 29.2, 0);
-  add(g, box(12, 0.6, 12, 0x8a3a2a, MAT.ROOF), 0, 32.3, 0);
-  add(g, cyl(0.15, 0.15, 8, 6, 0x333333, MAT.METAL), 0, 36.5, 0);
+  add(g, box(11, 6, 11, 0xe8d4a0, MAT.BUILDING), 0, 33, 0);
+  add(g, box(9, 3.1, 0.3, 0x2a2420, MAT.METAL), 0, 33, 5.6);
+  add(g, box(0.3, 3.1, 9, 0x2a2420, MAT.METAL), 5.6, 33, 0);
+  add(g, box(12, 0.6, 12, 0x8a3a2a, MAT.ROOF), 0, 36.2, 0);
+  add(g, cyl(0.15, 0.15, 8, 6, 0x333333, MAT.METAL), 0, 40.2, 0);
   return g;
 }
 
@@ -337,25 +349,53 @@ function makeWindmill() {
 
 function makeArch() {
   const g = new THREE.Group();
-  const ochre = 0xc48a42;
-  const shade = 0x8a6230;
-  const dark = 0x6a4a28;
-  // Sea-window in a small rocky headland, opening facing south (toward the hero camera).
-  add(g, box(11, 20, 16, shade, MAT.ROCK), -13, 8, 0);
-  add(g, box(8, 12, 12, ochre, MAT.ROCK), -16, 14, 2, 0, 0.1, 0.12);
-  add(g, box(11, 18, 15, shade, MAT.ROCK), 13, 7, 1);
-  add(g, box(8, 11, 11, ochre, MAT.ROCK), 16, 13, -1, 0, -0.08, -0.1);
-  add(g, box(14, 5, 16, dark, MAT.ROCK), -13, 2, 0);
-  add(g, box(14, 5, 16, dark, MAT.ROCK), 13, 2, 0);
-  const cap = new THREE.TorusGeometry(13, 5.4, 8, 18, Math.PI);
-  retagGeometry(cap, MAT.ROCK, 0);
-  const capMesh = new THREE.Mesh(cap, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: ochre, flatShading: true })));
-  capMesh.userData.matId = MAT.ROCK;
-  capMesh.position.set(0, 16, 0);
-  g.add(capMesh);
-  add(g, box(16, 5, 12, shade, MAT.ROCK), 0, 24, 0);
-  add(g, box(6, 5, 7, dark, MAT.ROCK), -5, 22, 4);
-  add(g, box(5, 4, 6, dark, MAT.ROCK), 6, 23, -3);
+  g.name = "arch";
+  const pale = 0xe4cc9a;
+  const mid = 0xcbb27a;
+  const shade = 0xa88858;
+  const dark = 0x8a6a40;
+  // Tall pale-ochre limestone headland with an arch CUT through, facing south.
+  const shape = new THREE.Shape();
+  const W = 14, Hgt = 58;
+  shape.moveTo(-W, 0);
+  shape.lineTo(-W - 4, 10);
+  shape.lineTo(-W + 2, 28);
+  shape.lineTo(-W + 1, Hgt);
+  shape.lineTo(W - 2, Hgt - 2);
+  shape.lineTo(W + 3, 26);
+  shape.lineTo(W + 2, 8);
+  shape.lineTo(W, 0);
+  shape.closePath();
+  const hole = new THREE.Path();
+  hole.absellipse(0, 18, 6.2, 16, 0, Math.PI * 2, true);
+  shape.holes.push(hole);
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth: 14, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.2, bevelSegments: 2, curveSegments: 16,
+  });
+  geo.translate(0, 0, -7);
+  const pos = geo.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const stripe = Math.sin(x * 0.55 + y * 1.15) + 0.5 * Math.sin((x - y) * 1.8 + z * 0.2);
+    const hatch = stripe > 0.35 ? 0.62 : stripe > 0.0 ? 0.8 : stripe > -0.3 ? 0.92 : 1;
+    const shadeAmt = (z > 4 ? 0.82 : 1) * (y < 4 ? 0.85 : 1);
+    col[i * 3] = 0.86 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.72 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.48 * hatch * shadeAmt;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  retagGeometry(geo, MAT.ROCK, 0);
+  const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
+  mesh.userData.matId = MAT.ROCK;
+  g.add(mesh);
+  // Side buttresses and a rocky spine toward the cape (north, +Z)
+  add(g, box(8, 16, 12, mid, MAT.ROCK), -12, 8, 8, 0, 0.15, 0.08);
+  add(g, box(8, 15, 12, shade, MAT.ROCK), 12, 7, 8, 0, -0.12, -0.06);
+  add(g, box(10, 10, 16, mid, MAT.ROCK), 0, 6, 14);
+  add(g, box(7, 12, 10, pale, MAT.ROCK), -6, 12, 16);
+  add(g, box(8, 5, 12, dark, MAT.ROCK), 0, 2, 8);
   return g;
 }
 
@@ -658,7 +698,8 @@ function makeCoastalCliffs(H) {
   return mesh;
 }
 
-export function createLandmarks(scene, terrain, sky) {
+export function createLandmarks(scene, terrain, sky, quality = "medium") {
+  const q = (typeof QUALITY !== "undefined" && QUALITY[quality]) ? QUALITY[quality] : { houses: 1 };
   const group = new THREE.Group();
   group.name = "landmarks";
   const anim = [];
@@ -672,9 +713,9 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Hangar
   const hangar = makeHangar();
-  hangar.scale.setScalar(1.55);
+  hangar.scale.setScalar(1.85);
   hangar.position.set(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z), LANDMARKS.hangar.z);
-  hangar.rotation.y = 0.1;
+  hangar.rotation.y = 0;
   group.add(hangar);
 
   // Parked trainer on the apron + a few cars
@@ -706,7 +747,7 @@ export function createLandmarks(scene, terrain, sky) {
   group.add(windsock);
 
   const tower = makeTower();
-  tower.scale.setScalar(1.5);
+  tower.scale.setScalar(1.65);
   tower.position.set(LANDMARKS.tower.x, H(LANDMARKS.tower.x, LANDMARKS.tower.z), LANDMARKS.tower.z);
   group.add(tower);
   sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xffe2a0, 4, 80);
@@ -761,23 +802,39 @@ export function createLandmarks(scene, terrain, sky) {
     anim.push({ smoke: plume, t: 0 });
   }
 
-  // Town houses
+  // Dense white / terracotta village on the south-facing hillside, facing the hero camera.
   const houseColors = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
-  const roofColors = [0xf02218, 0xd41010, 0xff3020, 0xe01814, 0xff3a22];
+  const roofColors = [0xe02018, 0xc41010, 0xff3020, 0xd01814, 0xff3a22];
   const spots = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  for (let i = 0; i < 96; i++) {
-    const a = rnd() * Math.PI * 2;
-    const r = 10 + rnd() * 95;
-    const x = LANDMARKS.town.x + Math.cos(a) * r;
-    const z = LANDMARKS.town.z + Math.sin(a) * r * 0.7;
-    if (Math.abs(z + 1100) < 70) continue;
-    const h = house(5.4 + rnd() * 3.0, 5.2 + rnd() * 2.8, 4.2 + rnd() * 2.2, 3.0 + rnd() * 1.6, houseColors[i % 5], roofColors[i % 5]);
-    h.position.set(x, H(x, z), z);
-    h.rotation.y = rnd() * Math.PI * 2;
-    group.add(h);
-    spots.push(h.position.clone());
+  const houseFrac = (q && q.houses != null) ? q.houses : 1;
+  const terraces = [
+    { cx: LANDMARKS.town.x, cz: LANDMARKS.town.z, rx: 85, rz: 58, n: 110, s: 1.85 },
+    { cx: LANDMARKS.town.x - 30, cz: LANDMARKS.town.z - 80, rx: 95, rz: 42, n: 90, s: 2.0 },
+    { cx: LANDMARKS.town.x + 50, cz: LANDMARKS.town.z + 60, rx: 65, rz: 48, n: 55, s: 1.7 },
+    { cx: LANDMARKS.town.x + 10, cz: LANDMARKS.town.z - 130, rx: 70, rz: 30, n: 40, s: 1.9 },
+  ];
+  let hi = 0;
+  for (const ter of terraces) {
+    const nH = Math.floor(ter.n * houseFrac);
+    for (let i = 0; i < nH; i++) {
+      const a = rnd() * Math.PI * 2;
+      const rr = Math.sqrt(rnd());
+      const x = ter.cx + Math.cos(a) * rr * ter.rx;
+      const z = ter.cz + Math.sin(a) * rr * ter.rz;
+      if (Math.abs(z + 1100) < 64) continue;
+      if (Math.hypot(x - LANDMARKS.hangar.x, z - LANDMARKS.hangar.z) < 48) continue;
+      const hgt = H(x, z);
+      if (hgt < 3.5) continue;
+      const h = house(5.2 + rnd() * 3.2, 5.0 + rnd() * 2.6, 4.0 + rnd() * 2.4, 3.2 + rnd() * 1.6, houseColors[hi % 5], roofColors[hi % 5]);
+      h.position.set(x, hgt, z);
+      h.rotation.y = rnd() * Math.PI * 2;
+      h.scale.setScalar(ter.s);
+      group.add(h);
+      spots.push(h.position.clone());
+      hi++;
+    }
   }
 
   const church = makeChurch();
@@ -809,15 +866,17 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(-90, 0.9, -1480);
-  steamer.rotation.y = -0.9;
+  steamer.position.set(-30, 0.9, -1470);
+  steamer.rotation.y = -0.7;
+  steamer.scale.setScalar(1.55);
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[-70, -1510, 0x2a6cb6], [-120, -1450, 0xe8e0c8], [-40, -1530, 0xc05030], [40, -1500, 0xc08020], [-100, -1410, 0xf4ead0]];
+  const coastal = [[-18, -1505, 0x2a6cb6], [-42, -1440, 0xe8e0c8], [16, -1488, 0xc05030], [-8, -1520, 0xc08020], [-55, -1425, 0xf4ead0]];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
-    b.rotation.y = -0.6;
+    b.rotation.y = -0.55;
+    b.scale.setScalar(1.45);
     group.add(b);
     boats.push(b);
   }
@@ -851,13 +910,22 @@ export function createLandmarks(scene, terrain, sky) {
   castle.scale.setScalar(3.15);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
   group.add(castle);
+  // Cape fort on the west ridge, readable in the hero (master's right side)
+  const capeFort = makeCastle();
+  capeFort.scale.setScalar(1.9);
+  const fX = LANDMARKS.lighthouse.x - 36, fZ = LANDMARKS.lighthouse.z + 85;
+  capeFort.position.set(fX, H(fX, fZ), fZ);
+  capeFort.rotation.y = 0.3;
+  group.add(capeFort);
 
   const mills = [];
+  const mx = LANDMARKS.windmills.x, mz = LANDMARKS.windmills.z;
   const millSpots = [
-    [520, -860], [600, -800], [460, -780], [580, -920], [440, -900],
+    [mx, mz], [mx + 55, mz + 30], [mx - 40, mz + 45], [mx + 70, mz - 25], [mx - 55, mz - 20],
   ];
   for (const [x, z] of millSpots) {
     const m = makeWindmill();
+    m.scale.setScalar(1.35);
     m.position.set(x, H(x, z), z);
     m.rotation.y = 0.4;
     group.add(m);
@@ -865,8 +933,9 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   const arch = makeArch();
-  arch.scale.set(1.2, 1.15, 1.15);
-  arch.position.set(LANDMARKS.arch.x, 0, LANDMARKS.arch.z);
+  arch.scale.set(0.95, 1.05, 0.9);
+  const aH = Math.max(0, H(LANDMARKS.arch.x, LANDMARKS.arch.z + 16));
+  arch.position.set(LANDMARKS.arch.x, aH, LANDMARKS.arch.z);
   arch.rotation.y = 0.08;
   group.add(arch);
 
@@ -880,7 +949,7 @@ export function createLandmarks(scene, terrain, sky) {
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
   falls.scale.set(1.8, 1.6, 1.8);
   falls.position.set(wx, 50, wz);
-  falls.rotation.y = 0.35;
+  falls.rotation.y = 0.05;
   group.add(falls);
 
   // Roads

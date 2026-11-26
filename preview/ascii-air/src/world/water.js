@@ -44,15 +44,18 @@ void main() {
   vec3 V = normalize(cameraPosition - vWorld);
   float fres = pow(1.0 - sat(dot(N, V)), 3.0);
   float ndl = sat(dot(N, normalize(uSunDir)));
-  // Bright cerulean sea, turquoise shallows along the south coast, foam and sparkle.
-  float foamZone = sat(1.0 - abs(vWorld.z + 1280.0) / 180.0) * sat(1.0 - abs(vWorld.x) / 900.0);
-  float bayShore = sat(1.0 - abs(vWorld.x - 10.0) / 150.0) * sat(1.0 - abs(vWorld.z + 1180.0) / 240.0);
-  foamZone = max(foamZone, bayShore * 0.4);
-  float mid = sat(1.0 - length(vWorld.xz - vec2(0.0, -900.0)) / 2200.0);
-  vec3 midCol = mix(uDeep, uShallow, 0.55);
-  vec3 water = mix(uDeep, midCol, mid * 0.45 + 0.08 * ndl);
-  float shoreBand = sat(1.0 - abs(foamZone - 0.32) * 5.0);
-  water = mix(water, uShallow, shoreBand * 0.95 + foamZone * 0.04);
+  // Turquoise near the island, deep blue further out.
+  float radial = length(vWorld.xz - vec2(0.0, -200.0));
+  float nearIsle = sat(1.0 - (radial - 900.0) / 700.0);
+  float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 220.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
+  float capeShore = sat(1.0 - length(vWorld.xz - vec2(-150.0, -1270.0)) / 200.0);
+  float beach = sat(1.0 - length(vWorld.xz - vec2(40.0, -1220.0)) / 140.0);
+  float foamZone = max(max(southShore * 0.85, capeShore), beach);
+  float mid = sat(1.0 - radial / 2400.0);
+  vec3 midCol = mix(uDeep, uShallow, 0.62);
+  vec3 water = mix(uDeep, midCol, mid * 0.50 + nearIsle * 0.25 + 0.06 * ndl);
+  float shoreBand = sat(foamZone * 1.4);
+  water = mix(water, uShallow, shoreBand * 0.9 + nearIsle * 0.12);
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
   // Sparkle highlights
   float glitter = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 1.6) * 43758.5));
@@ -61,6 +64,12 @@ void main() {
   // Soft ripple highlights, not dark streak lines
   float ripple = smoothstep(0.82, 0.98, fract(vWorld.x * 0.045 + vWorld.z * 0.04 + vWave * 1.6));
   col = mix(col, vec3(0.70, 0.93, 0.98), ripple * 0.12);
+  // Ink-line wave strokes, album style
+  float wstroke = abs(fract(vWorld.x * 0.016 + vWorld.z * 0.021 + uTime * 0.04) - 0.5);
+  float inkLine = (1.0 - smoothstep(0.0, 0.035, wstroke)) * (0.35 + 0.4 * nearIsle);
+  float wstroke2 = abs(fract(vWorld.x * 0.011 - vWorld.z * 0.018 + 0.3) - 0.5);
+  inkLine = max(inkLine, (1.0 - smoothstep(0.0, 0.028, wstroke2)) * 0.22);
+  col = mix(col, vec3(0.10, 0.18, 0.32), inkLine * 0.55 * (1.0 - shoreBand * 0.7));
   float surf = shoreBand * sat(0.35 + vWave * 1.4) * 0.85;
   float foamLine = sat(1.0 - abs(foamZone - 0.30) * 14.0);
   col = mix(col, vec3(1.0, 1.0, 1.0), foamLine * 0.92 + surf * 0.15);
@@ -87,8 +96,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x1460b8) },
-      uShallow: { value: new THREE.Color(0x3ad4c8) },
+      uDeep: { value: new THREE.Color(0x0e4aa8) },
+      uShallow: { value: new THREE.Color(0x3adfc8) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },
@@ -139,8 +148,8 @@ export function createWater() {
         mat.uniforms.uShallow.value.setHex(0x4a7a9a);
         mat.uniforms.uSky.value.setHex(0x6a8498);
       } else {
-        mat.uniforms.uDeep.value.setHex(0x1460b8);
-        mat.uniforms.uShallow.value.setHex(0x3ad4c8);
+        mat.uniforms.uDeep.value.setHex(0x0e4aa8);
+        mat.uniforms.uShallow.value.setHex(0x3adfc8);
         mat.uniforms.uSky.value.setHex(0xa8e0f4);
       }
     },

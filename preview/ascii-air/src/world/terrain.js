@@ -1,10 +1,9 @@
 import * as THREE from "three";
-import { WORLD, MAT, LANDMARKS } from "../core/config.js";
+import { WORLD, MAT, LANDMARKS, QUALITY } from "../core/config.js";
 import { clamp, lerp, smoothstep, saturate } from "../core/utils.js";
 import { fbm, ridge, valueNoise } from "./noise.js";
 import { tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
-const N = 192;
 const SIZE = WORLD.size;
 const HALF = SIZE * 0.5;
 
@@ -66,12 +65,13 @@ export function computeHeight(x, z) {
   );
   const grassPad = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 48, Math.abs(x + 820) / 190));
   const coveSunny = smoothstep(90, 28, dist2(x, z, 40, -1220));
-  const beachCape = smoothstep(80, 24, dist2(x, z, -180, -1260));
+  const beachCape = smoothstep(90, 28, dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z));
   mask = Math.max(mask, airportPad, grassPad, coveSunny, beachCape);
 
-  // Arch rock islet
+  // Limestone headland, attached to Cinder Cape
   const archD = dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z);
-  mask = Math.max(mask, smoothstep(70, 22, archD));
+  const capeNeck = capsuleDist(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z, LANDMARKS.arch.x, LANDMARKS.arch.z);
+  mask = Math.max(mask, smoothstep(90, 28, archD), smoothstep(52, 16, capeNeck));
 
   // Keep the postcard water in front of the south coast deep and clear.
   if (z < -1450) {
@@ -234,11 +234,17 @@ export function computeHeight(x, z) {
 
   // Mix in islet height
   if (islet < 100) h = Math.max(h, smoothstep(90, 20, islet) * (2.5 + 1.5 * fbm(x * 0.05, z * 0.05, 2, 9)));
-  if (archD < 80) {
-    const feet = smoothstep(70, 22, archD) * 16;
+  if (archD < 100 || capeNeck < 60) {
+    const feet = Math.max(smoothstep(90, 24, archD) * 12, smoothstep(48, 14, capeNeck) * 14);
     h = Math.max(h, feet);
-    // keep the opening wet so the arch reads as a hole
-    if (archD < 14) h = Math.min(h, -1.2);
+    // Slot under the window so the sea shows through, pillars stay dry
+    const slot = (Math.abs(x - LANDMARKS.arch.x) < 9) && (Math.abs(z - LANDMARKS.arch.z) < 16);
+    if (slot) h = Math.min(h, -0.4);
+  }
+
+  // Kill stray green pyramids / sand islets in open water (keep wreck, palm islet, lagoon bar)
+  if (mask < 0.06 && archD > 40 && islet > 80 && dist2(x, z, LANDMARKS.wreck.x, LANDMARKS.wreck.z) > 90) {
+    h = Math.min(h, -1.6);
   }
 
   // Shore clamp: no vertical walls at the waterline
@@ -256,7 +262,7 @@ export function computeHeight(x, z) {
   );
   const grassPad2 = Math.max(0, 1 - Math.max(Math.abs(z - 1120) / 48, Math.abs(x + 820) / 190));
   const cove2 = smoothstep(90, 28, dist2(x, z, 40, -1220));
-  const beachCape2 = smoothstep(80, 24, dist2(x, z, -180, -1260));
+  const beachCape2 = smoothstep(90, 28, dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z));
   h = flatten(h, 4.2, Math.pow(saturate(airportPad2), 1.15));
   h = flatten(h, 90, Math.pow(saturate(grassPad2), 1.2) * 0.95);
   h = flatten(h, 1.8, cove2 * 0.9);
@@ -296,8 +302,10 @@ export function computeMaterial(x, z, h, slope) {
   const dist = Math.hypot(x, z);
   if (h < -1.2) return MAT.WATER_DEEP;
   if (h < 0.45) return MAT.SEA;
-  // foam / wet sand near water
-  if (h < 1.6) return MAT.SAND;
+  // foam / wet sand near water (east beaches only — west cape stays limestone)
+  const westCape = x < -40 && z < -1180;
+  if (h < 1.6 && !westCape) return MAT.SAND;
+  if (westCape && h < 40) return MAT.ROCK;
   const vd = dist2(x, z, 0, 200);
   if (vd < 160 && h > 200) return MAT.SNOW;
   if (vd < 420 && (slope > 0.55 || h > 130)) return MAT.ROCK;
@@ -309,10 +317,11 @@ export function computeMaterial(x, z, h, slope) {
   if (Math.abs(z - 1120) < 16 && Math.abs(x + 820) < 140) return MAT.RUNWAY;
   // lagoon sand + the one small cove; south coast is rock
   if (h < 3.5 && dist2(x, z, -740, -1120) < 260) return MAT.SAND;
-  if (h < 3.2 && dist2(x, z, 40, -1220) < 90) return MAT.SAND;
+  if (h < 5.5 && dist2(x, z, 40, -1220) < 160) return MAT.SAND;
+  if (h < 4.5 && dist2(x, z, LANDMARKS.lighthouse.x + 40, LANDMARKS.lighthouse.z + 40) < 80) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
   // Coastal cliffs only — steep faces near the water, not the whole south slope.
-  const nearCoast = h > 1.4 && h < 48 && (z < -1180 || dist2(x, z, -180, -1260) < 160);
+  const nearCoast = h > 1.4 && h < 48 && (z < -1180 || dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z) < 180 || dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z) < 120);
   if (nearCoast && slope > 0.22) return MAT.ROCK;
   if (slope > 0.55 && h < 80) return MAT.ROCK;
   // forest belts
@@ -321,7 +330,8 @@ export function computeMaterial(x, z, h, slope) {
   return MAT.GRASS;
 }
 
-export function createTerrain() {
+export function createTerrain(quality = "medium") {
+  const N = (QUALITY[quality] && QUALITY[quality].terrainN) || 192;
   const verts = N + 1;
   const heights = new Float32Array(verts * verts);
   const mats = new Uint8Array(verts * verts);
@@ -361,8 +371,13 @@ export function createTerrain() {
       case MAT.SEA: return [0.07, 0.32 + n * 0.04, 0.40];
       case MAT.WATER_DEEP: return [0.06, 0.22, 0.30];
       case MAT.SAND: return [0.98, 0.90, 0.58 + n * 0.06];
-      case MAT.GRASS: return [0.36 + n * 0.10, 0.80 + n * 0.10, 0.16 + n * 0.04];
-      case MAT.FOREST: return [0.10, 0.55 + n * 0.12, 0.12];
+      case MAT.GRASS: {
+        const dry = saturate((n - 0.45) * 2) * saturate((z + 400) / 800);
+        const lime = [0.34 + n * 0.12, 0.78 + n * 0.12, 0.14 + n * 0.05];
+        const ochre = [0.55 + n * 0.08, 0.68, 0.20];
+        return [lime[0] + (ochre[0]-lime[0])*dry*0.45, lime[1] + (ochre[1]-lime[1])*dry*0.45, lime[2] + (ochre[2]-lime[2])*dry*0.45];
+      }
+      case MAT.FOREST: return [0.12 + n * 0.04, 0.50 + n * 0.16, 0.14];
       case MAT.ROCK: {
         const vd = Math.hypot(x, z - 200);
         // Sharp red-orange volcano peak with lava streaks
@@ -374,7 +389,7 @@ export function createTerrain() {
         }
         if (vd < 420 && h > 110) return [0.70 + n * 0.06, 0.48, 0.32];
         // Grey-ochre coastal rock, not a yellow dome
-        return [0.72 + n * 0.06, 0.58 + n * 0.04, 0.38];
+        return [0.82 + n * 0.06, 0.68 + n * 0.05, 0.42];
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];

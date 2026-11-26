@@ -230,8 +230,8 @@ export function createFlightCamera(camera) {
     const spd = craft.airspeed || 0;
     const k = clamp((spd - 28) / 48, 0, 1);
     const baseFov = portrait ? CAM.fovPortrait : CAM.fov;
-    if (state.hero) camera.fov = 50;
-    else if (state.mode === "title") camera.fov = 50;
+    if (state.hero) camera.fov = 54;
+    else if (state.mode === "title") camera.fov = 54;
     else camera.fov = baseFov + k * 8;
     camera.near = CAM.near;
     camera.far = CAM.far;
@@ -317,7 +317,7 @@ export function createFlightCamera(camera) {
     collide(camera.position, r.look);
     camera.up.copy(r.up);
     camera.lookAt(r.look);
-    camera.fov = state.hero ? 50 : (portrait ? CAM.fovPortrait : CAM.fov);
+    camera.fov = state.hero ? 54 : (portrait ? CAM.fovPortrait : CAM.fov);
     camera.updateProjectionMatrix();
     state.hasPose = true;
   }

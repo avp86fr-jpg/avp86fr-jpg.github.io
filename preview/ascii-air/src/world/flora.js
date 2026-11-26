@@ -110,23 +110,24 @@ export function createFlora(scene, terrain, quality = "medium") {
       const jz = z + ((Math.cos(x * 0.09 + z * 0.13) * 6) | 0);
       const h = terrain.heightAt(jx, jz);
       const m = terrain.materialAt(jx, jz);
-      if (h < 1.6 || h > 145) continue;
+      if (h < 4.5 || h > 145) continue;
+      if (jz < -1180 && h < 10) continue;
       if (m === MAT.RUNWAY || m === MAT.ROAD || m === MAT.DIRT) continue;
       if (Math.abs(jz + 1100) < 95 && Math.abs(jx) < 520) continue;
       if (Math.abs(jz - 1120) < 32 && Math.abs(jx + 820) < 170) continue;
       const n = fbm(jx * 0.004, jz * 0.004, 3, 77);
       const dx = jx + 40, dz = jz + 1220;
       const inCove = dx * dx + dz * dz < 110 * 110;
-      if (inCove && h < 8 && n > 0.3) {
+      if (inCove && h >= 3.2 && h < 9 && n > 0.35 && jz > -1240) {
         palms.push({ x: jx, y: h, z: jz, s: 0.9 + n * 0.45, r: n * 6 });
       } else if (m === MAT.FOREST || (m === MAT.GRASS && n > (z < -200 && z > -1000 ? 0.18 : 0.26) && h > 5)) {
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
-        trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: n > 0.55 });
+        trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: n > 0.48 });
       }
     }
   }
   const groves = [
-    [-80, -1180], [70, -1160], [-220, -980], [160, -860],
+    [-220, -980], [160, -860],
     [-360, -620], [240, -520], [80, -400], [-180, -300],
     [200, 80], [340, 260], [-300, 200], [120, 420],
     [-80, 60], [40, -200], [220, -700], [90, -640],
@@ -146,7 +147,8 @@ export function createFlora(scene, terrain, quality = "medium") {
       const x = gx + Math.cos(a) * r;
       const z = gz + Math.sin(a) * r * 0.8;
       const h = terrain.heightAt(x, z);
-      if (h < 1.5 || h > 150) continue;
+      if (h < 4.5 || h > 150) continue;
+      if (z < -1180 && h < 10) continue;
       if (Math.abs(z + 1100) < 95 && Math.abs(x) < 520) continue;
       blobs.push({ x, y: h + 1.2, z, s: 1.6 + (i % 4) * 0.45, r: a });
     }
@@ -158,13 +160,23 @@ export function createFlora(scene, terrain, quality = "medium") {
 
   const allTrees = [];
   trees.forEach((list, i) => { for (let k = 0; k < caps[i]; k++) allTrees.push(list[k]); });
-  if (allTrees.length) {
+  const pines = allTrees.filter((p) => !p.cone);
+  const cypress = allTrees.filter((p) => p.cone);
+  if (pines.length) {
     const tg = trunkGeo();
     tg.translate(0, 2.2, 0);
     const cg = canopyGeo("sphere");
     cg.translate(0, 5.4, 0);
     const treeG = mergeGeos([tg, cg], MAT.FOLIAGE);
-    group.add(instance(treeG, flatMat(0x2a9a2a, MAT.FOLIAGE), allTrees, allTrees.length));
+    group.add(instance(treeG, flatMat(0x2c9a2e, MAT.FOLIAGE), pines, pines.length));
+  }
+  if (cypress.length) {
+    const tg = trunkGeo();
+    tg.translate(0, 2.4, 0);
+    const cg = canopyGeo("cone");
+    cg.translate(0, 6.6, 0);
+    const treeG = mergeGeos([tg, cg], MAT.FOLIAGE);
+    group.add(instance(treeG, flatMat(0x1e7a32, MAT.FOLIAGE), cypress, cypress.length));
   }
 
   // Palms share the foliage-blob instance so flora stays at two draws (trees + blobs).

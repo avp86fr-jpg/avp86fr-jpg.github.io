@@ -17,14 +17,14 @@ export const THERMAL_FIELDS = [
 ];
 
 export function createIsland(scene, quality = "medium") {
-  const terrain = createTerrain();
+  const terrain = createTerrain(quality);
   scene.add(terrain.mesh);
 
   const sky = createSky(scene);
   const water = createWater();
   scene.add(water.mesh, water.lake);
 
-  const landmarks = createLandmarks(scene, terrain, sky);
+  const landmarks = createLandmarks(scene, terrain, sky, quality);
   const flora = createFlora(scene, terrain, quality);
   const skyprops = createSkyProps(scene, quality);
   const thermals = createThermals(scene, THERMAL_FIELDS);
@@ -44,7 +44,7 @@ export function createIsland(scene, quality = "medium") {
     if (Math.abs(z - 1120) < 18 && Math.abs(x + 820) < 150 && h > 80) return "grass";
     const dLag = Math.hypot(x + 740, z + 1120);
     const dSunny = Math.hypot(x - 40, z + 1220);
-    const dCape = Math.hypot(x + 180, z + 1260);
+    const dCape = Math.hypot(x - LANDMARKS.lighthouse.x, z - LANDMARKS.lighthouse.z);
     if (dLag < 220 && h < 2.2) return "lagoon";
     if (h < 0.35) return "water";
     if (dSunny < 110 && h < 6) return "beach";

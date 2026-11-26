@@ -655,6 +655,18 @@ async function boot() {
 
   ui.setLoad(0.5, "raising the island…");
   island = createIsland(scene, settings.quality || "medium");
+  if (ui.setMiniMap) {
+    const S = 96, world = 3000, data = new Uint8Array(S * S);
+    for (let j = 0; j < S; j++) {
+      for (let i = 0; i < S; i++) {
+        const x = (i + 0.5) / S * world - world / 2;
+        const z = world / 2 - (j + 0.5) / S * world;
+        const h = island.heightAt(x, z);
+        data[j * S + i] = h > 0.5 ? Math.min(255, 40 + h) : 0;
+      }
+    }
+    ui.setMiniMap({ S, world, data });
+  }
   {
     const meshes = [];
     const lg = island.landmarks && island.landmarks.group;

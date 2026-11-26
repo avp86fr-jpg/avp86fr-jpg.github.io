@@ -442,11 +442,28 @@ button.album-btn:active, button.ascii-btn:active { background: #ffe08a; }
   position: absolute;
   left: 14px;
   bottom: 136px;
-  padding: 10px 12px;
+  padding: 8px 10px 10px;
   font-size: 13px;
   line-height: 1.15;
   z-index: 6;
+  width: auto;
 }
+#hud-minimap canvas {
+  display: block;
+  width: 148px;
+  height: 148px;
+  border: 3px solid #14100a;
+  background: #7eb8d8;
+  image-rendering: auto;
+}
+#hud-minimap .mini-cap {
+  display: flex;
+  justify-content: space-between;
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+#hud-minimap .mini-scale { font-size: 12px; margin-top: 3px; letter-spacing: 0.06em; }
 #hud-flight.flight-bar {
   position: absolute;
   left: 50%;
