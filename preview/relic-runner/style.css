@@ -226,3 +226,57 @@ body.portrait .opt.steerPrev canvas { width: 100%; }
 #zone .zk { font-family: 'Oswald'; font-size: min(3.2vw, 13px); letter-spacing: 6px; color: #ffd36a; }
 @keyframes zIn { 0% { opacity: 0; transform: translateY(-14px); letter-spacing: .3em; } 14% { opacity: 1; transform: none; } 78% { opacity: 1; } 100% { opacity: 0; } }
 #letter.zone::before, #letter.zone::after { height: 7vh !important; }
+
+/* ===== pass 10: LIGNE CLAIRE comic skin (body.comic). Fonts: Bangers + Comic Neue, both SIL OFL (fonts/OFL-*.txt) ===== */
+@font-face { font-family: 'Bangers'; src: url('fonts/Bangers-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'ComicNeue'; src: url('fonts/ComicNeue-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+body.comic { --ink: #1d1612; --paper: #fbf5e6; --cy: #ffd23a; --cr: #d8432a; --cb: #2f7fc4; }
+body.comic .bark { background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 26px; box-shadow: 4px 5px 0 rgba(29,22,18,.55); padding: 8px 20px 8px 8px; font-family: 'ComicNeue', sans-serif; font-weight: 700; }
+body.comic .bark::after { content: ''; position: absolute; left: 52px; bottom: -17px; border-style: solid; border-width: 17px 4px 0 18px; border-color: var(--ink) transparent transparent transparent; }
+body.comic .bark::before { content: ''; position: absolute; left: 56px; bottom: -11px; border-style: solid; border-width: 12px 3px 0 12px; border-color: var(--paper) transparent transparent transparent; z-index: 1; }
+body.comic .bark canvas { border: 3px solid var(--ink); background: #f6d9a8; }
+body.comic .bark .who { font-family: 'Bangers', sans-serif; font-weight: 400; color: var(--cr); font-size: .95em; letter-spacing: 1.5px; }
+body.comic .bark .txt { text-transform: uppercase; letter-spacing: .3px; color: var(--ink); }
+body.comic .ctr { background: var(--paper); color: var(--ink); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); font-family: 'Bangers', sans-serif; letter-spacing: 1px; }
+body.comic .scroll { background: var(--paper); border: 3px solid var(--ink); border-radius: 3px; box-shadow: 4px 4px 0 var(--ink); }
+body.comic .scroll::before, body.comic .scroll::after { background: var(--cy); border: 3px solid var(--ink); border-radius: 4px; box-shadow: none; width: 16px; }
+body.comic .scroll .v { font-family: 'Bangers', sans-serif; letter-spacing: 2px; }
+body.comic .scroll .l { font-family: 'ComicNeue', sans-serif; font-weight: 700; }
+body.comic .missions > * { background: var(--paper) !important; border: 2.5px solid var(--ink) !important; border-radius: 2px !important; box-shadow: 3px 3px 0 var(--ink) !important; color: var(--ink) !important; font-family: 'ComicNeue', sans-serif; font-weight: 700; }
+body.comic .pop { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: 1.5px; color: var(--cy); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); }
+body.comic .pop.bad { color: #ff8a6a; text-shadow: 3px 3px 0 var(--ink); }
+body.comic .pop small { font-family: 'ComicNeue', sans-serif; -webkit-text-stroke: 0; color: #fff; text-shadow: 2px 2px 0 var(--ink); }
+body.comic .banner { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: 3px; color: var(--cy); -webkit-text-stroke: 2.5px var(--ink); paint-order: stroke fill; text-shadow: 5px 5px 0 var(--ink); }
+body.comic .banner small { font-family: 'ComicNeue', sans-serif; font-weight: 700; -webkit-text-stroke: 0; color: var(--ink); background: var(--paper); display: table; margin: 6px auto 0; padding: 2px 12px; border: 2.5px solid var(--ink); letter-spacing: 3px; text-shadow: none; }
+body.comic .panel { background: var(--paper); border: 4px solid var(--ink); border-radius: 2px; box-shadow: 9px 9px 0 rgba(29,22,18,.9); color: var(--ink); }
+body.comic .panel h1 { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: 2.5px; color: var(--cr); font-size: 2.5rem; -webkit-text-stroke: 1.2px var(--ink); }
+body.comic .panel h2 { font-family: 'ComicNeue', sans-serif; font-weight: 700; text-transform: uppercase; color: var(--ink); border-bottom: 3px solid var(--ink); }
+body.comic .btn { font-family: 'Bangers', sans-serif; font-weight: 400; font-size: 1.45rem; letter-spacing: 1.8px; color: var(--ink); background: var(--cy); border: 3px solid var(--ink); border-radius: 4px; box-shadow: 4px 4px 0 var(--ink); text-shadow: none; }
+body.comic .btn.alt { background: var(--cb); color: #fff; border-color: var(--ink); box-shadow: 4px 4px 0 var(--ink); text-shadow: 1px 1px 0 var(--ink); }
+body.comic .btn:active, body.comic .btn.press { box-shadow: 1px 1px 0 var(--ink); }
+/* title = album cover: paper frame + ink keyline, series line, big lettered title, red volume plate */
+body.comic #title { background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(29,22,18,.35)); }
+body.comic #title .cover { position: absolute; inset: 0; pointer-events: none; border: min(2.4vw, 18px) solid var(--paper); box-shadow: inset 0 0 0 4px var(--ink); }
+body:not(.comic) #title .cover, body:not(.comic) .logo .series { display: none; }
+body.comic .logo .series { display: inline-block; font-family: 'ComicNeue', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; font-size: min(3.2vw, 1.15rem); color: var(--ink); background: var(--paper); border: 3px solid var(--ink); padding: 3px 16px; margin-bottom: 10px; box-shadow: 3px 3px 0 var(--ink); }
+body.comic .logo .l1 { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: .06em; font-size: min(14vw, 150px); background: none; color: var(--cy); -webkit-text-stroke: min(.5vw, 4px) var(--ink); paint-order: stroke fill; filter: none; text-shadow: min(.8vw, 7px) min(.8vw, 7px) 0 var(--ink); transform: rotate(-2deg); }
+body.comic .logo .l2 { font-family: 'Bangers', sans-serif; font-weight: 400; color: #fff; background: var(--cr); border: 3px solid var(--ink); border-radius: 50%; padding: 6px 22px; box-shadow: 4px 4px 0 var(--ink); text-shadow: 2px 2px 0 var(--ink); transform: rotate(4deg); }
+body.comic .logo .tag { font-family: 'ComicNeue', sans-serif; font-weight: 700; color: var(--ink); background: var(--paper); display: table; margin: 14px auto 0; padding: 3px 14px; border: 2.5px solid var(--ink); text-shadow: none; letter-spacing: 4px; }
+body.comic .foot { color: var(--paper); text-shadow: 1px 1px 0 var(--ink); }
+/* story moments = comic panels: letterbox bars become paper gutters with ink keylines, the title card a caption box */
+body.comic #letter::before, body.comic #letter::after { background: var(--paper); }
+body.comic #letter.on::before { box-shadow: 0 4px 0 var(--ink); } body.comic #letter.on::after { box-shadow: 0 -4px 0 var(--ink); }
+body.comic #cine .tcard { left: 0; right: 0; margin: 0 auto; width: fit-content; max-width: 86vw; padding: 14px 30px 12px; background: var(--paper); border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); color: var(--ink); text-shadow: none; }
+body.comic #cine .t1 { font-family: 'Bangers', sans-serif; font-weight: 400; color: var(--cr); -webkit-text-stroke: 1.5px var(--ink); letter-spacing: .06em; }
+body.comic #cine .t2 { font-family: 'ComicNeue', sans-serif; font-weight: 700; color: var(--ink); letter-spacing: 3px; }
+body.comic #cine .t3 { font-family: 'ComicNeue', sans-serif; font-weight: 700; color: #5a4636; font-style: normal; }
+body.comic #cine .count { font-family: 'Bangers', sans-serif; font-weight: 400; color: var(--cy); -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 8px 8px 0 var(--ink); }
+body.comic #cine .skip { font-family: 'Bangers', sans-serif; color: var(--paper); text-shadow: 2px 2px 0 var(--ink); }
+/* sound-effect lettering */
+.sfxw { position: absolute; z-index: 6; pointer-events: none; transform: translate(-50%, -50%) rotate(var(--r, 0deg)); font-family: 'Bangers', sans-serif; font-size: min(11vw, 17vh, 104px); letter-spacing: .04em; line-height: 1;
+  color: var(--cy); -webkit-text-stroke: min(.7vw, 5px) var(--ink); paint-order: stroke fill; text-shadow: 6px 6px 0 var(--ink); animation: sfxPop 1.15s cubic-bezier(.2,1.6,.4,1) forwards; }
+.sfxw.red { color: #ff6a3a; } .sfxw.blue { color: #9fe2ff; }
+@keyframes sfxPop { 0% { transform: translate(-50%, -50%) rotate(var(--r)) scale(.2); opacity: 0; } 14% { transform: translate(-50%, -50%) rotate(var(--r)) scale(1.15); opacity: 1; }
+  28% { transform: translate(-50%, -50%) rotate(var(--r)) scale(1); } 78% { opacity: 1; } 100% { transform: translate(-50%, -50%) rotate(var(--r)) scale(1.08) translateY(-12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sfxw { animation: none; } }
+#sfxLayer { position: fixed; inset: 0; pointer-events: none; z-index: 7; overflow: hidden; }
