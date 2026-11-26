@@ -125,180 +125,118 @@ export function stepCraft(c, input, world, dt, settings) {
   }
 
   const def = c.def;
-  const assist = settings?.assist || "full";
   const inv = settings?.invertPitch ? -1 : 1;
-  const sens = settings?.sensitivity ?? 0.7;
+  const sens = settings?.sensitivity ?? 0.85;
 
   axes(c);
 
-  // Tow launch for glider
   if (c.tow) {
     stepTow(c, world, dt);
-    finishKinematics(c, world);
+    finishKinematics(c, world, input);
     return;
   }
 
-  // Throttle — on the ground, one press of Space/Action or holding power goes to full
+  const boost = !!(input.boost || input.actionHeld || (input.throttle || 0) > 0.4
+    || (input.throttleSet != null && input.throttleSet > 0.7));
+  const brake = !!(input.brake || (input.throttle || 0) < -0.4);
+
   if (def.engine) {
-    if (c.onGround && (input.actionHeld || (input.throttle || 0) > 0.4 || (input.autoThrottle && input.actionPressed))) {
-      c.throttle = 1;
-    } else if (input.throttleSet != null) {
-      c.throttle = clamp(input.throttleSet, 0, 1);
-    } else {
-      c.throttle = clamp(c.throttle + (input.throttle || 0) * dt * 1.8, 0, 1);
-    }
+    if (c.onGround || c.waterborne) c.throttle = boost ? 1 : 0;
+    else c.throttle = boost ? 1 : brake ? 0.12 : 0.72;
   } else {
     c.throttle = 0;
   }
 
   if (input.gearToggle) c.gearDown = !c.gearDown;
 
-  // Auto-level
   _euler.setFromQuaternion(c.quat, "YXZ");
   let pitch = _euler.x;
   let yaw = _euler.y;
   let roll = _euler.z;
 
-  let inPitch = (input.pitch || 0) * inv * sens;
-  let inRoll = (input.roll || 0) * sens;
-  let inYaw = (input.yaw || 0) * sens;
+  const turn = clamp(((input.roll || 0) + (input.yaw || 0)) * sens, -1, 1);
+  const inPitch = clamp((input.pitch || 0) * inv * sens, -1, 1);
 
-  if (assist === "full" && !c.onGround && !c.waterborne) {
-    if (Math.abs(inRoll) < 0.08) inRoll += clamp(-roll * 1.4, -1, 1);
-    if (Math.abs(inPitch) < 0.08) {
-      const cruisePitch = -0.04;
-      inPitch += clamp((cruisePitch - pitch) * 0.9, -0.5, 0.5);
-    }
-    // keep the nose up in a turn so a banked pass doesn't spiral into the sea
-    inPitch += Math.min(0.28, Math.abs(roll) * 0.28);
-    // hard bank limiter: holding roll must not invert the aircraft
-    const maxBank = 0.88; // ~50°
-    if (roll < -maxBank) inRoll = Math.min(inRoll, -0.7);
-    if (roll >  maxBank) inRoll = Math.max(inRoll,  0.7);
-    inRoll = clamp(inRoll, -0.75, 0.75);
-  } else if (assist === "light" && !c.onGround) {
-    if (Math.abs(inRoll) < 0.05) inRoll += clamp(-roll * 0.6, -0.5, 0.5);
-    inPitch += Math.min(0.15, Math.abs(roll) * 0.15);
-    const maxBankL = 0.85;
-    if (roll < -maxBankL) inRoll = Math.min(inRoll, -0.5);
-    if (roll >  maxBankL) inRoll = Math.max(inRoll,  0.5);
+  const maxPitch = 35 * Math.PI / 180;
+  const maxBank = 42 * Math.PI / 180;
+  const yawRate = 2.05;
+
+  const takeoffSpd = Math.max(16, (def.stallSpeed || 22) * 0.68);
+
+  if (c.onGround || c.waterborne) {
+    const targetPitch = boost && c.airspeed > takeoffSpd * 0.75 ? 0.16 : 0;
+    pitch = damp(pitch, targetPitch, 8, dt);
+    roll = damp(roll, 0, 10, dt);
+    if (Math.abs(turn) > 0.15 && c.airspeed > 4) yaw -= turn * yawRate * 0.35 * dt;
+  } else {
+    const targetPitch = Math.abs(inPitch) < 0.08 ? (boost ? 0.08 : 0) : inPitch * maxPitch;
+    pitch = damp(pitch, clamp(targetPitch, -maxPitch, maxPitch), 7, dt);
+    pitch = clamp(pitch, -maxPitch, maxPitch);
+    yaw -= turn * yawRate * dt;
+    roll = damp(roll, clamp(-turn * maxBank, -maxBank, maxBank), 8, dt);
+    roll = clamp(roll, -maxBank, maxBank);
   }
 
-  const air = c.vel.length();
-  const controlAuth = 0.25 + 0.75 * saturate(air / Math.max(12, def.stallSpeed));
-  c.angVel.x = damp(c.angVel.x, inPitch * def.pitchRate * controlAuth, 8, dt);
-  c.angVel.z = damp(c.angVel.z, -inRoll * def.rollRate * controlAuth, 8, dt);
-  c.angVel.y = damp(c.angVel.y, -inYaw * def.yawRate * controlAuth, 6, dt);
-
-  // Integrate orientation from body rates
-  const wx = c.angVel.x, wy = c.angVel.y, wz = c.angVel.z;
-  _qDot.set(wx, wy, wz, 0);
-  _q.copy(c.quat);
-  // q' = 0.5 * q * ω
-  c.quat.set(
-    c.quat.x + 0.5 * dt * (c.quat.w * wx + c.quat.y * wz - c.quat.z * wy),
-    c.quat.y + 0.5 * dt * (c.quat.w * wy + c.quat.z * wx - c.quat.x * wz),
-    c.quat.z + 0.5 * dt * (c.quat.w * wz + c.quat.x * wy - c.quat.y * wx),
-    c.quat.w + 0.5 * dt * (-c.quat.x * wx - c.quat.y * wy - c.quat.z * wz)
-  );
-  c.quat.normalize();
+  c.angVel.set(0, -turn * yawRate, 0);
+  c.yawRate = -turn * yawRate;
+  _euler.set(pitch, yaw, roll, "YXZ");
+  c.quat.setFromEuler(_euler);
   axes(c);
 
-  // Wind (gentle prevailing from west)
-  const wind = _tmp.set(3.5, 0, 0.5);
-  _velB.copy(c.vel).sub(wind);
-  const airspeed = _velB.length();
-  c.airspeed = airspeed;
+  const cruise = def.cruise || 46;
+  const boostSpd = Math.min(def.maxSpeed || 68, cruise * 1.38);
+  const brakeSpd = cruise * 0.52;
 
-  // AoA in pitch plane
-  const vb = _velB.clone().applyQuaternion(_q.copy(c.quat).invert());
-  const aoa = Math.atan2(-vb.y, Math.max(0.01, -vb.z));
-  c.aoa = aoa;
-  const stalled = Math.abs(aoa) > def.stallAoA;
-  c.stalled = stalled && airspeed > 8 && !c.onGround;
-
-  const rho = WORLD.airDensity;
-  const qbar = 0.5 * rho * airspeed * airspeed;
-  const Cl = liftCurve(aoa, def.clMax, def.stallAoA);
-  let liftMag = qbar * def.wingArea * Cl;
-  // Ground effect
-  if (c.agl < def.wingspan) {
-    liftMag *= 1 + 0.32 * (1 - c.agl / def.wingspan);
-  }
-  const Cd = def.cd0 + def.kInduced * Cl * Cl;
-  const dragMag = qbar * def.wingArea * Cd;
-
-  _force.set(0, -def.mass * WORLD.gravity, 0);
-
-  if (airspeed > 0.4) {
-    // lift ~ perpendicular to airspeed toward wing up
-    _liftDir.copy(_velB).cross(_right);
-    if (_liftDir.dot(_up) < 0) _liftDir.negate();
-    if (_liftDir.lengthSq() < 1e-6) _liftDir.copy(_up);
-    _liftDir.normalize();
-    _force.addScaledVector(_liftDir, liftMag);
-    _force.addScaledVector(_velB, -dragMag / airspeed);
+  const horiz = Math.hypot(c.vel.x, c.vel.z);
+  let spd;
+  if (c.onGround || c.waterborne) {
+    const accel = boost ? 20 : (brake ? -30 : -10);
+    spd = Math.max(0, horiz + accel * dt);
+    if (!boost && horiz < 1.2) spd = 0;
+  } else if (!def.engine) {
+    // Glider: pitch sets speed, with a gentle baseline
+    const dive = clamp(-pitch, -0.4, 0.4);
+    const want = clamp(32 + dive * 50, 16, 62);
+    spd = damp(horiz, brake ? want * 0.7 : want, 1.6, dt);
+  } else {
+    const want = brake ? brakeSpd : boost ? boostSpd : cruise;
+    spd = damp(horiz < 2 ? cruise * 0.8 : horiz, want, 2.4, dt);
   }
 
-  // Arcade boost: at cruise speed the wing already carries most of the weight,
-  // so a gentle climb is easy and a short bank doesn't dump you into the sea.
-  const support = saturate(airspeed / Math.max(12, def.cruise * 0.85));
-  let arcade = 0.22;
-  if (c.gearDown && c.throttle < 0.28) arcade = 0.04;
-  _force.y += def.mass * WORLD.gravity * support * arcade;
+  const wantY = _fwd.y * Math.max(spd, 1);
+  c.vel.x = _fwd.x * spd;
+  c.vel.z = _fwd.z * spd;
 
-  if (def.engine && c.throttle > 0) {
-    // thrust falls a little with speed
-    const t = def.maxThrust * c.throttle * (1 - saturate((airspeed - def.cruise) / (def.maxSpeed * 1.4)));
-    _force.addScaledVector(_fwd, t);
-  }
-  // Modest gear drag (~2 m/s² at cruise), enough to bleed speed without stalling
-  if (c.gearDown && !c.onGround && airspeed > 0.4) {
-    _force.addScaledVector(_velB, -0.00125 * def.mass * airspeed);
-  }
+  const surf = world.landingSurface ? world.landingSurface(c.pos.x, c.pos.z) : "";
+  const pad = surf === "runway" || surf === "grass" || surf === "beach"
+    || (def.waterCapable && (surf === "lagoon" || surf === "water"));
+  const flaring = !c.onGround && !c.waterborne && pad && c.agl < 55 && !boost && inPitch < 0.15;
 
-  // Thermals
-  const th = world.thermalAt(c.pos.x, c.pos.z, c.pos.y) || 0;
-  c.thermal = th;
-  if (th > 0) _force.y += def.mass * th;
-
-  // Integrate velocity / position
-  const acc = _force.multiplyScalar(1 / def.mass);
-  c.vel.addScaledVector(acc, dt);
-  // soft speed cap
-  const sp = c.vel.length();
-  if (sp > def.maxSpeed * 1.4) c.vel.multiplyScalar((def.maxSpeed * 1.4) / sp);
-
-  // Arcade coordinated turn: a bank yaws the flight path tightly enough
-  // for a joyful circuit, instead of a 350 m jet-radius arc.
-  if (assist !== "off" && !c.onGround && !c.waterborne) {
-    const rate = -roll * (assist === "full" ? 1.15 : 0.7);
-    const a = rate * dt;
-    const cs = Math.cos(a), sn = Math.sin(a);
-    const vx = c.vel.x, vz = c.vel.z;
-    c.vel.x = vx * cs - vz * sn;
-    c.vel.z = vx * sn + vz * cs;
-    // keep the nose with the path
-    if (Math.abs(rate) > 0.05) {
+  if ((c.onGround || c.waterborne) && !(boost && spd >= takeoffSpd)) {
+    c.vel.y = 0;
+  } else if (flaring) {
+    const wantVs = c.agl < 2.5 ? -1.8 : c.agl < 7 ? -1.3 : c.agl < 18 ? -2.6 : -4.0;
+    c.vel.y = damp(c.vel.y, wantVs, 5, dt);
+    const landSpd = Math.min(spd, cruise * 0.62);
+    c.vel.x = _fwd.x * landSpd;
+    c.vel.z = _fwd.z * landSpd;
+    if (c.agl < 16) {
       _euler.setFromQuaternion(c.quat, "YXZ");
-      _euler.y -= a;
+      _euler.x = damp(_euler.x, c.agl < 7 ? 0.12 : 0.02, 5, dt);
+      _euler.z = damp(_euler.z, 0, 5, dt);
       c.quat.setFromEuler(_euler);
+      c.gearDown = true;
     }
+    if (c.agl < 1.8) c.vel.y = Math.min(c.vel.y, -2.4);
+  } else {
+    c.vel.y = damp(c.vel.y, wantY, 5, dt);
   }
-
-  // Landing cushion: over a pad, full assist washes off the last of the sink
-  if (assist === "full" && !c.onGround && !c.waterborne && (c.gearDown || (def.waterCapable && c.throttle < 0.28))) {
-    const surf = world.landingSurface(c.pos.x, c.pos.z);
-    const pad = surf === "runway" || surf === "grass" || surf === "beach" ||
-      (def.waterCapable && (surf === "lagoon" || surf === "water"));
-    if (pad && c.agl < 30) {
-      const wantVs = c.agl < 7 ? -1.0 : -2.0;
-      c.vel.y += clamp(wantVs - c.vel.y, -10, 10) * Math.min(1, dt * 2.6);
-    }
-  }
+  c.airspeed = Math.max(spd, Math.hypot(c.vel.x, c.vel.y, c.vel.z) * 0.5);
 
   c.prevPos.copy(c.pos);
   c.pos.addScaledVector(c.vel, dt);
+  c.stalled = false;
+  c.aoa = 0;
 
   finishKinematics(c, world, input);
 }
@@ -343,6 +281,12 @@ function finishKinematics(c, world) {
 
   const surface = world.landingSurface(c.pos.x, c.pos.z);
   const water = th < 0.35;
+  const padSurf = surface === "runway" || surface === "grass" || surface === "beach"
+    || (c.def.waterCapable && (surface === "lagoon" || surface === "water"));
+  if (!c.onGround && !c.waterborne && padSurf && c.agl < 1.7 && c.throttle < 0.95 && c.airTime > 0.3 && c.vel.y < 3) {
+    c.pos.y = th + gear;
+    c.agl = 0;
+  }
   if (c.unstickT > 0) {
     c.unstickT -= PHYS.dt;
     if (c.throttle > 0.45 && c.airspeed >= c.def.stallSpeed * 0.7) {
@@ -375,24 +319,30 @@ function finishKinematics(c, world) {
     return;
   }
 
-  // Collision / landing
+  // Collision / landing — arcade: bounce and recover on light touches, no stalls or tumbles.
   const bank = Math.abs(c.roll);
   const pitchAbs = Math.abs(c.pitch);
   const vDown = -c.vel.y;
-  const tooHard = vDown > LANDING.crashVSpeed;
-  const oddAttitude = bank > 0.7 || pitchAbs > 0.7;
   const validLand =
     (surface === "runway" || surface === "grass" || surface === "beach" ||
       (c.def.waterCapable && (surface === "lagoon" || surface === "water"))) &&
     (c.gearDown || (c.def.waterCapable && water) || (c.id === "glider" && surface));
 
-  // On a real pad with gear down, a firm arrival is a rough landing, not a crash.
-  const firmButOk = validLand && !oddAttitude && vDown <= LANDING.crashVSpeed + 3.5;
-  if ((tooHard && !firmButOk) || (oddAttitude && (!validLand || vDown > 6)) || (!validLand && vDown > 3.5 && c.airTime > 0.6)) {
-    if (!c.onGround && !c.waterborne) {
-      crash(c);
-      return;
-    }
+  // Extreme slam into a cliff only; otherwise bounce back and level out.
+  if (!validLand && !c.onGround && !c.waterborne && c.airTime > 0.4 && vDown > 22) {
+    crash(c);
+    return;
+  }
+  if (!validLand && !c.onGround && !c.waterborne && (vDown > 4 || c.agl < 0.4)) {
+    c.vel.y = Math.max(5, vDown * 0.4);
+    c.pos.y = th + gear + 1.4;
+    _euler.setFromQuaternion(c.quat, "YXZ");
+    _euler.x = 0.12;
+    _euler.z = 0;
+    c.quat.setFromEuler(_euler);
+    c.onGround = false;
+    c.waterborne = false;
+    return;
   }
 
   // Snap onto surface
@@ -433,8 +383,8 @@ function finishKinematics(c, world) {
     const rollDamp = Math.exp(-(kRoll + kBrake) * PHYS.dt);
     c.vel.x *= rollDamp;
     c.vel.z *= rollDamp;
-    const vr = c.def.stallSpeed * 0.78;
-    const ready = c.def.engine && c.throttle > 0.55 && c.airspeed >= vr;
+    const vr = Math.max(16, c.def.stallSpeed * 0.68);
+    const ready = c.def.engine && c.throttle > 0.95 && c.airspeed >= vr;
     _euler.setFromQuaternion(c.quat, "YXZ");
     if (ready) {
       // Automatic gentle rotation and unstick — dead-simple takeoff

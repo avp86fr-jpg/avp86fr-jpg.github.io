@@ -83,16 +83,53 @@ export function createSkyProps(scene, quality = "medium") {
   }
   group.add(heroInst);
 
-  // Balloons (ambient, plus mission ones are separate)
-  const balloons = [];
-  const balloonColors = [0xe06a4f, 0xf2c14e, 0x3aa0d0, 0xd45aaa, 0x3aa86a, 0xf4f0e6];
-  for (let i = 0; i < 8; i++) {
-    const b = makeBalloon(balloonColors[i % balloonColors.length]);
-    const a = i * 0.9;
-    b.position.set(Math.cos(a) * 700, 140 + i * 12, Math.sin(a) * 700 + 100);
-    group.add(b);
-    balloons.push({ mesh: b, home: b.position.clone(), phase: i });
+  // Balloons — one instanced mesh (ambient; mission balloons stay separate)
+  const balloonProto = makeBalloon(0xe06a4f);
+  balloonProto.updateMatrixWorld(true);
+  const bGeos = [];
+  balloonProto.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    bGeos.push(g);
+  });
+  // simple merge
+  let bn = 0;
+  for (const g of bGeos) bn += g.getAttribute("position").count;
+  const bpos = new Float32Array(bn * 3);
+  const bidx = [];
+  let bbase = 0;
+  for (const g of bGeos) {
+    const p = g.getAttribute("position");
+    for (let i = 0; i < p.count; i++) {
+      bpos[(bbase + i) * 3] = p.getX(i);
+      bpos[(bbase + i) * 3 + 1] = p.getY(i);
+      bpos[(bbase + i) * 3 + 2] = p.getZ(i);
+    }
+    if (g.index) { for (let i = 0; i < g.index.array.length; i++) bidx.push(g.index.array[i] + bbase); }
+    else { for (let i = 0; i < p.count; i++) bidx.push(bbase + i); }
+    bbase += p.count;
   }
+  const balloonGeo = new THREE.BufferGeometry();
+  balloonGeo.setAttribute("position", new THREE.BufferAttribute(bpos, 3));
+  balloonGeo.setIndex(bidx);
+  balloonGeo.computeVertexNormals();
+  retagGeometry(balloonGeo, MAT.BALLOON, 1);
+  const balloonMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xe06a4f, flatShading: true }));
+  const nBal = 6;
+  const balloonInst = new THREE.InstancedMesh(balloonGeo, balloonMat, nBal);
+  const balloons = [];
+  for (let i = 0; i < nBal; i++) {
+    const a = i * 0.9;
+    const home = { x: Math.cos(a) * 700, y: 140 + i * 12, z: Math.sin(a) * 700 + 100 };
+    dummy.position.set(home.x, home.y, home.z);
+    dummy.scale.setScalar(1);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    balloonInst.setMatrixAt(i, dummy.matrix);
+    balloons.push({ home, phase: i });
+  }
+  group.add(balloonInst);
 
   // Blimp
   const blimp = makeBlimp();
@@ -138,12 +175,19 @@ export function createSkyProps(scene, quality = "medium") {
       }
       cloudInst.instanceMatrix.needsUpdate = true;
 
-      for (const b of balloons) {
-        b.mesh.position.x = b.home.x + Math.sin(time * 0.12 + b.phase) * 40;
-        b.mesh.position.z = b.home.z + Math.cos(time * 0.1 + b.phase) * 40;
-        b.mesh.position.y = b.home.y + Math.sin(time * 0.3 + b.phase) * 8;
-        b.mesh.rotation.y += dt * 0.2;
+      for (let i = 0; i < balloons.length; i++) {
+        const b = balloons[i];
+        dummy.position.set(
+          b.home.x + Math.sin(time * 0.12 + b.phase) * 40,
+          b.home.y + Math.sin(time * 0.3 + b.phase) * 8,
+          b.home.z + Math.cos(time * 0.1 + b.phase) * 40
+        );
+        dummy.rotation.set(0, time * 0.2 + b.phase, 0);
+        dummy.scale.setScalar(1);
+        dummy.updateMatrix();
+        balloonInst.setMatrixAt(i, dummy.matrix);
       }
+      balloonInst.instanceMatrix.needsUpdate = true;
       const ba = time * 0.03;
       blimp.position.set(Math.cos(ba) * 900, 260, Math.sin(ba) * 900);
       blimp.rotation.y = ba + Math.PI / 2;

@@ -348,12 +348,15 @@ ${wrapText(m.brief, 44)}
   function showPause(save) {
     state.screen = "pause";
     const p = openOverlay(`<div style="margin-bottom:8px">PAUSED</div><div id="mlist"></div>`);
+    const gearLabel = hooks.gearDown?.() === false ? "TRAIN  (rentré)" : "TRAIN  (sorti)";
     renderMenu(p.querySelector("#mlist"), [
-      { label: "RESUME", fn: () => { closeOverlay(); hooks.onResume?.(); } },
-      { label: "FULL SCREEN", fn: () => hooks.onFullscreen?.() },
+      { label: "REPRENDRE", fn: () => { closeOverlay(); hooks.onResume?.(); } },
+      { label: "PLEIN ÉCRAN", fn: () => hooks.onFullscreen?.() },
+      { label: gearLabel, fn: () => { hooks.onGear?.(); showPause(save); } },
+      { label: "CAMÉRA", fn: () => hooks.onCamera?.() },
       { label: "OPTIONS", fn: () => showOptions(save) },
-      { label: "RESTART", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
-      { label: "HANGAR / MENU", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
+      { label: "RECOMMENCER", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
+      { label: "MENU", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
     ], save);
   }
 
@@ -385,7 +388,7 @@ time  ${formatTime(result.time || 0)}
     if (!h) return;
     try { if (localStorage.getItem("apa_flyhint")) return; } catch {}
     h.classList.remove("hidden");
-    h.textContent = "Poussez GAZ (ou Shift / Espace) — l'avion roule et décolle tout seul. Dirigez avec le manche ou WASD.";
+    h.textContent = "Maintenez BOOST ou Espace : l'avion décolle tout seul. Le manche (ou WASD) tourne et cabre. Relâchez pour se stabiliser.";
     const hide = () => {
       h.classList.add("hidden");
       try { localStorage.setItem("apa_flyhint", "1"); } catch {}
@@ -423,9 +426,10 @@ time  ${formatTime(result.time || 0)}
     const weather = ctx.weather || { id: "clear", rain: 0, windDeg: 40, windKt: 6, visibility: 12, turbulence: 0 };
     const save = ctx.save || {};
     const ins = safeInsets();
-    const mobileChrome = (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 900);
-    const padT = 8 + ins.top + (mobileChrome ? 40 : 0);
-    const padB = 8 + ins.bottom + (mobileChrome ? (portrait ? 148 : 56) : 0);
+    const touch = !!(mobile && mobile.isTouchUI && mobile.isTouchUI());
+    document.body.classList.toggle("touch-ui", touch && state.screen === "fly");
+    const padT = (touch ? 6 : 8) + ins.top;
+    const padB = (touch ? 4 : 8) + ins.bottom;
     const padL = 8 + ins.left;
     const padR = 8 + ins.right;
     const stats = hud.querySelector("#hud-stats");
@@ -440,8 +444,9 @@ time  ${formatTime(result.time || 0)}
 
     stats.style.top = padT + "px"; stats.style.left = padL + "px";
     comp.style.top = padT + "px";
-    fsBtn.style.top = padT + "px"; fsBtn.style.right = padR + "px";
-    miss.style.top = (padT + (mobileChrome ? 44 : 48)) + "px"; miss.style.right = padR + "px";
+    fsBtn.style.display = "none";
+    miss.style.top = padT + "px";
+    miss.style.right = (touch ? padR + 52 : padR) + "px";
     mmap.style.left = padL + "px"; mmap.style.bottom = (padB + 48) + "px";
     flight.style.bottom = padB + "px";
     photo.style.right = padR + "px"; photo.style.bottom = (padB + 48) + "px";
@@ -457,10 +462,18 @@ time  ${formatTime(result.time || 0)}
     const photos = (save.photos && save.photos.length) || 0;
     const planeName = (craft.def && craft.def.name) || (craft.id || "TRAINER").toUpperCase();
 
-    stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span><span class="stats-wings" aria-hidden="true">✉</span></div>'
-      + "★ " + String(stars).padStart(3) + " / 180\n"
-      + "○ " + String(photos).padStart(2) + " / 50 (Trésors)\n"
-      + "✈ " + planeName + "  Niv.2";
+    function sbar(v, max) {
+      const n = 10, k = Math.round((max ? v / max : 0) * n);
+      return '<span class="sbar">' + "█".repeat(k) + "░".repeat(n - k) + "</span>";
+    }
+    if (touch) {
+      stats.innerHTML = '<div class="stat-pill">★ ' + stars + '　○ ' + photos + "</div>";
+    } else {
+      stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span><span class="stats-wings" aria-hidden="true">✉</span></div>'
+        + '<div class="stat-row">★ ' + String(stars).padStart(3) + " / 180 " + sbar(stars, 180) + "</div>"
+        + '<div class="stat-row">○ ' + String(photos).padStart(2) + " / 50 (Trésors) " + sbar(photos, 50) + "</div>"
+        + '<div class="stat-row">✈ ' + planeName + "  Niv.2</div>";
+    }
     comp.textContent = compassStrip(craft.heading, hdg);
 
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";
@@ -499,9 +512,16 @@ time  ${formatTime(result.time || 0)}
       } else {
         lines.push(m.title);
       }
-      miss.textContent = lines.join("\n");
+      if (touch) {
+        if (m.activity === "rings") miss.textContent = "Anneaux " + mission.ringsPassed + "/" + m.rings.length;
+        else if (m.activity === "landing") miss.textContent = "Atterrissage";
+        else if (m.activity === "balloons") miss.textContent = (m.title || "Ballons") + "  " + mission.popped + "/" + (mission.balloons && mission.balloons.length || 0);
+        else miss.textContent = m.title || "Mission";
+      } else miss.textContent = lines.join("\n");
     } else if (mission && mission.result) {
       miss.textContent = mission.message || "";
+    } else if (touch) {
+      miss.textContent = weather.id === "storm" ? "Vol libre · Orage" : "Vol libre";
     } else {
       miss.textContent = "VOL LIBRE\n> " + hourToClock(hour) + "\n> Vent : " + windLine + "\n> Météo : " + (weather.id === "storm" ? "ORAGE" : "CLAIR");
     }
@@ -527,19 +547,19 @@ time  ${formatTime(result.time || 0)}
     if (state._hideHint && !craft.onGround && (craft.altitude || 0) > 8) state._hideHint();
 
 
-    if (!portrait && !mobileChrome && window.innerWidth > 900 && window.innerHeight > 560) {
+    if (!touch && !portrait && window.innerWidth > 900 && window.innerHeight > 560) {
       mmap.classList.remove("hidden");
       mmap.textContent = "CARTE          N\n" + drawMini(craft) + "\n         3 km";
     } else mmap.classList.add("hidden");
 
-    const showPhoto = mission && mission.active && mission.active.activity === "photo" && !mission.result;
+    const showPhoto = !touch && mission && mission.active && mission.active.activity === "photo" && !mission.result;
     if (showPhoto) {
       photo.classList.remove("hidden");
       aux.classList.add("hidden");
       const sub = (mission.active.subject && mission.active.subject.name) || "subject";
       photo.classList.toggle("ready", !!mission.photoReady);
       photo.textContent = "MISSION PHOTO\n┌────────────┐\n│ " + String(sub).slice(0, 10).padEnd(10) + " │\n│ " + (mission.photoReady ? "  CADRÉ !   " : "  chercher  ") + " │\n└────────────┘";
-    } else if (landing) {
+    } else if (landing && !touch) {
       photo.classList.add("hidden");
       aux.classList.remove("hidden");
       const a = landingAssist(craft, mission.active);
@@ -547,7 +567,7 @@ time  ${formatTime(result.time || 0)}
       const latS = (a.lat >= 0 ? "+" : "") + a.lat.toFixed(1);
       const etaS = a.eta > 0 ? (Math.round(a.eta) + " s") : "—";
       aux.textContent = "AIDE À L'ATTERRISSAGE\n> Plané : " + glideS + "°\n> Axe : " + latS + " m\n> Vitesse : " + Math.round(a.spd) + " km/h\nTOUCHER    ~" + etaS;
-    } else if (stormy && !portrait) {
+    } else if (stormy && !portrait && !touch) {
       photo.classList.add("hidden");
       aux.classList.remove("hidden");
       const turb = weather.turbulence > 0.55 ? "élevée" : weather.turbulence > 0.2 ? "moyenne" : "faible";
@@ -661,12 +681,12 @@ time  ${formatTime(result.time || 0)}
       if (i >= 0 && i < W && j >= 0 && j < H) g[j][i] = ch;
     };
     mark(0, -1100, "A");
-    mark(1180, -1080, "L");
+    mark(720, -1020, "L");
     mark(0, 200, "^");
-    mark(40, 1240, "C");
-    mark(-960, 180, "W");
-    mark(720, 640, "F");
-    mark(1480, -360, "n");
+    mark(280, 780, "C");
+    mark(-480, 80, "W");
+    mark(320, 480, "F");
+    mark(820, -620, "n");
     mark(craft.pos.x, craft.pos.z, "@");
     return g.map((r) => r.join(" ")).join("\n");
   }

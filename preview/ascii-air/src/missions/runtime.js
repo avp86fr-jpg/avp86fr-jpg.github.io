@@ -276,13 +276,17 @@ export function createMissionSystem(scene, world, audio) {
         const p = ringWorldPos(cur, time);
         cur.position.copy(p);
         cur.rotation.z = time * 0.6;
-        cur.material.color.set(0xffc45a);
+        const tint = (color) => {
+          cur.traverse((o) => { if (o.material && o.material.color && o.material.color.set && !o.material.transparent) o.material.color.set(color); });
+        };
+        tint(0xffc45a);
         const d = craft.pos.distanceTo(p);
-        if (d < cur.userData.base.r + 5.5) {
+        const rad = (cur.userData.base && cur.userData.base.r) || 18;
+        if (d < rad + 5.5) {
           state.next++;
           state.ringsPassed++;
           audio?.play("ring");
-          cur.material.color.set(0x5a2208);
+          tint(0x5a2208);
           cur.visible = false;
           if (state.next >= meshes.length) {
             const stars = starsFromTime(m, state.t);
@@ -354,20 +358,37 @@ export function createMissionSystem(scene, world, audio) {
 
   function abort() { clear(); }
 
-  function spawnDemoRing(x, y, z, radius = 18) {
-    // Remove previous demo rings
+  function clearDemoRings() {
     const stale = [];
     group.traverse((o) => { if (o.userData && o.userData.demoRing) stale.push(o); });
     stale.forEach((o) => o.parent && o.parent.remove(o));
+  }
+
+  function spawnDemoRing(x, y, z, radius = 18, clear = true) {
+    if (clear) clearDemoRings();
     const mesh = ringMesh(radius);
     mesh.position.set(x, y, z);
-    mesh.lookAt(x, y, z + 1); // face north by default; caller can rotate
+    mesh.lookAt(x, y, z + 40);
     mesh.userData.demoRing = true;
+    mesh.userData.base = { x, y, z, r: radius };
     group.add(mesh);
     if (!group.parent) scene.add(group);
     return mesh;
   }
 
-  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing };
+  function spawnDemoChain(rings) {
+    clearDemoRings();
+    const meshes = [];
+    for (let i = 0; i < rings.length; i++) {
+      const r = rings[i];
+      const mesh = spawnDemoRing(r.x, r.y, r.z, r.r ?? 18, false);
+      const n = rings[i + 1] || rings[i - 1] || r;
+      mesh.lookAt(n.x, n.y, n.z);
+      meshes.push(mesh);
+    }
+    return meshes;
+  }
+
+  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain };
 
 }

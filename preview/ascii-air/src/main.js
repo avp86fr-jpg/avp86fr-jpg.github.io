@@ -55,6 +55,7 @@ hooks.onCamera = () => flyCam.cycle();
 hooks.onPause = () => togglePause();
 hooks.onResume = () => { paused = false; mode = "fly"; ui.showHUD(); };
 hooks.onGear = () => { craft.gearDown = !craft.gearDown; audio.play("gear"); };
+hooks.gearDown = () => !!(craft && craft.gearDown);
 hooks.onFullscreen = () => toggleFullscreen();
 hooks.onRestart = () => restartCurrent();
 hooks.onQuit = () => backToTitle();
@@ -630,12 +631,12 @@ function hudShot() {
 }
 
 function heroShot(opts = {}) {
-  const x = opts.x ?? 260;
-  const y = opts.y ?? 52;
-  const z = opts.z ?? -1460;
-  const tx = opts.tx ?? 40;
-  const ty = opts.ty ?? 28;
-  const tz = opts.tz ?? -200;
+  const x = opts.x ?? 240;
+  const y = opts.y ?? 68;
+  const z = opts.z ?? -1310;
+  const tx = opts.tx ?? -20;
+  const ty = opts.ty ?? 32;
+  const tz = opts.tz ?? -160;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
@@ -658,12 +659,18 @@ function heroShot(opts = {}) {
   paused = true;
   if (opts.showcase !== false) showcaseRings("pro", 3, 12, 27.346, null);
   if (contrail) contrail.clear();
-  if (missions.spawnDemoRing) {
-    const rx = x + (tx - x) * 0.28;
-    const rz = z + (tz - z) * 0.28;
-    const ry = y - 14;
-    const ring = missions.spawnDemoRing(rx, ry, rz, opts.ringR ?? 32);
-    if (ring) ring.lookAt(x, y, z);
+  if (missions.spawnDemoChain) {
+    const chain = [];
+    for (let i = 0; i < 4; i++) {
+      const t = 0.16 + i * 0.13;
+      chain.push({
+        x: x + (tx - x) * t,
+        y: y - 6 - i * 5,
+        z: z + (tz - z) * t,
+        r: 22 - i * 2,
+      });
+    }
+    missions.spawnDemoChain(chain);
   }
   syncPlaneMesh();
   hudShot();
@@ -738,10 +745,7 @@ function stormShot(opts = {}) {
     weather.bolt.scale.set(2.4, 3.2, 2.4);
   }
   showcaseRings("ace", 4, 12, 46.219, "storm");
-  if (missions.spawnDemoRing) {
-    const ring = missions.spawnDemoRing(80, 116, -1280, 32);
-    if (ring) ring.lookAt(pose.x, pose.y, pose.z);
-  }
+  // ring chain already spawned by heroShot
   flyCam.state.hero = true;
   flyCam.snap(craft, false);
   syncPlaneMesh();
@@ -767,6 +771,7 @@ function exposeAPI() {
       };
     },
     startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot,
+    get planeMesh() { return planeMesh; },
     setWeather: (id, opts) => weather && weather.set(id, opts),
     setTime: (h) => { clock.set(h); island.sky.setHour(h); },
     setDisplayMode: () => {},
@@ -788,13 +793,14 @@ function exposeAPI() {
     // Step live input (held keys / touch) through physics without waiting on the renderer.
     advance(seconds) {
       const steps = Math.max(1, Math.round(seconds / PHYS.dt));
-      const inp = input.update(settings);
       for (let i = 0; i < steps; i++) {
         const stepInp = input.update(settings);
         if (weather) weather.applyToCraft(craft, PHYS.dt);
         stepCraft(craft, stepInp, island, PHYS.dt, settings);
         handleCraftEvents();
         maybeRespawn();
+        if (mode === "fly") missions.update(PHYS.dt, i * PHYS.dt, craft, camera, stepInp);
+        flyCam.update(PHYS.dt, craft, ui.isPortrait && ui.isPortrait());
       }
       syncPlaneMesh();
     },
@@ -812,7 +818,7 @@ function exposeAPI() {
     listMissions: () => MISSIONS.map((m) => m.id),
     getMission,
     simulate(seconds, inputFn) {
-      const inp = { pitch: 0, roll: 0, yaw: 0, throttle: 0, throttleSet: 0.7, actionPressed: false, actionHeld: false, gearToggle: false };
+      const inp = { pitch: 0, roll: 0, yaw: 0, throttle: 0, throttleSet: null, boost: false, brake: false, actionPressed: false, actionHeld: false, gearToggle: false };
       const steps = Math.max(1, Math.floor(seconds * PHYS.hz));
       let t = 0;
       for (let i = 0; i < steps; i++) {

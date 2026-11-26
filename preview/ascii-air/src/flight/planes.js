@@ -194,13 +194,88 @@ function buildGlider(s) {
   return g;
 }
 
+function mergePlaneStatic(root, keep = []) {
+  const keepSet = new Set(keep.filter(Boolean));
+  const skip = (o) => {
+    let n = o;
+    while (n && n !== root) {
+      if (keepSet.has(n) || n.name === "prop") return true;
+      n = n.parent;
+    }
+    return false;
+  };
+  const buckets = new Map();
+  const toRemove = [];
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isMesh || skip(o) || !o.geometry || !o.material) return;
+    const mat = o.material;
+    const col = mat.color ? mat.color.getHex() : 0;
+    const key = col + ":" + (mat.type || "") + ":" + (mat.transparent ? 1 : 0) + ":" + ((mat.opacity || 1).toFixed(2));
+    if (mat.transparent) return;
+    if (!buckets.has(key)) buckets.set(key, { mat, geos: [] });
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    buckets.get(key).geos.push(g);
+    toRemove.push(o);
+  });
+  for (const o of toRemove) { if (o.parent) o.parent.remove(o); }
+  const merged = new THREE.Group();
+  merged.name = "plane-body";
+  for (const { mat, geos } of buckets.values()) {
+    if (!geos.length) continue;
+    let n = 0;
+    for (const g of geos) n += g.getAttribute("position").count;
+    const pos = new Float32Array(n * 3);
+    const nrm = new Float32Array(n * 3);
+    const idx = [];
+    let base = 0;
+    for (const g of geos) {
+      const p = g.getAttribute("position");
+      const nn = g.getAttribute("normal");
+      for (let i = 0; i < p.count; i++) {
+        pos[(base + i) * 3] = p.getX(i);
+        pos[(base + i) * 3 + 1] = p.getY(i);
+        pos[(base + i) * 3 + 2] = p.getZ(i);
+        if (nn) {
+          nrm[(base + i) * 3] = nn.getX(i);
+          nrm[(base + i) * 3 + 1] = nn.getY(i);
+          nrm[(base + i) * 3 + 2] = nn.getZ(i);
+        }
+      }
+      if (g.index) {
+        const ia = g.index.array;
+        for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base);
+      } else {
+        for (let i = 0; i < p.count; i++) idx.push(base + i);
+      }
+      base += p.count;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+    geo.setIndex(idx);
+    merged.add(new THREE.Mesh(geo, mat));
+  }
+  root.add(merged);
+  return root;
+}
+
 const BUILDERS = { trainer: buildTrainer, seaplane: buildSeaplane, glider: buildGlider };
 
 export function createPlaneMesh(id, colors) {
   const def = PLANES[id];
   const s = scheme(colors?.color || def.color, colors?.accent || def.accent);
-  const g = BUILDERS[id](s);
+  const visual = BUILDERS[id](s);
+  // Builders place the nose at +Z; flight/camera forward is -Z, so flip the visual.
+  visual.name = "plane-visual";
+  visual.rotation.y = Math.PI;
+  const g = new THREE.Group();
   g.name = "plane-" + id;
+  g.add(visual);
+  const ud = visual.userData || {};
+  g.userData = ud;
+  mergePlaneStatic(visual, [ud.prop, ud.elevator, ud.rudder, ud.ailL, ud.ailR]);
   tagMesh(g, MAT.PLANE, 1);
   return g;
 }

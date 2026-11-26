@@ -10,10 +10,10 @@ import { createSkyProps, createThermals } from "./skyprops.js";
 export const THERMAL_FIELDS = [
   { id: "volcano-e", x: 220, z: 280, r: 80, y: 40, h: 220, strength: 14 },
   { id: "volcano-w", x: -180, z: 160, r: 70, y: 40, h: 200, strength: 12 },
-  { id: "mills", x: -960, z: 180, r: 90, y: 60, h: 180, strength: 9 },
+  { id: "mills", x: -480, z: 80, r: 90, y: 50, h: 160, strength: 9 },
   { id: "ridge", x: -700, z: 1100, r: 70, y: 90, h: 160, strength: 11 },
-  { id: "castle", x: 80, z: 1180, r: 60, y: 100, h: 140, strength: 8 },
-  { id: "valley", x: 600, z: 500, r: 50, y: 40, h: 120, strength: 7 },
+  { id: "castle", x: 280, z: 780, r: 70, y: 80, h: 140, strength: 8 },
+  { id: "valley", x: 360, z: 440, r: 60, y: 40, h: 120, strength: 7 },
 ];
 
 export function createIsland(scene, quality = "medium") {
@@ -44,7 +44,7 @@ export function createIsland(scene, quality = "medium") {
     if (Math.abs(z - 1120) < 18 && Math.abs(x + 820) < 150 && h > 80) return "grass";
     const dLag = Math.hypot(x + 740, z + 1120);
     const dSunny = Math.hypot(x - 80, z + 1280);
-    const dCape = Math.hypot(x - 1000, z + 1240);
+    const dCape = Math.hypot(x - 720, z + 1020);
     if (dLag < 220 && h < 2.2) return "lagoon";
     if (h < 0.35) return "water";
     if (dSunny < 150 && h < 6) return "beach";

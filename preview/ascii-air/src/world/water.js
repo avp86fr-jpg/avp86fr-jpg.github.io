@@ -51,16 +51,16 @@ void main() {
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
   vec3 col = water + uSky * fres * 0.08 + uSunCol * sp * 0.25 * nearIsle;
   // white surf on the shallows + thin outlined foam crests and spray in a blow
-  float surf = sat((nearIsle - 0.78) / 0.22) * sat(vWave * 1.8);
-  float crest = sat(vWave * uChop - 0.62);
-  float crestThin = crest * (1.0 - sat((vWave * uChop - 1.15) * 2.2));
-  float foamAmt = crestThin * sat(uChop - 1.15);
-  col = mix(col, vec3(0.96, 0.98, 1.0), max(surf * 0.5, foamAmt * 0.92));
-  float foamEdge = sat((foamAmt - 0.25) * 10.0) * (1.0 - sat((foamAmt - 0.55) * 12.0));
-  col = mix(col, vec3(0.14, 0.16, 0.20), foamEdge * 0.55);
-  if (uChop > 1.4) {
-    float spray = step(0.86, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 6.0) * 43758.5));
-    col = mix(col, vec3(0.93, 0.96, 1.0), spray * 0.45 * sat(crest));
+  float surf = sat((nearIsle - 0.78) / 0.22) * sat(vWave * 1.8) * 0.35;
+  float crest = sat(vWave * uChop - 0.85);
+  float crestThin = crest * (1.0 - sat((vWave * uChop - 1.25) * 2.4));
+  float foamAmt = crestThin * sat(uChop - 1.35);
+  col = mix(col, vec3(0.96, 0.98, 1.0), max(surf, foamAmt * 0.85));
+  float foamEdge = sat((foamAmt - 0.35) * 12.0) * (1.0 - sat((foamAmt - 0.62) * 14.0));
+  col = mix(col, vec3(0.14, 0.16, 0.20), foamEdge * 0.5);
+  if (uChop > 2.0) {
+    float spray = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 6.0) * 43758.5));
+    col = mix(col, vec3(0.93, 0.96, 1.0), spray * 0.35 * sat(crest));
   }
   gl_FragColor = vec4(col, uMatId / 255.0);
 }

@@ -61,8 +61,8 @@ export const MISSIONS = [
     start: { x: 800, y: 55, z: -1000, heading: 0.3, speed: 44 },
     timeLimits: [95, 75, 60],
     rings: pathRings([
-      [900, 50, -1000, 15], [1180, 55, -900, 15], [1300, 60, -1080, 15],
-      [1180, 55, -1250, 15], [1000, 50, -1200, 15], [900, 45, -1080, 15],
+      [640, 50, -980, 15], [720, 55, -900, 15], [820, 60, -1020, 15],
+      [720, 55, -1180, 15], [600, 50, -1140, 15], [640, 45, -1040, 15],
     ], 15),
   },
   // ---------- RINGS PRO ----------
@@ -92,22 +92,22 @@ export const MISSIONS = [
     id: "rings-p3", activity: "rings", klass: "pro", title: "Mill Waltz",
     brief: "Some of these rings drift on the west wind. Stay light on the stick.",
     hour: 15, plane: "trainer",
-    start: { x: -620, y: 90, z: 40, heading: -0.8, speed: 44 },
+    start: { x: -400, y: 90, z: 40, heading: -0.8, speed: 44 },
     timeLimits: [105, 85, 68],
     rings: pathRings([
-      [-700, 80, 80, 11, 1, 18, "x"], [-880, 90, 180, 11], [-1040, 100, 80, 11, 1, 16, "y"],
-      [-1080, 110, 260, 11], [-900, 90, 40, 11, 1, 20, "z"], [-800, 80, 200, 11],
+      [-420, 70, 80, 11, 1, 18, "x"], [-560, 80, 20, 11], [-620, 90, 120, 11, 1, 16, "y"],
+      [-480, 85, 80, 11], [-400, 75, 140, 11, 1, 20, "z"], [-520, 70, -40, 11],
     ], 11),
   },
   {
     id: "rings-p4", activity: "rings", klass: "pro", title: "Arch & Isle",
     brief: "Tight rings through the sea arch, then a hop to One-Palm Isle.",
     hour: 12, plane: "trainer",
-    start: { x: 1100, y: 45, z: -400, heading: 0.2, speed: 44 },
+    start: { x: 700, y: 45, z: -400, heading: 0.2, speed: 44 },
     timeLimits: [100, 78, 62],
     rings: pathRings([
-      [1200, 40, -400, 11], [1480, 22, -360, 9], [1400, 30, -600, 11],
-      [800, 35, -1400, 11], [400, 30, -1700, 11], [180, 22, -1880, 10],
+      [760, 40, -500, 11], [820, 22, -620, 9], [700, 30, -800, 11],
+      [500, 35, -1400, 11], [300, 30, -1700, 11], [180, 22, -1880, 10],
     ], 11),
   },
 
@@ -166,7 +166,7 @@ export const MISSIONS = [
     brief: "A narrower beach near the lighthouse rocks. Watch the cape on short final.",
     hour: 17.2, plane: "trainer",
     start: { x: 1500, y: 80, z: -800, heading: -2.2, speed: 42 },
-    target: { type: "beach", x: 1000, z: -1240, heading: -2.0, len: 180, wid: 28 },
+    target: { type: "beach", x: 720, z: -1180, heading: -2.0, len: 180, wid: 28 },
   },
   {
     id: "land-p3", activity: "landing", klass: "pro", title: "Ridge Tight",
@@ -208,9 +208,9 @@ export const MISSIONS = [
   {
     id: "bal-b4", activity: "balloons", klass: "beginner", title: "Cape Dots",
     brief: "A string of balloons around Cinder Cape Light.",
-    hour: 17, plane: "trainer", start: { x: 1180, y: 70, z: -1080, heading: 0, speed: 42 },
+    hour: 17, plane: "trainer", start: { x: 720, y: 70, z: -1020, heading: 0, speed: 42 },
     timeLimit: 95, count: 8,
-    area: { cx: 1180, cz: -1080, r: 260, y0: 30, y1: 100 },
+    area: { cx: 720, cz: -1020, r: 260, y0: 30, y1: 100 },
   },
   // ---------- BALLOONS PRO ----------
   {
@@ -223,27 +223,27 @@ export const MISSIONS = [
   {
     id: "bal-p2", activity: "balloons", klass: "pro", title: "Valley Drift",
     brief: "Tight air over Mistfall. Don't clip the cliffs.",
-    hour: 8, plane: "trainer", start: { x: 560, y: 150, z: 560, heading: 0.3, speed: 44 },
+    hour: 8, plane: "trainer", start: { x: 300, y: 130, z: 400, heading: 0.3, speed: 44 },
     timeLimit: 95, count: 10,
-    area: { cx: 720, cz: 600, r: 300, y0: 50, y1: 180 },
+    area: { cx: 340, cz: 460, r: 300, y0: 50, y1: 180 },
   },
   {
     id: "bal-p3", activity: "balloons", klass: "pro", title: "Ruin Rise",
     brief: "North cliffs and the castle ruins. Wind along the ridge.",
-    hour: 16.5, plane: "trainer", start: { x: 40, y: 150, z: 1240, heading: 0, speed: 44 },
+    hour: 16.5, plane: "trainer", start: { x: 280, y: 150, z: 780, heading: 0, speed: 44 },
     timeLimit: 95, count: 10,
-    area: { cx: 40, cz: 1240, r: 300, y0: 90, y1: 200 },
+    area: { cx: 280, cz: 780, r: 300, y0: 70, y1: 180 },
   },
   {
     id: "bal-p4", activity: "balloons", klass: "pro", title: "Island Sweep",
     brief: "A mixed circuit: mills, lagoon and the sea arch. Keep moving.",
-    hour: 11, plane: "trainer", start: { x: -960, y: 90, z: 180, heading: 0, speed: 44 },
+    hour: 11, plane: "trainer", start: { x: -480, y: 90, z: 80, heading: 0, speed: 44 },
     timeLimit: 110, count: 12,
     spots: [
-      [-960, 90, 180], [-740, 40, -1120], [0, 60, -1100],
-      [1180, 70, -1080], [1480, 40, -360], [180, 30, -1880],
-      [40, 130, 1240], [720, 80, 640], [-820, 110, 1120],
-      [0, 160, 200], [-260, 50, -980], [240, 40, -1360],
+      [-480, 90, 80], [-740, 40, -1120], [0, 60, -1100],
+      [720, 70, -1020], [820, 40, -620], [180, 30, -1880],
+      [280, 130, 780], [320, 80, 480], [-820, 110, 1120],
+      [0, 160, 200], [-260, 50, -980], [-200, 40, -1280],
     ],
   },
 

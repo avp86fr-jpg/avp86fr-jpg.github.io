@@ -12,36 +12,25 @@ export function createMobileLayer(root, input, hooks) {
   const el = document.createElement("div");
   el.id = "mobile-layer";
   el.innerHTML = `
+    <div id="rotate-prompt" class="rotate-prompt" hidden>Tournez l'appareil en paysage</div>
     <div class="stick-base" id="stick" aria-label="Manche">
       <div class="stick-knob" id="stick-knob"></div>
       <div class="ctrl-label">MANCHE</div>
     </div>
-    <div class="throttle-track" id="thr" aria-label="Gaz">
-      <div class="throttle-fill" id="thr-fill"></div>
-      <div class="throttle-knob" id="thr-knob"></div>
-      <div class="ctrl-label">GAZ</div>
-    </div>
-    <button type="button" class="album-btn" id="btn-action">GO</button>
-    <button type="button" class="album-btn" id="btn-cam">CAM</button>
-    <button type="button" class="album-btn" id="btn-pause">II</button>
-    <button type="button" class="album-btn" id="btn-gear">TRAIN</button>
-    <button type="button" class="album-btn" id="btn-fs">PLEIN ÉCRAN</button>
+    <button type="button" class="album-btn boost-btn" id="btn-action">BOOST</button>
+    <button type="button" class="album-btn brake-btn" id="btn-brake">BRAKE</button>
+    <button type="button" class="album-btn pause-btn" id="btn-pause">II</button>
   `;
   root.appendChild(el);
 
   const stick = el.querySelector("#stick");
   const knob = el.querySelector("#stick-knob");
-  const thr = el.querySelector("#thr");
-  const thrFill = el.querySelector("#thr-fill");
-  const thrKnob = el.querySelector("#thr-knob");
   const btnAction = el.querySelector("#btn-action");
-  const btnCam = el.querySelector("#btn-cam");
+  const btnBrake = el.querySelector("#btn-brake");
   const btnPause = el.querySelector("#btn-pause");
-  const btnGear = el.querySelector("#btn-gear");
-  const btnFs = el.querySelector("#btn-fs");
+  const rotate = el.querySelector("#rotate-prompt");
 
-  let stickId = null, thrId = null;
-
+  let stickId = null;
   const opts = { passive: false };
 
   function stickAt(cx, cy) {
@@ -59,18 +48,6 @@ export function createMobileLayer(root, input, hooks) {
     input.setStick(0, 0, false);
     stickId = null;
   }
-  function thrAt(cy) {
-    const r = thr.getBoundingClientRect();
-    const v = 1 - (cy - r.top) / r.height;
-    const t = Math.max(0, Math.min(1, v));
-    setThrVisual(t);
-    input.setThrottleSlider(t);
-  }
-  function setThrVisual(t) {
-    thrFill.style.height = `${t * 100}%`;
-    thrKnob.style.bottom = `${t * 100}%`;
-  }
-  setThrVisual(0);
 
   function bindPtr(node, onDown, onMove, onUp) {
     node.addEventListener("pointerdown", onDown, opts);
@@ -93,65 +70,93 @@ export function createMobileLayer(root, input, hooks) {
     if (e.pointerId === stickId) stickEnd();
   });
 
-  bindPtr(thr, (e) => {
-    try { thr.setPointerCapture(e.pointerId); } catch {}
-    thrId = e.pointerId;
-    thrAt(e.clientY);
+  const downBoost = (e) => {
+    input.setTouchAction(true);
+    input.setTouchBoost?.(true);
+    btnAction.classList.add("lit");
     e.preventDefault();
-    e.stopPropagation();
-  }, (e) => {
-    if (e.pointerId === thrId) { thrAt(e.clientY); e.preventDefault(); }
-  }, (e) => {
-    if (e.pointerId === thrId) thrId = null;
-  });
+  };
+  const endBoost = (e) => {
+    input.setTouchAction(false);
+    input.setTouchBoost?.(false);
+    btnAction.classList.remove("lit");
+    if (e) e.preventDefault();
+  };
+  btnAction.addEventListener("pointerdown", downBoost, opts);
+  btnAction.addEventListener("pointerup", endBoost, opts);
+  btnAction.addEventListener("pointercancel", endBoost, opts);
+  btnAction.addEventListener("touchstart", downBoost, opts);
+  btnAction.addEventListener("touchend", endBoost, opts);
 
-  const downAct = (e) => { input.setTouchAction(true); btnAction.classList.add("lit"); e.preventDefault(); };
-  const endAct = (e) => { input.setTouchAction(false); btnAction.classList.remove("lit"); if (e) e.preventDefault(); };
-  btnAction.addEventListener("pointerdown", downAct, opts);
-  btnAction.addEventListener("pointerup", endAct, opts);
-  btnAction.addEventListener("pointercancel", endAct, opts);
-  btnAction.addEventListener("touchstart", downAct, opts);
-  btnAction.addEventListener("touchend", endAct, opts);
-  btnCam.addEventListener("pointerdown", (e) => { input.state.touchCamera = true; hooks.onCamera?.(); e.preventDefault(); }, opts);
+  const downBrake = (e) => {
+    input.setTouchBrake?.(true);
+    btnBrake.classList.add("lit");
+    e.preventDefault();
+  };
+  const endBrake = (e) => {
+    input.setTouchBrake?.(false);
+    btnBrake.classList.remove("lit");
+    if (e) e.preventDefault();
+  };
+  btnBrake.addEventListener("pointerdown", downBrake, opts);
+  btnBrake.addEventListener("pointerup", endBrake, opts);
+  btnBrake.addEventListener("pointercancel", endBrake, opts);
+  btnBrake.addEventListener("touchstart", downBrake, opts);
+  btnBrake.addEventListener("touchend", endBrake, opts);
+
   btnPause.addEventListener("pointerdown", (e) => { hooks.onPause?.(); e.preventDefault(); }, opts);
-  btnGear.addEventListener("pointerdown", (e) => { hooks.onGear?.(); e.preventDefault(); }, opts);
-  btnFs.addEventListener("pointerdown", (e) => { hooks.onFullscreen?.(); e.preventDefault(); }, opts);
+
+  let askedFs = false;
+  el.addEventListener("pointerdown", () => {
+    if (askedFs) return;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    askedFs = true;
+    hooks.onFullscreen?.();
+  }, { capture: true, passive: true });
 
   function layout(portrait, visible) {
     const ins = safeInsets();
     const show = !!(visible && isTouchUI());
     el.style.display = show ? "block" : "none";
     el.style.pointerEvents = show ? "auto" : "none";
-    const padL = Math.max(16, ins.left + 10);
-    const padR = Math.max(16, ins.right + 10);
-    const padB = Math.max(16, ins.bottom + 12);
-    const padT = Math.max(8, ins.top + 8);
+    document.body.classList.toggle("touch-ui", show);
+    document.body.classList.toggle("touch-portrait", show && !!portrait);
+    if (!show) return;
+
+    const padL = Math.max(12, ins.left + 8);
+    const padR = Math.max(12, ins.right + 8);
+    const padB = Math.max(8, ins.bottom + 8);
+    const padT = Math.max(6, ins.top + 6);
+    const h = window.innerHeight || 390;
+    const w = window.innerWidth || 844;
+
+    rotate.hidden = !portrait;
+    rotate.style.cssText = portrait
+      ? `position:absolute;left:50%;top:${padT}px;transform:translateX(-50%);z-index:8;`
+      : "";
 
     if (portrait) {
-      stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:132px;height:132px;`;
-      thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + 96}px;width:56px;height:180px;`;
-      thr.classList.remove("slim");
-      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:84px;height:84px;border-radius:50%;`;
-      btnCam.style.cssText = `position:absolute;right:${padR + 96}px;bottom:${padB}px;min-width:56px;min-height:56px;`;
-      btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:48px;min-height:48px;`;
-      btnGear.style.cssText = `position:absolute;left:${padL}px;top:${padT}px;min-width:56px;min-height:48px;`;
-      btnFs.style.cssText = `position:absolute;left:${padL + 72}px;top:${padT}px;min-width:56px;min-height:48px;font-size:12px;`;
+      const stickN = Math.min(132, Math.max(108, Math.floor(w * 0.28)));
+      stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:${stickN}px;height:${stickN}px;`;
+      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:88px;height:88px;border-radius:50%;`;
+      btnBrake.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + 100}px;min-width:72px;height:48px;`;
+      btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT + 36}px;min-width:44px;min-height:44px;`;
     } else {
-      stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:118px;height:118px;`;
-      // Wide, easy-to-grab power lever on the far right — never a 20px sliver
-      thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + 84}px;width:56px;height:160px;`;
-      thr.classList.remove("slim");
-      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:72px;height:72px;border-radius:50%;`;
-      btnCam.style.cssText = `position:absolute;right:${padR + 84}px;bottom:${padB}px;min-width:52px;min-height:52px;`;
-      btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:48px;min-height:48px;`;
-      btnGear.style.cssText = `position:absolute;left:${padL}px;top:${padT}px;min-width:56px;min-height:48px;`;
-      btnFs.style.cssText = `position:absolute;left:${padL + 68}px;top:${padT}px;min-width:56px;min-height:48px;font-size:12px;`;
+      const stickN = Math.min(120, Math.max(96, Math.floor(Math.min(h * 0.38, w * 0.16))));
+      const boostN = Math.min(80, Math.max(64, Math.floor(h * 0.22)));
+      stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:${stickN}px;height:${stickN}px;`;
+      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:${boostN}px;height:${boostN}px;border-radius:50%;`;
+      btnBrake.style.cssText = `position:absolute;right:${padR + boostN + 8}px;bottom:${padB}px;min-width:64px;height:48px;`;
+      btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:44px;min-height:44px;z-index:7;`;
     }
   }
 
-  function setThrottle(t) { if (thrId == null) setThrVisual(t); }
+  function setThrottle() { /* arcade: no slider */ }
 
-  return { el, layout, setThrottle, buttons: { btnAction, btnCam, btnPause, btnGear, btnFs }, isTouchUI };
+  return {
+    el, layout, setThrottle, isTouchUI,
+    buttons: { btnAction, btnBrake, btnPause },
+  };
 }
 
 export function iosFullscreenHint() {

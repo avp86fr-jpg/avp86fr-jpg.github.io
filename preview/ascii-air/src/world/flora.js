@@ -118,7 +118,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       if (isPalm) {
         if (n < 0.28) continue;
         palms.push({ x: jx, y: h, z: jz, s: 0.85 + n * 0.5, r: n * 6 });
-      } else if (m === MAT.FOREST || (m === MAT.GRASS && n > 0.40 && h > 6)) {
+      } else if (m === MAT.FOREST || (m === MAT.GRASS && n > 0.34 && h > 6)) {
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
         trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: n > 0.55 });
       }
@@ -129,27 +129,22 @@ export function createFlora(scene, terrain, quality = "medium") {
   const caps = trees.map((list) => Math.min(list.length, Math.floor(list.length * treeFrac)));
   const maxP = Math.min(palms.length, Math.floor(palms.length * Math.min(1, treeFrac + 0.15)));
 
-  const trunkM = flatMat(0x6a4424, MAT.WOOD);
-  const trunkG = trunkGeo();
-  // one trunk instanced mesh for all trees (concat placements)
   const allTrees = [];
   trees.forEach((list, i) => { for (let k = 0; k < caps[i]; k++) allTrees.push(list[k]); });
-  if (allTrees.length) group.add(instance(trunkG, trunkM, allTrees, allTrees.length));
-
-  const sphereG = canopyGeo("sphere");
-  const coneG = canopyGeo("cone");
-  for (let i = 0; i < 3; i++) {
-    const list = trees[i].slice(0, caps[i]);
-    const spheres = list.filter((p) => !p.cone);
-    const cones = list.filter((p) => p.cone);
-    const mat = flatMat(GREENS[i], MAT.FOLIAGE);
-    if (spheres.length) group.add(instance(sphereG, mat, spheres, spheres.length));
-    if (cones.length) group.add(instance(coneG, mat, cones, cones.length));
+  if (allTrees.length) {
+    const tg = trunkGeo();
+    tg.translate(0, 2.2, 0);
+    const cg = canopyGeo("sphere");
+    cg.translate(0, 5.4, 0);
+    const treeG = mergeGeos([tg, cg], MAT.FOLIAGE);
+    group.add(instance(treeG, flatMat(0x3a9a3a, MAT.FOLIAGE), allTrees, allTrees.length));
   }
 
   if (maxP) {
-    group.add(instance(palmTrunkGeo(), flatMat(0x8a6230, MAT.WOOD), palms, maxP));
-    group.add(instance(palmCrownGeo(), flatMat(0x3aa24a, MAT.FOLIAGE), palms, maxP));
+    const pt = palmTrunkGeo();
+    const pc = palmCrownGeo();
+    const palmG = mergeGeos([pt, pc], MAT.FOLIAGE);
+    group.add(instance(palmG, flatMat(0x3aa24a, MAT.FOLIAGE), palms, maxP));
   }
 
   scene.add(group);

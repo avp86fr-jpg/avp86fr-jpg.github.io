@@ -7,6 +7,8 @@ export function createInput(root) {
     pitch: 0, roll: 0, yaw: 0,
     throttle: 0,
     throttleSet: null,
+    boost: false,
+    brake: false,
     action: false,
     actionHeld: false,
     actionPressed: false,
@@ -72,6 +74,8 @@ export function createInput(root) {
     if (any(KEYS.yawRight)) yaw += 1;
     if (any(KEYS.throttleUp)) throttle += 1;
     if (any(KEYS.throttleDown)) throttle -= 1;
+    const boostHeld = any(KEYS.throttleUp) || state.touchBoost || false;
+    const brakeHeld = any(KEYS.throttleDown) || any(KEYS.brake || []) || state.touchBrake || false;
 
     if (state.stick.active) {
       roll = state.stick.x;
@@ -94,9 +98,12 @@ export function createInput(root) {
     const actionHeld = any(KEYS.action) || state.touchAction || !!(gp && gp.action);
     const actionPressed = actionHeld && !actionWas;
     actionWas = actionHeld;
+    const boost = boostHeld || actionHeld;
+    const brake = brakeHeld && !boost;
 
     const out = {
       pitch, roll, yaw, throttle, throttleSet,
+      boost, brake,
       action: actionPressed,
       actionHeld,
       actionPressed,
@@ -123,6 +130,8 @@ export function createInput(root) {
 
   function setThrottleSlider(v) { state.throttleSlider = v == null ? null : clamp(v, 0, 1); }
   function setTouchAction(v) { state.touchAction = v; }
+  function setTouchBoost(v) { state.touchBoost = v; }
+  function setTouchBrake(v) { state.touchBrake = v; }
 
   let gyroOn = false;
   function setGyro(on) {
@@ -160,5 +169,5 @@ export function createInput(root) {
     state.gyroPitch = 0;
   }
 
-  return { update, setStick, setThrottleSlider, setTouchAction, setGyro, disableGyro, calibrateGyro, state, keys };
+  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setGyro, disableGyro, calibrateGyro, state, keys };
 }

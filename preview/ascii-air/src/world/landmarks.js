@@ -150,15 +150,14 @@ function makeLighthouse() {
 
 function makePier() {
   const g = new THREE.Group();
-  const len = 180;
-  add(g, box(10, 1, len, 0x7a5a32, MAT.WOOD), 0, 1.2, 0);
-  for (let i = -6; i <= 6; i++) {
-    add(g, box(0.6, 3.2, 0.6, 0x5a4020, MAT.WOOD), -4, -0.4, i * 12);
-    add(g, box(0.6, 3.2, 0.6, 0x5a4020, MAT.WOOD), 4, -0.4, i * 12);
+  const len = 56;
+  add(g, box(8, 1, len, 0x7a5a32, MAT.WOOD), 0, 1.2, 0);
+  for (let i = -2; i <= 2; i++) {
+    add(g, box(0.6, 3.2, 0.6, 0x5a4020, MAT.WOOD), -3.4, -0.4, i * 10);
+    add(g, box(0.6, 3.2, 0.6, 0x5a4020, MAT.WOOD), 3.4, -0.4, i * 10);
   }
-  // end hut
-  add(g, box(8, 5, 8, 0x8a6238, MAT.WOOD), 0, 4, len / 2 - 6);
-  add(g, cone(6, 4, 4, 0x5a3020, MAT.ROOF), 0, 8.5, len / 2 - 6);
+  add(g, box(6, 4, 6, 0x8a6238, MAT.WOOD), 0, 3.6, len / 2 - 4);
+  add(g, cone(5, 3.2, 4, 0x5a3020, MAT.ROOF), 0, 7.2, len / 2 - 4);
   return g;
 }
 
@@ -602,25 +601,32 @@ export function createLandmarks(scene, terrain, sky) {
       river.name = "lava";
       group.add(river);
     }
-    const n = 70;
-    const p = new Float32Array(n * 3);
-    const id = new Float32Array(n * 2);
-    for (let i = 0; i < n; i++) {
-      p[i * 3] = (Math.random() - 0.5) * 40;
-      p[i * 3 + 1] = Math.random() * 90;
-      p[i * 3 + 2] = (Math.random() - 0.5) * 40;
-      id[i * 2] = MAT.CLOUD; id[i * 2 + 1] = 0;
-    }
-    const pg = new THREE.BufferGeometry();
-    pg.setAttribute("position", new THREE.BufferAttribute(p, 3));
-    pg.setAttribute("aId", new THREE.BufferAttribute(id, 2));
-    const smoke = new THREE.Points(pg, new THREE.PointsMaterial({
-      color: 0xb8b0a8, size: 7, sizeAttenuation: true, transparent: true, opacity: 0.65, depthWrite: false,
-    }));
-    smoke.name = "smoke";
-    smoke.position.set(vx, vy + 4, vz);
-    group.add(smoke);
-    anim.push({ smoke, t: 0 });
+    const plume = new THREE.Group();
+    plume.name = "smoke";
+    plume.position.set(vx, vy + 8, vz);
+    const puffMat = new THREE.MeshLambertMaterial({ color: 0xc8c2b8, emissive: 0x8a8680, emissiveIntensity: 0.25, flatShading: false });
+    patchMaterialIdAlpha(puffMat);
+    puffMat.userData.matId = MAT.CLOUD;
+    const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.CLOUD, 0);
+    const spots = [
+      [0, 10, 0, 16], [10, 22, 4, 18], [-8, 28, -6, 15], [4, 42, 8, 20],
+      [-12, 50, 2, 17], [8, 64, -4, 22], [-6, 78, 6, 18], [2, 96, 0, 24],
+      [14, 88, 10, 16], [-16, 70, -8, 15],
+    ];
+    const inst = new THREE.InstancedMesh(puffGeo, puffMat, spots.length);
+    inst.name = "smoke";
+    const dummy = new THREE.Object3D();
+    spots.forEach((s, i) => {
+      dummy.position.set(s[0], s[1], s[2]);
+      dummy.scale.set(s[3], s[3] * 0.72, s[3]);
+      dummy.rotation.set(0, i * 0.4, 0);
+      dummy.updateMatrix();
+      inst.setMatrixAt(i, dummy.matrix);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    plume.add(inst);
+    group.add(plume);
+    anim.push({ smoke: plume, t: 0 });
   }
 
   // Town houses
@@ -670,11 +676,11 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(980, 0.9, -880);
+  steamer.position.set(560, 0.9, -900);
   steamer.rotation.y = -0.9;
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[720, -1020, 0x2a6cb6], [860, -960, 0xe8e0c8], [1100, -920, 0xc05030]];
+  const coastal = [[440, -1000, 0x2a6cb6], [620, -860, 0xe8e0c8], [700, -1100, 0xc05030], [500, -780, 0xc08020]];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
@@ -687,12 +693,12 @@ export function createLandmarks(scene, terrain, sky) {
   // pier extends south (+Z in our layout? south is +Z if Z south... we used Z north, south is negative Z)
   // Sunny beach at z=-1280, pier at (240, -1360) extending further south (more negative Z)
   pier.position.set(LANDMARKS.pier.x, 0.6, LANDMARKS.pier.z);
-  pier.rotation.y = 0; // pier local Z is its length; rotate so +Z local goes south (−world Z)
-  pier.rotation.y = Math.PI;
+  // Deck runs west into the harbor, never along the south-looking hero camera.
+  pier.rotation.y = Math.PI / 2;
   group.add(pier);
 
   const wreck = makeWreck();
-  wreck.position.set(LANDMARKS.wreck.x, -0.4, LANDMARKS.wreck.z);
+  wreck.position.set(LANDMARKS.wreck.x, -2.4, LANDMARKS.wreck.z);
   group.add(wreck);
 
   const light = makeLighthouse();
@@ -713,7 +719,7 @@ export function createLandmarks(scene, terrain, sky) {
 
   const mills = [];
   const millSpots = [
-    [-960, 180], [-1040, 80], [-880, 260], [-1080, 260], [-900, 40],
+    [-480, 80], [-560, 20], [-400, 140], [-620, 120], [-520, -40],
   ];
   for (const [x, z] of millSpots) {
     const m = makeWindmill();
@@ -809,18 +815,22 @@ export function createLandmarks(scene, terrain, sky) {
       }
       for (const a of anim) {
         if (!a.smoke) continue;
-        const arr = a.smoke.geometry.attributes.position.array;
-        for (let i = 0; i < arr.length; i += 3) {
-          arr[i + 1] += dt * (10 + (i % 5) * 2);
-          arr[i] += Math.sin(time * 0.6 + i) * dt * 2.2;
-          arr[i + 2] += Math.cos(time * 0.4 + i * 0.3) * dt * 1.6;
-          if (arr[i + 1] > 120) {
-            arr[i + 1] = 0;
-            arr[i] = (Math.random() - 0.5) * 40;
-            arr[i + 2] = (Math.random() - 0.5) * 40;
+        if (a.smoke.isPoints && a.smoke.geometry && a.smoke.geometry.attributes.position) {
+          const arr = a.smoke.geometry.attributes.position.array;
+          for (let i = 0; i < arr.length; i += 3) {
+            arr[i + 1] += dt * (10 + (i % 5) * 2);
+            arr[i] += Math.sin(time * 0.6 + i) * dt * 2.2;
+            arr[i + 2] += Math.cos(time * 0.4 + i * 0.3) * dt * 1.6;
+            if (arr[i + 1] > 120) {
+              arr[i + 1] = 0;
+              arr[i] = (Math.random() - 0.5) * 40;
+              arr[i + 2] = (Math.random() - 0.5) * 40;
+            }
           }
+          a.smoke.geometry.attributes.position.needsUpdate = true;
+        } else {
+          a.smoke.rotation.y += dt * 0.08;
         }
-        a.smoke.geometry.attributes.position.needsUpdate = true;
       }
     },
   };
