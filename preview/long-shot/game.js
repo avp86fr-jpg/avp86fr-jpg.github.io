@@ -33214,12 +33214,27 @@ void main() {
   }
   function pickTier(setting) {
     if (setting && setting !== "auto" && TIERS[setting]) return isMobile() && MOBILE[setting] ? MOBILE[setting] : TIERS[setting];
-    if (isMobile()) return Math.min(screen.width, screen.height) * (devicePixelRatio || 1) > 1e3 && (navigator.hardwareConcurrency || 4) >= 8 ? MOBILE.medium : MOBILE.low;
+    if (isMobile()) return G.settings && G.settings.autoTier === "medium" ? MOBILE.medium : MOBILE.low;
     return TIERS.high;
   }
   function adaptQuality(dt, onChange) {
     if (G.settings.quality !== "auto") return;
     const fps = G.stats.fps;
+    if (G.quality.mobile) {
+      if (G.quality.name === "low") {
+        smoothT = fps > 52 && G.quality.dynPr >= 1 ? smoothT + dt : Math.max(0, smoothT - dt * 2);
+        if (smoothT > 40 && G.settings.autoTier !== "medium") {
+          G.settings.autoTier = "medium";
+          onChange("tierUp");
+        }
+      } else {
+        roughT = fps < 24 && G.quality.dynPr <= 0.81 ? roughT + dt : Math.max(0, roughT - dt);
+        if (roughT > 8 && G.settings.autoTier !== "low") {
+          G.settings.autoTier = "low";
+          onChange("tierDown");
+        }
+      }
+    }
     const target = G.settings.fpsCap >= 60 ? 50 : 27;
     if (fps < target) {
       lowTime += dt;
@@ -33241,7 +33256,7 @@ void main() {
       onChange("pr");
     }
   }
-  var TIERS, MOBILE, lowTime, highTime;
+  var TIERS, MOBILE, lowTime, highTime, smoothT, roughT;
   var init_quality = __esm({
     "src/core/quality.js"() {
       init_state();
@@ -33251,11 +33266,13 @@ void main() {
         high: { name: "high", pr: 1, maxPr: 2, shadows: true, shadowSize: 2048, msaa: 4, terrainSeg: 320, trees: 1, particles: 2600, crowd: 1, far: 18e3, hdr: true, grass: 1, bloom: true }
       };
       MOBILE = {
-        low: { ...TIERS.low, mobile: true, maxPr: 1, particles: 320, trees: 0.32 },
-        medium: { ...TIERS.medium, mobile: true, maxPr: 1.25, shadowSize: 768, particles: 700, trees: 0.6 }
+        low: { ...TIERS.low, mobile: true, maxPr: 1, particles: 320, trees: 0.3, terrainSeg: 120, far: 8e3 },
+        medium: { ...TIERS.medium, mobile: true, maxPr: 1.25, shadowSize: 768, particles: 700, trees: 0.5, terrainSeg: 160 }
       };
       lowTime = 0;
       highTime = 0;
+      smoothT = 0;
+      roughT = 0;
     }
   });
 
@@ -33669,9 +33686,18 @@ void main() {
     return mat2;
   }
   function mat(color, o = {}) {
-    const k = JSON.stringify([color, o]);
+    const lam = !!(G.quality && G.quality.mobile) && (o.metal ?? 0) < 0.4 && !o.transparent && !o.keepPBR;
+    const k = JSON.stringify([color, o, lam]);
     if (cache.has(k) && !o.unique) return cache.get(k);
-    const m = new MeshStandardMaterial({
+    const m = lam ? new MeshLambertMaterial({
+      color: new Color(color),
+      emissive: o.emissive ? new Color(o.emissive) : new Color(0),
+      emissiveIntensity: o.ei ?? 1,
+      vertexColors: !!o.vc,
+      flatShading: !!o.flat,
+      side: o.side ?? FrontSide,
+      depthWrite: o.depthWrite ?? true
+    }) : new MeshStandardMaterial({
       color: new Color(color),
       roughness: o.rough ?? 0.85,
       metalness: o.metal ?? 0,
@@ -33695,6 +33721,7 @@ void main() {
   var init_materials = __esm({
     "src/render/materials.js"() {
       init_three_module();
+      init_state();
       HAZE = {
         uHazeColor: { value: new Color(0.6, 0.65, 0.75) },
         uSunHazeColor: { value: new Color(1, 0.7, 0.4) },
@@ -35860,7 +35887,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               cx.globalAlpha = 0.8;
               cx.lineWidth = 1.5;
               cx.beginPath();
-              for (const [sx, sy] of [[-1, 0], [1, 0], [-1, 1], [1, 1]]) {
+              for (let q = 0; q < 4; q++) {
+                const sx = q & 1 ? 1 : -1, sy = q >> 1;
                 const x = hx2 + sx * bw2, y = by0 + sy * bh, dy = sy ? -l : l;
                 cx.moveTo(x, y + dy);
                 cx.lineTo(x, y);
@@ -37463,7 +37491,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function pineGeometry(snow = 0.6, seed = 0, palette = {}) {
     const trunk = palette.trunk || "#3a2a1c", leaf = new Color(palette.leaf || "#1f3524"), snowC = new Color(palette.snow || "#e8eef6");
-    const lite = !!palette.lite, arms = lite ? 8 : 11, tiers = lite ? 5 : 7, R = mulberry32(17 + Math.floor(seed * 100));
+    const mob = !!(G.quality && G.quality.mobile), lite = !!palette.lite, arms = mob ? 6 : lite ? 8 : 11, tiers = mob ? 4 : lite ? 5 : 7, R = mulberry32(17 + Math.floor(seed * 100));
     const parts = [[new CylinderGeometry(0.1, 0.24, 3.2, lite ? 5 : 7).translate(0, 1.6, 0), trunk]];
     const H0 = 1.5, H1 = 12.8;
     for (let i = 0; i < tiers; i++) {
@@ -37583,7 +37611,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       grp.userData.lod = { near: near2.length, far: far.length };
       return grp;
     }
-    const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+    const m = G.quality && G.quality.mobile ? new MeshLambertMaterial({ vertexColors: true }) : new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
     hazeify(m, { sway: o.sway ?? 0.5 });
     const im = makeForestMesh(geo, m, count, placeFn, o.tries || 4);
     im.castShadow = o.cast ?? false;
@@ -37613,6 +37641,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return vnoise(x + z * 0.71, y - z * 0.53, s) * 0.5 + vnoise(y * 1.13 + 3.1, z * 1.07 - x * 0.31, s + 1) * 0.5;
   }
   function rockGeometry(seed = 1, detail = 1, o = {}) {
+    if (G.quality && G.quality.mobile) detail = Math.max(0, detail - 1);
     const det = Math.max(1, Math.min(8, detail * 2 + 1));
     let g = new IcosahedronGeometry(1, det);
     g.deleteAttribute("normal");
@@ -37659,7 +37688,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return g;
   }
   function sandbagGeometry(seed = 0) {
-    let g = new BoxGeometry(0.62, 0.2, 0.34, 8, 3, 5);
+    const lo = G.quality && G.quality.mobile;
+    let g = lo ? new BoxGeometry(0.62, 0.2, 0.34, 5, 2, 3) : new BoxGeometry(0.62, 0.2, 0.34, 8, 3, 5);
     g.deleteAttribute("normal");
     g.deleteAttribute("uv");
     g = mergeVertices(g);
@@ -37701,7 +37731,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return out;
   }
   function butteGeometry(seed, radius, height4, o = {}) {
-    const R = mulberry32(seed * 31 + 7), seg = o.seg || 48, tiersN = 3 + Math.floor(R() * 3), parts = [];
+    const R = mulberry32(seed * 31 + 7), seg = o.seg || (G.quality && G.quality.mobile ? G.quality.name === "low" ? 16 : 22 : 48), tiersN = 3 + Math.floor(R() * 3), parts = [];
     const cols = o.colors || ["#b8693c", "#d09060", "#9c5634", "#c47c4c", "#e0b080"];
     const outline = (a, s) => 1 + 0.18 * (fbm(Math.cos(a) * 2 + seed, Math.sin(a) * 2, 3, s) - 0.5) * 2 + 0.06 * Math.sin(a * 7 + seed);
     {
@@ -38002,8 +38032,32 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return puffTex;
   }
   function sprite(tex2, color, additive, opacity) {
-    const s = new Sprite(new SpriteMaterial({ map: tex2, color, transparent: true, depthWrite: false, blending: additive ? AdditiveBlending : NormalBlending, opacity }));
+    const key = tex2.id * 2 + (additive ? 1 : 0);
+    const list = pool.get(key);
+    let s = list && list.pop();
+    if (s) {
+      s.material.color.copy(color);
+      s.material.opacity = opacity;
+      s.material.rotation = 0;
+      s.visible = true;
+      s.rotation.set(0, 0, 0);
+    } else {
+      s = new Sprite(new SpriteMaterial({ map: tex2, color, transparent: true, depthWrite: false, blending: additive ? AdditiveBlending : NormalBlending, opacity }));
+      s.userData.fxKey = key;
+    }
     return s;
+  }
+  function release(s) {
+    s.removeFromParent();
+    const key = s.userData.fxKey;
+    let list = pool.get(key);
+    if (!list) pool.set(key, list = []);
+    if (list.length < 160) list.push(s);
+    else s.material.dispose();
+  }
+  function disposeFXPool() {
+    for (const list of pool.values()) for (const s of list) s.material.dispose();
+    pool.clear();
   }
   function spawnFX(kind, pos, o = {}) {
     const scene = G.world?.scene;
@@ -38051,22 +38105,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (f.kind === "fire") p.s.material.color.setRGB(2 * (1 - k * 0.5), 1.2 * (1 - k), 0.4 * (1 - k));
       }
       if (!alive) {
-        for (const p of f.parts) {
-          p.s.removeFromParent();
-          p.s.material.dispose();
-        }
+        for (const p of f.parts) release(p.s);
         live.splice(i, 1);
       }
     }
   }
   function clearFX() {
-    for (const f of live) for (const p of f.parts) {
-      p.s.removeFromParent();
-      p.s.material.dispose();
-    }
+    for (const f of live) for (const p of f.parts) release(p.s);
     live.length = 0;
   }
-  var live, puffTex;
+  var live, puffTex, pool;
   var init_fx = __esm({
     "src/render/fx.js"() {
       init_three_module();
@@ -38074,6 +38122,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_state();
       live = [];
       puffTex = null;
+      pool = /* @__PURE__ */ new Map();
     }
   });
 
@@ -38311,7 +38360,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     g.setAttribute("color", new BufferAttribute(col, 3));
     g.computeBoundingSphere();
-    const m = new MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? 0.92, metalness: 0 });
+    const m = G.quality && G.quality.mobile ? new MeshLambertMaterial({ vertexColors: true }) : new MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? 0.92, metalness: 0 });
     hazeify(m, { detail: o.detail ?? 0.25 });
     const mesh = new Mesh(g, m);
     mesh.receiveShadow = true;
@@ -38342,6 +38391,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   var init_terrain = __esm({
     "src/render/terrain.js"() {
       init_three_module();
+      init_state();
       init_materials();
     }
   });
@@ -38663,7 +38713,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const s = 0.8 + rnd() * 0.9, sy = 0.9 + rnd() * 0.4;
       if (!lofOK(x, z, h, s, sy)) return null;
       return { x, y: h, z, r: rnd() * 6.28, s, sy };
-    }, { cast: false, sway: 0.25, isNear: (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 || -p.z < 420 }));
+    }, { cast: false, sway: 0.25, isNear: tier.mobile ? (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 170 || -p.z < 260 : (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 || -p.z < 420 }));
     S2.add(makeForest(pine, 60, (i) => {
       const a = rnd() * 6.28, r = 62 + rnd() * 70;
       const x = 30 + Math.cos(a) * r, z = -790 + Math.sin(a) * r * 0.7;
@@ -38978,6 +39028,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return nestCut(x, z, heightRaw(x, z), NEST02, 0.35, 40, 160);
   }
   function buildRefinery(tier) {
+    SK = tier.mobile ? tier.name === "low" ? 0.6 : 0.8 : 1;
     const w = baseWorld({
       haze: "#d8c2a0",
       sunHaze: "#ffe0b0",
@@ -39037,26 +39088,26 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.tanks = [];
     for (let i = 0; i < 6; i++) {
       const x = -200 + i * 34, z = -1030 + i % 2 * 6;
-      P.push([tf(new CylinderGeometry(13, 13, 15, 28), x, 7.5, z), i % 3 === 1 ? "#c9c4b8" : white]);
-      P.push([tf(new CylinderGeometry(13.05, 13.05, 1.2, 28), x, 4, z), rust]);
-      P.push([tf(new SphereGeometry(13, 28, 6, 0, Math.PI * 2, 0, 0.35), x, 15 - 13 * Math.cos(0.35), z), "#d6d2ca"]);
+      P.push([tf(cylG(13, 13, 15, 28), x, 7.5, z), i % 3 === 1 ? "#c9c4b8" : white]);
+      P.push([tf(cylG(13.05, 13.05, 1.2, 28), x, 4, z), rust]);
+      P.push([tf(sphG(13, 28, 6, 0, Math.PI * 2, 0, 0.35), x, 15 - 13 * Math.cos(0.35), z), "#d6d2ca"]);
       P.push([tf(new BoxGeometry(0.8, 15, 0.8), x + 12.8, 7.5, z + 1.5, 0, 0, 0), dark]);
       w.colliders.push(cylCollider(x, z, 13, 0, 17, { name: "storage tank", metal: true }));
     }
     for (let i = 0; i < 3; i++) {
       const x = 20 + i * 18, z = -990, H = 34 + i * 7;
-      P.push([tf(new CylinderGeometry(2.6, 3, H, 16), x, H / 2, z), steel]);
+      P.push([tf(cylG(2.6, 3, H, 16), x, H / 2, z), steel]);
       for (let k = 1; k < 5; k++) {
-        P.push([tf(new CylinderGeometry(4.2, 4.2, 0.25, 16), x, k * H / 5, z), dark]);
-        P.push([tf(new CylinderGeometry(4.25, 4.25, 1, 16, 1, true), x, k * H / 5 + 0.6, z), yellow]);
+        P.push([tf(cylG(4.2, 4.2, 0.25, 16), x, k * H / 5, z), dark]);
+        P.push([tf(cylG(4.25, 4.25, 1, 16, 1, true), x, k * H / 5 + 0.6, z), yellow]);
       }
       w.colliders.push(cylCollider(x, z, 3, 0, H, { name: "column", metal: true }));
     }
     for (let i = 0; i < 9; i++) P.push([tf(new BoxGeometry(0.5, 6, 0.5), -180 + i * 24, 3, -962), dark]);
-    for (let k = 0; k < 4; k++) P.push([tf(new CylinderGeometry(0.45, 0.45, 200, 10), -84, 5.6 + k % 2 * 0.9, -961.5 + (k - 1.5) * 0.9, 0, 0, Math.PI / 2), k === 2 ? "#c2b23a" : steel]);
-    for (let k = 0; k < 3; k++) P.push([tf(new CylinderGeometry(0.35, 0.35, 70, 8), 30 + (k - 1) * 0.8, 4.5, -960 - 35, Math.PI / 2), steel]);
-    P.push([tf(new CylinderGeometry(0.8, 1.4, 62, 10), 110, 31, -1070), "#bdb6aa"]);
-    for (let k = 1; k < 6; k++) P.push([tf(new CylinderGeometry(1, 1, 1.6, 10, 1, true), 110, k * 11, -1070), k % 2 ? red : white]);
+    for (let k = 0; k < 4; k++) P.push([tf(cylG(0.45, 0.45, 200, 10), -84, 5.6 + k % 2 * 0.9, -961.5 + (k - 1.5) * 0.9, 0, 0, Math.PI / 2), k === 2 ? "#c2b23a" : steel]);
+    for (let k = 0; k < 3; k++) P.push([tf(cylG(0.35, 0.35, 70, 8), 30 + (k - 1) * 0.8, 4.5, -960 - 35, Math.PI / 2), steel]);
+    P.push([tf(cylG(0.8, 1.4, 62, 10), 110, 31, -1070), "#bdb6aa"]);
+    for (let k = 1; k < 6; k++) P.push([tf(cylG(1, 1, 1.6, 10, 1, true), 110, k * 11, -1070), k % 2 ? red : white]);
     {
       const beam = (x1, y1, z1, x2, y2, z2, t, c) => {
         const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1, L = Math.hypot(dx, dy, dz);
@@ -39080,25 +39131,25 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       lattice(66, -948, 4, 2, 4, 6, 6);
       for (let i = 0; i < 3; i++) P.push([tf(new CapsuleGeometry(1.5, 7, 4, 14), 72 + i * 7, 13.6, -954, 0, 0, Math.PI / 2), i === 1 ? "#d8d4cc" : "#b8b4ac"]);
       for (let i = 0; i < 2; i++) {
-        P.push([tf(new CylinderGeometry(1.2, 1.2, 14, 14), 74 + i * 12, 31, -956), steel]);
-        P.push([tf(new SphereGeometry(1.2, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), 74 + i * 12, 38, -956), steel]);
+        P.push([tf(cylG(1.2, 1.2, 14, 14), 74 + i * 12, 31, -956), steel]);
+        P.push([tf(sphG(1.2, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), 74 + i * 12, 38, -956), steel]);
       }
       w.colliders.push(boxCollider(78, 12, -954, 12.5, 12, 6.5, { name: "process unit", metal: true }));
       for (const [x, z, H, r] of [[-12, -1072, 52, 3.2], [-2, -1080, 60, 2.4], [8, -1068, 44, 2.8], [140, -985, 48, 2.6]]) {
-        P.push([tf(new CylinderGeometry(r, r * 1.08, H, 18), x, H / 2, z), "#c9c6bf"]);
-        P.push([tf(new SphereGeometry(r, 18, 6, 0, Math.PI * 2, 0, Math.PI / 2), x, H, z), "#c9c6bf"]);
+        P.push([tf(cylG(r, r * 1.08, H, 18), x, H / 2, z), "#c9c6bf"]);
+        P.push([tf(sphG(r, 18, 6, 0, Math.PI * 2, 0, Math.PI / 2), x, H, z), "#c9c6bf"]);
         for (let k = 1; k < 6; k++) {
           const y = k * H / 6;
-          P.push([tf(new CylinderGeometry(r + 1.4, r + 1.4, 0.2, 18, 1, false, 0, Math.PI * 1.4), x, y, z), "#4a4e52"]);
-          P.push([tf(new CylinderGeometry(r + 1.45, r + 1.45, 0.9, 18, 1, true, 0, Math.PI * 1.4), x, y + 0.55, z), yellow]);
+          P.push([tf(cylG(r + 1.4, r + 1.4, 0.2, 18, 1, false, 0, Math.PI * 1.4), x, y, z), "#4a4e52"]);
+          P.push([tf(cylG(r + 1.45, r + 1.45, 0.9, 18, 1, true, 0, Math.PI * 1.4), x, y + 0.55, z), yellow]);
         }
         P.push([tf(new BoxGeometry(0.6, H, 0.6), x + r + 0.4, H / 2, z), "#5a5e62"]);
-        P.push([tf(new CylinderGeometry(0.5, 0.5, H * 0.9, 8), x - r - 0.6, H * 0.45, z + 0.5), "#8f9396"]);
+        P.push([tf(cylG(0.5, 0.5, H * 0.9, 8), x - r - 0.6, H * 0.45, z + 0.5), "#8f9396"]);
         w.colliders.push(cylCollider(x, z, r, 0, H, { name: "column", metal: true }));
       }
       for (const [x, z] of [[150, -1040], [160, -1048]]) {
-        P.push([tf(new CylinderGeometry(1.6, 2.6, 78, 14), x, 39, z), "#d9d5cc"]);
-        for (let k = 0; k < 3; k++) P.push([tf(new CylinderGeometry(1.75 - k * 0, 1.75, 3, 14, 1, true), x, 70 - k * 7, z), k % 2 ? white : red]);
+        P.push([tf(cylG(1.6, 2.6, 78, 14), x, 39, z), "#d9d5cc"]);
+        for (let k = 0; k < 3; k++) P.push([tf(cylG(1.75 - k * 0, 1.75, 3, 14, 1, true), x, 70 - k * 7, z), k % 2 ? white : red]);
         w.colliders.push(cylCollider(x, z, 2.4, 0, 78, { name: "stack", metal: true }));
       }
       for (let i = 0; i < 12; i++) {
@@ -39108,22 +39159,22 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         beam(x, 4.5, -1010, x, 4.5, -1016, 0.35, dark);
         beam(x, 9, -1010, x, 9, -1016, 0.35, dark);
       }
-      for (let k = 0; k < 6; k++) P.push([tf(new CylinderGeometry(0.4, 0.4, 132, 10), 46, k < 3 ? 4.95 : 9.45, -1011 - k % 3 * 2.2, 0, 0, Math.PI / 2), k === 1 ? "#c2b23a" : k === 4 ? "#7d8a96" : steel]);
+      for (let k = 0; k < 6; k++) P.push([tf(cylG(0.4, 0.4, 132, 10), 46, k < 3 ? 4.95 : 9.45, -1011 - k % 3 * 2.2, 0, 0, Math.PI / 2), k === 1 ? "#c2b23a" : k === 4 ? "#7d8a96" : steel]);
       for (let i = 0; i < 5; i++) {
         P.push([tf(new BoxGeometry(10, 1.4, 6), -8 + i * 24, 10.6, -1013), "#8d9196"]);
-        for (const dx of [-2.5, 2.5]) P.push([tf(new CylinderGeometry(1.9, 1.9, 0.3, 14), -8 + i * 24 + dx, 11.4, -1013), "#2c2f33"]);
+        for (const dx of [-2.5, 2.5]) P.push([tf(cylG(1.9, 1.9, 0.3, 14), -8 + i * 24 + dx, 11.4, -1013), "#2c2f33"]);
       }
       for (const [x, z] of [[150, -930], [175, -945]]) {
-        P.push([tf(new SphereGeometry(8, 22, 14), x, 11, z), white]);
+        P.push([tf(sphG(8, 22, 14), x, 11, z), white]);
         for (let k = 0; k < 8; k++) {
           const a = k / 8 * Math.PI * 2;
           beam(x + Math.cos(a) * 7.2, 0, z + Math.sin(a) * 7.2, x + Math.cos(a) * 7.6, 11, z + Math.sin(a) * 7.6, 0.5, "#9a9da0");
         }
-        P.push([tf(new CylinderGeometry(8.05, 8.05, 0.8, 22, 1, true), x, 11, z), rust]);
+        P.push([tf(cylG(8.05, 8.05, 0.8, 22, 1, true), x, 11, z), rust]);
         w.colliders.push(cylCollider(x, z, 8, 0, 19, { name: "sphere tank", metal: true }));
       }
       for (const [x, z] of [[-160, -840], [40, -840], [-200, -980], [120, -900], [-110, -1e3]]) {
-        P.push([tf(new CylinderGeometry(0.15, 0.25, 16, 6), x, 8, z), "#9a9da0"]);
+        P.push([tf(cylG(0.15, 0.25, 16, 6), x, 8, z), "#9a9da0"]);
         P.push([tf(new BoxGeometry(2.2, 0.5, 0.6), x, 16, z), "#4a4e52"]);
       }
       for (const [x, z, sx, sz] of [[78, -955, 34, 22], [-2, -1074, 40, 30], [-115, -1033, 215, 42], [162, -938, 50, 34], [45, -1013, 140, 12], [36, -990, 62, 16]]) {
@@ -39132,7 +39183,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       }
       for (let i = 0; i < 14; i++) {
         const x = -900 + i * 120 + i % 3 * 25, z = -2600 - i % 4 * 90, H = 25 + i * 37 % 50;
-        P.push([tf(new CylinderGeometry(2 + i % 3, 3 + i % 3, H, 8), x, heightRaw(x, z) + H / 2, z), "#b9ad9a"]);
+        P.push([tf(cylG(2 + i % 3, 3 + i % 3, H, 8), x, heightRaw(x, z) + H / 2, z), "#b9ad9a"]);
       }
     }
     P.push([tf(new BoxGeometry(26, 8, 14), -6, 4, -880), "#c8bba5"]);
@@ -39144,7 +39195,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     P.push([tf(new BoxGeometry(26.6, 1, 0.25), -6, 8.9, -872.8), "#b0a48f"]);
     P.push([tf(new BoxGeometry(0.3, 18, 0.3), 3, 17, -884), steel]);
     for (let k = 0; k < 6; k++) P.push([tf(new BoxGeometry(2.4, 0.08, 0.08), 3, 10 + k * 3, -884, 0, k * 0.5), steel]);
-    P.push([tf(new CylinderGeometry(0.06, 0.06, 5, 6), -17, 10.7, -876), "#ddd"]);
+    P.push([tf(cylG(0.06, 0.06, 5, 6), -17, 10.7, -876), "#ddd"]);
     for (let i = 0; i < 16; i++) P.push([tf(new BoxGeometry(1.6, 0.2, 0.6), 8, 0.25 + i * 0.5, -885 + i * 0.6), dark]);
     P.push([tf(new BoxGeometry(4, 3, 4), -78, 1.5, -818), "#cbbfa8"]);
     P.push([tf(new BoxGeometry(0.6, 5, 0.6), -66, 2.5, -818), red]);
@@ -39171,7 +39222,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let i = 0; i < 3; i++) {
       const x = -96 + i * 13, z = -912;
       P.push([tf(new CapsuleGeometry(2, 8, 4, 16), x, 2.6, z, Math.PI / 2, 0, 0), "#d9d6cf"]);
-      P.push([tf(new CylinderGeometry(2.04, 2.04, 1.2, 16), x, 2.6, z, Math.PI / 2), red]);
+      P.push([tf(cylG(2.04, 2.04, 1.2, 16), x, 2.6, z, Math.PI / 2), red]);
       P.push([tf(new BoxGeometry(3.2, 0.6, 1.2), x, 0.3, z - 3), dark]);
       P.push([tf(new BoxGeometry(3.2, 0.6, 1.2), x, 0.3, z + 3), dark]);
       w.chain.push(new Vector3(x, 2.6, z));
@@ -39183,7 +39234,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let i = 0; i < 70; i++) {
       const x = -220 + rnd() * 320, z = -1070 + rnd() * 240;
       if (Math.abs(z + 1030) < 18 || x > -110 && x < -50 && z > -925 && z < -895) continue;
-      if (rnd() < 0.6) P.push([tf(new CylinderGeometry(0.4, 0.4, 1.2, 10), x, 0.6, z), [red, "#3d5b7a", "#4a4a3a", yellow][Math.floor(rnd() * 4)]]);
+      if (rnd() < 0.6) P.push([tf(cylG(0.4, 0.4, 1.2, 10), x, 0.6, z), [red, "#3d5b7a", "#4a4a3a", yellow][Math.floor(rnd() * 4)]]);
       else P.push([tf(new BoxGeometry(1.6, 1.2, 1.2), x, 0.6, z, 0, rnd() * 3), "#8a6a42"]);
     }
     const fence = [];
@@ -39207,14 +39258,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         for (let k = 0; k < 22; k++) {
           const a = 0.4 + k * 0.11, y = 0.6 + k * 0.66;
           P.push([tf(new BoxGeometry(1, 0.1, 0.32), x + Math.cos(a) * 13.6, y, z + Math.sin(a) * 13.6, 0, -a, 0), grate]);
-          if (k % 2 === 0) P.push([tf(new CylinderGeometry(0.04, 0.04, 1.1, 4), x + Math.cos(a) * 14.15, y + 0.55, z + Math.sin(a) * 14.15), rail]);
+          if (k % 2 === 0) P.push([tf(cylG(0.04, 0.04, 1.1, 4), x + Math.cos(a) * 14.15, y + 0.55, z + Math.sin(a) * 14.15), rail]);
         }
-        P.push([tf(new TorusGeometry(12.6, 0.05, 4, 40), x, 15.9, z, Math.PI / 2), rail]);
-        P.push([tf(new TorusGeometry(13.2, 0.16, 4, 40), x, 11, z, Math.PI / 2), "#b8b2a6"]);
+        P.push([tf(torG(12.6, 0.05, 4, 40), x, 15.9, z, Math.PI / 2), rail]);
+        P.push([tf(torG(13.2, 0.16, 4, 40), x, 11, z, Math.PI / 2), "#b8b2a6"]);
         for (let k = 0; k < 3; k++) {
           const a = k * 2.1 + 1;
-          P.push([tf(new CylinderGeometry(0.4, 0.4, 2.4, 10), x + Math.cos(a) * 13.6, 1.2, z + Math.sin(a) * 13.6, 0, 0, Math.PI / 2), steel]);
-          P.push([tf(new CylinderGeometry(0.62, 0.62, 0.12, 10), x + Math.cos(a) * 14.4, 1.2, z + Math.sin(a) * 14.4, 0, 0, Math.PI / 2), dark]);
+          P.push([tf(cylG(0.4, 0.4, 2.4, 10), x + Math.cos(a) * 13.6, 1.2, z + Math.sin(a) * 13.6, 0, 0, Math.PI / 2), steel]);
+          P.push([tf(cylG(0.62, 0.62, 0.12, 10), x + Math.cos(a) * 14.4, 1.2, z + Math.sin(a) * 14.4, 0, 0, Math.PI / 2), dark]);
         }
       }
       P.push([tf(new BoxGeometry(200, 0.12, 1.2), -84, 7.2, -963.8), grate]);
@@ -39227,20 +39278,20 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       for (let i = 0; i < 9; i++) P.push([tf(new BoxGeometry(6, 0.2, 0.2), -180 + i * 24, 6.4, -962), dark]);
       for (let i = 0; i < 3; i++) {
         const x = -96 + i * 13, z = -908.6;
-        P.push([tf(new CylinderGeometry(0.22, 0.22, 2.2, 10), x, 3.7, z), steel]);
-        P.push([tf(new TorusGeometry(0.5, 0.22, 8, 10, Math.PI / 2), x + 0.5, 4.8, z, 0, 0, Math.PI / 2), steel]);
-        for (const y of [2.9, 4.3]) P.push([tf(new CylinderGeometry(0.36, 0.36, 0.1, 12), x, y, z), dark]);
-        P.push([tf(new TorusGeometry(0.3, 0.035, 5, 14), x, 3.6, z + 0.35), "#c8a020"]);
-        P.push([tf(new CylinderGeometry(0.04, 0.04, 0.4, 6), x, 3.6, z + 0.2, Math.PI / 2), dark]);
+        P.push([tf(cylG(0.22, 0.22, 2.2, 10), x, 3.7, z), steel]);
+        P.push([tf(torG(0.5, 0.22, 8, 10, Math.PI / 2), x + 0.5, 4.8, z, 0, 0, Math.PI / 2), steel]);
+        for (const y of [2.9, 4.3]) P.push([tf(cylG(0.36, 0.36, 0.1, 12), x, y, z), dark]);
+        P.push([tf(torG(0.3, 0.035, 5, 14), x, 3.6, z + 0.35), "#c8a020"]);
+        P.push([tf(cylG(0.04, 0.04, 0.4, 6), x, 3.6, z + 0.2, Math.PI / 2), dark]);
       }
-      for (let k = 0; k < 8; k++) P.push([tf(new CylinderGeometry(0.4, 0.4, 0.1, 12), -96 + k * 4, 4.9, -907, 0, 0, Math.PI / 2), dark]);
+      for (let k = 0; k < 8; k++) P.push([tf(cylG(0.4, 0.4, 0.1, 12), -96 + k * 4, 4.9, -907, 0, 0, Math.PI / 2), dark]);
       for (let k = 0; k < 6; k++) P.push([tf(new BoxGeometry(0.25, 4.9, 0.25), -98 + k * 6, 2.45, -906.6), dark]);
       for (let i = 0; i < 3; i++) {
         P.push([tf(new BoxGeometry(2.2, 1.2, 1.6), -14 + i * 6, 9, -883), "#d0ccc2"]);
-        P.push([tf(new CylinderGeometry(0.6, 0.6, 0.1, 14), -14 + i * 6, 9.65, -883), dark]);
+        P.push([tf(cylG(0.6, 0.6, 0.1, 14), -14 + i * 6, 9.65, -883), dark]);
       }
-      P.push([tf(new SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, 1), 6, 9.6, -884, -0.9, 0.6, 0), "#e0e0dc"]);
-      P.push([tf(new CylinderGeometry(0.05, 0.05, 1.4, 6), 6, 9.1, -884), dark]);
+      P.push([tf(sphG(1, 12, 6, 0, Math.PI * 2, 0, 1), 6, 9.6, -884, -0.9, 0.6, 0), "#e0e0dc"]);
+      P.push([tf(cylG(0.05, 0.05, 1.4, 6), 6, 9.1, -884), dark]);
       for (let i = 0; i < 14; i++) P.push([tf(new BoxGeometry(0.05, 1, 0.05), -18.8 + i * 2, 9.9, -886.9), rail]);
       P.push([tf(new BoxGeometry(26.4, 0.05, 0.05), -6, 10.4, -886.9), rail]);
       P.push([tf(new BoxGeometry(4, 0.15, 1.8), -6, 3.4, -872.1, 0.12), "#7a6e5c"]);
@@ -39253,10 +39304,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         for (const dx of [-2.6, 2.6]) P.push([tf(new BoxGeometry(0.3, 0.4, 2.4), x + dx * Math.cos(ry), 0.2, z - dx * Math.sin(ry), 0, ry), dark]);
       }
       P.push([tf(new BoxGeometry(4.2, 2.2, 1.8), -30, 1.3, -862), "#d8b020"]);
-      P.push([tf(new CylinderGeometry(0.12, 0.12, 1.6, 8), -28.6, 3, -862), dark]);
+      P.push([tf(cylG(0.12, 0.12, 1.6, 8), -28.6, 3, -862), dark]);
       P.push([tf(new BoxGeometry(4.4, 0.3, 2), -30, 0.15, -862), dark]);
       for (const [dx, dz] of [[-1.4, -1.4], [1.4, -1.4], [-1.4, 1.4], [1.4, 1.4]]) P.push([tf(new BoxGeometry(0.22, 10, 0.22), -150 + dx, 5, -900 + dz, dz * 0.02, 0, -dx * 0.02), dark]);
-      P.push([tf(new CylinderGeometry(2.4, 2.4, 3.2, 16), -150, 11.6, -900), "#b8b0a0"]);
+      P.push([tf(cylG(2.4, 2.4, 3.2, 16), -150, 11.6, -900), "#b8b0a0"]);
       P.push([tf(new ConeGeometry(2.5, 0.8, 16), -150, 13.6, -900), "#8a8070"]);
     }
     const refMesh = mergedMesh(P, { rough: 0.7, metal: 0.15 });
@@ -39303,30 +39354,30 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     {
       const E = [];
-      const Rr = mulberry32(606);
+      const Rr = mulberry32(606), cs = tier.mobile ? 0.5 : 1;
       for (let i = 0; i < 7; i++) {
         const x = -260 + i * 70 + Rr() * 20, z = -1180 - Rr() * 60, r = 2.5 + Rr() * 2.5, hh = 34 + Rr() * 30;
-        E.push([tf(new CylinderGeometry(r, r, hh, 16), x, height2(x, z) + hh / 2, z), i % 2 ? "#d8d4cc" : "#b9b4aa"]);
-        for (let k = 1; k < 5; k++) E.push([tf(new CylinderGeometry(r * 1.12, r * 1.12, 0.6, 16), x, height2(x, z) + hh * k / 5, z), "#6e6a64"]);
-        E.push([tf(new CylinderGeometry(0.4, 0.4, hh * 0.9, 6), x + r + 1.2, height2(x, z) + hh * 0.45, z), "#7a7d80"]);
+        E.push([tf(cylG(r, r, hh, 16 * cs), x, height2(x, z) + hh / 2, z), i % 2 ? "#d8d4cc" : "#b9b4aa"]);
+        for (let k = 1; k < 5; k++) E.push([tf(cylG(r * 1.12, r * 1.12, 0.6, 16), x, height2(x, z) + hh * k / 5, z), "#6e6a64"]);
+        E.push([tf(cylG(0.4, 0.4, hh * 0.9, 6), x + r + 1.2, height2(x, z) + hh * 0.45, z), "#7a7d80"]);
       }
       for (let i = 0; i < 9; i++) {
         const x = -320 + i % 3 * 52, z = -1260 - Math.floor(i / 3) * 52, r = 18 + Rr() * 5;
         const y0 = height2(x, z);
-        E.push([tf(new CylinderGeometry(r, r, 14, 28), x, y0 + 7, z), "#e6e2d8"]);
-        E.push([tf(new CylinderGeometry(r * 0.98, r, 1.6, 28), x, y0 + 14.6, z), "#cfcabd"]);
-        E.push([tf(new CylinderGeometry(r + 0.2, r + 0.2, 0.9, 28), x, y0 + 4, z), "#a12a20"]);
+        E.push([tf(cylG(r, r, 14, 28 * cs), x, y0 + 7, z), "#e6e2d8"]);
+        E.push([tf(cylG(r * 0.98, r, 1.6, 28 * cs), x, y0 + 14.6, z), "#cfcabd"]);
+        E.push([tf(cylG(r + 0.2, r + 0.2, 0.9, 28 * cs), x, y0 + 4, z), "#a12a20"]);
       }
       for (let i = 0; i < 12; i++) {
         const z = -1140 - i * 18;
         E.push([tf(new BoxGeometry(520, 0.6, 0.6), -40, height2(-40, z) + 7, z), "#6d7072"]);
-        E.push([tf(new CylinderGeometry(0.7, 0.7, 520, 8), -40, height2(-40, z) + 7.9, z, 0, 0, Math.PI / 2), "#8f9396"]);
+        E.push([tf(cylG(0.7, 0.7, 520, 8), -40, height2(-40, z) + 7.9, z, 0, 0, Math.PI / 2), "#8f9396"]);
       }
       for (const [x, z, hh] of [[180, -1240, 70], [240, -1300, 58]]) {
-        E.push([tf(new CylinderGeometry(0.9, 1.6, hh, 10), x, height2(x, z) + hh / 2, z), "#a6a29a"]);
-        for (let k = 0; k < 3; k++) E.push([tf(new CylinderGeometry(1.8, 1.8, 0.5, 10), x, height2(x, z) + hh * (0.3 + k * 0.25), z), "#b22a20"]);
+        E.push([tf(cylG(0.9, 1.6, hh, 10), x, height2(x, z) + hh / 2, z), "#a6a29a"]);
+        for (let k = 0; k < 3; k++) E.push([tf(cylG(1.8, 1.8, 0.5, 10), x, height2(x, z) + hh * (0.3 + k * 0.25), z), "#b22a20"]);
       }
-      for (let i = 0; i < 4; i++) E.push([tf(new BoxGeometry(14, 10, 14), 40 + i * 16, height2(40, -1240) + 5, -1240), "#9aa0a3"], [tf(new CylinderGeometry(5, 5.6, 3, 16, 1, true), 40 + i * 16, height2(40, -1240) + 11.5, -1240), "#6f7477"]);
+      for (let i = 0; i < 4; i++) E.push([tf(new BoxGeometry(14, 10, 14), 40 + i * 16, height2(40, -1240) + 5, -1240), "#9aa0a3"], [tf(cylG(5, 5.6, 3, 16, 1, true), 40 + i * 16, height2(40, -1240) + 11.5, -1240), "#6f7477"]);
       for (let i = 0; i < 6; i++) for (let k = 0; k < 4; k++) E.push([tf(new BoxGeometry(0.5, 30, 0.5), -150 + i * 6, height2(-150, -1230) + 15, -1230 + k * 6), "#5d6062"], [tf(new BoxGeometry(6, 0.4, 6), -147 + i * 6, height2(-150, -1230) + 6 + k * 7, -1227), "#6d7072"]);
       const em = mergedMesh(E, { rough: 0.7, metal: 0.2, cast: false });
       S2.add(em);
@@ -39424,7 +39475,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       f.position.set(x, 8.6, -818);
       S2.add(f);
     }
-    const fp = mergedMesh([[tf(new CylinderGeometry(0.06, 0.06, 4, 6), -66, 7.2, -818), "#ccc"], [tf(new CylinderGeometry(0.06, 0.06, 4, 6), -54, 7.2, -818), "#ccc"]]);
+    const fp = mergedMesh([[tf(cylG(0.06, 0.06, 4, 6), -66, 7.2, -818), "#ccc"], [tf(cylG(0.06, 0.06, 4, 6), -54, 7.2, -818), "#ccc"]]);
     S2.add(fp);
     w.sock = sock;
     w.cars = {};
@@ -39450,7 +39501,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.mapInfo = { center: [-60, -950], size: 460, label: "SAL-KHAMAR REFINERY" };
     return w;
   }
-  var NEST02;
+  var NEST02, SK, sk, cylG, sphG, torG;
   var init_refinery = __esm({
     "src/scene/refinery/index.js"() {
       init_three_module();
@@ -39460,6 +39511,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_rng();
       init_common();
       NEST02 = null;
+      SK = 1;
+      sk = (n, min) => Math.max(min, Math.round(n * SK));
+      cylG = (rt, rb, h, rs = 32, hs = 1, open = false, t0 = 0, tl = Math.PI * 2) => new CylinderGeometry(rt, rb, h, sk(rs, 5), hs, open, t0, tl);
+      sphG = (r, ws = 32, hs = 16, p0, pl, t0, tl) => new SphereGeometry(r, sk(ws, 6), sk(hs, 3), p0, pl, t0, tl);
+      torG = (r, tube, rs = 12, ts = 48, arc) => new TorusGeometry(r, tube, sk(rs, 3), sk(ts, 6), arc);
     }
   });
 
@@ -41574,7 +41630,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             }
           }
           if (this.speed > 0) this.phase += dt * this.speed * (this.anim === "run" ? 0.36 : 0.62);
-          this.pos.y = this.ground(this.pos.x, this.pos.z);
+          if (this.pos.x !== this._gx || this.pos.z !== this._gz || this.fixedY !== this._gf) {
+            this._gx = this.pos.x;
+            this._gz = this.pos.z;
+            this._gf = this.fixedY;
+            this._gy = this.ground(this.pos.x, this.pos.z);
+          }
+          this.pos.y = this._gy;
           this.holder.rotation.y = this.heading;
         }
         ejectFromCar() {
@@ -43464,6 +43526,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const onLayout = () => {
           clearTimeout(lt);
           lt = setTimeout(() => {
+            G._vw = innerWidth;
+            G._vh = innerHeight;
             resize();
             checkRotate();
           }, 120);
@@ -43561,13 +43625,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           checkRotate();
         });
       }
+      var rotKey = -1;
       function checkRotate() {
-        const ok = portraitOk;
-        const show2 = document.body.classList.contains("touch") && G.mode === "play" && innerHeight > innerWidth * 1.05 && !ok;
-        const el2 = $2("rotate");
-        if (el2.classList.contains("hidden") === show2) el2.classList.toggle("hidden", !show2);
-        const pt = innerHeight > innerWidth * 1.05;
-        if (document.body.classList.contains("portrait") !== pt) document.body.classList.toggle("portrait", pt);
+        const vw = G._vw || innerWidth, vh = G._vh || innerHeight, pt = vh > vw * 1.05;
+        const show2 = IN.touch && G.mode === "play" && pt && !portraitOk, k = (show2 ? 1 : 0) + (pt ? 2 : 0);
+        if (k === rotKey) return;
+        rotKey = k;
+        $2("rotate").classList.toggle("hidden", !show2);
+        document.body.classList.toggle("portrait", pt);
       }
       function goTitle() {
         G.mode = "title";
@@ -43738,6 +43803,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         $2("bMap").getContext("2d").fillStyle = "#222";
         G.prebuilt = null;
         preloadTheme(id);
+        if (G.settings.quality === "auto") {
+          const t = pickTier("auto");
+          if (t.name !== G.quality.name) {
+            Object.assign(G.quality, t, { dynPr: 1 });
+            resize();
+          }
+        }
         await nextFrame();
         try {
           if (titleWorld && id !== "villa") {
@@ -43777,8 +43849,34 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       function prewarm(M2) {
         const r = G.renderer, t0 = performance.now();
         try {
-          player.bc.prewarm && player.bc.prewarm(M2.world.scene, () => r.compile(M2.world.scene, G.camera));
+          {
+            const fwd = new Vector3(0, 0, -1).applyQuaternion(G.camera.quaternion), p = G.camera.position.clone().addScaledVector(fwd, 20);
+            for (const k of ["dust", "spark", "paper"]) spawnFX(k, p, { scale: 0.01 });
+          }
+          const hidden = [];
+          M2.world.scene.traverse((o) => {
+            if (!o.visible && o.name !== "fxKeeper") {
+              hidden.push(o);
+              o.visible = true;
+            }
+          });
+          r.setRenderTarget(G.rt);
+          player.bc.prewarm && player.bc.prewarm(M2.world.scene, () => {
+            r.compile(M2.world.scene, G.camera);
+            const fc = [];
+            M2.world.scene.traverse((o) => {
+              if (o.frustumCulled) {
+                fc.push(o);
+                o.frustumCulled = false;
+              }
+            });
+            r.render(M2.world.scene, G.camera);
+            for (const o of fc) o.frustumCulled = true;
+          });
+          r.compile(M2.world.scene, G.camera);
+          for (const o of hidden) o.visible = false;
           r.compile(G.fpScene, G.fpCam);
+          r.setRenderTarget(null);
           const v0 = G.view;
           G._shadowDirty = true;
           for (const v3 of ["scope", "bino", "eye"]) {
@@ -43786,10 +43884,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             render(0);
           }
           G.view = v0;
+          clearFX();
         } catch (e) {
           console.warn("prewarm", e);
         }
         G.stats.prewarmMs = Math.round(performance.now() - t0);
+        G.stats.prewarmProgs = r.info.programs.map((q) => q.id);
       }
       function beginPlay(M2) {
         G.mission = M2;
@@ -43866,6 +43966,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           G.player = null;
         }
         clearFX();
+        disposeFXPool();
         disposeScene(M2.world.scene);
         clearMatCache();
         G.mission = null;
@@ -43967,7 +44068,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           fpsAcc = 0;
           fpsN = 0;
         }
-        adaptQuality(dt, () => resize());
+        adaptQuality(dt, (k) => {
+          if (k === "tierUp" || k === "tierDown") save();
+          else resize();
+        });
         updateDebug();
       }
       var _ip = new Vector3();
@@ -44129,6 +44233,38 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (M2.alarm !== "alarm") setIntensity((M2.def.music || 0.15) + (G.view === "scope" ? 0.2 : 0) + (P.optics.holding ? 0.25 : 0));
         updateDomHud(dt, M2, P);
       }
+      var setTxt = (el2, v3) => {
+        if (el2._t !== v3) {
+          el2._t = v3;
+          el2.textContent = v3;
+        }
+      };
+      var setHtml = (el2, v3) => {
+        if (el2._h !== v3) {
+          el2._h = v3;
+          el2.innerHTML = v3;
+        }
+      };
+      var setCls = (el2, v3) => {
+        if (el2._c !== v3) {
+          el2._c = v3;
+          el2.className = v3;
+        }
+      };
+      var setSty = (el2, k, v3) => {
+        const c = el2._s || (el2._s = {});
+        if (c[k] !== v3) {
+          c[k] = v3;
+          el2.style[k] = v3;
+        }
+      };
+      var setHid = (el2, h) => {
+        if (el2._hd !== h) {
+          el2._hd = h;
+          el2.classList.toggle("hidden", h);
+        }
+      };
+      var hObjKey = null;
       function updateDomHud(dt, M2, P) {
         hudDomT -= dt;
         if (radioT > 0) {
@@ -44145,8 +44281,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         if (hudDomT > 0) return;
         hudDomT = 0.1;
-        $2("hClock").textContent = M2.clockString();
         checkRotate();
+        setTxt($2("hClock"), M2.clockString());
         if (document.body.classList.contains("dialopen")) {
           const dv = $2("dialVal"), xc = G.hudCross, t = "ELEV " + (P.elev >= 0 ? "+" : "") + P.elev.toFixed(1) + " \xB7 WIND " + (P.windage >= 0 ? "R " : "L ") + Math.abs(P.windage).toFixed(1) + (xc != null && G.settings.difficulty !== "ghost" ? "\nCROSS " + Math.abs(xc).toFixed(1) + " m/s " + (xc > 0 ? "\u2192" : "\u2190") : "");
           if (dv.textContent !== t) dv.textContent = t;
@@ -44161,31 +44297,31 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           }
         }
         const a = $2("hAlarm");
-        a.className = "alarm " + M2.alarm;
-        a.textContent = M2.kind === "range" ? `STAGE ${Math.min(M2.si + 1, M2.stages.length)}/${M2.stages.length} \xB7 ${M2.score} PTS` : M2.alarm.toUpperCase();
+        setCls(a, "alarm " + M2.alarm);
+        setTxt(a, M2.kind === "range" ? `STAGE ${Math.min(M2.si + 1, M2.stages.length)}/${M2.stages.length} \xB7 ${M2.score} PTS` : M2.alarm.toUpperCase());
         if (M2.kind !== "range") {
           const e = $2("hEscape"), eta = M2.alarm === "alarm" && !M2.ended ? M2.escapeETA() : null;
           if (M2.alarm === "alarm" && !M2.ended) {
             const t = M2.npcs.find((n) => n.role === "target");
-            e.className = "hescape" + (eta != null && eta < 12 ? " urgent" : "");
-            e.children[0].textContent = "\u26A0 ALARM RAISED" + (M2.alarmReason ? " \xB7 " + ({ shots: "SHOTS HEARD", body: "BODY FOUND", explosion: "EXPLOSION", nearMiss: "NEAR MISS SEEN" }[M2.alarmReason] || String(M2.alarmReason).toUpperCase()) : "");
-            e.children[1].textContent = !t?.alive ? "Target down \u2014 extract" : eta != null ? (t.inCar ? "TARGET IN VEHICLE \u2014 " : "TARGET FLEEING \u2014 ") + "ESCAPES IN ~" + Math.max(0, Math.ceil(eta)) + " s" : "Guards in cover \xB7 target moving";
+            setCls(e, "hescape" + (eta != null && eta < 12 ? " urgent" : ""));
+            setTxt(e.children[0], "\u26A0 ALARM RAISED" + (M2.alarmReason ? " \xB7 " + ({ shots: "SHOTS HEARD", body: "BODY FOUND", explosion: "EXPLOSION", nearMiss: "NEAR MISS SEEN" }[M2.alarmReason] || String(M2.alarmReason).toUpperCase()) : ""));
+            setTxt(e.children[1], !t?.alive ? "Target down \u2014 extract" : eta != null ? (t.inCar ? "TARGET IN VEHICLE \u2014 " : "TARGET FLEEING \u2014 ") + "ESCAPES IN ~" + Math.max(0, Math.ceil(eta)) + " s" : "Guards in cover \xB7 target moving");
             if (M2._eta0 == null && eta != null) M2._eta0 = eta;
-            e.children[2].style.transform = "scaleX(" + (eta != null && M2._eta0 ? Math.max(0, Math.min(1, eta / M2._eta0)) : 0) + ")";
+            setSty(e.children[2], "transform", "scaleX(" + (eta != null && M2._eta0 ? Math.max(0, Math.min(1, eta / M2._eta0)).toFixed(3) : 0) + ")");
           } else if (M2.alarm === "suspicious" && !M2.ended) {
-            e.className = "hescape sus";
-            e.children[0].textContent = "SUSPICIOUS";
-            e.children[1].textContent = "Guards are searching \u2014 hold fire " + Math.max(0, Math.ceil(M2.suspicionUntil - M2.mt)) + " s";
-            e.children[2].style.transform = "scaleX(0)";
+            setCls(e, "hescape sus");
+            setTxt(e.children[0], "SUSPICIOUS");
+            setTxt(e.children[1], "Guards are searching \u2014 hold fire " + Math.max(0, Math.ceil(M2.suspicionUntil - M2.mt)) + " s");
+            setSty(e.children[2], "transform", "scaleX(0)");
           } else if (!e.classList.contains("hidden")) e.className = "hescape hidden";
           if (M2.alarm !== "alarm") M2._eta0 = null;
         }
         const now2 = $2("tlNow");
-        if (now2) now2.style.left = Math.min(100, M2.mt / M2.def.duration * 100) + "%";
-        if (M2.kind === "range") $2("hObj").innerHTML = `Target: <b>${M2.stage === "mover" ? "MOVING 420 m" : (M2.stage?.d || "-") + " m plate"}</b> \xB7 shots ${M2.stats.shots}/${M2.shotsMax}`;
-        else $2("hObj").innerHTML = `<div class="${M2.primaryDone ? "ok" : ""}">${M2.primaryDone ? "\u2713" : "\u25C9"} ${M2.def.objectives.primary.text}</div>` + M2.def.objectives.secondary.map((s) => `<div class="${M2.secondary[s.id] ? "ok" : ""}">${M2.secondary[s.id] ? "\u2713" : "\u25CB"} ${s.text}</div>`).join("");
-        $2("hExfil").classList.toggle("hidden", !(M2.primaryDone && !M2.ended && M2.kind !== "range"));
-        $2("hKeys").classList.toggle("hidden", M2.mt > 40 && M2.kind !== "range");
+        if (now2) setSty(now2, "left", Math.min(100, M2.mt / M2.def.duration * 100).toFixed(1) + "%");
+        if (M2.kind === "range") setHtml($2("hObj"), `Target: <b>${M2.stage === "mover" ? "MOVING 420 m" : (M2.stage?.d || "-") + " m plate"}</b> \xB7 shots ${M2.stats.shots}/${M2.shotsMax}`);
+        else if (hObjKey !== (hObjKey = (M2.primaryDone ? 1 : 0) + JSON.stringify(M2.secondary))) setHtml($2("hObj"), `<div class="${M2.primaryDone ? "ok" : ""}">${M2.primaryDone ? "\u2713" : "\u25C9"} ${M2.def.objectives.primary.text}</div>` + M2.def.objectives.secondary.map((s) => `<div class="${M2.secondary[s.id] ? "ok" : ""}">${M2.secondary[s.id] ? "\u2713" : "\u25CB"} ${s.text}</div>`).join(""));
+        setHid($2("hExfil"), !(M2.primaryDone && !M2.ended && M2.kind !== "range"));
+        setHid($2("hKeys"), M2.mt > 40 && M2.kind !== "range");
         if (intelOpen) renderIntel(M2, P);
       }
       var _sun = new Vector3();
