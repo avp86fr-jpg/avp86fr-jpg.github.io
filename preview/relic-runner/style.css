@@ -310,3 +310,11 @@ body:not(.comic) #speedLines, body:not(.comic) #impactFrame { display: none; }
   filter: drop-shadow(0 0 0 #1d1612) drop-shadow(3px 3px 0 #1d1612) drop-shadow(-3px -3px 0 #1d1612) drop-shadow(3px -3px 0 #1d1612) drop-shadow(-3px 3px 0 #1d1612); }
 .sfxw.burst::after { content: ''; position: absolute; inset: -20% -10%; z-index: -1; background: #ff6a3a;
   clip-path: polygon(50% 8%, 57% 32%, 76% 18%, 68% 40%, 92% 42%, 72% 54%, 88% 72%, 64% 64%, 66% 90%, 52% 70%, 40% 92%, 38% 66%, 14% 76%, 30% 56%, 8% 44%, 32% 40%, 22% 18%, 43% 32%);  }
+
+/* pass 12g: compact steering pad — two arrow buttons bottom-left, ~86 px each, 16 px gap, sized for the left thumb */
+body.touch #touch #tStick { left: 0; bottom: 0; width: calc(var(--t) * 236px); height: calc(var(--t) * 150px); background: none; }
+.padBtn { position: absolute; bottom: calc(var(--t) * 20px); width: calc(var(--t) * 86px); height: calc(var(--t) * 86px); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font: calc(var(--t) * 40px)/1 'Bangers', sans-serif; color: #1d1612; background: #fff4d6; border: 3px solid #1d1612; box-shadow: 0 4px 0 #1d1612, 0 6px 12px rgba(0,0,0,.35); pointer-events: none; transition: transform .05s, background .05s; }
+.padBtn.L { left: calc(var(--t) * 22px); } .padBtn.R { left: calc(var(--t) * 124px); }
+.padBtn.on { background: #ffd23a; transform: translateY(3px) scale(.94); box-shadow: 0 1px 0 #1d1612; }
+body.touch #tBase { display: none; }
