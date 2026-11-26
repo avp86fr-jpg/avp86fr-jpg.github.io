@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { CAM, PHYS, DEFAULT_SETTINGS, PLANES, SPAWN, STAR_UNLOCKS, VERSION, MAT } from "./core/config.js";
+import { CAM, PHYS, DEFAULT_SETTINGS, PLANES, SPAWN, STAR_UNLOCKS, VERSION, MAT, HERO_VIEW } from "./core/config.js";
 import { isMobileUA, isIOS, isStandalone, nowMs, clamp, headingFromXZ } from "./core/utils.js";
 import { createLigneClaire } from "./post/ligneClaire.js";
 import { getIdMaterial, tagMesh, patchMaterialIdAlpha, retagGeometry } from "./render/idMaterial.js";
@@ -717,12 +717,12 @@ function hudShot() {
 }
 
 function heroShot(opts = {}) {
-  const x = opts.x ?? 0;
-  const y = opts.y ?? 68;
-  const z = opts.z ?? -1580;
-  const tx = opts.tx ?? 0;
-  const ty = opts.ty ?? 26;
-  const tz = opts.tz ?? -500;
+  const x = opts.x ?? HERO_VIEW.plane.x;
+  const y = opts.y ?? HERO_VIEW.plane.y;
+  const z = opts.z ?? HERO_VIEW.plane.z;
+  const tx = opts.tx ?? HERO_VIEW.look.x;
+  const ty = opts.ty ?? HERO_VIEW.look.y;
+  const tz = opts.tz ?? HERO_VIEW.look.z;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
@@ -751,10 +751,10 @@ function heroShot(opts = {}) {
     for (let i = 0; i < 4; i++) {
       const t = 0.16 + i * 0.13;
       chain.push({
-        x: x + (tx - x) * t,
-        y: y - 6 - i * 5,
+        x: x + (tx - x) * t - 70,
+        y: y - 4 - i * 4,
         z: z + (tz - z) * t,
-        r: 22 - i * 2,
+        r: 18 - i * 1.5,
       });
     }
     missions.spawnDemoChain(chain);

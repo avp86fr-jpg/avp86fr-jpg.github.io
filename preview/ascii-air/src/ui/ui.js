@@ -574,13 +574,21 @@ time  ${formatTime(result.time || 0)}
       const n = 10, k = Math.round((max ? v / max : 0) * n);
       return '<span class="sbar">' + "█".repeat(k) + "░".repeat(n - k) + "</span>";
     }
+    function ico(kind) {
+      const common = 'class="hud-ico" viewBox="0 0 24 24" aria-hidden="true"';
+      if (kind === "mail") return '<svg '+common+'><path d="M2 5h20v14H2V5zm0 0l10 8L22 5" fill="none" stroke="#14100a" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+      if (kind === "star") return '<svg '+common+'><path d="M12 2.2l2.6 6.6 7.2.6-5.4 4.6 1.6 7-6-3.6-6 3.6 1.6-7-5.4-4.6 7.2-.6z" fill="#14100a" stroke="#14100a" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+      if (kind === "gem") return '<svg '+common+'><path d="M12 3l8 6-8 12L4 9z" fill="none" stroke="#14100a" stroke-width="2.3" stroke-linejoin="round"/><path d="M4 9h16M12 3v18M8 9l4 12 4-12" fill="none" stroke="#14100a" stroke-width="1.6"/></svg>';
+      // plane
+      return '<svg '+common+'><path d="M3 13.5l8-1.2V7.5l2.2 4.6 7.3-1.1-1.2 2.4-6.1.4v3.2l2.4 1.6v.9l-3.6-.8-3.6.8v-.9l2.4-1.6v-3.2L3 15.7z" fill="#14100a"/></svg>';
+    }
     if (touch) {
-      stats.innerHTML = '<div class="stat-pill">★ ' + stars + '　○ ' + photos + "</div>";
+      stats.innerHTML = '<div class="stat-pill">' + ico("star") + " " + stars + "　" + ico("gem") + " " + photos + "</div>";
     } else {
-      stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span><span class="stats-wings" aria-hidden="true">✉</span></div>'
-        + '<div class="stat-row">★ ' + String(stars).padStart(3) + " / " + starMax + " " + sbar(stars, starMax) + "</div>"
-        + '<div class="stat-row">○ ' + String(photos).padStart(2) + " / 50 (Treasures) " + sbar(photos, 50) + "</div>"
-        + '<div class="stat-row">✈ ' + planeName + "  Lvl.2</div>";
+      stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span>' + ico("mail") + "</div>"
+        + '<div class="stat-row">' + ico("star") + " " + String(stars).padStart(3) + " / " + starMax + " " + sbar(stars, starMax) + "</div>"
+        + '<div class="stat-row">' + ico("gem") + " " + String(photos).padStart(2) + " / 50 (Treasures) " + sbar(photos, 50) + "</div>"
+        + '<div class="stat-row">' + ico("plane") + " " + planeName + "  Lvl.2</div>";
     }
     comp.textContent = compassStrip(craft.heading, hdg);
 
@@ -876,25 +884,40 @@ time  ${formatTime(result.time || 0)}
           const o = (y * S + x) * 4;
           if (h > 0) {
             const k = h / 255;
-            img.data[o] = Math.round(72 + k * 90);
-            img.data[o + 1] = Math.round(150 + k * 50);
-            img.data[o + 2] = Math.round(52);
+            img.data[o] = Math.round(62 + k * 70);
+            img.data[o + 1] = Math.round(140 + k * 55);
+            img.data[o + 2] = Math.round(48);
             img.data[o + 3] = 255;
           } else {
-            img.data[o] = 100;
-            img.data[o + 1] = 176;
-            img.data[o + 2] = 214;
+            img.data[o] = 70;
+            img.data[o + 1] = 160;
+            img.data[o + 2] = 210;
             img.data[o + 3] = 255;
           }
         }
       }
       ctx.putImageData(img, 0, 0);
+      // Ink silhouette: outline land/water boundary
+      ctx.fillStyle = "#14100a";
+      const step = 2;
+      for (let y = 1; y < S - 1; y += 1) {
+        for (let x = 1; x < S - 1; x += 1) {
+          const i = Math.min(n - 1, Math.floor(x / S * n));
+          const j = Math.min(n - 1, Math.floor(y / S * n));
+          const h = data[j * n + i];
+          if (h <= 0) continue;
+          const inb = (xx, yy) => data[Math.min(n - 1, Math.floor(yy / S * n)) * n + Math.min(n - 1, Math.floor(xx / S * n))] <= 0;
+          if (inb(x - step, y) || inb(x + step, y) || inb(x, y - step) || inb(x, y + step)) {
+            ctx.fillRect(x - 1, y - 1, 3, 3);
+          }
+        }
+      }
     } else {
-      ctx.fillStyle = "#7eb8d8";
+      ctx.fillStyle = "#5aa8c8";
       ctx.fillRect(0, 0, S, S);
     }
     ctx.strokeStyle = "#14100a";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.strokeRect(2, 2, S - 4, S - 4);
     const toX = (x) => ((x + W / 2) / W) * S;
     const toY = (z) => (1 - (z + W / 2) / W) * S;

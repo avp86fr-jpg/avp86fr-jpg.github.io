@@ -233,7 +233,7 @@ export function computeHeight(x, z) {
     const wd = dist2(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
     if (wd < 90) {
       const lip = smoothstep(90, 18, wd);
-      if (z >= LANDMARKS.waterfall.z) h = Math.max(h, lerp(h, 70, lip));
+      if (z >= LANDMARKS.waterfall.z) h = Math.max(h, lerp(h, 42, lip));
       else h = lerp(h, 18, lip * 0.9);
     }
     const bd = dist2(x, z, LANDMARKS.bridge.x, LANDMARKS.bridge.z);
@@ -414,7 +414,7 @@ export function createTerrain(quality = "medium") {
         }
         if (vd < 420 && h > 110) return [0.70 + n * 0.06, 0.48, 0.32];
         // Grey-ochre coastal rock, not a yellow dome
-        return [0.70 + n * 0.08, 0.56 + n * 0.05, 0.34];
+        return [0.55 + n * 0.10, 0.46 + n * 0.06, 0.30];
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];

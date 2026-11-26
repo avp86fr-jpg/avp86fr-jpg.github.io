@@ -218,6 +218,17 @@ export const KEYS = {
   debug: ["Backquote"],
 };
 
+export const HERO_VIEW = {
+  // South-east vantage, looking north-north-west so the coast runs
+  // left-foreground (airport) to right-background (cape).
+  plane: { x: 90, y: 52, z: -1505 },
+  look:  { x: -30, y: 42, z: -800 },
+  dist: 33,
+  height: 8.5,
+  side: 4.5,
+  fov: 50,
+};
+
 export const SPAWN = {
   airport: { x: -280, y: 6, z: -1100, heading: 0 }, // heading 0 = +X (east) along runway
   lagoon: { x: -720, y: 4, z: -1080, heading: 0.4 },
@@ -232,21 +243,21 @@ export const LANDMARKS = {
   church:       { x: 240,  z: -960,  name: "Chapel" },
   market:       { x: 175,  z: -980,  name: "Market" },
   harbor:       { x: 180,  z: -1220, name: "Harbor" },
-  lighthouse:   { x: -120, z: -1250, name: "Cinder Cape Light" },
+  lighthouse:   { x: -170, z: -1190, name: "Cinder Cape Light" },
   pier:         { x: 200,  z: -1280, name: "Long Pier" },
   beach:        { x: 40,   z: -1220, name: "Sunny Beach" },
   lagoon:       { x: -740, z: -1120, name: "Quiet Lagoon" },
   wreck:        { x: -820, z: -1680, name: "Shallow Wreck" },
   volcano:      { x: 0,    z: 200,   name: "Mount Glyph" },
   crater:       { x: 0,    z: 200,   name: "Crater Lake" },
-  waterfall:    { x: -8,   z: -900,  name: "Mistfall" },
+  waterfall:    { x: 130,  z: -920,  name: "Mistfall" },
   bridge:       { x: -40,  z: -960,  name: "Stone Bridge" },
   cave:         { x: 30,   z: -800,  name: "Fall Cave" },
   castle:       { x: -280, z: 40,    name: "Cliff Ruins" },
   windmills:    { x: 260,  z: -900,  name: "Mill Hills" },
   grassStrip:   { x: -820, z: 1120,  name: "Ridge Strip" },
   palmIslet:    { x: 180,  z: -1880, name: "One-Palm Isle" },
-  arch:         { x: -145, z: -1310, name: "Sea Arch" },
+  arch:         { x: -210, z: -1250, name: "Sea Arch" },
 };
 
 export const AUDIO_FILES = [

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { CAM, LANDMARKS as LM } from "../core/config.js";
+import { CAM, LANDMARKS as LM, HERO_VIEW } from "../core/config.js";
 import { clamp, lerp, wrapAngle } from "../core/utils.js";
 
 const _fwd = new THREE.Vector3();
@@ -201,14 +201,12 @@ export function createFlightCamera(camera) {
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     if (hero) {
-      // 3/4 rear-above over the water, nearly level look INTO the island.
-      // Tail nearest the camera, nose pointing away at the vista.
-      const dist = 40 + (portrait ? 4 : 0);
-      const height = 14 + (portrait ? 1.5 : 0);
-      const side = 6.2;
+      // 3/4 rear-above, look along the diagonal vista (SE -> NNW).
+      const dist = HERO_VIEW.dist + (portrait ? 4 : 0);
+      const height = HERO_VIEW.height + (portrait ? 1.2 : 0);
+      const side = HERO_VIEW.side;
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
-      // Look a little lower so the plane sits in the lower-middle, not on the HUD.
-      _look.set(0, 26, -500);
+      _look.set(HERO_VIEW.look.x, HERO_VIEW.look.y, HERO_VIEW.look.z);
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
@@ -230,8 +228,8 @@ export function createFlightCamera(camera) {
     const spd = craft.airspeed || 0;
     const k = clamp((spd - 28) / 48, 0, 1);
     const baseFov = portrait ? CAM.fovPortrait : CAM.fov;
-    if (state.hero) camera.fov = 54;
-    else if (state.mode === "title") camera.fov = 54;
+    if (state.hero) camera.fov = HERO_VIEW.fov;
+    else if (state.mode === "title") camera.fov = HERO_VIEW.fov;
     else camera.fov = baseFov + k * 8;
     camera.near = CAM.near;
     camera.far = CAM.far;
@@ -241,11 +239,11 @@ export function createFlightCamera(camera) {
       const t = state.titleOrbit;
       // Stay over the water, south-east, looking in at the vista (not the airfield).
       camera.position.set(
-        -30 + Math.sin(t * 0.5) * 50,
-        88 + Math.sin(t * 0.35) * 8,
-        -1720 + Math.cos(t * 0.5) * 36
+        130 + Math.sin(t * 0.5) * 36,
+        90 + Math.sin(t * 0.35) * 6,
+        -1650 + Math.cos(t * 0.5) * 28
       );
-      camera.lookAt(0, 28, -480);
+      camera.lookAt(HERO_VIEW.look.x, HERO_VIEW.look.y, HERO_VIEW.look.z);
       camera.up.set(0, 1, 0);
       camera.updateProjectionMatrix();
       return;
@@ -317,7 +315,7 @@ export function createFlightCamera(camera) {
     collide(camera.position, r.look);
     camera.up.copy(r.up);
     camera.lookAt(r.look);
-    camera.fov = state.hero ? 54 : (portrait ? CAM.fovPortrait : CAM.fov);
+    camera.fov = state.hero ? HERO_VIEW.fov : (portrait ? CAM.fovPortrait : CAM.fov);
     camera.updateProjectionMatrix();
     state.hasPose = true;
   }

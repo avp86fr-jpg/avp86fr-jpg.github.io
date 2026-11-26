@@ -48,7 +48,7 @@ void main() {
   // Turquoise near the island, deep blue further out.
   float radial = length(vWorld.xz - vec2(0.0, -200.0));
   float nearIsle = sat(1.0 - (radial - 900.0) / 700.0);
-  float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 220.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
+  float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 140.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
   float capeShore = sat(1.0 - length(vWorld.xz - vec2(-150.0, -1270.0)) / 200.0);
   float beach = sat(1.0 - length(vWorld.xz - vec2(40.0, -1220.0)) / 140.0);
   float foamZone = max(max(southShore * 0.85, capeShore), beach);
@@ -56,7 +56,7 @@ void main() {
   vec3 midCol = mix(uDeep, uShallow, 0.62);
   vec3 water = mix(uDeep, midCol, mid * 0.50 + nearIsle * 0.25 + 0.06 * ndl);
   float shoreBand = sat(foamZone * 1.4);
-  water = mix(water, uShallow, shoreBand * 0.9 + nearIsle * 0.12);
+  water = mix(water, uShallow, shoreBand * 0.55 + nearIsle * 0.18);
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
   // Sparkle highlights
   float glitter = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 1.6) * 43758.5));
@@ -65,16 +65,16 @@ void main() {
   col += uSunCol * glitter * 0.20 * (0.22 + shoreBand * 0.5) * day;
   // Soft ripple highlights, not dark streak lines
   float ripple = smoothstep(0.82, 0.98, fract(vWorld.x * 0.045 + vWorld.z * 0.04 + vWave * 1.6));
-  col = mix(col, vec3(0.70, 0.93, 0.98), ripple * 0.12 * day);
+  col = mix(col, vec3(0.55, 0.82, 0.90), ripple * 0.08 * day);
   // Ink-line wave strokes, album style
   float wstroke = abs(fract(vWorld.x * 0.016 + vWorld.z * 0.021 + uTime * 0.04) - 0.5);
   float inkLine = (1.0 - smoothstep(0.0, 0.035, wstroke)) * (0.35 + 0.4 * nearIsle);
   float wstroke2 = abs(fract(vWorld.x * 0.011 - vWorld.z * 0.018 + 0.3) - 0.5);
   inkLine = max(inkLine, (1.0 - smoothstep(0.0, 0.028, wstroke2)) * 0.22);
-  col = mix(col, vec3(0.10, 0.18, 0.32), inkLine * 0.55 * (1.0 - shoreBand * 0.7));
+  col = mix(col, vec3(0.08, 0.16, 0.30), inkLine * 0.85 * (1.0 - shoreBand * 0.5));
   float surf = shoreBand * sat(0.35 + vWave * 1.4) * 0.85;
   float foamLine = sat(1.0 - abs(foamZone - 0.30) * 14.0);
-  col = mix(col, mix(vec3(0.35, 0.42, 0.50), vec3(1.0, 1.0, 1.0), day), (foamLine * 0.92 + surf * 0.15) * (0.25 + 0.75 * day));
+  col = mix(col, mix(vec3(0.35, 0.42, 0.50), vec3(0.92, 0.96, 0.98), day), (foamLine * 0.55 + surf * 0.10) * (0.2 + 0.8 * day));
   float crest = sat(vWave * uChop - 0.85);
   float crestThin = crest * (1.0 - sat((vWave * uChop - 1.25) * 2.4));
   float foamAmt = crestThin * sat(uChop - 1.35);

@@ -377,9 +377,9 @@ function makeArch() {
     const stripe = Math.sin(x * 0.55 + y * 1.15) + 0.5 * Math.sin((x - y) * 1.8 + z * 0.2);
     const hatch = stripe > 0.35 ? 0.62 : stripe > 0.0 ? 0.8 : stripe > -0.3 ? 0.92 : 1;
     const shadeAmt = (z > 4 ? 0.82 : 1) * (y < 4 ? 0.85 : 1);
-    col[i * 3] = 0.86 * hatch * shadeAmt;
-    col[i * 3 + 1] = 0.72 * hatch * shadeAmt;
-    col[i * 3 + 2] = 0.48 * hatch * shadeAmt;
+    col[i * 3] = 0.62 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.52 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.34 * hatch * shadeAmt;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
@@ -406,18 +406,24 @@ function makeCave(heightAt) {
 
 function makeWaterfall() {
   const g = new THREE.Group();
-  const geo = new THREE.PlaneGeometry(14, 72, 1, 8);
-  retagGeometry(geo, MAT.WATERFALL, 1);
   const mat = new THREE.MeshBasicMaterial({
-    color: 0xc8f4ff,
+    color: 0xeaf8ff,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.92,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
+  const geo = new THREE.PlaneGeometry(18, 56, 1, 10);
+  retagGeometry(geo, MAT.WATERFALL, 1);
   const sheet = new THREE.Mesh(geo, mat);
   sheet.name = "falls";
   g.add(sheet);
+  const sheet2 = new THREE.Mesh(geo.clone(), mat.clone());
+  sheet2.name = "falls";
+  sheet2.position.set(6, -4, 3);
+  sheet2.rotation.y = 0.12;
+  sheet2.scale.set(0.75, 0.9, 1);
+  g.add(sheet2);
   // mist particles
   const n = 80;
   const p = new Float32Array(n * 3);
@@ -650,45 +656,69 @@ function makeCoastalCliffs(H) {
   const positions = [];
   const colors = [];
   const indices = [];
+  // Only the west limestone cape and the far-east headland — never a wall in front of the airport.
+  const ranges = [
+    { x0: -480, x1: -40, z0: -1470, z1: -1080 },
+    { x0: 520, x1: 900, z0: -1400, z1: -1080 },
+  ];
   const pts = [];
-  for (let x = -980; x <= 880; x += 8) {
-    let zLand = null, h = 0;
-    for (let z = -1470; z <= -1020; z += 6) {
-      const hh = H(x, z);
-      if (hh > 8) { zLand = z; h = hh; break; }
+  for (const R of ranges) {
+    for (let x = R.x0; x <= R.x1; x += 7) {
+      let zLand = null, h = 0;
+      for (let z = R.z0; z <= R.z1; z += 5) {
+        const hh = H(x, z);
+        if (hh > 7) { zLand = z; h = hh; break; }
+      }
+      if (zLand != null) pts.push({ x, z: zLand - 1.2, h: Math.min(Math.max(h, 10), 56), band: R.x0 });
     }
-    if (zLand != null && zLand > -1470) pts.push({ x, z: zLand - 1.5, h: Math.min(Math.max(h, 12), 70) });
   }
-  // Extra hatched wall along the west limestone cape
+  // Extra wall along the west cape, leaving the arch window open
   const ax = LANDMARKS.arch.x, az = LANDMARKS.arch.z;
-  for (let x = ax - 70; x <= ax + 50; x += 6) {
-    if (Math.abs(x - ax) < 9) continue; // leave the window open
-    const zWall = az - 10;
-    const hh = Math.max(H(x, zWall + 8), 18);
-    pts.push({ x, z: zWall, h: Math.min(hh + 8, 48) });
+  for (let x = ax - 80; x <= ax + 55; x += 6) {
+    if (Math.abs(x - ax) < 9) continue;
+    const zWall = az - 8;
+    const hh = Math.max(H(x, zWall + 8), 16);
+    pts.push({ x, z: zWall, h: Math.min(hh + 6, 42), band: -480 });
   }
-  const ochre = [0.72, 0.54, 0.34];
-  const shade = [0.46, 0.34, 0.22];
-  function vert(x, y, z, c) {
+  function vert(x, y, z, shade) {
     const i = positions.length / 3;
     positions.push(x, y, z);
-    const stripe = Math.sin(x * 1.45 + y * 2.1) + 0.6 * Math.sin((x - y) * 2.8 + z * 0.2);
-    const hatch = stripe > 0.28 ? 0.42 : stripe > 0.0 ? 0.64 : stripe > -0.28 ? 0.82 : 1;
-    colors.push(c[0] * hatch, c[1] * hatch, c[2] * hatch);
+    const stripe = Math.sin(x * 1.7 + y * 2.4) + 0.7 * Math.sin((x - y) * 3.1 + z * 0.25);
+    const hatch = stripe > 0.45 ? 0.32 : stripe > 0.1 ? 0.52 : stripe > -0.2 ? 0.78 : 0.96;
+    // Grey-ochre rock, never pale sand
+    const base = shade ? [0.42, 0.34, 0.24] : [0.58, 0.48, 0.32];
+    const n = 0.08 * Math.sin(x * 0.2 + z * 0.15);
+    colors.push(
+      Math.min(1, base[0] * hatch + n),
+      Math.min(1, base[1] * hatch + n * 0.6),
+      Math.min(1, base[2] * hatch)
+    );
     return i;
   }
+  const bushPts = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i], b = pts[i + 1];
-    if (Math.hypot(b.x - a.x, b.z - a.z) > 40) continue;
-    const y0 = -0.5;
-    const i0 = vert(a.x, y0, a.z - 2, shade);
-    const i1 = vert(a.x, a.h * 0.95, a.z, ochre);
-    const i2 = vert(b.x, y0, b.z - 2, shade);
-    const i3 = vert(b.x, b.h * 0.95, b.z, ochre);
+    if (Math.hypot(b.x - a.x, b.z - a.z) > 36) continue;
+    const y0 = -0.6;
+    // Lower dark shelf
+    const i0 = vert(a.x, y0, a.z - 1, true);
+    const i1 = vert(a.x, a.h * 0.48, a.z + 1.5, true);
+    const i2 = vert(b.x, y0, b.z - 1, true);
+    const i3 = vert(b.x, b.h * 0.48, b.z + 1.5, true);
     indices.push(i0, i2, i1, i1, i2, i3);
-    const i4 = vert(a.x, a.h * 0.95, a.z + 5, ochre);
-    const i5 = vert(b.x, b.h * 0.95, b.z + 5, ochre);
-    indices.push(i1, i3, i4, i4, i3, i5);
+    // Mid shelf, set back
+    const i4 = vert(a.x, a.h * 0.44, a.z + 2, false);
+    const i5 = vert(a.x, a.h * 0.82, a.z + 5, false);
+    const i6 = vert(b.x, b.h * 0.44, b.z + 2, false);
+    const i7 = vert(b.x, b.h * 0.82, b.z + 5, false);
+    indices.push(i4, i6, i5, i5, i6, i7);
+    // Top cap / lip
+    const i8 = vert(a.x, a.h * 0.82, a.z + 5, false);
+    const i9 = vert(a.x, a.h * 0.98, a.z + 9, false);
+    const i10 = vert(b.x, b.h * 0.82, b.z + 5, false);
+    const i11 = vert(b.x, b.h * 0.98, b.z + 9, false);
+    indices.push(i8, i10, i9, i9, i10, i11);
+    if ((i % 2) === 0) bushPts.push({ x: (a.x + b.x) * 0.5, y: (a.h + b.h) * 0.5, z: (a.z + b.z) * 0.5 + 8 });
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
@@ -696,12 +726,35 @@ function makeCoastalCliffs(H) {
   geo.setIndex(indices);
   geo.computeVertexNormals();
   retagGeometry(geo, MAT.ROCK, 0);
-  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false }));
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
   const mesh = new THREE.Mesh(geo, mat);
   mesh.userData.matId = MAT.ROCK;
   mesh.name = "cliffs";
-  return mesh;
+  const group = new THREE.Group();
+  group.name = "cliffs";
+  group.add(mesh);
+  // Vegetation tufts along the lip (one instanced draw)
+  if (bushPts.length) {
+    const inst = new THREE.InstancedMesh(
+      retagGeometry(new THREE.SphereGeometry(2.1, 6, 5), MAT.FOLIAGE, 0),
+      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2f8a32, flatShading: true })),
+      bushPts.length
+    );
+    inst.userData.matId = MAT.FOLIAGE;
+    const dummy = new THREE.Object3D();
+    bushPts.forEach((p, i) => {
+      dummy.position.set(p.x, p.y, p.z);
+      const s = 1.1 + (i % 5) * 0.25;
+      dummy.scale.set(s, s * (0.8 + (i % 3) * 0.15), s);
+      dummy.updateMatrix();
+      inst.setMatrixAt(i, dummy.matrix);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+    group.add(inst);
+  }
+  return group;
 }
+
 
 export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const q = (typeof QUALITY !== "undefined" && QUALITY[quality]) ? QUALITY[quality] : { houses: 1 };
@@ -718,7 +771,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Hangar
   const hangar = makeHangar();
-  hangar.scale.setScalar(1.85);
+  hangar.scale.setScalar(2.25);
   hangar.position.set(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z), LANDMARKS.hangar.z);
   hangar.rotation.y = 0;
   group.add(hangar);
@@ -753,8 +806,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   group.add(windsock);
 
   const tower = makeTower();
-  tower.scale.setScalar(1.65);
-  tower.position.set(LANDMARKS.tower.x, H(LANDMARKS.tower.x, LANDMARKS.tower.z), LANDMARKS.tower.z);
+  tower.scale.setScalar(2.15);
+  tower.position.set(LANDMARKS.hangar.x - 8, H(LANDMARKS.hangar.x - 8, LANDMARKS.hangar.z - 42), LANDMARKS.hangar.z - 42);
   group.add(tower);
   sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xffe2a0, 4, 80);
 
@@ -783,14 +836,12 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     const plume = new THREE.Group();
     plume.name = "smoke";
     plume.position.set(vx, vy + 8, vz);
-    const puffMat = new THREE.MeshLambertMaterial({ color: 0xc8c2b8, emissive: 0x8a8680, emissiveIntensity: 0.25, flatShading: false });
+    const puffMat = new THREE.MeshLambertMaterial({ color: 0xddd6cc, emissive: 0xc8c0b6, emissiveIntensity: 0.12, flatShading: false, transparent: true, opacity: 0.4, depthWrite: false });
     patchMaterialIdAlpha(puffMat);
     puffMat.userData.matId = MAT.CLOUD;
     const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.CLOUD, 0);
     const spots = [
-      [0, 16, 0, 22], [14, 32, 6, 26], [-12, 40, -8, 22], [6, 58, 10, 28],
-      [-16, 72, 4, 24], [12, 92, -6, 32], [-8, 114, 8, 26], [4, 138, 0, 34],
-      [20, 126, 14, 22], [-22, 100, -12, 22], [0, 160, 4, 28], [16, 150, -10, 20],
+      [0, 10, 0, 10], [6, 22, 3, 9], [-5, 28, -3, 8], [3, 38, 2, 7],
     ];
     const inst = new THREE.InstancedMesh(puffGeo, puffMat, spots.length);
     inst.name = "smoke";
@@ -816,10 +867,10 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const houseFrac = (q && q.houses != null) ? q.houses : 1;
   const terraces = [
-    { cx: LANDMARKS.town.x, cz: LANDMARKS.town.z, rx: 85, rz: 58, n: 110, s: 1.85 },
-    { cx: LANDMARKS.town.x - 30, cz: LANDMARKS.town.z - 80, rx: 95, rz: 42, n: 90, s: 2.0 },
-    { cx: LANDMARKS.town.x + 50, cz: LANDMARKS.town.z + 60, rx: 65, rz: 48, n: 55, s: 1.7 },
-    { cx: LANDMARKS.town.x + 10, cz: LANDMARKS.town.z - 130, rx: 70, rz: 30, n: 40, s: 1.9 },
+    { cx: LANDMARKS.town.x, cz: LANDMARKS.town.z, rx: 95, rz: 65, n: 120, s: 2.25 },
+    { cx: LANDMARKS.town.x - 30, cz: LANDMARKS.town.z - 90, rx: 110, rz: 48, n: 100, s: 2.4 },
+    { cx: LANDMARKS.town.x + 55, cz: LANDMARKS.town.z + 70, rx: 70, rz: 52, n: 60, s: 2.05 },
+    { cx: LANDMARKS.town.x + 10, cz: LANDMARKS.town.z - 140, rx: 80, rz: 34, n: 48, s: 2.3 },
   ];
   let hi = 0;
   for (const ter of terraces) {
@@ -900,14 +951,14 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   group.add(wreck);
 
   const light = makeLighthouse();
-  light.scale.setScalar(1.7);
+  light.scale.setScalar(2.2);
   light.position.set(LANDMARKS.lighthouse.x, H(LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z), LANDMARKS.lighthouse.z);
   group.add(light);
   sky.addLamp(new THREE.Vector3(LANDMARKS.lighthouse.x, light.position.y + 40, LANDMARKS.lighthouse.z), 0xfff2c0, 8, 260);
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(3.4, 2.8, 2.6);
+  bridge.scale.set(4.4, 3.6, 3.2);
   bridge.position.set(bx, Math.max(22, H(bx, bz) + 8), bz);
   bridge.rotation.y = 0.08;
   group.add(bridge);
@@ -931,7 +982,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   ];
   for (const [x, z] of millSpots) {
     const m = makeWindmill();
-    m.scale.setScalar(1.35);
+    m.scale.setScalar(1.95);
     m.position.set(x, H(x, z), z);
     m.rotation.y = 0.4;
     group.add(m);
@@ -939,7 +990,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   const arch = makeArch();
-  arch.scale.set(0.95, 1.05, 0.9);
+  arch.scale.set(0.88, 0.78, 0.85);
   const aH = Math.max(0, H(LANDMARKS.arch.x, LANDMARKS.arch.z + 16));
   arch.position.set(LANDMARKS.arch.x, aH, LANDMARKS.arch.z);
   arch.rotation.y = 0.08;
@@ -953,8 +1004,19 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const falls = makeWaterfall();
   // sheet hangs down from ~88 to ~16, center at ~52
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
-  falls.scale.set(2.8, 2.6, 2.4);
-  falls.position.set(wx, Math.max(40, H(wx, wz) - 8), wz);
+  falls.scale.set(1.5, 1.35, 1.2);
+  falls.position.set(wx, H(wx, wz) - 6, wz - 10);
+  // Dark rock flanks so the sheet reads as a fall, not a white slab
+  const lip = box(16, 8, 18, 0x6a5840, MAT.ROCK);
+  lip.position.set(wx, H(wx, wz) + 10, wz + 2);
+  group.add(lip);
+  const wallL = box(5, 28, 10, 0x5a4a34, MAT.ROCK);
+  wallL.position.set(wx - 12, H(wx, wz) - 4, wz);
+  group.add(wallL);
+  const wallR = box(5, 26, 10, 0x5a4a34, MAT.ROCK);
+  wallR.position.set(wx + 12, H(wx, wz) - 5, wz);
+  group.add(wallR);
+
   falls.rotation.y = 0.05;
   group.add(falls);
 
@@ -981,8 +1043,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     sky.addLamp(bulb.position.clone(), 0xffc878, 2.2, 28);
   }
 
-  group.add(makeCoastalCliffs(H));
   mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock"]));
+  group.add(makeCoastalCliffs(H));
   // keep boat meshes (they bob)
   scene.add(group);
 

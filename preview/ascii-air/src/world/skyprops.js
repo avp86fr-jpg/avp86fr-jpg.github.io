@@ -24,9 +24,10 @@ export function createSkyProps(scene, quality = "medium") {
   group.name = "skyprops";
 
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    color: 0xfffdf8,
-    emissive: 0xf0f4ff,
-    emissiveIntensity: 0.55,
+    color: 0xffffff,
+    vertexColors: true,
+    emissive: 0xd8e8ff,
+    emissiveIntensity: 0.28,
     flatShading: false,
   }));
   const clouds = new THREE.Group();
@@ -51,11 +52,30 @@ export function createSkyProps(scene, quality = "medium") {
     cloudGeo = mergeSimple(geos, MAT.CLOUD);
   }
   const heroSpots = [
-    [-320, 230, -1200, 38], [280, 250, -1080, 34], [-20, 270, -820, 42],
-    [420, 220, -1280, 30], [-480, 250, -960, 32], [140, 280, -1360, 26],
-    [-180, 240, -700, 36], [80, 300, -500, 40], [-70, 220, -1500, 24],
-    [200, 210, -200, 28],
+    [-420, 280, -900, 36], [360, 300, -720, 32], [-80, 340, -400, 40],
+    [500, 260, -1000, 28], [-560, 300, -600, 30], [220, 320, -200, 34],
+    [-280, 290, -200, 32], [80, 360, 200, 38],
   ];
+  // White tops, soft blue undersides — album cumulus, not grey blobs
+  {
+    const pos = cloudGeo.getAttribute("position");
+    const col = new Float32Array(pos.count * 3);
+    let ymin = Infinity, ymax = -Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i);
+      if (y < ymin) ymin = y;
+      if (y > ymax) ymax = y;
+    }
+    const span = Math.max(0.001, ymax - ymin);
+    for (let i = 0; i < pos.count; i++) {
+      const k = (pos.getY(i) - ymin) / span;
+      // underside pale blue-grey, crown bright white
+      col[i * 3] = 0.78 + 0.22 * k;
+      col[i * 3 + 1] = 0.84 + 0.16 * k;
+      col[i * 3 + 2] = 0.92 + 0.08 * k;
+    }
+    cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  }
   const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nCloud + heroSpots.length);
   const dummy = new THREE.Object3D();
   const cloudData = [];
