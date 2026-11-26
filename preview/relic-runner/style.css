@@ -302,3 +302,11 @@ body.tzones #tStick[data-z="-1"]::before, body.tzones #tStick[data-z="1"]::after
   -webkit-mask: radial-gradient(ellipse 40% 34% at 50% 62%, transparent 55%, #000 90%); mask: radial-gradient(ellipse 40% 34% at 50% 62%, transparent 55%, #000 90%); }
 #impactFrame.on { animation: impF .32s ease-out; } @keyframes impF { 0% { opacity: 1; transform: scale(1.06); } 100% { opacity: 0; transform: scale(1); } }
 body:not(.comic) #speedLines, body:not(.comic) #impactFrame { display: none; }
+
+/* pass 12e: bold KABOOM — yellow starburst with an ink outline behind the lettering */
+.sfxw.burst { padding: .35em .55em; }
+.sfxw.burst::before { content: ''; position: absolute; inset: -38% -26%; z-index: -1; background: #ffd23a;
+  clip-path: polygon(50% 0, 58% 26%, 82% 6%, 74% 34%, 100% 30%, 80% 50%, 100% 70%, 74% 66%, 82% 94%, 58% 74%, 50% 100%, 42% 74%, 18% 94%, 26% 66%, 0 70%, 20% 50%, 0 30%, 26% 34%, 18% 6%, 42% 26%);
+  filter: drop-shadow(0 0 0 #1d1612) drop-shadow(3px 3px 0 #1d1612) drop-shadow(-3px -3px 0 #1d1612) drop-shadow(3px -3px 0 #1d1612) drop-shadow(-3px 3px 0 #1d1612); }
+.sfxw.burst::after { content: ''; position: absolute; inset: -20% -10%; z-index: -1; background: #ff6a3a;
+  clip-path: polygon(50% 8%, 57% 32%, 76% 18%, 68% 40%, 92% 42%, 72% 54%, 88% 72%, 64% 64%, 66% 90%, 52% 70%, 40% 92%, 38% 66%, 14% 76%, 30% 56%, 8% 44%, 32% 40%, 22% 18%, 43% 32%);  }
