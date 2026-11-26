@@ -5,6 +5,7 @@ import { tagMesh, retagGeometry } from "../render/idMaterial.js";
 const VERT = /* glsl */ `
 varying vec3 vWorld;
 varying vec3 vN;
+varying float vWave;
 uniform float uTime;
 uniform float uChop;
 void main() {
@@ -14,6 +15,7 @@ void main() {
   float w2 = cos(p.z * 0.025 + uTime * 0.6) * 0.16 * chop;
   float w3 = sin((p.x + p.z) * 0.045 + uTime * 1.1) * 0.08 * chop;
   p.y += w1 + w2 + w3;
+  vWave = w1 + w2 + w3;
   vec3 t = vec3(1.0, 0.03 * cos(p.x * 0.03 + uTime * 0.8), 0.0);
   vec3 b = vec3(0.0, 0.025 * -sin(p.z * 0.025 + uTime * 0.6), 1.0);
   vN = normalize(cross(b, t));
@@ -27,6 +29,7 @@ const FRAG = /* glsl */ `
 precision highp float;
 varying vec3 vWorld;
 varying vec3 vN;
+varying float vWave;
 uniform vec3 uDeep;
 uniform vec3 uShallow;
 uniform vec3 uSunDir;
@@ -44,10 +47,13 @@ void main() {
   // depth cue from absolute y around 0 is useless; use distance from origin-ish
   float radial = length(vWorld.xz);
   float nearIsle = sat(1.0 - (radial - 650.0) / 1100.0);
-  vec3 water = mix(uDeep, uShallow, nearIsle * 0.80 + 0.08 * ndl);
-  // sparkle
-  float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 36.0);
-  vec3 col = water + uSky * fres * 0.12 + uSunCol * sp * (0.45 + 0.55 * nearIsle);
+  vec3 water = mix(uDeep, uShallow, nearIsle * 0.85 + 0.05 * ndl);
+  float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 48.0);
+  vec3 col = water + uSky * fres * 0.08 + uSunCol * sp * 0.25 * nearIsle;
+  // white surf band on the shallows + storm foam crests
+  float surf = sat((nearIsle - 0.78) / 0.22) * sat(vWave * 1.8);
+  float crest = sat(vWave * uChop - 0.28);
+  col = mix(col, vec3(0.95, 0.98, 1.0), max(surf * 0.55, crest * 0.35 * sat(uChop - 1.2)));
   gl_FragColor = vec4(col, uMatId / 255.0);
 }
 `;
@@ -61,8 +67,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x053a7a) },
-      uShallow: { value: new THREE.Color(0x1ec4d2) },
+      uDeep: { value: new THREE.Color(0x1568b4) },
+      uShallow: { value: new THREE.Color(0x3ad4e4) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },
@@ -104,17 +110,17 @@ export function createWater() {
     _storm: false,
     setStorm(on) {
       this._storm = !!on;
-      const chop = on ? 3.2 : 1.0;
+      const chop = on ? 1.7 : 1.0;
       mat.uniforms.uChop.value = chop;
       if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.4 : 1.0;
       if (on) {
-        mat.uniforms.uDeep.value.setHex(0x021028);
-        mat.uniforms.uShallow.value.setHex(0x163858);
-        mat.uniforms.uSky.value.setHex(0x152040);
+        mat.uniforms.uDeep.value.setHex(0x1a2838);
+        mat.uniforms.uShallow.value.setHex(0x3a4a5c);
+        mat.uniforms.uSky.value.setHex(0x4a5868);
       } else {
-        mat.uniforms.uDeep.value.setHex(0x053a7a);
-        mat.uniforms.uShallow.value.setHex(0x1ec4d2);
-        mat.uniforms.uSky.value.setHex(0x2a5a90);
+        mat.uniforms.uDeep.value.setHex(0x1568b4);
+        mat.uniforms.uShallow.value.setHex(0x3ad4e4);
+        mat.uniforms.uSky.value.setHex(0xa8e0f4);
       }
     },
     update(t, sky) {

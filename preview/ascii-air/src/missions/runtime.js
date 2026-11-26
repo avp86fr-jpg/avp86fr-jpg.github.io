@@ -7,7 +7,7 @@ import { MISSIONS, getMission } from "./data.js";
 import { resetCraft, launchCraft } from "../flight/physics.js";
 
 function ringMesh(radius = 14) {
-  const geo = new THREE.TorusGeometry(radius, 1.15, 8, 22);
+  const geo = new THREE.TorusGeometry(radius, 2.2, 8, 24);
   retagGeometry(geo, MAT.RING, 1);
   const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xff8a28 }));
   const m = new THREE.Mesh(geo, mat);

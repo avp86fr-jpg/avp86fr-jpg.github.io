@@ -1,8 +1,23 @@
+@font-face {
+  font-family: "Itim";
+  src: url("./fonts/Itim-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Patrick Hand";
+  src: url("./fonts/PatrickHand-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0; width: 100%; height: 100%;
-  background: #07090b; color: #d4efe0;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
+  background: #8ed7f5; color: #1a140e;
+  font-family: "Patrick Hand", "Itim", "Segoe UI", sans-serif;
   overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -119,22 +134,20 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
 #loading {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #07090b;
+  background: #f3e6c4;
   z-index: 20;
   pointer-events: auto;
-  color: #b8f5cc;
-  text-shadow: 0 0 10px rgba(80,255,170,0.35);
+  color: #1a140e;
 }
 #loading .bar {
   width: min(72vw, 420px); height: 10px;
-  border: 1px solid rgba(140, 255, 200, 0.5);
+  border: 2.5px solid #1a140e;
   margin-top: 18px;
-  background: #0c1410;
+  background: #fffaf0;
 }
 #loading .bar > span {
   display: block; height: 100%; width: 0%;
-  background: linear-gradient(90deg, #1d7a4a, #6fffc0);
-  box-shadow: 0 0 10px #4dffb0;
+  background: #e24a3a;
 }
 .banner {
   position: absolute; left: 50%; transform: translateX(-50%);
@@ -228,4 +241,147 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
   #hud-flight { font-size: 10px; padding: 3px 8px; }
   #hud-aux, #hud-photo { font-size: 10px; width: auto; min-height: 0; max-width: 36vw; }
   #hud-compass { font-size: 10px; padding: 2px 8px; }
+}
+
+
+/* ---- Album / ligne-claire UI (overrides leftover terminal chrome) ---- */
+.hint { color: #3a3028; text-shadow: none; }
+.stars { color: #c9a227; text-shadow: none; }
+.menu-item {
+  color: #1a140e;
+  font-family: "Itim", "Patrick Hand", sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+.menu-item.active, .menu-item:hover {
+  color: #1a140e;
+  background: #ffe08a;
+  text-shadow: none;
+}
+.title-plaque {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 18px;
+  background: #fffaf0;
+  border: 3px solid #1a140e;
+  border-radius: 8px;
+  padding: 10px 18px 14px;
+  box-shadow: 5px 5px 0 #1a140e;
+  max-width: min(92vw, 760px);
+  margin: 0 auto 12px;
+  pointer-events: none;
+}
+.title-wordmark {
+  font-family: "Itim", "Patrick Hand", sans-serif;
+  font-weight: 400;
+  font-size: clamp(28px, 5.4vw, 58px);
+  line-height: 0.95;
+  margin: 0;
+  color: #1a140e;
+  letter-spacing: 0.02em;
+}
+.title-tag {
+  font-family: "Patrick Hand", "Itim", sans-serif;
+  margin: 2px 0 0;
+  font-size: clamp(14px, 2.2vw, 20px);
+  color: #3a3028;
+}
+.speech-balloon, .balloon, .album-panel {
+  background: #fffaf0;
+  color: #1a140e;
+  border: 2.5px solid #1a140e;
+  border-radius: 18px;
+  box-shadow: 3px 3px 0 #1a140e;
+  text-shadow: none;
+  font-family: "Patrick Hand", "Itim", sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+.album-panel {
+  position: absolute;
+  padding: 6px 10px;
+  font-size: 16px;
+  white-space: pre;
+  pointer-events: none;
+}
+#title-menu.album-panel {
+  position: relative;
+  pointer-events: auto;
+  padding: 10px 6px 4px;
+  min-width: min(80vw, 360px);
+  border-radius: 12px;
+}
+.speech-balloon.title-balloon {
+  position: relative;
+  padding: 6px 12px;
+  font-size: 18px;
+  white-space: normal;
+}
+.speech-balloon.title-balloon::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  bottom: -10px;
+  width: 14px;
+  height: 14px;
+  background: #fffaf0;
+  border-right: 2.5px solid #1a140e;
+  border-bottom: 2.5px solid #1a140e;
+  transform: rotate(45deg);
+}
+button.album-btn, button.ascii-btn {
+  pointer-events: auto;
+  background: #fffaf0;
+  color: #1a140e;
+  border: 2.5px solid #1a140e;
+  font-family: "Itim", "Patrick Hand", sans-serif;
+  text-shadow: none;
+  padding: 0.4em 0.7em;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 #1a140e;
+}
+button.album-btn:active, button.ascii-btn:active { background: #ffe08a; }
+#hud-fs.album-btn, #hud-fs.ascii-btn {
+  position: absolute;
+  min-width: 44px;
+  min-height: 44px;
+  pointer-events: auto;
+}
+#hud-stats, #hud-mission, #hud-photo, #hud-aux, #hud-minimap, #hud-compass, #hud-flight {
+  background: #fffaf0;
+  color: #1a140e;
+  border: 2.5px solid #1a140e;
+  box-shadow: 3px 3px 0 #1a140e;
+  text-shadow: none;
+}
+#overlay .album-panel {
+  position: relative;
+  pointer-events: auto;
+  border-radius: 12px;
+  padding: 16px 18px;
+  max-width: 92vw;
+  max-height: 86vh;
+  overflow: auto;
+}
+.stick-base, .throttle-track {
+  border: 2.5px solid #1a140e;
+  background: rgba(255, 250, 240, 0.35);
+  box-shadow: 2px 2px 0 #1a140e;
+}
+.hud-line, .banner {
+  font-family: "Itim", "Patrick Hand", sans-serif;
+  color: #1a140e;
+  text-shadow: none;
+  background: #fffaf0;
+  border: 2.5px solid #1a140e;
+  border-radius: 16px;
+  padding: 4px 12px;
+  box-shadow: 3px 3px 0 #1a140e;
+}
+@media (max-width: 960px) {
+  .album-panel { font-size: 14px; padding: 4px 8px; }
 }

@@ -39,11 +39,11 @@ void main() {
 `;
 
 export function createSky(scene) {
-  const hemi = new THREE.HemisphereLight(0xc8e8ff, 0x4a6a30, 1.0);
-  const sun = new THREE.DirectionalLight(0xfff6d8, 1.8);
+  const hemi = new THREE.HemisphereLight(0xe8f6ff, 0x8ab060, 1.35);
+  const sun = new THREE.DirectionalLight(0xfff6d8, 0.45);
   sun.position.set(200, 400, 100);
   sun.castShadow = false;
-  const amb = new THREE.AmbientLight(0x6a7a58, 0.28);
+  const amb = new THREE.AmbientLight(0xfff4e0, 0.7);
 
   const skyGeo = new THREE.SphereGeometry(4800, 24, 16);
   retagGeometry(skyGeo, MAT.SKY, 0);
@@ -124,8 +124,8 @@ export function createSky(scene) {
       { t: 0,  z: 0x02030a, ho: 0x0a1020, g: 0x05060c, s: 0xb0c4ff, i: 0.05, si: 0.0, hc: 0x1a2230, ac: 0x0a0c18, fog: 0x0a1020 },
       { t: 5,  z: 0x0a1230, ho: 0x2a2048, g: 0x100818, s: 0xffc8a0, i: 0.12, si: 0.05, hc: 0x3a2858, ac: 0x120818, fog: 0x1a1430 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
-      { t: 9,  z: 0x1a62c4, ho: 0x4a98d8, g: 0x2a5a70, s: 0xfff0c4, i: 0.5,  si: 1.55, hc: 0x6aadd8, ac: 0x1a3020, fog: 0x163868 },
-      { t: 12, z: 0x1a62c8, ho: 0x4a96dc, g: 0x245064, s: 0xfff2c8, i: 0.55, si: 1.65, hc: 0x6aaddc, ac: 0x1a3020, fog: 0x163868 },
+      { t: 9,  z: 0x1a7ae8, ho: 0xa8ecff, g: 0x7ec8e0, s: 0xfff4c8, i: 1.15, si: 0.5,  hc: 0xc8e8ff, ac: 0x8aaf60, fog: 0xb8e0f4 },
+      { t: 12, z: 0x1878f0, ho: 0xb4f0ff, g: 0x8ad4e8, s: 0xfff6d0, i: 1.2,  si: 0.55, hc: 0xd0eeff, ac: 0x8ab060, fog: 0xc4e8f8 },
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
       { t: 20.5,z:0x050818, ho: 0x14182c, g: 0x08060c, s: 0xc0d0ff, i: 0.08, si: 0.02, hc: 0x1a2238, ac: 0x0a0c18, fog: 0x0c101c },
@@ -178,11 +178,11 @@ export function createSky(scene) {
     hemi.intensity = pal.hemiInt;
     sun.color.copy(pal.sun);
     sun.intensity = pal.sunInt;
-    amb.intensity = 0.16 + (1 - night) * 0.22;
+    amb.intensity = 0.22 + (1 - night) * 0.55;
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 500 : 2200;
-    fog.far = night > 0.6 ? 2800 : 7600;
+    fog.near = night > 0.6 ? 700 : 2800;
+    fog.far = night > 0.6 ? 3200 : 8200;
     scene.fog = fog;
 
     stars.material.opacity = saturate((night - 0.35) * 2);
@@ -201,26 +201,26 @@ export function createSky(scene) {
   }
 
   function applyStormLook() {
-    skyMat.uniforms.uZenith.value.setHex(0x0a1535);
-    skyMat.uniforms.uHorizon.value.setHex(0x1a2a58);
-    skyMat.uniforms.uGround.value.setHex(0x0a1520);
-    skyMat.uniforms.uSunCol.value.setHex(0x8890aa);
-    skyMat.uniforms.uNight.value = 0.55;
-    state.sunColor.setHex(0x8890aa);
-    state.horizonColor.setHex(0x1a2a58);
-    state.zenithColor.setHex(0x0a1535);
-    state.fogColor.setHex(0x101828);
-    hemi.color.setHex(0x2a3060);
-    hemi.groundColor.setHex(0x101018);
-    hemi.intensity = 0.22;
-    sun.color.setHex(0x8890aa);
-    sun.intensity = 0.18;
-    amb.intensity = 0.12;
-    fog.color.setHex(0x101828);
-    fog.near = 380;
-    fog.far = 2800;
-    stars.material.opacity = 0.2;
-    stars.visible = true;
+    skyMat.uniforms.uZenith.value.setHex(0x24344c);
+    skyMat.uniforms.uHorizon.value.setHex(0x6a7a90);
+    skyMat.uniforms.uGround.value.setHex(0x3a4a58);
+    skyMat.uniforms.uSunCol.value.setHex(0xc8d0dc);
+    skyMat.uniforms.uNight.value = 0.35;
+    state.sunColor.setHex(0xc8d0dc);
+    state.horizonColor.setHex(0x6a7a90);
+    state.zenithColor.setHex(0x24344c);
+    state.fogColor.setHex(0x4a5868);
+    hemi.color.setHex(0x8898ac);
+    hemi.groundColor.setHex(0x3a4038);
+    hemi.intensity = 0.7;
+    sun.color.setHex(0xc8d0dc);
+    sun.intensity = 0.22;
+    amb.intensity = 0.4;
+    fog.color.setHex(0x4a5868);
+    fog.near = 900;
+    fog.far = 4200;
+    stars.material.opacity = 0;
+    stars.visible = false;
     for (const L of state.lights) {
       L.intensity = L.userData.baseInt * (L.userData.always ? 1 : 0.7);
     }

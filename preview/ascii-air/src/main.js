@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CAM, PHYS, DEFAULT_SETTINGS, PLANES, SPAWN, STAR_UNLOCKS, VERSION, MAT } from "./core/config.js";
 import { isMobileUA, isIOS, isStandalone, nowMs, clamp, headingFromXZ } from "./core/utils.js";
-import { createAsciiPipeline, computeGrid } from "./ascii/asciiPass.js";
+import { createLigneClaire } from "./post/ligneClaire.js";
 import { getIdMaterial, tagMesh, patchMaterialIdAlpha, retagGeometry } from "./render/idMaterial.js";
 import { makeColorDepthRT, makeRT } from "./render/targets.js";
 import { createBloom } from "./post/bloom.js";
@@ -68,41 +68,48 @@ renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.autoClear = false;
 renderer.info.autoReset = false;
-renderer.setClearColor(0x07090b, 1);
+renderer.setClearColor(0x8ed7f5, 1);
 const backend = renderer.capabilities.isWebGL2 ? "WebGL2" : "WebGL1";
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(CAM.fov, 16 / 9, CAM.near, CAM.far);
 const flyCam = createFlightCamera(camera);
 
-const ascii = createAsciiPipeline();
+const look = createLigneClaire();
 const bloom = createBloom();
 const idMat = getIdMaterial();
 
-let grid = { cols: 160, rows: 90, cell: 12 };
-let colorRT = null, idRT = null, asciiRT = null, bloomA = null, bloomB = null;
+let grid = { cols: 1920, rows: 1080, cell: 1 };
+let colorRT = null, bloomA = null, bloomB = null;
 
 function allocTargets() {
   const cssW = canvas.clientWidth || window.innerWidth;
   const cssH = canvas.clientHeight || window.innerHeight;
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const outW = Math.max(320, Math.round(cssW * dpr));
-  const outH = Math.max(180, Math.round(cssH * dpr));
-  renderer.setSize(outW, outH, false);
   const q = QUALITY[settings.quality] || QUALITY.medium;
-  grid = computeGrid(cssW, cssH, settings.charSize || "medium", q.gridScale, dpr);
+  const mobile = isMobileUA() || cssW < 820;
+  const dprCap = mobile ? (settings.quality === "high" ? 1.5 : 1.25) : (settings.quality === "low" ? 1 : 1.5);
+  const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+  let outW = Math.max(320, Math.round(cssW * dpr));
+  let outH = Math.max(180, Math.round(cssH * dpr));
+  const longCap = mobile ? (settings.quality === "high" ? 1600 : settings.quality === "low" ? 1024 : 1280)
+    : (settings.quality === "low" ? 1440 : 1920);
+  const long = Math.max(outW, outH);
+  if (long > longCap) {
+    const s = longCap / long;
+    outW = Math.max(320, Math.round(outW * s));
+    outH = Math.max(180, Math.round(outH * s));
+  }
+  renderer.setSize(outW, outH, false);
+  grid = { cols: outW, rows: outH, cell: 1 };
   const dispose = (rt) => { if (rt) rt.dispose(); };
-  dispose(colorRT); dispose(idRT); dispose(asciiRT); dispose(bloomA); dispose(bloomB);
-  colorRT = makeColorDepthRT(grid.cols, grid.rows);
-  idRT = makeRT(grid.cols, grid.rows, THREE.NearestFilter);
-  asciiRT = makeRT(outW, outH, THREE.LinearFilter, THREE.SRGBColorSpace);
+  dispose(colorRT); dispose(bloomA); dispose(bloomB);
+  colorRT = makeColorDepthRT(outW, outH, THREE.LinearFilter);
   const bw = Math.max(64, outW >> 2), bh = Math.max(36, outH >> 2);
   bloomA = makeRT(bw, bh);
   bloomB = makeRT(bw, bh);
-  ascii.uniforms.uGrid.value.set(grid.cols, grid.rows);
-  ascii.uniforms.uNearFar.value.set(camera.near, camera.far);
-  bloom.compose.uniforms.uRes.value.set(outW, outH);
-  camera.aspect = cssW / cssH;
+  look.uniforms.uRes.value.set(outW, outH);
+  look.uniforms.uNearFar.value.set(camera.near, camera.far);
+  camera.aspect = cssW / Math.max(1, cssH);
   camera.updateProjectionMatrix();
 }
 
@@ -121,17 +128,15 @@ contrail = createContrail(scene);
 function rebuildPlane(id) {
   if (planeMesh) scene.remove(planeMesh);
   planeMesh = createPlaneMesh(id, PLANES[id]);
+  flattenLook(planeMesh);
   scene.add(planeMesh);
   if (craft.id !== id) resetCraft(craft, SPAWN.airport, SPAWN.airport.heading, id);
 }
 
 function applyVisualSettings() {
-  ascii.setMode(settings.displayMode || "color");
-  ascii.uniforms.uGlowBoost.value = settings.glow ?? 0.7;
-  ascii.uniforms.uContrast.value = settings.highContrast ? 1.5 : 1.0;
-  ascii.uniforms.uQuantize.value = settings.displayMode === "color" ? 0 : 0;
-  bloom.compose.uniforms.uCrt.value = settings.crt ?? 0;
-  bloom.compose.uniforms.uStrength.value = (settings.glow ?? 0.7) * (QUALITY[settings.quality]?.bloom ? 0.7 : 0.15);
+  look.uniforms.uContrast.value = settings.highContrast ? 1.12 : 1.04;
+  look.uniforms.uOutline.value = settings.highContrast ? 1.15 : 1.0;
+  look.uniforms.uBloom.value = (QUALITY[settings.quality] || QUALITY.medium).bloom ? 0.48 : 0.18;
   flyCam.state.comfort = !!settings.motionComfort;
   audio.setVolumes(settings);
   allocTargets();
@@ -140,7 +145,6 @@ function applyVisualSettings() {
 // Auto quality hint
 if (!save.settings._autoQ && isMobileUA()) {
   settings.quality = "medium";
-  settings.charSize = "medium";
 }
 
 let mode = "boot"; // boot | title | fly
@@ -295,6 +299,36 @@ function maybeRespawn() {
   }
 }
 
+function flattenLook(root) {
+  if (!root) return;
+  root.traverse((o) => {
+    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    for (const m of mats) {
+      if (!m || m.userData._flat) continue;
+      if (m.vertexColors) { m.userData._flat = true; continue; }
+      if (m.isMeshLambertMaterial || m.isMeshPhongMaterial || m.isMeshStandardMaterial) {
+        const c = (m.color && m.color.clone) ? m.color.clone() : new THREE.Color(0xffffff);
+        m.emissive = c.multiplyScalar(0.45);
+        m.emissiveIntensity = 0.45;
+        if (m.shininess != null) m.shininess = 0;
+        m.userData._flat = true;
+      }
+    }
+  });
+}
+
+let groundShadow = null;
+function ensureShadow() {
+  if (groundShadow) return;
+  const geo = new THREE.CircleGeometry(4.4, 20);
+  geo.rotateX(-Math.PI / 2);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x1a140e, transparent: true, opacity: 0.28, depthWrite: false });
+  groundShadow = new THREE.Mesh(geo, mat);
+  groundShadow.renderOrder = 2;
+  groundShadow.name = "ground-shadow";
+  scene.add(groundShadow);
+}
+
 function syncPlaneMesh() {
   if (!planeMesh) return;
   planeMesh.position.copy(craft.pos);
@@ -306,6 +340,15 @@ function syncPlaneMesh() {
     const airborne = !craft.onGround && !craft.crashed && craft.airspeed > 18;
     const tail = new THREE.Vector3(0, 0.2, 4).applyQuaternion(craft.quat).add(craft.pos);
     contrail.update(tail, airborne);
+  }
+  if (groundShadow && island) {
+    const gy = Math.max(island.heightAt(craft.pos.x, craft.pos.z), 0.05);
+    groundShadow.position.set(craft.pos.x, gy + 0.08, craft.pos.z);
+    const agl = Math.max(0.5, craft.pos.y - gy);
+    const s = 4.4 * (1 + agl * 0.03);
+    groundShadow.scale.set(s / 4.4, 1, s / 4.4 * 0.7);
+    groundShadow.material.opacity = 0.28 * (1 / (1 + agl * 0.045));
+    groundShadow.visible = !craft.crashed;
   }
 }
 
@@ -375,34 +418,16 @@ function renderFrame(time) {
     }
   }
 
-  ascii.uniforms.uTime.value = time;
-  bloom.compose.uniforms.uTime.value = time;
-  if (island) {
-    ascii.uniforms.uFogColor.value.copy(island.sky.fogColor);
-  }
+  look.uniforms.uTime.value = time;
 
-  // 1. Color + depth
   renderer.setRenderTarget(colorRT);
   renderer.clear();
   renderer.render(scene, camera);
 
-  // Material IDs are packed in the color RT alpha (see patchMaterialIdAlpha).
-  // Skip the second override pass so desktop draw calls stay under 150.
-
-  // 2. ASCII compose
-  ascii.uniforms.tColor.value = colorRT.texture;
-  ascii.uniforms.tDepth.value = colorRT.depthTexture;
-  ascii.uniforms.tId.value = colorRT.texture;
-  renderer.setRenderTarget(asciiRT);
-  renderer.clear();
-  renderer.render(ascii.scene, ascii.camera);
-
-  const useBloom = (QUALITY[settings.quality] || QUALITY.medium).bloom && (settings.glow ?? 0.7) > 0.05
-    && settings.displayMode !== "paper";
-
+  const useBloom = (QUALITY[settings.quality] || QUALITY.medium).bloom;
   if (useBloom) {
     bloom.quad.material = bloom.extract;
-    bloom.extract.uniforms.tMap.value = asciiRT.texture;
+    bloom.extract.uniforms.tMap.value = colorRT.texture;
     renderer.setRenderTarget(bloomA);
     renderer.clear();
     renderer.render(bloom.scene, bloom.camera);
@@ -416,23 +441,18 @@ function renderFrame(time) {
     bloom.blur.uniforms.uDir.value.set(0, 1 / bloomA.height);
     renderer.setRenderTarget(bloomA);
     renderer.render(bloom.scene, bloom.camera);
-
-    bloom.quad.material = bloom.compose;
-    bloom.compose.uniforms.tSrc.value = asciiRT.texture;
-    bloom.compose.uniforms.tBloom.value = bloomA.texture;
-    renderer.setRenderTarget(null);
-    renderer.clear();
-    renderer.render(bloom.scene, bloom.camera);
+    look.uniforms.tBloom.value = bloomA.texture;
+    look.uniforms.uBloom.value = 0.48;
   } else {
-    bloom.quad.material = bloom.compose;
-    bloom.compose.uniforms.tSrc.value = asciiRT.texture;
-    bloom.compose.uniforms.tBloom.value = asciiRT.texture;
-    bloom.compose.uniforms.uStrength.value = 0;
-    bloom.compose.uniforms.uCrt.value = settings.crt ?? 0;
-    renderer.setRenderTarget(null);
-    renderer.clear();
-    renderer.render(bloom.scene, bloom.camera);
+    look.uniforms.tBloom.value = colorRT.texture;
+    look.uniforms.uBloom.value = 0.0;
   }
+
+  look.uniforms.tColor.value = colorRT.texture;
+  look.uniforms.tDepth.value = colorRT.depthTexture;
+  renderer.setRenderTarget(null);
+  renderer.clear();
+  renderer.render(look.scene, look.camera);
 }
 
 async function warmup() {
@@ -508,8 +528,8 @@ function step(now) {
     if (weather) {
       weather.update(dtRaw, now / 1000);
       weather.applyToCraft(craft, dtRaw);
-      ascii.uniforms.uRain.value = weather.state.rain;
-      ascii.uniforms.uFlash.value = weather.state.flash;
+      look.uniforms.uRain.value = weather.state.rain;
+      look.uniforms.uFlash.value = weather.state.flash;
     }
 
     syncPlaneMesh();
@@ -549,7 +569,7 @@ function step(now) {
   const info = renderer.info;
   dbg.update({
     backend, grid, fps, frameMs, calls: info.render.calls,
-    mode: settings.displayMode, charSize: settings.charSize, quality: settings.quality,
+    mode: "ligne-claire", quality: settings.quality,
     craft,
   });
 }
@@ -561,6 +581,8 @@ async function boot() {
 
   ui.setLoad(0.5, "raising the island…");
   island = createIsland(scene, settings.quality || "medium");
+  flattenLook(scene);
+  ensureShadow();
   weather = createWeather(scene, island.sky, island.water);
   missions = createMissionSystem(scene, island, audio);
   rebuildPlane(save.plane || "trainer");
@@ -629,7 +651,7 @@ function heroShot(opts = {}) {
     const rx = x + (tx - x) * 0.28;
     const rz = z + (tz - z) * 0.28;
     const ry = y - 14;
-    const ring = missions.spawnDemoRing(rx, ry, rz, opts.ringR ?? 18);
+    const ring = missions.spawnDemoRing(rx, ry, rz, opts.ringR ?? 32);
     if (ring) ring.lookAt(x, y, z);
   }
   syncPlaneMesh();
@@ -668,8 +690,8 @@ function landingShot(opts = {}) {
   clock.set(opts.hour ?? 11);
   island.sky.setHour(opts.hour ?? 11);
   camOverride = null;
-  const x = opts.x ?? 540;
-  const y = opts.y ?? 28;
+  const x = opts.x ?? 500;
+  const y = opts.y ?? 22;
   const z = opts.z ?? -1100;
   const hdg = Math.PI;
   resetCraft(craft, { x, y, z, heading: hdg }, hdg, "trainer");
@@ -705,15 +727,15 @@ function stormShot(opts = {}) {
   }
   showcaseRings("ace", 4, 12, 46.219, "storm");
   if (missions.spawnDemoRing) {
-    const ring = missions.spawnDemoRing(80, 116, -1320, 18);
+    const ring = missions.spawnDemoRing(80, 116, -1280, 32);
     if (ring) ring.lookAt(pose.x, pose.y, pose.z);
   }
   flyCam.state.hero = true;
   flyCam.snap(craft, false);
   syncPlaneMesh();
-  if (ascii && weather) {
-    ascii.uniforms.uRain.value = 1;
-    ascii.uniforms.uFlash.value = 0.42;
+  if (look && weather) {
+    look.uniforms.uRain.value = 1;
+    look.uniforms.uFlash.value = 0.35;
   }
   hudShot();
   return pose;
@@ -728,15 +750,15 @@ function exposeAPI() {
     getPerf() {
       return {
         fps, frameMs, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
-        grid: { ...grid }, backend, displayMode: settings.displayMode, charSize: settings.charSize,
+        grid: { ...grid }, backend, displayMode: "ligne-claire",
         quality: settings.quality,
       };
     },
     startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot,
     setWeather: (id, opts) => weather && weather.set(id, opts),
     setTime: (h) => { clock.set(h); island.sky.setHour(h); },
-    setDisplayMode: (m) => { settings.displayMode = m; applyVisualSettings(); },
-    setCharSize: (s) => { settings.charSize = s; applyVisualSettings(); },
+    setDisplayMode: () => {},
+    setCharSize: () => {},
     setQuality: (q) => { settings.quality = q; applyVisualSettings(); },
     setPlane: (id) => { rebuildPlane(id); resetCraft(craft, craft.spawn, craft.spawn?.heading, id); },
     teleport: (x, y, z) => { craft.pos.set(x, y, z); craft.prevPos.copy(craft.pos); },

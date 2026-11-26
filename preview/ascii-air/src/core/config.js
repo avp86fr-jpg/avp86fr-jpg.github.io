@@ -1,7 +1,7 @@
-/** ASCII AIR — global configuration. */
+/** AEROPOSTALE ISLAND — global configuration. */
 
 export const VERSION = "m1.0";
-export const TITLE = "ASCII AIR";
+export const TITLE = "AEROPOSTALE ISLAND";
 
 export const WORLD = {
   size: 3000,          // island extent, meters (approx 3×3 km)
@@ -23,12 +23,12 @@ export const PHYS = {
 };
 
 export const CAM = {
-  fov: 60,
-  fovPortrait: 68,
+  fov: 55,
+  fovPortrait: 62,
   near: 0.8,
   far: 6200,
-  chaseDist: 18,
-  chaseHeight: 5.4,
+  chaseDist: 16,
+  chaseHeight: 4.6,
   chaseLag: 10,
 };
 
@@ -75,12 +75,10 @@ export const GRID_CAPS = {
   mobile:  { cols: 180, rows: 140 },
 };
 
-export const DISPLAY_MODES = ["color", "green", "amber", "paper"];
-
 export const QUALITY = {
-  low:    { trees: 0.35, clouds: 0.4, bloom: false, crt: false, shadows: false, particles: 0.3, gridScale: 0.85 },
-  medium: { trees: 0.7,  clouds: 0.75, bloom: true,  crt: false, shadows: false, particles: 0.7, gridScale: 1 },
-  high:   { trees: 1,    clouds: 1,    bloom: true,  crt: true,  shadows: true,  particles: 1,   gridScale: 1 },
+  low:    { trees: 0.45, clouds: 0.55, bloom: false, shadows: false, particles: 0.3, resScale: 0.75 },
+  medium: { trees: 0.85, clouds: 0.85, bloom: true,  shadows: false, particles: 0.7, resScale: 1 },
+  high:   { trees: 1,    clouds: 1,    bloom: true,  shadows: true,  particles: 1,   resScale: 1 },
 };
 
 export const STAR_UNLOCKS = {
@@ -88,9 +86,6 @@ export const STAR_UNLOCKS = {
   glider: 14,
   colorSchemes: 4,
   timeControl: 10,
-  amberMode: 8,
-  paperMode: 12,
-  greenMode: 3,
 };
 
 export const PLANES = {
@@ -183,10 +178,7 @@ export const LANDING = {
 };
 
 export const DEFAULT_SETTINGS = {
-  charSize: "medium",
-  displayMode: "color",
-  glow: 0.85,
-  crt: 0.0,
+  glow: 0.7,
   assist: "full",          // full | light | off
   invertPitch: false,
   sensitivity: 0.7,

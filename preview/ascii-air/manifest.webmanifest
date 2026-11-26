@@ -1,10 +1,10 @@
 {
-  "name": "ASCII AIR",
-  "short_name": "ASCII AIR",
+  "name": "AEROPOSTALE ISLAND",
+  "short_name": "AEROPOSTALE",
   "display": "fullscreen",
   "orientation": "any",
-  "background_color": "#07090b",
-  "theme_color": "#07090b",
+  "background_color": "#8ed7f5",
+  "theme_color": "#7ec8f0",
   "start_url": "./index.html",
   "icons": []
 }

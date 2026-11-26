@@ -3,15 +3,15 @@ import { MAT } from "../core/config.js";
 import { retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
 const STORM_SKY = {
-  zenith: 0x0a1535,
-  horizon: 0x1a2a58,
-  ground: 0x0a1520,
-  sun: 0x8890aa,
-  hemi: 0x2a3060,
-  amb: 0x101018,
-  fog: 0x101828,
-  hemiInt: 0.22,
-  sunInt: 0.18,
+  zenith: 0x24344c,
+  horizon: 0x6a7a90,
+  ground: 0x3a4a58,
+  sun: 0xc8d0dc,
+  hemi: 0x8898ac,
+  amb: 0x3a4038,
+  fog: 0x4a5868,
+  hemiInt: 0.7,
+  sunInt: 0.22,
 };
 
 export function createWeather(scene, sky, water) {
@@ -116,9 +116,8 @@ export function createWeather(scene, sky, water) {
   return { state, set, update, applyToCraft, bolt };
 }
 
+
 function makeBolt() {
-  const g = new THREE.Group();
-  g.name = "lightning";
   const pts = [];
   let x = 0, y = 80, z = 0;
   pts.push(new THREE.Vector3(x, y, z));
@@ -128,28 +127,53 @@ function makeBolt() {
     z += (Math.random() - 0.5) * 8;
     pts.push(new THREE.Vector3(x, y, z));
   }
+  const geos = [];
   for (let i = 1; i < pts.length; i++) {
     const a = pts[i - 1], b = pts[i];
     const dir = b.clone().sub(a);
     const len = dir.length();
     const mid = a.clone().add(b).multiplyScalar(0.5);
-    const geo = retagGeometry(new THREE.BoxGeometry(1.6, len, 1.6), MAT.LIGHT, 1);
-    const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-      color: 0xd8b8ff, toneMapped: false,
-    }));
-    const m = new THREE.Mesh(geo, mat);
-    m.position.copy(mid);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-    g.add(m);
+    const geo = new THREE.BoxGeometry(1.6, len, 1.6);
+    const m = new THREE.Matrix4();
+    m.makeTranslation(mid.x, mid.y, mid.z);
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    const r = new THREE.Matrix4().makeRotationFromQuaternion(q);
+    m.multiply(r);
+    geo.applyMatrix4(m);
+    geos.push(geo);
   }
-  // glow core
-  const core = new THREE.Mesh(
-    retagGeometry(new THREE.BoxGeometry(4.5, 90, 4.5), MAT.LIGHT, 1),
-    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-      color: 0xf4eeff, transparent: true, opacity: 0.55, toneMapped: false,
-    }))
-  );
-  core.position.y = 20;
-  g.add(core);
-  return g;
+  const core = new THREE.BoxGeometry(4.2, 90, 4.2);
+  core.translate(0, 20, 0);
+  geos.push(core);
+  // merge
+  let n = 0;
+  for (const g of geos) n += g.getAttribute("position").count;
+  const pos = new Float32Array(n * 3);
+  const idx = [];
+  let base = 0;
+  for (const g of geos) {
+    const p = g.getAttribute("position");
+    for (let i = 0; i < p.count; i++) {
+      pos[(base + i) * 3] = p.getX(i);
+      pos[(base + i) * 3 + 1] = p.getY(i);
+      pos[(base + i) * 3 + 2] = p.getZ(i);
+    }
+    if (g.index) {
+      const ia = g.index.array;
+      for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base);
+    } else {
+      for (let i = 0; i < p.count; i++) idx.push(base + i);
+    }
+    base += p.count;
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  merged.setIndex(idx);
+  merged.computeVertexNormals();
+  retagGeometry(merged, MAT.LIGHT, 1);
+  const mesh = new THREE.Mesh(merged, patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+    color: 0xf4f8ff, toneMapped: false,
+  })));
+  mesh.name = "lightning";
+  return mesh;
 }

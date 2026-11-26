@@ -24,9 +24,9 @@ export function createSkyProps(scene, quality = "medium") {
   group.name = "skyprops";
 
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    color: 0xf8fbff,
-    emissive: 0x6677aa,
-    emissiveIntensity: 0.18,
+    color: 0xfffdf8,
+    emissive: 0xf0f4ff,
+    emissiveIntensity: 0.7,
     flatShading: true,
   }));
   const clouds = new THREE.Group();
@@ -58,8 +58,8 @@ export function createSkyProps(scene, quality = "medium") {
     const r = 200 + (i * 97) % 1400;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r * 0.8;
-    const y = 280 + (i * 13) % 180;
-    const s = 8 + (i * 7) % 18;
+    const y = 240 + (i * 17) % 200;
+    const s = 16 + (i * 11) % 28;
     dummy.position.set(x, y, z);
     dummy.scale.set(s, s * 0.6, s);
     dummy.rotation.y = a;
@@ -68,6 +68,20 @@ export function createSkyProps(scene, quality = "medium") {
     cloudData.push({ x, y, z, s, a, r, speed: 2 + (i % 5) });
   }
   group.add(cloudInst);
+  const heroSpots = [
+    [-420, 260, -1280, 36], [380, 280, -1200, 32], [-80, 310, -980, 40],
+    [620, 250, -1420, 28], [-700, 290, -1100, 30], [200, 340, -1500, 24],
+  ];
+  const heroInst = new THREE.InstancedMesh(cloudGeo, cloudMat, heroSpots.length);
+  for (let i = 0; i < heroSpots.length; i++) {
+    const [x, y, z, s] = heroSpots[i];
+    dummy.position.set(x, y, z);
+    dummy.scale.set(s, s * 0.55, s);
+    dummy.rotation.y = i * 0.7;
+    dummy.updateMatrix();
+    heroInst.setMatrixAt(i, dummy.matrix);
+  }
+  group.add(heroInst);
 
   // Balloons (ambient, plus mission ones are separate)
   const balloons = [];

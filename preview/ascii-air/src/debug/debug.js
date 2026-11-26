@@ -12,9 +12,9 @@ export function createDebug(root) {
     if (!on) return;
     const c = info.craft;
     el.textContent =
-`ASCII AIR  ${info.backend}  ${info.grid.cols}×${info.grid.rows}  cell ${info.grid.cell.toFixed(1)}px
+`AEROPOSTALE ISLAND  ${info.backend}  ${info.grid.cols}×${info.grid.rows}px
 fps ${info.fps.toFixed(0)}  frame ${info.frameMs.toFixed(1)}ms  calls ${info.calls}
-mode ${info.mode}  size ${info.charSize}  q ${info.quality}
+mode ${info.mode}  q ${info.quality}
 
 pos ${c.pos.x.toFixed(0)}  ${c.pos.y.toFixed(1)}  ${c.pos.z.toFixed(0)}
 ias ${c.airspeed.toFixed(1)}  alt ${c.altitude.toFixed(1)}  agl ${c.agl.toFixed(1)}

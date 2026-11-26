@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { MAT, PLANES } from "../core/config.js";
 import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
+import { seatPilot } from "../world/pilot.js";
 
 function mat(color, matId = MAT.PLANE, hero = 1) {
   const m = new THREE.MeshLambertMaterial({ color, flatShading: true, emissive: color, emissiveIntensity: 0.35 });
@@ -65,6 +66,7 @@ function buildTrainer(s) {
   g.add(prop);
   g.userData.prop = prop;
   g.userData.wheels = [wL, wR, wT];
+  seatPilot(g);
   return g;
 }
 
@@ -96,6 +98,7 @@ function buildSeaplane(s) {
   g.add(prop);
   g.userData.prop = prop;
   g.userData.floats = [floatL, floatR];
+  seatPilot(g);
   return g;
 }
 
@@ -113,6 +116,7 @@ function buildGlider(s) {
   add(g, new THREE.BoxGeometry(2.4, 0.08, 0.7), s.body, MAT.PLANE, 0, 0.2, -3.1);
   // skid
   add(g, new THREE.BoxGeometry(0.2, 0.15, 1.6), s.dark, MAT.METAL, 0, -0.4, 0.4);
+  seatPilot(g);
   return g;
 }
 

@@ -350,8 +350,8 @@ function makeRunwayLights(parent, x0, x1, z, y) {
     // 09 at the west threshold, 27 at the east — large centreline numerals
     paintDigit(g, "0", x0 + 48, y + 0.25, z - 8, 2.4);
     paintDigit(g, "9", x0 + 48, y + 0.25, z + 8, 2.4);
-    paintDigit(g, "2", x1 - 52, y + 0.25, z - 9, 3.0);
-    paintDigit(g, "7", x1 - 52, y + 0.25, z + 9, 3.0);
+    paintDigit(g, "2", x1 - 70, y + 0.4, z - 16, 6.4);
+    paintDigit(g, "7", x1 - 70, y + 0.4, z + 16, 6.4);
     // green chevrons leading in: west of 09 (dir +X), east of 27 (dir -X)
     for (let i = 0; i < 5; i++) {
       chevronPair(g, x0 - 28 - i * 16, y, z, +1, 1.15);
@@ -506,6 +506,15 @@ export function createLandmarks(scene, terrain, sky) {
     glow.position.set(vx, vy - 4.2, vz);
     glow.name = "lava";
     group.add(glow);
+    // bright lava rivers down the south and east flanks
+    for (const [dx, dz, len, rot] of [[40, 70, 90, 0.4], [-30, 80, 80, -0.3], [70, 20, 70, 1.1], [-60, 40, 75, -1.0]]) {
+      const river = box(7, 2.2, len, 0xff5a18, MAT.LIGHT, 1);
+      river.position.set(vx + dx, vy - 18, vz + dz);
+      river.rotation.x = 0.35;
+      river.rotation.y = rot;
+      river.name = "lava";
+      group.add(river);
+    }
     const n = 70;
     const p = new Float32Array(n * 3);
     const id = new Float32Array(n * 2);
@@ -528,7 +537,7 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   // Town houses
-  const houseColors = [0xf2e6d0, 0xe8d8c0, 0xf0efe8, 0xe6d2b8, 0xf6e8d8];
+  const houseColors = [0xfff8ee, 0xfff4e0, 0xf7f0e4, 0xffe8d0, 0xfffaf4];
   const roofColors = [0xe22a1c, 0xc41a14, 0xe03820, 0xd02018, 0xee4a28];
   const spots = [];
   let seed = 7;

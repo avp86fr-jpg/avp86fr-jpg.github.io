@@ -1,56 +1,40 @@
-import { TITLE, PLANES, STAR_UNLOCKS, DISPLAY_MODES } from "../core/config.js";
+import { TITLE, PLANES, STAR_UNLOCKS } from "../core/config.js";
 import { hourToClock, formatTime, pad, isIOS, isStandalone, isMobileUA, safeInsets } from "../core/utils.js";
 import { ACTIVITIES, CLASSES, missionsBy, MISSIONS } from "../missions/data.js";
 import { totalStars } from "../save/save.js";
 import { createMobileLayer, iosFullscreenHint } from "./mobile.js";
 
-const LOGO = `
- █████  ██████  ██████  ██  ██      █████  ██  █████
-██   ██ ██      ██      ██  ██     ██   ██ ██  ██  ██
-███████ ██████  ██      ██  ██     ███████ ██  █████
-██   ██     ██  ██      ██  ██     ██   ██ ██  ██  ██
-██   ██ ██████  ██████  ██  ██████ ██   ██ ██  ██  ██
-`;
 
-
-const PIXEL_FONT = {
-  A: ["01110","10001","10001","11111","10001","10001","10001"],
-  S: ["01111","10000","10000","01110","00001","00001","11110"],
-  C: ["01110","10001","10000","10000","10000","10001","01110"],
-  I: ["11111","00100","00100","00100","00100","00100","11111"],
-  R: ["11110","10001","10001","11110","10100","10010","10001"],
-  " ": ["000","000","000","000","000","000","000"],
-};
+function pilotSvg() {
+  // Original airmail pilot (Tess): short dark curls, tan cap, teal scarf. Not any licensed character.
+  return `<svg class="pilot-mark" viewBox="0 0 80 96" width="92" height="110" aria-hidden="true">
+    <g fill="none" stroke="#1a140e" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+      <ellipse cx="40" cy="78" rx="22" ry="16" fill="#e0a04a"/>
+      <ellipse cx="40" cy="40" rx="18" ry="20" fill="#f0c8a0"/>
+      <path d="M24 36c2-16 30-16 32 0" fill="#2a1a14"/>
+      <ellipse cx="40" cy="24" rx="20" ry="10" fill="#7a4a28"/>
+      <path d="M18 30h44" />
+      <circle cx="32" cy="42" r="4.5" fill="#3a3a3a"/>
+      <circle cx="48" cy="42" r="4.5" fill="#3a3a3a"/>
+      <path d="M36.5 42h7"/>
+      <path d="M33 54c4 4 10 4 14 0" />
+      <path d="M22 70c6-10 30-10 36 0" fill="#2aa8a0"/>
+    </g>
+  </svg>`;
+}
 
 export function paintWordmark() {
-  const text = "ASCII AIR";
-  const px = 5, gap = 1, pad = 4;
-  const rows = 7;
-  const cols = [...text].reduce((n, ch) => n + (PIXEL_FONT[ch][0].length) + gap, 0) - gap;
-  const scale = 6;
-  const c = document.createElement("canvas");
-  c.width = (cols + pad * 2) * scale;
-  c.height = (rows + pad * 2) * scale;
-  const ctx = c.getContext("2d");
-  ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillStyle = "#eafff2";
-  ctx.shadowColor = "#4dffb0";
-  ctx.shadowBlur = 12;
-  let x = pad;
-  for (const ch of text) {
-    const g = PIXEL_FONT[ch] || PIXEL_FONT[" "];
-    for (let r = 0; r < g.length; r++) {
-      for (let cix = 0; cix < g[r].length; cix++) {
-        if (g[r][cix] === "1") {
-          ctx.fillRect((x + cix) * scale, (pad + r) * scale, scale, scale);
-        }
-      }
-    }
-    x += g[0].length + gap;
-  }
-  c.className = "title-logo-img";
-  c.style.cssText = "width:min(86vw,720px);height:auto;image-rendering:pixelated;display:block;margin:0 auto 8px;";
-  return c;
+  const el = document.createElement("div");
+  el.className = "title-plaque";
+  el.innerHTML = `
+    ${pilotSvg()}
+    <div class="title-copy">
+      <h1 class="title-wordmark">${TITLE}</h1>
+      <p class="title-tag">Mail planes over a sunny island</p>
+    </div>
+    <div class="speech-balloon title-balloon">Ready when you are!</div>
+  `;
+  return el;
 }
 
 export function createUI(root, hooks) {
@@ -62,9 +46,9 @@ export function createUI(root, hooks) {
   const loading = document.createElement("div");
   loading.id = "loading";
   loading.innerHTML = `<div class="logo-slot"></div>
-    <div class="hint">GLYPH ISLAND  ·  M1</div>
+    <div class="hint">AEROPOSTALE ISLAND</div>
     <div class="bar"><span id="load-bar"></span></div>
-    <div id="load-msg" class="hint" style="margin-top:10px">warming the grid…</div>`;
+    <div id="load-msg" class="hint" style="margin-top:10px">warming the engine…</div>`;
   wrap.appendChild(loading);
 
   const title = document.createElement("div");
@@ -73,8 +57,8 @@ export function createUI(root, hooks) {
   title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8vh;pointer-events:none;";
   title.innerHTML = `
     <div class="logo-slot" id="logo"></div>
-    <div class="hint" style="margin:6px 0 14px">A glowing island. A little plane. The world, in characters.</div>
-    <div class="ascii-panel" id="title-menu" style="pointer-events:auto;min-width:min(80vw,360px);padding:10px 0;"></div>
+    <div class="hint" style="margin:6px 0 14px">An island in the sun. A little mail plane. Clear skies ahead.</div>
+    <div class="album-panel" id="title-menu" style="pointer-events:auto;min-width:min(80vw,360px);padding:10px 0;"></div>
     <div id="ios-hint" class="hint hidden" style="margin-top:10px;max-width:90vw;text-align:center;white-space:normal;padding:0 12px"></div>
   `;
   wrap.appendChild(title);
@@ -86,15 +70,15 @@ export function createUI(root, hooks) {
   hud.className = "hidden";
   hud.style.cssText = "position:absolute;inset:0;pointer-events:none;";
   hud.innerHTML = `
-    <div class="term-panel" id="hud-stats"></div>
-    <div class="term-panel" id="hud-compass"></div>
-    <div class="term-panel" id="hud-mission"></div>
+    <div class="album-panel balloon" id="hud-stats"></div>
+    <div class="album-panel balloon" id="hud-compass"></div>
+    <div class="album-panel balloon" id="hud-mission"></div>
     <div class="banner hud-line" id="hud-msg" style="top:18%;font-size:18px;"></div>
-    <div class="term-panel hidden" id="hud-minimap"></div>
-    <div class="term-panel" id="hud-flight"></div>
-    <div class="term-panel hidden" id="hud-photo"></div>
-    <div class="term-panel hidden" id="hud-aux"></div>
-    <button class="ascii-btn hidden" id="hud-fs">FULL</button>
+    <div class="album-panel balloon hidden" id="hud-minimap"></div>
+    <div class="album-panel balloon" id="hud-flight"></div>
+    <div class="album-panel balloon hidden" id="hud-photo"></div>
+    <div class="album-panel balloon hidden" id="hud-aux"></div>
+    <button class="album-btn hidden" id="hud-fs">FULL</button>
   `;
   wrap.appendChild(hud);
 
@@ -102,7 +86,7 @@ export function createUI(root, hooks) {
   overlay.id = "overlay";
   overlay.className = "hidden";
   overlay.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);pointer-events:auto;";
-  overlay.innerHTML = `<div class="ascii-panel" id="overlay-panel" style="padding:16px 18px;max-width:92vw;max-height:86vh;overflow:auto;white-space:pre;"></div>`;
+  overlay.innerHTML = `<div class="album-panel" id="overlay-panel" style="padding:16px 18px;max-width:92vw;max-height:86vh;overflow:auto;white-space:pre;"></div>`;
   wrap.appendChild(overlay);
 
   const mobile = createMobileLayer(wrap, hooks.input, {
@@ -143,7 +127,7 @@ export function createUI(root, hooks) {
     const hint = title.querySelector("#ios-hint");
     if (iosFullscreenHint()) {
       hint.classList.remove("hidden");
-      hint.textContent = "iPhone Safari can't go full screen here. Share → Add to Home Screen, then open ASCII AIR like an app.";
+      hint.textContent = "iPhone Safari can't go full screen here. Share → Add to Home Screen, then open AEROPOSTALE ISLAND like an app.";
     } else hint.classList.add("hidden");
     mobile.layout(isPortrait(), false);
   }
@@ -303,10 +287,6 @@ ${wrapText(m.brief, 44)}
       <div id="opts"></div>
       <div id="mlist"></div>`);
     const opts = [
-      ["Character size", "charSize", ["large", "medium", "fine"]],
-      ["Display mode", "displayMode", DISPLAY_MODES],
-      ["Glow", "glow", "slider"],
-      ["CRT", "crt", "slider"],
       ["Flight assist", "assist", ["full", "light", "off"]],
       ["Invert pitch", "invertPitch", "bool"],
       ["Sensitivity", "sensitivity", "slider"],
@@ -458,7 +438,7 @@ time  ${formatTime(result.time || 0)}
     const photos = (save.photos && save.photos.length) || 0;
     const planeName = (craft.def && craft.def.name) || (craft.id || "TRAINER").toUpperCase();
 
-    stats.textContent = "ASCII AIR  v1.0\n★ " + String(stars).padStart(3) + " / 180\n○ " + String(photos).padStart(2) + " / 50 (Treasures)\n★ " + planeName + "  Lv.2";
+    stats.textContent = "AEROPOSTALE ISLAND\n★ " + String(stars).padStart(3) + " / 180\n○ " + String(photos).padStart(2) + " / 50 (Treasures)\n★ " + planeName + "  Lv.2";
     comp.textContent = compassStrip(craft.heading, hdg);
 
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";
@@ -587,7 +567,7 @@ time  ${formatTime(result.time || 0)}
     const alt = Math.max(0, (craft.altitude || 0) - 4);
     const glide = along > 8 ? -(Math.atan2(alt, along) * 180 / Math.PI) : 0;
     const spd = (craft.airspeed || 0) * 1.94384;
-    const eta = (along > 0 && craft.airspeed > 5) ? along / craft.airspeed : 0;
+    const eta = Math.max(0, (along > 0 && craft.airspeed > 5) ? along / craft.airspeed : 0);
     return { glide, lat, spd, eta, along };
   }
 
@@ -634,7 +614,7 @@ time  ${formatTime(result.time || 0)}
     elements() {
       // all visible interactive + hud boxes for overlap tests
       const els = [];
-      wrap.querySelectorAll("button, .menu-item, .stick-base, .throttle-track, .ascii-panel, .term-panel, .hud-line, #hud-msg").forEach((e) => {
+      wrap.querySelectorAll("button, .menu-item, .stick-base, .throttle-track, .album-panel, .album-panel balloon, .hud-line, #hud-msg").forEach((e) => {
         if (e.offsetParent === null && !e.getClientRects().length) return;
         const r = e.getBoundingClientRect();
         if (r.width > 2 && r.height > 2) els.push({ id: e.id || e.className, r });

@@ -1,12 +1,12 @@
 import * as THREE from "three";
 
-export function makeColorDepthRT(w, h) {
+export function makeColorDepthRT(w, h, filter = THREE.LinearFilter) {
   const depth = new THREE.DepthTexture(w, h);
   depth.format = THREE.DepthFormat;
   depth.type = THREE.UnsignedIntType;
   const rt = new THREE.WebGLRenderTarget(w, h, {
-    minFilter: THREE.NearestFilter,
-    magFilter: THREE.NearestFilter,
+    minFilter: filter,
+    magFilter: filter,
     generateMipmaps: false,
     depthBuffer: true,
     stencilBuffer: false,

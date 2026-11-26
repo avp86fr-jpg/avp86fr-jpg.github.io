@@ -270,12 +270,12 @@ export function createTerrain() {
   const matColor = (m, h, x, z) => {
     const n = fbm(x * 0.02, z * 0.02, 2, 3);
     switch (m) {
-      case MAT.SEA: return [0.08, 0.42 + n * 0.08, 0.78];
-      case MAT.WATER_DEEP: return [0.05, 0.22, 0.52];
-      case MAT.SAND: return [0.90, 0.80, 0.50 + n * 0.06];
-      case MAT.GRASS: return [0.32 + n * 0.20, 0.72 + n * 0.22, 0.12 + n * 0.06];
-      case MAT.FOREST: return [0.08, 0.30 + n * 0.10, 0.08];
-      case MAT.ROCK: return [0.42 + n * 0.10, 0.32 + n * 0.06, 0.28];
+      case MAT.SEA: return [0.16, 0.62 + n * 0.08, 0.88];
+      case MAT.WATER_DEEP: return [0.10, 0.36, 0.70];
+      case MAT.SAND: return [0.96, 0.88, 0.62 + n * 0.06];
+      case MAT.GRASS: return [0.48 + n * 0.16, 0.82 + n * 0.12, 0.22 + n * 0.06];
+      case MAT.FOREST: return [0.18, 0.52 + n * 0.10, 0.16];
+      case MAT.ROCK: return [0.62 + n * 0.08, 0.50 + n * 0.05, 0.40];
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];
       case MAT.RUNWAY: return [0.22, 0.23, 0.26];
@@ -328,15 +328,14 @@ export function createTerrain() {
     // Lava in the crater and in noisy streaks down the cone
     const streak = fbm(x * 0.025, z * 0.025, 3, 11);
     if (vd < 42 && hgt > 210) {
-      col[o*3] = 1.0; col[o*3+1] = 0.28 + streak * 0.25; col[o*3+2] = 0.04;
+      col[o*3] = 1.0; col[o*3+1] = 0.38 + streak * 0.25; col[o*3+2] = 0.08;
       aid[o*2] = MAT.LIGHT; aid[o*2+1] = 1;
     } else if (vd < 150 && hgt > 130 && streak > 0.58) {
       col[o*3] = 0.95; col[o*3+1] = 0.22 + (streak - 0.58) * 0.8; col[o*3+2] = 0.04;
       aid[o*2] = MAT.LIGHT; aid[o*2+1] = 1;
     } else {
-      const sh = 0.38 + 0.75 * Math.pow(ndl, 0.7);
-      const n2 = 0.82 + 0.32 * fbm(x * 0.030, z * 0.030, 3, 2.2);
-      col[o*3] *= sh * n2; col[o*3+1] *= sh * n2; col[o*3+2] *= sh * n2;
+      const sh = 0.88 + 0.14 * ndl;
+      col[o*3] *= sh; col[o*3+1] *= sh; col[o*3+2] *= sh;
     }
   }
   geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
