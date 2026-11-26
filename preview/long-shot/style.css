@@ -291,20 +291,20 @@ body.dialopen .touchui .dialbtn { background: rgba(255,180,58,0.4); border-color
 body.fineon .touchui .fine { background: rgba(255,200,60,0.55); border-color: #ffd880; }
 body:not(.vscope) .touchui .fine { display: none; }
 /* zoom rail: scope view only, right edge between the top row and FIRE */
-.zoomrail { position: absolute; display: none; pointer-events: auto; right: calc(var(--sr) + 22px); top: calc(var(--st) + 66px); bottom: calc(var(--sb) + 110px); width: 56px; max-height: 240px;
-  flex-direction: column; justify-content: space-between; align-items: center; padding: 6px 0; box-sizing: border-box; border-radius: 28px;
+.zoomrail { position: absolute; display: none; pointer-events: auto; right: calc(var(--sr) + 22px); top: calc(var(--st) + 66px); bottom: calc(var(--sb) + 110px); width: 56px; max-height: 260px;
+  flex-direction: column; justify-content: space-between; align-items: center; padding: 4px 0; box-sizing: border-box; border-radius: 28px;
   background: rgba(12,14,17,0.45); border: 1px solid rgba(255,255,255,0.25); touch-action: none; --zi: 1; }
 body.touch.vscope .zoomrail { display: flex; }
-.zoomrail span { position: relative; z-index: 1; font: 700 11px ui-monospace, monospace; color: rgba(235,240,243,0.75); height: 33.3%; display: flex; align-items: center; }
-.zoomrail .knob { position: absolute; left: 4px; right: 4px; height: calc(33.3% - 6px); border-radius: 22px; background: rgba(255,180,58,0.45); border: 1px solid #ffd27a;
-  top: calc(6px + (2 - var(--zi)) * (100% - 12px) / 3); transition: top .12s ease-out; }
+.zoomrail span { position: relative; z-index: 1; font: 700 11px ui-monospace, monospace; color: rgba(235,240,243,0.75); height: 25%; display: flex; align-items: center; }
+.zoomrail .knob { position: absolute; left: 4px; right: 4px; height: calc(25% - 4px); border-radius: 22px; background: rgba(255,180,58,0.45); border: 1px solid #ffd27a;
+  top: calc(4px + (3 - var(--zi)) * (100% - 8px) / 4); transition: top .12s ease-out; }
 .zoomrail.down { border-color: #ffd27a; }
 /* dial pad: turrets popup above the bottom-left row; shows the live dial */
 .dialpad { position: absolute; display: none; left: var(--sl); bottom: calc(var(--sb) + 64px); pointer-events: auto; padding: 6px; border-radius: 16px; background: rgba(8,10,12,0.72); border: 1px solid rgba(255,210,122,0.45); }
 body.dialopen .dialpad { display: block; }
 .dialval { white-space: pre-line; line-height: 1.35; font: 700 11px ui-monospace, monospace; color: #ffde70; text-align: center; padding: 2px 0 6px; letter-spacing: .04em; }
 .dgrid { display: grid; grid-template-columns: repeat(3, var(--tb)); gap: 6px; }
-.dgrid .zero { font-size: 11px; }
+.dgrid .zero { font-size: 10px; letter-spacing: 0; }
 body.touch .hkeys { display: none; }
 /* DOM HUD on touch: clear of the button rows */
 body.touch .htop { top: var(--st); left: var(--sl); gap: 8px; font-size: 11px; }
@@ -324,9 +324,9 @@ body.touch .htoast { font-size: 18px; }
 body.touch.portrait .lt-btns { bottom: calc(var(--sb) + 146px); flex-wrap: wrap; max-width: calc(100vw - var(--sl) - var(--sr)); }
 body.touch.portrait .dialpad { bottom: calc(var(--sb) + 146px); }
 body.touch.portrait.dialopen .lt-btns { display: none; }
-body.touch.portrait .hradio { top: calc(var(--st) + 64px); max-width: calc(100vw - var(--sl) - var(--sr)); box-sizing: border-box; }
-body.touch.portrait .hhint { top: calc(var(--st) + 64px); bottom: auto; max-width: calc(100vw - 40px); }
-body.touch.portrait .hescape { top: calc(var(--st) + 64px); left: var(--sl); right: var(--sr); }
+body.touch.portrait .hradio { top: calc(var(--st) + 152px); max-width: calc(100vw - var(--sl) - var(--sr)); box-sizing: border-box; }
+body.touch.portrait .hhint { top: calc(var(--st) + 152px); bottom: auto; max-width: calc(100vw - 40px); }
+body.touch.portrait .hescape { top: calc(var(--st) + 152px); left: var(--sl); right: var(--sr); }
 body.touch.portrait .htop { top: auto; bottom: var(--sb); flex-wrap: wrap; max-width: calc(100vw - var(--sl) - 220px); }
 body.touch.portrait .zoomrail { top: auto; bottom: calc(var(--sb) + 214px); height: 168px; }
 @media (max-height: 360px) and (orientation: landscape) {
@@ -365,3 +365,8 @@ body.touch .menu button, body.touch .panel button, body.touch .screen button { m
   .panel.small .primary { grid-column: 1 / -1; }
 }
 .screen, .panel { -webkit-overflow-scrolling: touch; }
+
+/* full-screen mobile scope: controls float more transparently over the image */
+body.touch.vscope .touchui button:not(.fire):not(.down) { background: rgba(12,14,17,0.32); border-color: rgba(255,255,255,0.22); }
+body.touch.vscope .touchui .fire:not(.down) { background: rgba(184,38,30,0.5); }
+body.touch.vscope .zoomrail { background: rgba(12,14,17,0.3); }
