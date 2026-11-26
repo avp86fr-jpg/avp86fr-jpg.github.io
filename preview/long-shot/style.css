@@ -435,3 +435,11 @@ body.has-therm .hkeys .kt, body.has-spot .hkeys .ks { display: inline; }
 body.touch .hradio img { width: 36px; height: 36px; border-radius: 4px; }
 .story .sdlg img { width: 72px; height: 72px; }
 .bmoth img { width: 60px; height: 60px; }
+
+/* M5 counter-sniper duel: detection meter */
+.hdetect{display:none;position:absolute;left:50%;top:64px;transform:translateX(-50%);width:min(280px,46vw);font:600 10px/1 'Barlow Condensed',sans-serif;letter-spacing:.22em;color:#d8d2c4;text-align:center;pointer-events:none;z-index:6}
+body.has-detect .hdetect{display:block}
+.hdetect i{display:block;height:5px;margin-top:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);position:relative;overflow:hidden}
+.hdetect i::after{content:'';position:absolute;inset:0;transform-origin:left;transform:scaleX(var(--k,0));background:linear-gradient(90deg,#e8c070,#ff6a3a);transition:transform .15s linear}
+.hdetect.hot{color:#ff8a5a;animation:detp .5s infinite alternate}.hdetect.done{opacity:.35}
+@keyframes detp{to{opacity:.55}}
