@@ -49,6 +49,11 @@
           <p id="dzWarn" class="warn"></p>
         </div>
       </div>
+      <div class="dzfoot">
+        <div class="dzfield"><h4>Field data</h4><table id="dzField"></table></div>
+        <div class="dzdope"><h4>ROOK-7 dope card · zero 100 m</h4><table id="dzDope"></table><div class="dzhint">Drop and wind in mil. Wind column is per 1 m/s of full-value crosswind — multiply by the gauge's CROSS value.</div></div>
+        <div class="dzcheck"><h4>Binocular checklist — confirm every trait before you fire</h4><div id="dzTraits"></div></div>
+      </div>
     </div>
     <div class="bside">
       <div class="bmeta"><div id="bPlace"></div><div id="bTime"></div></div>
@@ -78,9 +83,10 @@
   <div id="hMark" class="hmark"><i></i><i></i><i></i><i></i></div>
   <div id="hKill" class="hkill"><b></b><span></span></div>
   <div id="hHint" class="hhint hidden"></div>
+  <div id="hEscape" class="hescape hidden"><b></b><span></span><i></i></div>
   <div id="hExfil" class="hexfil hidden"><button id="exfilBtn" class="primary">EXTRACT ▸</button></div>
   <div id="hKeys" class="hkeys">
-    <b>RMB</b> scope · <b>Wheel</b> zoom · <b>LMB</b> fire · <b>Shift</b> hold breath · <b>B</b> binoculars · <b>T</b> tag · <b>R</b> range · <b>Q/E</b> windage · <b>↑/↓</b> elevation · <b>Tab</b> intel · <b>Space</b> fast-forward · <b>Esc</b> pause
+    <b>RMB</b> scope · <b>Wheel</b> zoom · <b>LMB</b> fire · <b>Shift</b> hold breath · <b>C</b> fine aim · <b>B</b> binoculars · <b>T</b> tag · <b>R</b> range · <b>Q/E</b> windage · <b>↑/↓</b> elevation · <b>Tab</b> intel · <b>Space</b> fast-forward · <b>Esc</b> pause
   </div>
   <div class="touchui">
     <div class="tl-btns"><button data-act="intel">INTEL</button><button data-act="pause">II</button></div>
@@ -88,7 +94,8 @@
     <div class="dial"><button data-act="elevUp">▲</button><div><button data-act="windL">◀</button><button data-act="windR">▶</button></div><button data-act="elevDn">▼</button></div>
     <div class="rt-btns"><button data-act="zoomIn">＋</button><button data-act="zoomOut">－</button><button data-act="scope">SCOPE</button></div>
     <button class="fire" data-act="fire">FIRE</button>
-    <button class="breath" data-hold="breath">BREATH</button>
+    <button class="breath" data-hold="breath">HOLD<br>BREATH</button>
+    <button class="fine" data-act="fine">FINE</button>
   </div>
 </div>
 

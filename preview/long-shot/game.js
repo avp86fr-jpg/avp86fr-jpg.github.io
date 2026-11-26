@@ -413,13 +413,13 @@
     vertexPosition.applyMatrix4(_viewWorldMatrix);
   }
   function checkIntersection$1(object, material, raycaster, ray, pA, pB, pC, point) {
-    let intersect;
+    let intersect2;
     if (material.side === BackSide) {
-      intersect = ray.intersectTriangle(pC, pB, pA, true, point);
+      intersect2 = ray.intersectTriangle(pC, pB, pA, true, point);
     } else {
-      intersect = ray.intersectTriangle(pA, pB, pC, material.side === FrontSide, point);
+      intersect2 = ray.intersectTriangle(pA, pB, pC, material.side === FrontSide, point);
     }
-    if (intersect === null) return null;
+    if (intersect2 === null) return null;
     _intersectionPointWorld.copy(point);
     _intersectionPointWorld.applyMatrix4(object.matrixWorld);
     const distance = raycaster.ray.origin.distanceTo(_intersectionPointWorld);
@@ -736,7 +736,7 @@
   }
   function findHoleBridge(hole, outerNode) {
     let p = outerNode;
-    const hx = hole.x;
+    const hx2 = hole.x;
     const hy = hole.y;
     let qx = -Infinity;
     let m;
@@ -745,10 +745,10 @@
       if (equals(hole, p.next)) return p.next;
       else if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
         const x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
-        if (x <= hx && x > qx) {
+        if (x <= hx2 && x > qx) {
           qx = x;
           m = p.x < p.next.x ? p : p.next;
-          if (x === hx) return m;
+          if (x === hx2) return m;
         }
       }
       p = p.next;
@@ -760,8 +760,8 @@
     let tanMin = Infinity;
     p = m;
     do {
-      if (hx >= p.x && p.x >= mx && hx !== p.x && pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
-        const tan = Math.abs(hy - p.y) / (hx - p.x);
+      if (hx2 >= p.x && p.x >= mx && hx2 !== p.x && pointInTriangle(hy < my ? hx2 : qx, hy, mx, my, hy < my ? qx : hx2, hy, p.x, p.y)) {
+        const tan = Math.abs(hy - p.y) / (hx2 - p.x);
         if (locallyInside(p, hole) && (tan < tanMin || tan === tanMin && (p.x > m.x || p.x === m.x && sectorContainsSector(m, p)))) {
           m = p;
           tanMin = tan;
@@ -1090,6 +1090,22 @@
       tangents[i] *= timeScale;
     }
   }
+  function ascSort(a, b) {
+    return a.distance - b.distance;
+  }
+  function intersect(object, raycaster, intersects2, recursive) {
+    let propagate = true;
+    if (object.layers.test(raycaster.layers)) {
+      const result = object.raycast(raycaster, intersects2);
+      if (result === false) propagate = false;
+    }
+    if (propagate === true && recursive === true) {
+      const children = object.children;
+      for (let i = 0, l = children.length; i < l; i++) {
+        intersect(children[i], raycaster, intersects2, true);
+      }
+    }
+  }
   function getByteLength(width, height4, format, type) {
     const typeByteLength = getTextureTypeByteLength(type);
     switch (format) {
@@ -1202,7 +1218,7 @@
     }
     throw new Error(`THREE.TextureUtils: Unknown texture type ${type}.`);
   }
-  var REVISION, CullFaceNone, CullFaceBack, CullFaceFront, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap, FrontSide, BackSide, DoubleSide, NoBlending, NormalBlending, AdditiveBlending, SubtractiveBlending, MultiplyBlending, CustomBlending, AddEquation, SubtractEquation, ReverseSubtractEquation, MinEquation, MaxEquation, ZeroFactor, OneFactor, SrcColorFactor, OneMinusSrcColorFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, DstAlphaFactor, OneMinusDstAlphaFactor, DstColorFactor, OneMinusDstColorFactor, SrcAlphaSaturateFactor, ConstantColorFactor, OneMinusConstantColorFactor, ConstantAlphaFactor, OneMinusConstantAlphaFactor, NeverDepth, AlwaysDepth, LessDepth, LessEqualDepth, EqualDepth, GreaterEqualDepth, GreaterDepth, NotEqualDepth, MultiplyOperation, MixOperation, AddOperation, NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping, AgXToneMapping, NeutralToneMapping, AttachedBindMode, DetachedBindMode, UVMapping, CubeReflectionMapping, CubeRefractionMapping, EquirectangularReflectionMapping, EquirectangularRefractionMapping, RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearFilter, LinearMipmapNearestFilter, LinearMipmapLinearFilter, UnsignedByteType, ByteType, ShortType, UnsignedShortType, IntType, UnsignedIntType, FloatType, HalfFloatType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedInt248Type, UnsignedInt5999Type, UnsignedInt101111Type, AlphaFormat, RGBFormat, RGBAFormat, DepthFormat, DepthStencilFormat, RedFormat, RedIntegerFormat, RGFormat, RGIntegerFormat, RGBAIntegerFormat, RGB_S3TC_DXT1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_PVRTC_2BPPV1_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGBA_ETC2_EAC_Format, R11_EAC_Format, SIGNED_R11_EAC_Format, RG11_EAC_Format, SIGNED_RG11_EAC_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_10x10_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_BPTC_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RED_RGTC1_Format, SIGNED_RED_RGTC1_Format, RED_GREEN_RGTC2_Format, SIGNED_RED_GREEN_RGTC2_Format, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InterpolateBezier, ZeroCurvatureEnding, ZeroSlopeEnding, WrapAroundEnding, BasicDepthPacking, TangentSpaceNormalMap, ObjectSpaceNormalMap, NoColorSpace, SRGBColorSpace, LinearSRGBColorSpace, LinearTransfer, SRGBTransfer, KeepStencilOp, AlwaysStencilFunc, NeverCompare, LessCompare, EqualCompare, LessEqualCompare, GreaterCompare, NotEqualCompare, GreaterEqualCompare, AlwaysCompare, StaticDrawUsage, GLSL3, WebGLCoordinateSystem, WebGPUCoordinateSystem, _cache, _setConsoleFunction, ReversedDepthFuncs, EventDispatcher, _lut, _seed, DEG2RAD, RAD2DEG, MathUtils, Vector2, Quaternion, Vector3, _vector$c, _quaternion$5, Matrix3, _m3, LINEAR_REC709_TO_XYZ, XYZ_TO_LINEAR_REC709, ColorManagement, _canvas, ImageUtils, _sourceId, TextureSource, _textureId, _tempVec3, Texture, Vector4, RenderTarget, WebGLRenderTarget, DataArrayTexture, Data3DTexture, Matrix4, _v1$7, _m1$2, _zero, _one, _x, _y, _z, _matrix$2, _quaternion$4, Euler, Layers, _object3DId, _v1$6, _q1, _m1$1, _target, _position$4, _scale$3, _quaternion$3, _xAxis, _yAxis, _zAxis, _addedEvent, _removedEvent, _childaddedEvent, _childremovedEvent, Object3D, Group, _moveEvent, WebXRController, _colorKeywords, _hslA, _hslB, Color, _color, Scene, _v0$2, _v1$5, _v2$4, _v3$2, _vab, _vac, _vbc, _vap, _vbp, _vcp, _v40, _v41, _v42, Triangle, Box3, _points, _vector$b, _box$4, _v0$1, _v1$4, _v2$3, _f0, _f1, _f2, _center, _extents, _triangleNormal, _testAxis, _vector$a, _vector2$1, _id$2, BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute, Float32BufferAttribute, _box$3, _v1$3, _v2$2, Sphere, _id$1, _m1, _obj, _offset, _box$2, _boxMorphTargets, _vector$9, BufferGeometry, InterleavedBuffer, _vector$8, InterleavedBufferAttribute, _vector1, _vector2, _normalMatrix, Plane, _materialId, Material, SpriteMaterial, _geometry, _intersectPoint, _worldScale, _mvPosition, _alignedPosition, _rotatedPosition, _viewWorldMatrix, _vA$1, _vB$1, _vC$1, _uvA, _uvB, _uvC, Sprite, _vector$7, _segCenter, _segDir, _diff, Ray, MeshBasicMaterial, _inverseMatrix$3, _ray$3, _sphere$6, _sphereHitAt, _vA, _vB, _vC, _tempA, _morphA, _intersectionPoint, _intersectionPointWorld, Mesh, _baseVector, _skinIndex, _skinWeight, _vector4, _matrix4, _vertex, _sphere$5, _inverseMatrix$2, _ray$2, SkinnedMesh, Bone, DataTexture, _offsetMatrix, _identityMatrix, Skeleton, InstancedBufferAttribute, _instanceLocalMatrix, _instanceWorldMatrix, _instanceIntersects, _box3, _identity, _mesh$1, _sphere$4, InstancedMesh, _sphere$3, _defaultSpriteCenter, _vector$6, Frustum, _projScreenMatrix$1, FrustumArray, PointsMaterial, _inverseMatrix, _ray, _sphere, _position$3, Points, CubeTexture, CanvasTexture, DepthTexture, CubeDepthTexture, ExternalTexture, BoxGeometry, CapsuleGeometry, CircleGeometry, CylinderGeometry, ConeGeometry, PolyhedronGeometry, Curve, EllipseCurve, ArcCurve, tmp, tmp2, px, py, pz, CatmullRomCurve3, CubicBezierCurve, CubicBezierCurve3, LineCurve, LineCurve3, QuadraticBezierCurve, QuadraticBezierCurve3, SplineCurve, Curves, CurvePath, Path, Shape, Earcut, ShapeUtils, ExtrudeGeometry, WorldUVGenerator, IcosahedronGeometry, LatheGeometry, PlaneGeometry, RingGeometry, SphereGeometry, TorusGeometry, UniformsUtils, default_vertex, default_fragment, ShaderMaterial, RawShaderMaterial, MeshStandardMaterial, MeshDepthMaterial, MeshDistanceMaterial, Interpolant, CubicInterpolant, LinearInterpolant, DiscreteInterpolant, BezierInterpolant, KeyframeTrack, BooleanKeyframeTrack, ColorKeyframeTrack, NumberKeyframeTrack, QuaternionLinearInterpolant, QuaternionKeyframeTrack, StringKeyframeTrack, VectorKeyframeTrack, LoadingManager, DefaultLoadingManager, Loader, Light, HemisphereLight, _projScreenMatrix, _lightPositionWorld, _lookTarget, LightShadow, _position$2, _quaternion$2, _scale$2, Camera, _v3$1, _minTarget, _maxTarget, PerspectiveCamera, PointLightShadow, PointLight, OrthographicCamera, DirectionalLightShadow, DirectionalLight, fov, aspect, CubeCamera, ArrayCamera, _RESERVED_CHARS_RE, _reservedRe, _wordChar, _wordCharOrDot, _directoryRe, _nodeRe, _objectRe, _propertyRe, _trackRe, _supportedObjectNames, Composite, PropertyBinding, _controlInterpolantsResultBuffer, Matrix2;
+  var REVISION, CullFaceNone, CullFaceBack, CullFaceFront, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap, FrontSide, BackSide, DoubleSide, NoBlending, NormalBlending, AdditiveBlending, SubtractiveBlending, MultiplyBlending, CustomBlending, AddEquation, SubtractEquation, ReverseSubtractEquation, MinEquation, MaxEquation, ZeroFactor, OneFactor, SrcColorFactor, OneMinusSrcColorFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, DstAlphaFactor, OneMinusDstAlphaFactor, DstColorFactor, OneMinusDstColorFactor, SrcAlphaSaturateFactor, ConstantColorFactor, OneMinusConstantColorFactor, ConstantAlphaFactor, OneMinusConstantAlphaFactor, NeverDepth, AlwaysDepth, LessDepth, LessEqualDepth, EqualDepth, GreaterEqualDepth, GreaterDepth, NotEqualDepth, MultiplyOperation, MixOperation, AddOperation, NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping, AgXToneMapping, NeutralToneMapping, AttachedBindMode, DetachedBindMode, UVMapping, CubeReflectionMapping, CubeRefractionMapping, EquirectangularReflectionMapping, EquirectangularRefractionMapping, RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearFilter, LinearMipmapNearestFilter, LinearMipmapLinearFilter, UnsignedByteType, ByteType, ShortType, UnsignedShortType, IntType, UnsignedIntType, FloatType, HalfFloatType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedInt248Type, UnsignedInt5999Type, UnsignedInt101111Type, AlphaFormat, RGBFormat, RGBAFormat, DepthFormat, DepthStencilFormat, RedFormat, RedIntegerFormat, RGFormat, RGIntegerFormat, RGBAIntegerFormat, RGB_S3TC_DXT1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_PVRTC_2BPPV1_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGBA_ETC2_EAC_Format, R11_EAC_Format, SIGNED_R11_EAC_Format, RG11_EAC_Format, SIGNED_RG11_EAC_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_10x10_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_BPTC_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RED_RGTC1_Format, SIGNED_RED_RGTC1_Format, RED_GREEN_RGTC2_Format, SIGNED_RED_GREEN_RGTC2_Format, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InterpolateBezier, ZeroCurvatureEnding, ZeroSlopeEnding, WrapAroundEnding, BasicDepthPacking, TangentSpaceNormalMap, ObjectSpaceNormalMap, NoColorSpace, SRGBColorSpace, LinearSRGBColorSpace, LinearTransfer, SRGBTransfer, KeepStencilOp, AlwaysStencilFunc, NeverCompare, LessCompare, EqualCompare, LessEqualCompare, GreaterCompare, NotEqualCompare, GreaterEqualCompare, AlwaysCompare, StaticDrawUsage, GLSL3, WebGLCoordinateSystem, WebGPUCoordinateSystem, _cache, _setConsoleFunction, ReversedDepthFuncs, EventDispatcher, _lut, _seed, DEG2RAD, RAD2DEG, MathUtils, Vector2, Quaternion, Vector3, _vector$c, _quaternion$5, Matrix3, _m3, LINEAR_REC709_TO_XYZ, XYZ_TO_LINEAR_REC709, ColorManagement, _canvas, ImageUtils, _sourceId, TextureSource, _textureId, _tempVec3, Texture, Vector4, RenderTarget, WebGLRenderTarget, DataArrayTexture, Data3DTexture, Matrix4, _v1$7, _m1$2, _zero, _one, _x, _y, _z, _matrix$2, _quaternion$4, Euler, Layers, _object3DId, _v1$6, _q1, _m1$1, _target, _position$4, _scale$3, _quaternion$3, _xAxis, _yAxis, _zAxis, _addedEvent, _removedEvent, _childaddedEvent, _childremovedEvent, Object3D, Group, _moveEvent, WebXRController, _colorKeywords, _hslA, _hslB, Color, _color, Scene, _v0$2, _v1$5, _v2$4, _v3$2, _vab, _vac, _vbc, _vap, _vbp, _vcp, _v40, _v41, _v42, Triangle, Box3, _points, _vector$b, _box$4, _v0$1, _v1$4, _v2$3, _f0, _f1, _f2, _center, _extents, _triangleNormal, _testAxis, _vector$a, _vector2$1, _id$2, BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute, Float32BufferAttribute, _box$3, _v1$3, _v2$2, Sphere, _id$1, _m1, _obj, _offset, _box$2, _boxMorphTargets, _vector$9, BufferGeometry, InterleavedBuffer, _vector$8, InterleavedBufferAttribute, _vector1, _vector2, _normalMatrix, Plane, _materialId, Material, SpriteMaterial, _geometry, _intersectPoint, _worldScale, _mvPosition, _alignedPosition, _rotatedPosition, _viewWorldMatrix, _vA$1, _vB$1, _vC$1, _uvA, _uvB, _uvC, Sprite, _vector$7, _segCenter, _segDir, _diff, Ray, MeshBasicMaterial, _inverseMatrix$3, _ray$3, _sphere$6, _sphereHitAt, _vA, _vB, _vC, _tempA, _morphA, _intersectionPoint, _intersectionPointWorld, Mesh, _baseVector, _skinIndex, _skinWeight, _vector4, _matrix4, _vertex, _sphere$5, _inverseMatrix$2, _ray$2, SkinnedMesh, Bone, DataTexture, _offsetMatrix, _identityMatrix, Skeleton, InstancedBufferAttribute, _instanceLocalMatrix, _instanceWorldMatrix, _instanceIntersects, _box3, _identity, _mesh$1, _sphere$4, InstancedMesh, _sphere$3, _defaultSpriteCenter, _vector$6, Frustum, _projScreenMatrix$1, FrustumArray, PointsMaterial, _inverseMatrix, _ray, _sphere, _position$3, Points, CubeTexture, CanvasTexture, DepthTexture, CubeDepthTexture, ExternalTexture, BoxGeometry, CapsuleGeometry, CircleGeometry, CylinderGeometry, ConeGeometry, PolyhedronGeometry, Curve, EllipseCurve, ArcCurve, tmp, tmp2, px, py, pz, CatmullRomCurve3, CubicBezierCurve, CubicBezierCurve3, LineCurve, LineCurve3, QuadraticBezierCurve, QuadraticBezierCurve3, SplineCurve, Curves, CurvePath, Path, Shape, Earcut, ShapeUtils, ExtrudeGeometry, WorldUVGenerator, IcosahedronGeometry, LatheGeometry, PlaneGeometry, RingGeometry, SphereGeometry, TorusGeometry, UniformsUtils, default_vertex, default_fragment, ShaderMaterial, RawShaderMaterial, MeshStandardMaterial, MeshLambertMaterial, MeshDepthMaterial, MeshDistanceMaterial, Interpolant, CubicInterpolant, LinearInterpolant, DiscreteInterpolant, BezierInterpolant, KeyframeTrack, BooleanKeyframeTrack, ColorKeyframeTrack, NumberKeyframeTrack, QuaternionLinearInterpolant, QuaternionKeyframeTrack, StringKeyframeTrack, VectorKeyframeTrack, LoadingManager, DefaultLoadingManager, Loader, Light, HemisphereLight, _projScreenMatrix, _lightPositionWorld, _lookTarget, LightShadow, _position$2, _quaternion$2, _scale$2, Camera, _v3$1, _minTarget, _maxTarget, PerspectiveCamera, PointLightShadow, PointLight, OrthographicCamera, DirectionalLightShadow, DirectionalLight, AmbientLight, fov, aspect, CubeCamera, ArrayCamera, _RESERVED_CHARS_RE, _reservedRe, _wordChar, _wordCharOrDot, _directoryRe, _nodeRe, _objectRe, _propertyRe, _trackRe, _supportedObjectNames, Composite, PropertyBinding, _controlInterpolantsResultBuffer, _matrix, Raycaster, Matrix2;
   var init_three_core = __esm({
     "node_modules/three/build/three.core.js"() {
       REVISION = "187";
@@ -6861,23 +6877,23 @@
         	 * @param {boolean} [reversedDepth=false] - Whether to use a reversed depth.
         	 * @return {Matrix4} A reference to this matrix.
         	 */
-        makePerspective(left, right, top, bottom, near, far, coordinateSystem = WebGLCoordinateSystem, reversedDepth = false) {
+        makePerspective(left, right, top, bottom, near2, far, coordinateSystem = WebGLCoordinateSystem, reversedDepth = false) {
           const te = this.elements;
-          const x = 2 * near / (right - left);
-          const y = 2 * near / (top - bottom);
+          const x = 2 * near2 / (right - left);
+          const y = 2 * near2 / (top - bottom);
           const a = (right + left) / (right - left);
           const b = (top + bottom) / (top - bottom);
           let c, d;
           if (reversedDepth) {
-            c = near / (far - near);
-            d = far * near / (far - near);
+            c = near2 / (far - near2);
+            d = far * near2 / (far - near2);
           } else {
             if (coordinateSystem === WebGLCoordinateSystem) {
-              c = -(far + near) / (far - near);
-              d = -2 * far * near / (far - near);
+              c = -(far + near2) / (far - near2);
+              d = -2 * far * near2 / (far - near2);
             } else if (coordinateSystem === WebGPUCoordinateSystem) {
-              c = -far / (far - near);
-              d = -far * near / (far - near);
+              c = -far / (far - near2);
+              d = -far * near2 / (far - near2);
             } else {
               throw new Error("THREE.Matrix4.makePerspective(): Invalid coordinate system: " + coordinateSystem);
             }
@@ -6914,7 +6930,7 @@
         	 * @param {boolean} [reversedDepth=false] - Whether to use a reversed depth.
         	 * @return {Matrix4} A reference to this matrix.
         	 */
-        makeOrthographic(left, right, top, bottom, near, far, coordinateSystem = WebGLCoordinateSystem, reversedDepth = false) {
+        makeOrthographic(left, right, top, bottom, near2, far, coordinateSystem = WebGLCoordinateSystem, reversedDepth = false) {
           const te = this.elements;
           const x = 2 / (right - left);
           const y = 2 / (top - bottom);
@@ -6922,15 +6938,15 @@
           const b = -(top + bottom) / (top - bottom);
           let c, d;
           if (reversedDepth) {
-            c = 1 / (far - near);
-            d = far / (far - near);
+            c = 1 / (far - near2);
+            d = far / (far - near2);
           } else {
             if (coordinateSystem === WebGLCoordinateSystem) {
-              c = -2 / (far - near);
-              d = -(far + near) / (far - near);
+              c = -2 / (far - near2);
+              d = -(far + near2) / (far - near2);
             } else if (coordinateSystem === WebGPUCoordinateSystem) {
-              c = -1 / (far - near);
-              d = -near / (far - near);
+              c = -1 / (far - near2);
+              d = -near2 / (far - near2);
             } else {
               throw new Error("THREE.Matrix4.makeOrthographic(): Invalid coordinate system: " + coordinateSystem);
             }
@@ -13305,12 +13321,12 @@
           _uvA.set(0, 0);
           _uvB.set(1, 0);
           _uvC.set(1, 1);
-          let intersect = raycaster.ray.intersectTriangle(_vA$1, _vB$1, _vC$1, false, _intersectPoint);
-          if (intersect === null) {
+          let intersect2 = raycaster.ray.intersectTriangle(_vA$1, _vB$1, _vC$1, false, _intersectPoint);
+          if (intersect2 === null) {
             transformVertex(_vB$1.set(-0.5, 0.5, 0), _mvPosition, center, _worldScale, sin, cos);
             _uvB.set(0, 1);
-            intersect = raycaster.ray.intersectTriangle(_vA$1, _vC$1, _vB$1, false, _intersectPoint);
-            if (intersect === null) {
+            intersect2 = raycaster.ray.intersectTriangle(_vA$1, _vC$1, _vB$1, false, _intersectPoint);
+            if (intersect2 === null) {
               return;
             }
           }
@@ -14634,10 +14650,10 @@
             _mesh$1.matrixWorld = _instanceWorldMatrix;
             _mesh$1.raycast(raycaster, _instanceIntersects);
             for (let i = 0, l = _instanceIntersects.length; i < l; i++) {
-              const intersect = _instanceIntersects[i];
-              intersect.instanceId = instanceId;
-              intersect.object = this;
-              intersects2.push(intersect);
+              const intersect2 = _instanceIntersects[i];
+              intersect2.instanceId = instanceId;
+              intersect2.object = this;
+              intersects2.push(intersect2);
             }
             _instanceIntersects.length = 0;
           }
@@ -18695,6 +18711,89 @@
           return this;
         }
       };
+      MeshLambertMaterial = class extends Material {
+        /**
+         * Constructs a new mesh lambert material.
+         *
+         * @param {Object} [parameters] - An object with one or more properties
+         * defining the material's appearance. Any property of the material
+         * (including any property from inherited materials) can be passed
+         * in here. Color values can be passed any type of value accepted
+         * by {@link Color#set}.
+         */
+        constructor(parameters) {
+          super();
+          this.isMeshLambertMaterial = true;
+          this.type = "MeshLambertMaterial";
+          this.color = new Color(16777215);
+          this.map = null;
+          this.lightMap = null;
+          this.lightMapIntensity = 1;
+          this.aoMap = null;
+          this.aoMapIntensity = 1;
+          this.emissive = new Color(0);
+          this.emissiveIntensity = 1;
+          this.emissiveMap = null;
+          this.bumpMap = null;
+          this.bumpScale = 1;
+          this.normalMap = null;
+          this.normalMapType = TangentSpaceNormalMap;
+          this.normalScale = new Vector2(1, 1);
+          this.displacementMap = null;
+          this.displacementScale = 1;
+          this.displacementBias = 0;
+          this.specularMap = null;
+          this.alphaMap = null;
+          this.envMap = null;
+          this.envMapRotation = new Euler();
+          this.combine = MultiplyOperation;
+          this.reflectivity = 1;
+          this.envMapIntensity = 1;
+          this.refractionRatio = 0.98;
+          this.wireframe = false;
+          this.wireframeLinewidth = 1;
+          this.wireframeLinecap = "round";
+          this.wireframeLinejoin = "round";
+          this.flatShading = false;
+          this.fog = true;
+          this.setValues(parameters);
+        }
+        copy(source) {
+          super.copy(source);
+          this.color.copy(source.color);
+          this.map = source.map;
+          this.lightMap = source.lightMap;
+          this.lightMapIntensity = source.lightMapIntensity;
+          this.aoMap = source.aoMap;
+          this.aoMapIntensity = source.aoMapIntensity;
+          this.emissive.copy(source.emissive);
+          this.emissiveMap = source.emissiveMap;
+          this.emissiveIntensity = source.emissiveIntensity;
+          this.bumpMap = source.bumpMap;
+          this.bumpScale = source.bumpScale;
+          this.normalMap = source.normalMap;
+          this.normalMapType = source.normalMapType;
+          this.normalScale.copy(source.normalScale);
+          this.displacementMap = source.displacementMap;
+          this.displacementScale = source.displacementScale;
+          this.displacementBias = source.displacementBias;
+          this.specularMap = source.specularMap;
+          this.alphaMap = source.alphaMap;
+          this.envMap = source.envMap;
+          this.envMapRotation.copy(source.envMapRotation);
+          this.combine = source.combine;
+          this.reflectivity = source.reflectivity;
+          this.envMapIntensity = source.envMapIntensity;
+          this.refractionRatio = source.refractionRatio;
+          this.wireframe = source.wireframe;
+          this.wireframeLinewidth = source.wireframeLinewidth;
+          this.wireframeLinecap = source.wireframeLinecap;
+          this.wireframeLinejoin = source.wireframeLinejoin;
+          this.flatShading = source.flatShading;
+          this.fog = source.fog;
+          return this;
+        }
+      };
       MeshDepthMaterial = class extends Material {
         /**
          * Constructs a new mesh depth material.
@@ -20121,13 +20220,13 @@
          * @param {number} [near=0.1] - The camera's near plane.
          * @param {number} [far=2000] - The camera's far plane.
          */
-        constructor(fov2 = 50, aspect2 = 1, near = 0.1, far = 2e3) {
+        constructor(fov2 = 50, aspect2 = 1, near2 = 0.1, far = 2e3) {
           super();
           this.isPerspectiveCamera = true;
           this.type = "PerspectiveCamera";
           this.fov = fov2;
           this.zoom = 1;
-          this.near = near;
+          this.near = near2;
           this.far = far;
           this.focus = 10;
           this.aspect = aspect2;
@@ -20304,8 +20403,8 @@
          * camera properties.
          */
         updateProjectionMatrix() {
-          const near = this.near;
-          let top = near * Math.tan(DEG2RAD * 0.5 * this.fov) / this.zoom;
+          const near2 = this.near;
+          let top = near2 * Math.tan(DEG2RAD * 0.5 * this.fov) / this.zoom;
           let height4 = 2 * top;
           let width = this.aspect * height4;
           let left = -0.5 * width;
@@ -20318,8 +20417,8 @@
             height4 *= view.height / fullHeight;
           }
           const skew = this.filmOffset;
-          if (skew !== 0) left += near * skew / this.getFilmWidth();
-          this.projectionMatrix.makePerspective(left, left + width, top, top - height4, near, this.far, this.coordinateSystem, this.reversedDepth);
+          if (skew !== 0) left += near2 * skew / this.getFilmWidth();
+          this.projectionMatrix.makePerspective(left, left + width, top, top - height4, near2, this.far, this.coordinateSystem, this.reversedDepth);
           this.projectionMatrixInverse.copy(this.projectionMatrix).invert();
         }
         toJSON(meta) {
@@ -20404,7 +20503,7 @@
          * @param {number} [near=0.1] - The camera's near plane.
          * @param {number} [far=2000] - The camera's far plane.
          */
-        constructor(left = -1, right = 1, top = 1, bottom = -1, near = 0.1, far = 2e3) {
+        constructor(left = -1, right = 1, top = 1, bottom = -1, near2 = 0.1, far = 2e3) {
           super();
           this.isOrthographicCamera = true;
           this.type = "OrthographicCamera";
@@ -20414,7 +20513,7 @@
           this.right = right;
           this.top = top;
           this.bottom = bottom;
-          this.near = near;
+          this.near = near2;
           this.far = far;
           this.updateProjectionMatrix();
         }
@@ -20551,6 +20650,19 @@
           return data2;
         }
       };
+      AmbientLight = class extends Light {
+        /**
+         * Constructs a new ambient light.
+         *
+         * @param {(number|Color|string)} [color=0xffffff] - The light's color.
+         * @param {number} [intensity=1] - The light's strength/intensity.
+         */
+        constructor(color, intensity) {
+          super(color, intensity);
+          this.isAmbientLight = true;
+          this.type = "AmbientLight";
+        }
+      };
       fov = -90;
       aspect = 1;
       CubeCamera = class extends Object3D {
@@ -20561,28 +20673,28 @@
          * @param {number} far - The camera's far plane.
          * @param {WebGLCubeRenderTarget} renderTarget - The cube render target.
          */
-        constructor(near, far, renderTarget) {
+        constructor(near2, far, renderTarget) {
           super();
           this.type = "CubeCamera";
           this.renderTarget = renderTarget;
           this.coordinateSystem = null;
           this.activeMipmapLevel = 0;
-          const cameraPX = new PerspectiveCamera(fov, aspect, near, far);
+          const cameraPX = new PerspectiveCamera(fov, aspect, near2, far);
           cameraPX.layers = this.layers;
           this.add(cameraPX);
-          const cameraNX = new PerspectiveCamera(fov, aspect, near, far);
+          const cameraNX = new PerspectiveCamera(fov, aspect, near2, far);
           cameraNX.layers = this.layers;
           this.add(cameraNX);
-          const cameraPY = new PerspectiveCamera(fov, aspect, near, far);
+          const cameraPY = new PerspectiveCamera(fov, aspect, near2, far);
           cameraPY.layers = this.layers;
           this.add(cameraPY);
-          const cameraNY = new PerspectiveCamera(fov, aspect, near, far);
+          const cameraNY = new PerspectiveCamera(fov, aspect, near2, far);
           cameraNY.layers = this.layers;
           this.add(cameraNY);
-          const cameraPZ = new PerspectiveCamera(fov, aspect, near, far);
+          const cameraPZ = new PerspectiveCamera(fov, aspect, near2, far);
           cameraPZ.layers = this.layers;
           this.add(cameraPZ);
-          const cameraNZ = new PerspectiveCamera(fov, aspect, near, far);
+          const cameraNZ = new PerspectiveCamera(fov, aspect, near2, far);
           cameraNZ.layers = this.layers;
           this.add(cameraNZ);
         }
@@ -21120,6 +21232,135 @@
         ]
       ];
       _controlInterpolantsResultBuffer = new Float32Array(1);
+      _matrix = /* @__PURE__ */ new Matrix4();
+      Raycaster = class {
+        /**
+         * Constructs a new raycaster.
+         *
+         * @param {Vector3} origin - The origin vector where the ray casts from.
+         * @param {Vector3} direction - The (normalized) direction vector that gives direction to the ray.
+         * @param {number} [near=0] - All results returned are further away than near. Near can't be negative.
+         * @param {number} [far=Infinity] - All results returned are closer than far. Far can't be lower than near.
+         */
+        constructor(origin, direction, near2 = 0, far = Infinity) {
+          this.ray = new Ray(origin, direction);
+          this.near = near2;
+          this.far = far;
+          this.camera = null;
+          this.layers = new Layers();
+          this.params = {
+            Mesh: {},
+            Line: { threshold: 1 },
+            LOD: {},
+            Points: { threshold: 1 },
+            Sprite: {}
+          };
+        }
+        /**
+         * Updates the ray with a new origin and direction by copying the values from the arguments.
+         *
+         * @param {Vector3} origin - The origin vector where the ray casts from.
+         * @param {Vector3} direction - The (normalized) direction vector that gives direction to the ray.
+         */
+        set(origin, direction) {
+          this.ray.set(origin, direction);
+        }
+        /**
+         * Uses the given coordinates and camera to compute a new origin and direction for the internal ray.
+         *
+         * @param {Vector2} coords - 2D coordinates of the mouse, in normalized device coordinates (NDC).
+         * X and Y components should be between `-1` and `1`.
+         * @param {Camera} camera - The camera from which the ray should originate.
+         */
+        setFromCamera(coords, camera) {
+          if (camera.isPerspectiveCamera) {
+            this.ray.origin.setFromMatrixPosition(camera.matrixWorld);
+            this.ray.direction.set(coords.x, coords.y, 0.5).unproject(camera).sub(this.ray.origin).normalize();
+            this.camera = camera;
+          } else if (camera.isOrthographicCamera) {
+            this.ray.origin.set(coords.x, coords.y, camera.projectionMatrix.elements[14]).unproject(camera);
+            this.ray.direction.set(0, 0, -1).transformDirection(camera.matrixWorld);
+            this.camera = camera;
+          } else {
+            error("Raycaster: Unsupported camera type: " + camera.type);
+          }
+        }
+        /**
+         * Uses the given WebXR controller to compute a new origin and direction for the internal ray.
+         *
+         * @param {WebXRController} controller - The controller to copy the position and direction from.
+         * @return {Raycaster} A reference to this raycaster.
+         */
+        setFromXRController(controller) {
+          _matrix.identity().extractRotation(controller.matrixWorld);
+          this.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+          this.ray.direction.set(0, 0, -1).applyMatrix4(_matrix);
+          return this;
+        }
+        /**
+         * The intersection point of a raycaster intersection test.
+         * @typedef {Object} Raycaster~Intersection
+         * @property {number} distance - The distance from the ray's origin to the intersection point.
+         * @property {number} distanceToRay -  Some 3D objects e.g. {@link Points} provide the distance of the
+         * intersection to the nearest point on the ray. For other objects it will be `undefined`.
+         * @property {Vector3} point - The intersection point, in world coordinates.
+         * @property {Object} face - The face that has been intersected.
+         * @property {number} faceIndex - The face index.
+         * @property {Object3D} object - The 3D object that has been intersected.
+         * @property {Vector2} uv - U,V coordinates at point of intersection.
+         * @property {Vector2} uv1 - Second set of U,V coordinates at point of intersection.
+         * @property {Vector3} normal - Interpolated normal vector at point of intersection.
+         * @property {number} instanceId - The index number of the instance where the ray
+         * intersects the {@link InstancedMesh}.
+         * @property {number} batchId - The index number of the instance where the ray
+         * intersects the {@link BatchedMesh}.
+         */
+        /**
+         * Checks all intersection between the ray and the object with or without the
+         * descendants. Intersections are returned sorted by distance, closest first.
+         *
+         * `Raycaster` delegates to the `raycast()` method of the passed 3D object, when
+         * evaluating whether the ray intersects the object or not. This allows meshes to respond
+         * differently to ray casting than lines or points.
+         *
+         * Note that for meshes, faces must be pointed towards the origin of the ray in order
+         * to be detected; intersections of the ray passing through the back of a face will not
+         * be detected. To raycast against both faces of an object, you'll want to set  {@link Material#side}
+         * to `THREE.DoubleSide`.
+         *
+         * Note that a ray hitting a triangle mesh exactly along an edge shared by two faces may be
+         * reported by both faces, resulting in two coincident intersections (identical point and
+         * distance) in the returned array.
+         *
+         * @param {Object3D} object - The 3D object to check for intersection with the ray.
+         * @param {boolean} [recursive=true] - If set to `true`, it also checks all descendants.
+         * Otherwise it only checks intersection with the object.
+         * @param {Array<Raycaster~Intersection>} [intersects=[]] The target array that holds the result of the method.
+         * @return {Array<Raycaster~Intersection>} An array holding the intersection points.
+         */
+        intersectObject(object, recursive = true, intersects2 = []) {
+          intersect(object, this, intersects2, recursive);
+          intersects2.sort(ascSort);
+          return intersects2;
+        }
+        /**
+         * Checks all intersection between the ray and the objects with or without
+         * the descendants. Intersections are returned sorted by distance, closest first.
+         *
+         * @param {Array<Object3D>} objects - The 3D objects to check for intersection with the ray.
+         * @param {boolean} [recursive=true] - If set to `true`, it also checks all descendants.
+         * Otherwise it only checks intersection with the object.
+         * @param {Array<Raycaster~Intersection>} [intersects=[]] The target array that holds the result of the method.
+         * @return {Array<Raycaster~Intersection>} An array holding the intersection points.
+         */
+        intersectObjects(objects, recursive = true, intersects2 = []) {
+          for (let i = 0, l = objects.length; i < l; i++) {
+            intersect(objects[i], this, intersects2, recursive);
+          }
+          intersects2.sort(ascSort);
+          return intersects2;
+        }
+      };
       Matrix2 = class {
         static {
           this.prototype.isMatrix2 = true;
@@ -29384,7 +29625,7 @@
          * @param {Vector3} [options.position=origin] - The position of the internal cube camera that renders the scene.
          * @return {WebGLCubeRenderTarget} The resulting PMREM.
          */
-        fromScene(scene, sigma = 0, near = 0.1, far = 100, options = {}) {
+        fromScene(scene, sigma = 0, near2 = 0.1, far = 100, options = {}) {
           const {
             size = 256,
             position = _origin
@@ -29406,7 +29647,7 @@
           renderer.autoClearDepth = true;
           renderer.autoClearStencil = true;
           if (background === null) scene.background = renderer.getClearColor(_clearColor);
-          const cubeCamera = new CubeCamera(near, far, sourceTarget);
+          const cubeCamera = new CubeCamera(near2, far, sourceTarget);
           cubeCamera.position.copy(position);
           cubeCamera.update(renderer, scene);
           renderer.autoClear = autoClear;
@@ -32682,6 +32923,8 @@ void main() {
         colorblind: false,
         subtitle: 1,
         sens: 1,
+        touchSens: 1,
+        fineMul: 0.35,
         invertY: false,
         master: 0.8,
         music: 0.55,
@@ -32703,7 +32946,7 @@ void main() {
   }
   function pickTier(setting) {
     if (setting && setting !== "auto" && TIERS[setting]) return TIERS[setting];
-    if (isMobile()) return Math.min(screen.width, screen.height) * (devicePixelRatio || 1) > 1e3 && (navigator.hardwareConcurrency || 4) >= 8 ? TIERS.medium : TIERS.low;
+    if (isMobile()) return Math.min(screen.width, screen.height) * (devicePixelRatio || 1) > 1e3 && (navigator.hardwareConcurrency || 4) >= 8 ? MOBILE.medium : MOBILE.low;
     return TIERS.high;
   }
   function adaptQuality(dt, onChange) {
@@ -32729,14 +32972,18 @@ void main() {
       onChange("pr");
     }
   }
-  var TIERS, lowTime, highTime;
+  var TIERS, MOBILE, lowTime, highTime;
   var init_quality = __esm({
     "src/core/quality.js"() {
       init_state();
       TIERS = {
-        low: { name: "low", pr: 0.75, maxPr: 1, shadows: false, shadowSize: 0, msaa: 0, terrainSeg: 170, trees: 0.38, particles: 600, crowd: 0.6, far: 9e3, hdr: false, grass: 0, bloom: false },
+        low: { name: "low", pr: 0.75, maxPr: 1, shadows: false, shadowSize: 0, msaa: 0, terrainSeg: 170, trees: 0.38, particles: 600, crowd: 0.6, far: 9e3, hdr: true, grass: 0, bloom: false },
         medium: { name: "medium", pr: 1, maxPr: 1.5, shadows: true, shadowSize: 1024, msaa: 0, terrainSeg: 240, trees: 0.75, particles: 1400, crowd: 0.85, far: 14e3, hdr: true, grass: 1, bloom: true },
         high: { name: "high", pr: 1, maxPr: 2, shadows: true, shadowSize: 2048, msaa: 4, terrainSeg: 320, trees: 1, particles: 2600, crowd: 1, far: 18e3, hdr: true, grass: 1, bloom: true }
+      };
+      MOBILE = {
+        low: { ...TIERS.low, mobile: true, maxPr: 1, particles: 320, trees: 0.32 },
+        medium: { ...TIERS.medium, mobile: true, maxPr: 1.25, shadowSize: 768, particles: 700, trees: 0.6 }
       };
       lowTime = 0;
       highTime = 0;
@@ -32801,23 +33048,27 @@ void main() {
         vec3 col;
         // heat shimmer (stronger in magnified optics)
         if (uHeat > 0.0) {
-          float hz = uHeat * (uMode == 1 || uMode == 2 ? 0.0011 * (0.6 + uZoom * 0.12) : 0.0006);
+          float hz = uHeat * (uMode == 1 || uMode == 2 ? 0.0011 * (0.6 + min(uZoom, 8.0) * 0.08) : 0.0006);
           vec2 q = uv * vec2(18.0, 46.0) + vec2(0.0, uTime * 2.3);
           uv += hz * vec2(nn(q) - 0.5, nn(q + 17.0) - 0.5) * (0.6 + 0.4 * sin(uTime * 3.0 + uv.y * 40.0));
         }
-        if (uCold > 0.0 && uMode == 1) { float w = sin(uv.y * 160.0 + uTime * 5.0) * 0.5 + 0.5 * sin(uv.y * 97.0 - uTime * 3.1); uv.x += w * 0.00035 * uCold * uZoom / 8.0; }
+        if (uCold > 0.0 && uMode == 1) { float w = sin(uv.y * 160.0 + uTime * 5.0) * 0.5 + 0.5 * sin(uv.y * 97.0 - uTime * 3.1); uv.x += w * 0.00035 * uCold * min(uZoom, 8.0) / 8.0 * 0.7; }
         if (uMode == 1) { // scope
           vec2 c = p - uOffset;
           float r = length(c) / uScopeR;
           // barrel distortion near the edge
           float k = 0.06 * r * r;
           vec2 duv = uv + (uv - 0.5) * k * 0.18;
-          float ca = 0.0035 * r * r;
+          float ca = 0.0022 * r * r;
           vec2 dir = normalize(c + 1e-5);
           vec3 sc;
           sc.r = sampleC(duv + dir * ca * vec2(1.0/asp,1.0)).r;
           sc.g = sampleC(duv).g;
           sc.b = sampleC(duv - dir * ca * vec2(1.0/asp,1.0)).b;
+          // optical sharpening (unsharp mask) that grows with magnification, so 12\xD7 stays crisp
+          { vec2 px = 1.0 / uRes; vec3 nb = (sampleC(duv + vec2(px.x, 0.0)) + sampleC(duv - vec2(px.x, 0.0)) + sampleC(duv + vec2(0.0, px.y)) + sampleC(duv - vec2(0.0, px.y))) * 0.25;
+            float dl = dot(sc - nb, vec3(0.299, 0.587, 0.114)); // luminance-only, so lens CA fringes aren't amplified
+            sc = max(sc + dl * (0.25 + 0.05 * uZoom) * (1.0 - smoothstep(0.6, 0.95, r)), vec3(0.0)); }
           if (uScopeBlur > 0.0) { vec3 bl = sampleC(duv + vec2(0.003,0.0)) + sampleC(duv - vec2(0.003,0.0)) + sampleC(duv + vec2(0.0,0.004)) + sampleC(duv - vec2(0.0,0.004)); sc = mix(sc, bl*0.25, uScopeBlur); }
           if (uFocus > 0.0) { vec3 fb = (sampleC(duv + vec2(0.0018,0.0)) + sampleC(duv - vec2(0.0018,0.0)) + sampleC(duv + vec2(0.0,0.0024)) + sampleC(duv - vec2(0.0,0.0024))) * 0.25; sc = mix(sc, fb, uFocus * smoothstep(0.25, 0.9, r)); }
           col = sc;
@@ -33029,7 +33280,7 @@ void main() {
     G.lens.u.tScene.value = G.rt.texture;
     G.lens.u.uRes.value.set(rw, rh);
     resizeBloom(rw, rh);
-    G.lens.u.uHdr.value = 1;
+    G.lens.u.uHdr.value = q.hdr ? 1 : 0;
     G.camera.aspect = w / h;
     G.camera.updateProjectionMatrix();
     G.fpCam.aspect = w / h;
@@ -33047,7 +33298,7 @@ void main() {
 
   // src/render/materials.js
   function hazeify(mat2, opts = {}) {
-    const key = "hz" + (opts.detail ? "d" : "") + (opts.sway ? "s" : "") + (opts.flag ? "f" : "") + (opts.rim ? "r" : "") + (opts.snowCap ? "c" : "");
+    const key = "hz" + (opts.detail ? "d" : "") + (opts.sway ? "s" + opts.sway : "") + (opts.flag ? "f" + opts.flag : "") + (opts.rim ? "r" : "") + (opts.snowCap ? "c" : "");
     mat2.customProgramCacheKey = () => key;
     mat2.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, HAZE);
@@ -33219,8 +33470,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const p = pts.get(t.identifier);
         if (!p) continue;
         if (pts.size === 1) {
-          IN.dx += (t.clientX - p.x) * 1.6;
-          IN.dy += (t.clientY - p.y) * 1.6;
+          const ks = 1.6 * (G.settings.touchSens || 1);
+          IN.dx += (t.clientX - p.x) * ks;
+          IN.dy += (t.clientY - p.y) * ks;
         }
         p.x = t.clientX;
         p.y = t.clientY;
@@ -33286,9 +33538,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function enableGyro() {
     const f = () => window.addEventListener("deviceorientation", (e) => {
       if (e.beta == null) return;
-      if (IN.gyro) {
-        IN.dx += (IN.gyro.g - e.gamma) * -14;
-        IN.dy += (IN.gyro.b - e.beta) * -14;
+      if (IN.gyro && G.settings.gyro && G.mode === "play") {
+        const dg = IN.gyro.g - e.gamma, db = IN.gyro.b - e.beta;
+        if (Math.abs(dg) < 20 && Math.abs(db) < 20) {
+          const ks = -14 * (G.settings.touchSens || 1);
+          IN.dx += dg * ks;
+          IN.dy += db * ks;
+        }
       }
       IN.gyro = { b: e.beta, g: e.gamma };
     });
@@ -34503,6 +34759,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.exhausted = 0;
           this.recoil = 0;
           this.recoilYaw = 0;
+          this.recoilV = 0;
+          this.recoilYawV = 0;
           this.swayX = 0;
           this.swayY = 0;
           this.t = Math.random() * 100;
@@ -34526,7 +34784,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         update(dt, wantHold, scoped) {
           const s = G.settings;
           this.magS += (this.magT - this.magS) * Math.min(1, dt * 7);
-          this.focusBlur = Math.min(0.85, Math.abs(this.magT - this.magS) * 0.3) + 0.06 * this.magS / 12 + (this.exhausted > 0 ? 0.25 : 0);
+          this.focusBlur = Math.min(0.85, Math.abs(this.magT - this.magS) * 0.3) + (this.exhausted > 0 ? 0.25 : 0);
           const holdMax = 5 * G.debug.breathMul;
           const canHold = wantHold && scoped && this.breath > 0 && this.exhausted <= 0;
           if (canHold && !this.holding) {
@@ -34554,19 +34812,35 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.t += dt;
           const t = this.t;
           const amp = 135e-5 * s.sway * G.debug.swayMul * (1 + this.heart * 1.1) * (s.steadyHands ? 0.55 : 1) * (this.exhausted > 0 ? 2 : 1);
-          const br = 0.22 + this.heart * 0.12;
+          const br = 0.2 + this.heart * 0.1;
+          this.breathPh = (this.breathPh ?? 0) + dt * br;
+          if (this.breathPh >= 1) this.breathPh -= 1;
+          const ph = this.breathPh, ss = (a, b, x) => {
+            const k = clamp2((x - a) / (b - a), 0, 1);
+            return k * k * (3 - 2 * k);
+          };
+          const curve = ph < 0.38 ? ss(0, 0.38, ph) : ph < 0.7 ? 1 - ss(0.38, 0.7, ph) : 0;
+          const pauseK = ph >= 0.72 && ph < 0.98 ? 1 : 0;
+          this.pauseK = lerp2(this.pauseK || 0, pauseK, Math.min(1, dt * 6));
+          this.breathCurve = curve;
           const bpm = this.bpm();
           const beat = Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 * bpm / 60)), 18);
           const still = lerp2(1, 0.09, this.holdK);
-          this.swayY = amp * still * (0.85 * Math.sin(t * Math.PI * 2 * br) + 0.35 * noise1(t * 0.45, 2)) + beat * 28e-5 * (0.5 + this.heart) * still;
-          this.swayX = amp * still * (0.45 * Math.sin(t * Math.PI * 2 * br * 0.5 + 1.3) + 0.4 * noise1(t * 0.38, 5));
-          this.recoil = Math.max(0, this.recoil - dt * (this.recoil * 5 + 4e-3));
-          this.recoilYaw *= Math.max(0, 1 - dt * 5);
+          const calm = 1 - 0.7 * this.pauseK;
+          this.swayY = amp * still * ((curve - 0.35) * 1.15 + 0.22 * calm * noise1(t * 0.22, 2)) + beat * 22e-5 * (0.5 + this.heart) * still;
+          this.swayX = amp * still * (0.3 * Math.sin(ph * Math.PI * 2 + 1.3) * (curve * 0.8 + 0.2) + 0.3 * calm * noise1(t * 0.19, 5));
+          const n = Math.max(1, Math.ceil(dt / 4e-3)), h = dt / n, K = 130, C = 2 * Math.sqrt(K) * 0.82;
+          for (let i = 0; i < n; i++) {
+            this.recoilV += (-K * this.recoil - C * this.recoilV) * h;
+            this.recoil += this.recoilV * h;
+            this.recoilYawV += (-K * this.recoilYaw - C * this.recoilYawV) * h;
+            this.recoilYaw += this.recoilYawV * h;
+          }
           heartbeat(dt, bpm, scoped ? this.holding ? 0.9 : 0.35 + this.heart * 0.4 : 0);
         }
         kick(amount) {
-          this.recoil += amount;
-          this.recoilYaw += (Math.random() - 0.5) * amount * 0.4;
+          this.recoilV += amount * 31;
+          this.recoilYawV += (Math.random() - 0.5) * amount * 12;
           this.heart = Math.min(1, this.heart + 0.06);
         }
       };
@@ -34625,7 +34899,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (E < 1e-9) {
       s = MathUtils.clamp(-C / A2, 0, 1);
       const qx = p0.x + d1.x * s - a.x, qy = p0.y + d1.y * s - a.y, qz = p0.z + d1.z * s - a.z;
-      return { dist: Math.sqrt(qx * qx + qy * qy + qz * qz), s };
+      _ssr.dist = Math.sqrt(qx * qx + qy * qy + qz * qz);
+      _ssr.s = s;
+      return _ssr;
     }
     s = den > 1e-9 ? MathUtils.clamp((Bv * F - C * E) / den, 0, 1) : 0;
     t = (Bv * s + F) / E;
@@ -34637,7 +34913,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       s = MathUtils.clamp((Bv - C) / A2, 0, 1);
     }
     const cx2 = p0.x + d1.x * s - (a.x + d2.x * t), cy = p0.y + d1.y * s - (a.y + d2.y * t), cz = p0.z + d1.z * s - (a.z + d2.z * t);
-    return { dist: Math.sqrt(cx2 * cx2 + cy * cy + cz * cz), s };
+    _ssr.dist = Math.sqrt(cx2 * cx2 + cy * cy + cz * cz);
+    _ssr.s = s;
+    return _ssr;
   }
   function segCollider(p0, p1, c) {
     if (c.type === "cyl") {
@@ -34659,14 +34937,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       return res.dist <= c.r ? res.s : -1;
     }
     const cs = Math.cos(-(c.ry || 0)), sn = Math.sin(-(c.ry || 0));
-    const tr = (p, o) => {
-      const x = p.x - c.c.x, z = p.z - c.c.z;
-      return o.set(x * cs + z * sn, p.y - c.c.y, -x * sn + z * cs);
-    };
-    tr(p0, _l0);
-    tr(p1, _l1);
+    let x = p0.x - c.c.x, z = p0.z - c.c.z;
+    _l0.set(x * cs + z * sn, p0.y - c.c.y, -x * sn + z * cs);
+    x = p1.x - c.c.x;
+    z = p1.z - c.c.z;
+    _l1.set(x * cs + z * sn, p1.y - c.c.y, -x * sn + z * cs);
     let tmin = 0, tmax = 1;
-    for (const ax of ["x", "y", "z"]) {
+    for (let ai = 0; ai < 3; ai++) {
+      const ax = AXES[ai];
       const o = _l0[ax], d = _l1[ax] - o, h = c.h[ax];
       if (Math.abs(d) < 1e-9) {
         if (o < -h || o > h) return -1;
@@ -34711,7 +34989,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (best) best.point = new Vector3().lerpVectors(p0, p1, best.s);
     return best;
   }
-  var RIFLES, GRAV, STEP, _w, _vr, _a, _ab, _ap, _d, _l0, _l1, _pt;
+  var RIFLES, GRAV, STEP, _w, _vr, _a, _ssr, _ab, _ap, _d, _l0, _l1, AXES, _pt;
   var init_sim = __esm({
     "src/ballistics/sim.js"() {
       init_three_module();
@@ -34724,11 +35002,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       _w = new Vector3();
       _vr = new Vector3();
       _a = new Vector3();
+      _ssr = { dist: 0, s: 0 };
       _ab = new Vector3();
       _ap = new Vector3();
       _d = new Vector3();
       _l0 = new Vector3();
       _l1 = new Vector3();
+      AXES = ["x", "y", "z"];
       _pt = new Vector3();
     }
   });
@@ -34738,8 +35018,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     return G.settings.colorblind ? TAG_COLORS.colorblind : TAG_COLORS.normal;
   }
   function taggablePos(o, out = new Vector3()) {
-    if (o.holder) return o.headPos(out).add(new Vector3(0, o.alive ? -0.4 : 0, 0));
-    if (o.colliders && o.mesh) return out.copy(o.pos).add(new Vector3(0, 1.2, 0));
+    if (o.holder) {
+      o.headPos(out);
+      out.y += o.alive ? -0.4 : 0;
+      return out;
+    }
+    if (o.colliders && o.mesh) {
+      out.copy(o.pos);
+      out.y += 1.2;
+      return out;
+    }
     return out.copy(o.pos);
   }
   function isVisible(o) {
@@ -34857,7 +35145,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function project(p, cam) {
     v2.copy(p).project(cam);
     if (v2.z > 1 || v2.z < -1) return null;
-    return { x: (v2.x + 1) / 2 * G.W, y: (1 - v2.y) / 2 * G.H };
+    _pr.x = (v2.x + 1) / 2 * G.W;
+    _pr.y = (1 - v2.y) / 2 * G.H;
+    return _pr;
   }
   function drawHud(P, M2) {
     const W = G.W, H = G.H;
@@ -34878,7 +35168,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const labels = [];
     for (const o of G.world.taggables || []) {
       if (!o.tagged || !isVisible(o)) continue;
-      const p = project(taggablePos(o, new Vector3()), cam);
+      const p = project(taggablePos(o, _tp), cam);
       if (!p) continue;
       if (view === "scope" && Math.hypot(p.x - cX, p.y - cY) > R * 0.97) continue;
       if (view === "bino" && Math.hypot(p.x - cX + H * 0.28, p.y - cY) > H * 0.4 && Math.hypot(p.x - cX - H * 0.28, p.y - cY) > H * 0.4) continue;
@@ -34917,8 +35207,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const placed = [];
     cx.font = "700 10px ui-monospace, monospace";
     for (const [i, L] of labels.entries()) {
-      const name = (L.dead ? "\u2715 " : "") + tagLabel(L.o), d = Math.round(cam.position.distanceTo(L.o.pos)) + " m";
-      const w = Math.max(cx.measureText(name).width, 40) + 4, h = 22;
+      if (i > 3) break;
+      const focus = i === 0 && L.c < R * 0.5;
+      const full = (L.dead ? "\u2715 " : "") + tagLabel(L.o), name = focus ? full : full.split(/[ ·(]/)[0].slice(0, 10), d = focus ? Math.round(cam.position.distanceTo(L.o.pos)) + " m" : "";
+      const w = Math.max(cx.measureText(name).width, focus ? 40 : 20) + 4, h = focus ? 22 : 13;
       const slots = [[10, -12], [-10 - w, -12], [10, -36], [-10 - w, -36], [10, 12], [-10 - w, 12], [10, -60]];
       let at = null;
       for (const [dx, dy] of slots) {
@@ -34940,21 +35232,31 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         cx.stroke();
         cx.globalAlpha = 1;
       }
-      const dim = i > 0 && L.c > R * 0.35 ? 0.75 : 1;
-      cx.globalAlpha = dim;
-      txt(name, at.x, at.y + 5, { color: L.col, font: "700 10px ui-monospace, monospace" });
-      txt(d, at.x, at.y + 17, { color: "rgba(230,235,240,0.8)", font: "500 9px ui-monospace, monospace" });
+      cx.globalAlpha = focus ? 1 : 0.62;
+      txt(name, at.x, at.y + 5, { color: L.col, font: focus ? "700 10px ui-monospace, monospace" : "600 9px ui-monospace, monospace" });
+      if (d) txt(d, at.x, at.y + 17, { color: "rgba(230,235,240,0.8)", font: "500 9px ui-monospace, monospace" });
       cx.globalAlpha = 1;
     }
     if (P.lastHit && P.lastHit.splash && G.time - P.lastHit.t < 3 && view !== "eye") {
       const p = project(P.lastHit.splash, cam);
       if (p) {
+        const age = G.time - P.lastHit.t, a = Math.max(0, 1 - age / 3);
+        cx.globalAlpha = a;
         cx.strokeStyle = "#ffdc70";
         cx.lineWidth = 1.5;
         cx.beginPath();
-        cx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+        cx.arc(p.x, p.y, 6, 0, Math.PI * 2);
         cx.stroke();
-        txt("SPLASH", p.x + 10, p.y, { color: "#ffdc70", font: "600 9px ui-monospace, monospace" });
+        if (age < 0.8) {
+          cx.globalAlpha = a * (1 - age / 0.8);
+          cx.beginPath();
+          cx.arc(p.x, p.y, 6 + age * 40, 0, Math.PI * 2);
+          cx.stroke();
+          cx.globalAlpha = a;
+        }
+        txt("SPLASH", p.x + 10, p.y - 6, { color: "#ffdc70", font: "700 9px ui-monospace, monospace" });
+        if (P.lastHit.corr) txt(P.lastHit.corr, p.x + 10, p.y + 6, { color: "#ffdc70", font: "600 9px ui-monospace, monospace" });
+        cx.globalAlpha = 1;
       }
     }
     if (view === "scope") drawScope(P, M2, pxPerMil, R);
@@ -35047,21 +35349,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     cx.restore();
     const o = P.optics;
     const narrow = W < H * 1.3;
-    const rx = narrow ? W - 14 : cX + R + 18, al = narrow ? "right" : "left";
-    txt(Math.round(o.magT) + "\xD7", rx, cY - R * 0.6, { color: "#f2f2f2", font: "700 20px ui-monospace, monospace", align: al });
-    txt("ZOOM", rx, cY - R * 0.6 + 18, { color: "#9aa", font: "600 9px ui-monospace, monospace", align: al });
+    const touchUI = document.body.classList.contains("touch");
+    const elevS = (P.elev >= 0 ? "+" : "") + P.elev.toFixed(1), windS = (P.windage >= 0 ? "R " : "L ") + Math.abs(P.windage).toFixed(1);
     const rr = P.lastRange;
     const rtxt = rr && rr.dist ? Math.round(rr.dist).toLocaleString("en-US") + " m" : "---- m";
-    const bw = 112, bx = cX + R * 0.36, by = cY + R * 0.6;
-    cx.fillStyle = "rgba(8,10,12,0.72)";
-    cx.strokeStyle = "rgba(255,255,255,0.75)";
-    cx.lineWidth = 1;
-    cx.fillRect(bx, by, bw, 26);
-    cx.strokeRect(bx, by, bw, 26);
-    txt(rtxt, bx + bw / 2, by + 13, { align: "center", font: "700 15px ui-monospace, monospace", color: rr && G.time - rr.t < 0.4 ? "#ffde70" : "#ffffff" });
-    const elevS = (P.elev >= 0 ? "+" : "") + P.elev.toFixed(1), windS = (P.windage >= 0 ? "R " : "L ") + Math.abs(P.windage).toFixed(1);
-    txt("ELEV " + elevS + " mil", rx, cY - R * 0.15, { align: al, color: P.elev ? "#ffde70" : "#cfd6da" });
-    txt("WIND " + windS + " mil", rx, cY - R * 0.15 + 16, { align: al, color: P.windage ? "#ffde70" : "#cfd6da" });
     const a0 = Math.PI * 0.72, a1 = Math.PI * 1.28;
     cx.lineWidth = 5;
     cx.strokeStyle = "rgba(255,255,255,0.15)";
@@ -35072,9 +35363,51 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     cx.beginPath();
     cx.arc(cX, cY, R + 12, a1 - (a1 - a0) * o.breath, a1);
     cx.stroke();
+    const steady = o.holding || o.pauseK > 0.6 && o.exhausted <= 0;
+    const strip = (bx2, by2, bw2, labels) => {
+      const ph = o.breathPh || 0;
+      cx.fillStyle = "rgba(255,255,255,0.14)";
+      cx.fillRect(bx2, by2, bw2 * 0.7, 6);
+      cx.fillStyle = o.holding ? "rgba(143,227,255,0.55)" : "rgba(124,240,168,0.6)";
+      cx.fillRect(bx2 + bw2 * 0.72, by2, bw2 * 0.26, 6);
+      cx.fillStyle = "#fff";
+      cx.fillRect(bx2 + bw2 * ph - 1.5, by2 - 3, 3, 12);
+      if (labels) {
+        txt("IN", bx2 + bw2 * 0.17, by2 + 16, { align: "center", font: "600 8px ui-monospace, monospace", color: "#9aa" });
+        txt("OUT", bx2 + bw2 * 0.54, by2 + 16, { align: "center", font: "600 8px ui-monospace, monospace", color: "#9aa" });
+        txt("PAUSE", bx2 + bw2 * 0.85, by2 + 16, { align: "center", font: "700 8px ui-monospace, monospace", color: "#7cf0a8" });
+      }
+    };
+    if (touchUI) {
+      const y0 = cY + R * 0.42;
+      cx.fillStyle = "rgba(6,8,10,0.55)";
+      cx.fillRect(cX - 92, y0 - 11, 184, 52);
+      txt(Math.round(o.magT) + "\xD7  \xB7  " + rtxt, cX, y0, { align: "center", font: "700 12px ui-monospace, monospace", color: rr && G.time - rr.t < 0.4 ? "#ffde70" : "#f2f2f2" });
+      txt("E " + elevS + "  W " + windS + " mil", cX, y0 + 14, { align: "center", font: "600 10px ui-monospace, monospace", color: P.elev || P.windage ? "#ffde70" : "#cfd6da" });
+      strip(cX - 70, y0 + 24, 140, false);
+      txt(o.holding ? "HOLD" : o.exhausted > 0 ? "EXHALE" : Math.round(o.breath * 100) + "%", cX + 80, y0 + 27, { align: "left", font: "600 8px ui-monospace, monospace", color: o.holding ? "#8fe3ff" : "#cfd6da" });
+      if (steady) txt(o.holding ? "STEADY \xB7 HOLD" : "STEADY", cX, y0 - 20, { align: "center", font: "700 11px ui-monospace, monospace", color: o.holding ? "#8fe3ff" : "#7cf0a8" });
+      if (P.fineOn) txt("FINE AIM", cX, cY - R * 0.5, { align: "center", font: "700 11px ui-monospace, monospace", color: "#ffde70" });
+      return;
+    }
+    const rx = narrow ? W - 14 : cX + R + 18, al = narrow ? "right" : "left";
+    txt(Math.round(o.magT) + "\xD7", rx, cY - R * 0.6, { color: "#f2f2f2", font: "700 20px ui-monospace, monospace", align: al });
+    txt("ZOOM", rx, cY - R * 0.6 + 18, { color: "#9aa", font: "600 9px ui-monospace, monospace", align: al });
+    const bw = 112, bx = cX + R * 0.36, by = cY + R * 0.6;
+    cx.fillStyle = "rgba(8,10,12,0.72)";
+    cx.strokeStyle = "rgba(255,255,255,0.75)";
+    cx.lineWidth = 1;
+    cx.fillRect(bx, by, bw, 26);
+    cx.strokeRect(bx, by, bw, 26);
+    txt(rtxt, bx + bw / 2, by + 13, { align: "center", font: "700 15px ui-monospace, monospace", color: rr && G.time - rr.t < 0.4 ? "#ffde70" : "#ffffff" });
+    txt("ELEV " + elevS + " mil", rx, cY - R * 0.15, { align: al, color: P.elev ? "#ffde70" : "#cfd6da" });
+    txt("WIND " + windS + " mil", rx, cY - R * 0.15 + 16, { align: al, color: P.windage ? "#ffde70" : "#cfd6da" });
     const bxL = narrow ? 14 : cX - R - 160;
     txt(o.holding ? "HOLDING BREATH" : o.exhausted > 0 ? "EXHALE\u2026" : "BREATH " + Math.round(o.breath * 100) + "%", bxL, cY + R * 0.45, { color: o.holding ? "#8fe3ff" : "#cfd6da", font: "600 10px ui-monospace, monospace" });
     drawECG(bxL, cY + R * 0.55, 140, 26, o);
+    strip(bxL, cY + R * 0.55 + 34, 140, true);
+    if (steady) txt(o.holding ? "STEADY \xB7 HOLD" : "STEADY", cX, cY + R * 0.82, { align: "center", font: "700 11px ui-monospace, monospace", color: o.holding ? "#8fe3ff" : "#7cf0a8" });
+    if (P.fineOn) txt("FINE AIM", cX, cY - R * 0.82, { align: "center", font: "700 11px ui-monospace, monospace", color: "#ffde70" });
   }
   function drawECG(x, y, w, h, o) {
     const bpm = o.bpm();
@@ -35122,24 +35455,53 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const rr = P.lastRange;
     txt("RNG " + (rr && rr.dist ? Math.round(rr.dist) + " m" + (rr.what ? " \xB7 " + rr.what.toUpperCase() : "") : "----"), cX, cY + H * 0.33, { align: "center", font: "700 13px ui-monospace, monospace", color: "#ffde70" });
     txt("8\xD7 \xB7 TAG \xB7 RANGE", cX, cY + H * 0.33 + 18, { align: "center", font: "500 9px ui-monospace, monospace", color: "rgba(230,235,240,0.7)" });
+    const traits = G.mission?.def?.dossier?.traits;
+    if (traits) {
+      if (!(G.frameN & 3) || bObs.o === void 0) bObs.o = pickAtCenter(G.camera, Math.max(26, H * 0.05));
+      const o = bObs.o;
+      if (o && o.holder && o.alive && o.def?.look) {
+        const L = o.def.look, dist = Math.round(G.camera.position.distanceTo(o.pos));
+        const bw = 178, bx = Math.min(W - bw - 12, cX + H * 0.12), by = cY - 60, bh = 40 + traits.length * 15;
+        cx.fillStyle = "rgba(6,9,12,0.72)";
+        cx.fillRect(bx, by, bw, bh);
+        cx.strokeStyle = "rgba(255,222,112,0.6)";
+        cx.strokeRect(bx, by, bw, bh);
+        let m = 0;
+        txt("DOSSIER CHECK \xB7 " + dist + " m", bx + 8, by + 11, { font: "700 9px ui-monospace, monospace", color: "#ffde70" });
+        traits.forEach(([label, fn], i) => {
+          const ok = fn(L, o);
+          if (ok) m++;
+          txt((ok ? "\u2714 " : "\u2715 ") + label.toUpperCase(), bx + 8, by + 27 + i * 15, { font: "600 10px ui-monospace, monospace", color: ok ? "#7cf0a8" : "rgba(220,225,230,0.55)" });
+        });
+        const all = m === traits.length;
+        txt(all ? "ALL TRAITS MATCH" : m + "/" + traits.length + " MATCH", bx + 8, by + bh - 7, { font: "700 9px ui-monospace, monospace", color: all ? "#ff6a4a" : "#cfd6da" });
+      }
+    }
   }
   function drawCommon(P, M2) {
     const W = G.W, H = G.H;
     if (G.settings.difficulty !== "ghost") {
-      const w = M2.wind.sample(G.camera.position, M2.mt);
-      const sp = Math.hypot(w.x, w.z);
       const camYaw = G.camera.rotation.y;
+      const dist = P.lastRange?.dist || 700;
+      _wb.set(-Math.sin(camYaw), 0, -Math.cos(camYaw)).multiplyScalar(dist).add(G.camera.position);
+      _wb.y = G.camera.position.y - dist * 0.02;
+      const wr = M2.wind.average(G.camera.position, _wb, M2.mt, 6);
+      _ws.lerp(wr, Math.min(1, (G.dtReal || 0.016) * 3));
+      const w = _ws;
+      const sp = Math.hypot(w.x, w.z);
       const ang = Math.atan2(w.x, -w.z) + camYaw;
       const touch = document.body.classList.contains("touch");
-      const x = W - 62, y = touch ? 172 : 118;
+      const small = touch && H < 430;
+      const x = W - (small ? 50 : 62), y = touch ? small ? 132 : 150 : 118, gr = small ? 22 : 28;
       cx.strokeStyle = "rgba(255,255,255,0.35)";
       cx.lineWidth = 1;
       cx.beginPath();
-      cx.arc(x, y, 28, 0, Math.PI * 2);
+      cx.arc(x, y, gr, 0, Math.PI * 2);
       cx.stroke();
       cx.save();
       cx.translate(x, y);
       cx.rotate(ang);
+      if (small) cx.scale(0.8, 0.8);
       cx.fillStyle = "#9fe8ff";
       cx.beginPath();
       cx.moveTo(0, -24);
@@ -35152,17 +35514,21 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       cx.closePath();
       cx.fill();
       cx.restore();
-      txt(sp.toFixed(1) + " m/s", x, y + 42, { align: "center", font: "700 12px ui-monospace, monospace" });
-      txt("WIND", x, y - 40, { align: "center", font: "600 9px ui-monospace, monospace", color: "#9aa" });
+      txt(sp.toFixed(1) + " m/s", x, y + gr + 14, { align: "center", font: "700 12px ui-monospace, monospace" });
+      txt("WIND", x, y - gr - 11, { align: "center", font: "600 9px ui-monospace, monospace", color: "#9aa" });
+      {
+        const cv2 = w.x * Math.cos(camYaw) - w.z * Math.sin(camYaw);
+        txt("CROSS " + Math.abs(cv2).toFixed(1) + (cv2 > 0 ? " \u2192" : " \u2190"), x, y + gr + 28 + (G.settings.difficulty === "recruit" && P.lastRange?.dist ? 14 : 0), { align: "center", font: "600 10px ui-monospace, monospace", color: "#9fe8ff" });
+      }
       if (G.settings.difficulty === "recruit" && P.lastRange?.dist) {
         const crossV = w.x * Math.cos(camYaw) - w.z * Math.sin(camYaw);
         const dope = P.dopeAt(P.lastRange.dist);
         const mils = crossV * dope.windMil;
-        txt(`HOLD ${dope.dropMil.toFixed(1)}\u2191 ${Math.abs(mils).toFixed(1)}${mils > 0 ? "\u2190" : "\u2192"}`, x, y + 58, { align: "center", font: "700 10px ui-monospace, monospace", color: "#ffde70" });
+        txt(`HOLD ${dope.dropMil.toFixed(1)}\u2191 ${Math.abs(mils).toFixed(1)}${mils > 0 ? "\u2190" : "\u2192"}`, x, y + gr + 28, { align: "center", font: "700 10px ui-monospace, monospace", color: "#ffde70" });
       }
     }
     const tch = document.body.classList.contains("touch");
-    const ax = tch ? W - 112 : W - 20, ay = tch ? 186 : H - 34;
+    const ax = tch ? W / 2 + 70 : W - 20, ay = tch ? H - 30 : H - 34;
     for (let i = 0; i < P.rifle.mag; i++) {
       cx.fillStyle = i < P.ammo ? "#d8b25a" : "rgba(255,255,255,0.15)";
       cx.fillRect(ax - 10 - i * 9, ay - 14, 5, 16);
@@ -35181,7 +35547,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     txt(Math.round(d) + " m  \xB7  " + Math.round(pr.v.length()) + " m/s  \xB7  " + pr.age.toFixed(2) + " s", W / 2, H * 0.965, { align: "center", font: "700 13px ui-monospace, monospace", color: "#ffe3a0" });
     txt("BULLET CAM \xB7 click / space to skip", 16, H * 0.035, { font: "600 10px ui-monospace, monospace", color: "#aaa" });
   }
-  var cv, cx, v2, MONO;
+  var cv, cx, v2, MONO, _pr, _tp, bObs, _wb, _ws;
   var init_hud = __esm({
     "src/ui/hud.js"() {
       init_three_module();
@@ -35190,6 +35556,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_recon();
       v2 = new Vector3();
       MONO = '600 12px ui-monospace, "DejaVu Sans Mono", monospace';
+      _pr = { x: 0, y: 0 };
+      _tp = new Vector3();
+      bObs = { o: void 0 };
+      _wb = new Vector3();
+      _ws = new Vector3();
     }
   });
 
@@ -35374,8 +35745,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/scene/world.js
-  function boxCollider(cx2, cy, cz, hx, hy, hz, o = {}) {
-    return Object.assign({ type: "box", c: new Vector3(cx2, cy, cz), h: new Vector3(hx, hy, hz), ry: 0 }, o);
+  function boxCollider(cx2, cy, cz, hx2, hy, hz, o = {}) {
+    return Object.assign({ type: "box", c: new Vector3(cx2, cy, cz), h: new Vector3(hx2, hy, hz), ry: 0 }, o);
   }
   function cylCollider(x, z, r, y0, y1, o = {}) {
     return Object.assign({ type: "cyl", x, z, r, y0, y1 }, o);
@@ -35755,13 +36126,83 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const g = mergeGeometries(geos, false);
     return g;
   }
+  function impostorTexture(geo) {
+    if (_impCache.has(geo)) return _impCache.get(geo);
+    const r = G.renderer;
+    if (!r) return null;
+    geo.computeBoundingBox();
+    const bb = geo.boundingBox, hw = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2 * 1.04, h = bb.max.y - bb.min.y;
+    const W = 128, H = Math.round(W * h / (hw * 2) / 4) * 4 || 256;
+    const rt = new WebGLRenderTarget(W, H, { depthBuffer: true, generateMipmaps: true, minFilter: LinearMipmapLinearFilter, magFilter: LinearFilter });
+    const sc = new Scene();
+    sc.add(new AmbientLight("#ffffff", 1.25));
+    const dl = new DirectionalLight("#ffffff", 1);
+    dl.position.set(0.5, 1, 1);
+    sc.add(dl);
+    sc.add(new Mesh(geo, new MeshLambertMaterial({ vertexColors: true })));
+    const cam = new OrthographicCamera(-hw, hw, bb.max.y, bb.min.y, -50, 50);
+    cam.position.set(0, 0, 10);
+    cam.lookAt(0, 0, 0);
+    cam.position.set(0, 0, 10);
+    const prevT = r.getRenderTarget(), prevC = new Color();
+    r.getClearColor(prevC);
+    const prevA = r.getClearAlpha(), prevTM = r.toneMapping;
+    r.setRenderTarget(rt);
+    r.setClearColor(1912864, 0);
+    r.toneMapping = NoToneMapping;
+    r.clear();
+    r.render(sc, cam);
+    r.setRenderTarget(prevT);
+    r.setClearColor(prevC, prevA);
+    r.toneMapping = prevTM;
+    const out = { tex: rt.texture, hw, y0: bb.min.y, h };
+    _impCache.set(geo, out);
+    return out;
+  }
+  function impostorGeometry(I) {
+    const g1 = new PlaneGeometry(I.hw * 2, I.h).translate(0, I.y0 + I.h / 2, 0), g2 = g1.clone().rotateY(Math.PI / 2);
+    const g = mergeGeometries([g1, g2], false);
+    const n = g.attributes.normal;
+    for (let i = 0; i < n.count; i++) n.setXYZ(i, 0, 1, 0);
+    return g;
+  }
   function makeForest(geo, count, placeFn, o = {}) {
+    if (o.isNear && G.renderer) {
+      const near2 = [], far = [];
+      let n = 0;
+      for (let i = 0; i < count * 4 && n < count; i++) {
+        const p = placeFn(i);
+        if (!p) continue;
+        n++;
+        (o.isNear(p) ? near2 : far).push(p);
+      }
+      const grp = new Group();
+      if (near2.length) grp.add(makeForest(geo, near2.length, (i) => near2[i], { ...o, isNear: null, tries: 1 }));
+      const I = impostorTexture(geo);
+      if (I && far.length) {
+        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.42, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff" });
+        hazeify(m2, {});
+        const im2 = makeForestMesh(impostorGeometry(I), m2, far.length, (i) => far[i], 1);
+        im2.castShadow = false;
+        im2.receiveShadow = false;
+        im2.userData.impostor = true;
+        grp.add(im2);
+      }
+      grp.userData.lod = { near: near2.length, far: far.length };
+      return grp;
+    }
     const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
     hazeify(m, { sway: o.sway ?? 0.5 });
+    const im = makeForestMesh(geo, m, count, placeFn, o.tries || 4);
+    im.castShadow = o.cast ?? false;
+    im.receiveShadow = true;
+    return im;
+  }
+  function makeForestMesh(geo, m, count, placeFn, tries) {
     const im = new InstancedMesh(geo, m, count);
     const d = new Object3D();
     let n = 0;
-    for (let i = 0; i < count * 4 && n < count; i++) {
+    for (let i = 0; i < count * tries && n < count; i++) {
       const p = placeFn(i);
       if (!p) continue;
       d.position.set(p.x, p.y - 0.3, p.z);
@@ -35772,8 +36213,6 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       im.setMatrixAt(n++, d.matrix);
     }
     im.count = n;
-    im.castShadow = o.cast ?? false;
-    im.receiveShadow = true;
     im.instanceMatrix.needsUpdate = true;
     im.computeBoundingSphere();
     return im;
@@ -35817,7 +36256,43 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     hazeify(m, { flag: o.amp ?? 1 });
     const mesh = new Mesh(g, m);
     mesh.castShadow = true;
+    mesh.userData.windFlag = true;
     return mesh;
+  }
+  function addWindMarkers(S, w, height4, pts, o = {}) {
+    const poleG = [];
+    for (const [x, z] of pts) {
+      const y = height4(x, z);
+      poleG.push([new CylinderGeometry(0.06, 0.08, o.pole || 7, 5).translate(x, y + (o.pole || 7) / 2, z), o.poleColor || "#2a2a2c"]);
+      const f = makeFlag(o.fw || 2.4, o.fh || 0.9, o.color || "#ff5a1f", { amp: 0.8 });
+      f.position.set(x, y + (o.pole || 7) - 0.5, z);
+      f.castShadow = false;
+      S.add(f);
+      const f2 = makeFlag((o.fw || 2.4) * 0.8, (o.fh || 0.9) * 0.6, o.color2 || "#f2f2f0", { amp: 0.9 });
+      f2.position.set(x, y + (o.pole || 7) - 1.6, z);
+      f2.castShadow = false;
+      S.add(f2);
+      if (o.drift !== false) {
+        const d = new Smoke(S, { at: [x, y + 0.4, z], n: 16, rate: 2.2, life: 5, size: 2.2, grow: 2.2, rise: 0.25, spread: 1.6, color: o.driftColor || "#eef2f8", opacity: o.driftOpacity ?? 0.22, windMul: 1.4 });
+        w.updaters.push((dt, wind) => d.update(dt, wind));
+      }
+    }
+    S.add(mergedMesh(poleG, { rough: 0.6 }));
+  }
+  function orientWindFlags(world, wind, mt, dt) {
+    if (!world.windFlags) {
+      world.windFlags = [];
+      world.scene.traverse((o) => {
+        if (o.userData.windFlag) world.windFlags.push(o);
+      });
+    }
+    for (const f of world.windFlags) {
+      wind.sample(f.position, mt, _fw);
+      const target = Math.atan2(_fw.z, _fw.x) * -1;
+      let d = target - f.rotation.y;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      f.rotation.y += d * Math.min(1, dt * 2.5);
+    }
   }
   function makeBanner(w, h, color, trim = "#d8b45a") {
     const c = document.createElement("canvas");
@@ -35958,13 +36433,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     grp.userData = { bolt: bolt2, handR, can, handRHome: handR.position.clone(), boltHome: bolt2.position.clone() };
     return grp;
   }
-  var glowTex, Smoke;
+  var glowTex, _impCache, _fw, Smoke;
   var init_common = __esm({
     "src/scene/common.js"() {
       init_three_module();
       init_BufferGeometryUtils();
       init_materials();
+      init_state();
       glowTex = null;
+      _impCache = /* @__PURE__ */ new Map();
+      _fw = new Vector3();
       Smoke = class {
         constructor(scene, o) {
           this.o = Object.assign({ n: 40, rate: 6, life: 9, size: 6, grow: 2.2, rise: 2.2, color: "#9aa0a8", opacity: 0.45, additive: false, spread: 0.6, windMul: 1 }, o);
@@ -36147,8 +36625,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const steep = smoothstep2(0.32, 0.55, slope2 + (vnoise(x / 25, z / 25, 9) - 0.5) * 0.15);
         c.copy(s).lerp(shade, vnoise(x / 70, z / 70, 1) * 0.5);
         {
-          const e = 6, hx = height(x + e, z) - height(x - e, z), hz = height(x, z + e) - height(x, z - e);
-          const nx = -hx, ny = 2 * e, nz = -hz, nl = Math.hypot(nx, ny, nz);
+          const e = 6, hx2 = height(x + e, z) - height(x - e, z), hz = height(x, z + e) - height(x, z - e);
+          const nx = -hx2, ny = 2 * e, nz = -hz, nl = Math.hypot(nx, ny, nz);
           const ndl = (nx * SUN[0] + ny * SUN[1] + nz * SUN[2]) / nl;
           const lit = smoothstep2(0.05, 0.4, ndl);
           c.lerp(SHADOW_C, (1 - lit) * 0.55 * smoothstep2(200, 900, Math.hypot(x - 30, z + 400)));
@@ -36183,7 +36661,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const sl = Math.abs(height(x + 3, z) - h) + Math.abs(height(x, z + 3) - h);
       if (sl > 4.2) return null;
       return { x, y: h, z, r: rnd() * 6.28, s: 0.8 + rnd() * 0.9, sy: 0.9 + rnd() * 0.4 };
-    }, { cast: false, sway: 0.25 }));
+    }, { cast: false, sway: 0.25, isNear: (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 || -p.z < 420 }));
     S.add(makeForest(pine, 60, (i) => {
       const a = rnd() * 6.28, r = 62 + rnd() * 70;
       const x = 30 + Math.cos(a) * r, z = -790 + Math.sin(a) * r * 0.7;
@@ -36371,6 +36849,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.updaters.push((dt, wind) => smoke.update(dt, wind));
     const smoke2 = new Smoke(S, { at: [-70, height(-70, -808) + 7, -810], n: 30, rate: 2.5, life: 10, size: 2.5, grow: 3, rise: 1.4, color: "#b8b4ba", opacity: 0.3 });
     w.updaters.push((dt, wind) => smoke2.update(dt, wind));
+    addWindMarkers(S, w, height, [[40, -230], [-16, -420], [62, -610]], { color: "#ff4a1a", color2: "#1a3a8a", pole: 6.5, driftColor: "#f2f5fb", driftOpacity: 0.26 });
     w.cars = {};
     const car1 = makeCar("#202326", "suv");
     car1.position.set(66, PAD_Y + 0.6, -760);
@@ -36705,6 +37184,76 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       flame.update(dt, wind);
       plume.update(dt, wind);
     });
+    {
+      const c = document.createElement("canvas");
+      c.width = c.height = 512;
+      const x = c.getContext("2d");
+      const R = mulberry32(77);
+      for (let i = 0; i < 26; i++) {
+        x.fillStyle = `rgba(${60 + R() * 40 | 0},${50 + R() * 30 | 0},${38 + R() * 20 | 0},${0.12 + R() * 0.18})`;
+        x.beginPath();
+        x.ellipse(R() * 512, R() * 512, 20 + R() * 70, 10 + R() * 40, R() * 3, 0, 7);
+        x.fill();
+      }
+      for (let i = 0; i < 1600; i++) {
+        const g = 70 + R() * 90 | 0;
+        x.fillStyle = `rgba(${g},${g * 0.85 | 0},${g * 0.65 | 0},${0.25 + R() * 0.35})`;
+        x.fillRect(R() * 512, R() * 512, 1 + R() * 3, 1 + R() * 3);
+      }
+      x.lineCap = "round";
+      for (let k = 0; k < 4; k++) {
+        const y0 = 60 + R() * 390, cv2 = (R() - 0.5) * 160;
+        x.strokeStyle = "rgba(70,56,40,0.32)";
+        x.lineWidth = 9;
+        for (const o of [0, 26]) {
+          x.beginPath();
+          x.moveTo(-10, y0 + o);
+          x.quadraticCurveTo(256, y0 + o + cv2, 522, y0 + o + cv2 * 0.3);
+          x.stroke();
+        }
+        x.strokeStyle = "rgba(40,32,24,0.18)";
+        x.lineWidth = 2;
+        x.setLineDash([3, 5]);
+        for (const o of [0, 26]) {
+          x.beginPath();
+          x.moveTo(-10, y0 + o);
+          x.quadraticCurveTo(256, y0 + o + cv2, 522, y0 + o + cv2 * 0.3);
+          x.stroke();
+        }
+        x.setLineDash([]);
+      }
+      for (let i = 0; i < 5; i++) {
+        const r = 14 + R() * 26, cx2 = R() * 512, cy2 = R() * 512;
+        const gr = x.createRadialGradient(cx2, cy2, 0, cx2, cy2, r);
+        gr.addColorStop(0, "rgba(18,14,12,0.55)");
+        gr.addColorStop(1, "rgba(18,14,12,0)");
+        x.fillStyle = gr;
+        x.beginPath();
+        x.arc(cx2, cy2, r, 0, 7);
+        x.fill();
+      }
+      const tex = new CanvasTexture(c);
+      tex.colorSpace = SRGBColorSpace;
+      tex.anisotropy = 4;
+      const dm = new MeshStandardMaterial({ map: tex, transparent: true, depthWrite: false, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+      const R2 = mulberry32(91), N2 = 34, im = new InstancedMesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), dm, N2), d = new Object3D();
+      let n = 0;
+      for (let i = 0; i < N2 * 3 && n < N2; i++) {
+        const px2 = -210 + R2() * 300, pz2 = -830 - R2() * 240, s = 26 + R2() * 30;
+        const h = height2(px2, pz2), hx2 = height2(px2 + s * 0.4, pz2), hz = height2(px2, pz2 + s * 0.4);
+        if (Math.abs(hx2 - h) + Math.abs(hz - h) > 0.6) continue;
+        d.position.set(px2, h + 0.06, pz2);
+        d.rotation.set(0, R2() * 6.28, 0);
+        d.scale.set(s, 1, s * (0.6 + R2() * 0.6));
+        d.updateMatrix();
+        im.setMatrixAt(n++, d.matrix);
+      }
+      im.count = n;
+      im.receiveShadow = true;
+      im.renderOrder = -1;
+      S.add(im);
+    }
+    addWindMarkers(S, w, height2, [[-30, -260], [26, -480], [-80, -690]], { color: "#ff6a10", color2: "#f4f4ee", pole: 6, driftColor: "#d6b483", driftOpacity: 0.3 });
     const sock = makeFlag(3, 0.9, "#ff5a1f", { amp: 0.7 });
     sock.position.set(-17, 13, -876);
     S.add(sock);
@@ -36756,11 +37305,29 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function missionById(id) {
     return MISSIONS.find((m) => m.id === id);
   }
-  var TAC, SOL, nestFace, MISSIONS;
+  var hx, near, reddish, greyish, TAC, SOL, nestFace, MISSIONS;
   var init_missions = __esm({
     "src/mission/missions.js"() {
       init_villa();
       init_refinery();
+      hx = (h) => {
+        if (!h) return null;
+        const n = parseInt(h.slice(1), 16);
+        return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+      };
+      near = (a, b, tol) => {
+        a = hx(a);
+        b = hx(b);
+        return !!a && Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) < tol;
+      };
+      reddish = (h) => {
+        const c = hx(h);
+        return !!c && c[0] > 0.55 && c[1] < 0.25 && c[2] < 0.25;
+      };
+      greyish = (h) => {
+        const c = hx(h);
+        return !!c && Math.max(...c) - Math.min(...c) < 0.08 && c[0] > 0.4;
+      };
       TAC = (o = {}) => Object.assign({ skin: "#c89878", top: "#2d3330", bottom: "#25282a", vest: "#1a1d1a", hat: "beanie", hatColor: "#202422", rifle: true, gloves: "#151515", hair: "#2a2018" }, o);
       SOL = (o = {}) => Object.assign({ skin: "#b98a66", top: "#55583e", bottom: "#4a4c36", vest: "#3a3d2a", hat: "cap", hatColor: "#4a4c36", rifle: true, shoes: "#3a2e20", hair: "#1a1410" }, o);
       nestFace = [0, 0];
@@ -36786,7 +37353,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             clues: ["Camel overcoat \u2014 RED SCARF", "Grey hair and beard, carries a black case", "Arrives by black SUV around 18:30", "Takes a private call on the upper balcony ~18:40"],
             notes: "He never takes calls in front of guests. Balcony is out of sight of the terrace \u2014 no witnesses up there.",
             warn: "Guests in camel coats are CIVILIANS. A civilian hit ends the contract.",
-            photoNpc: "ravel"
+            photoNpc: "ravel",
+            noTarget: "Camel coat + no beard = guest",
+            field: { range: 790, wind: "Left \u2192 right, 3\u20134 m/s, valley gusts", light: "Sunset \u2014 fading fast after 18:45", temp: "\u22126 \xB0C" },
+            traits: [
+              ["Camel overcoat", (L) => !!L.coat && near(L.coatColor, "#a8845a", 0.2)],
+              ["Red scarf", (L) => reddish(L.scarf)],
+              ["Grey hair + beard", (L) => !!L.beard && greyish(L.hair)],
+              ["Black case", (L) => !!L.briefcase]
+            ]
           },
           objectives: {
             primary: { id: "kill", text: "Eliminate Anton Ravel" },
@@ -36945,11 +37520,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             target: "COL. DRAZEN VOSK",
             alias: '"The Warden"',
             ref: "CONTRACT M2",
+            traits: [
+              ["Khaki uniform", (L) => near(L.top, "#b5a078", 0.2)],
+              ["Black beret", (L) => L.hat === "beret"],
+              ["Dark glasses", (L) => !!L.glasses],
+              ["Cane \xB7 limp", (L, n) => !!L.cane || n.anim === "limp"]
+            ],
             desc: "Warlord. Funds his militia by taxing the refinery's fuel. Today he inspects the tank farm in person \u2014 rare exposure.",
             clues: ["Khaki uniform, black beret, dark glasses", "WALKS WITH A CANE \u2014 old knee wound, visible limp", "His double, a major, dresses the same but walks normally", "Ends the tour on the control-building roof"],
             notes: "The three red-banded fuel tanks by the walkway are chained to one manifold valve. One round in the valve and the line goes up. Make sure no workers are near.",
             warn: "Workers in orange coveralls are CIVILIANS. Civilian casualties \u2014 including from the fuel chain \u2014 end the contract.",
-            photoNpc: "vosk"
+            photoNpc: "vosk",
+            noTarget: "No cane = the double",
+            field: { range: 920, wind: "Right \u2192 left, ~3 m/s, rising (storm)", light: "Low sun behind you", temp: "39 \xB0C \u2014 heat mirage" }
           },
           objectives: {
             primary: { id: "kill", text: "Eliminate Colonel Vosk" },
@@ -37471,11 +38054,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     const dtb = Math.min(0.25, Math.max(0, t - ud.lastT));
     ud.lastT = t;
-    const key = pose + (extra.fall > 0 ? "#f" : "") + (extra.panic ? "#p" : "");
-    if (ud.pose !== key) {
-      ud.pose = key;
-      ud.bw = ud.pose0 === void 0 ? 0 : 1;
-      ud.pose0 = key;
+    const kf = extra.fall > 0, kp = !!extra.panic;
+    if (ud.pose !== pose || ud.kf !== kf || ud.kp !== kp) {
+      ud.bw = ud.pose === void 0 ? 0 : 1;
+      ud.pose = pose;
+      ud.kf = kf;
+      ud.kp = kp;
     }
     ud.bw = Math.max(0, (ud.bw || 0) - dtb * 3.2);
     const kb = 1 - ud.bw * ud.bw * (3 - 2 * ud.bw) * 0.92;
@@ -37494,13 +38078,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function worldHitboxes(h, out = []) {
     const bones = h.userData.bones;
     h.updateMatrixWorld(true);
-    out.length = 0;
-    for (const hb of HITBOXES) {
-      const m = bones[hb[0]].matrixWorld;
-      va.set(hb[1], hb[2], hb[3]).applyMatrix4(m);
-      vb.set(hb[4], hb[5], hb[6]).applyMatrix4(m);
-      out.push({ a: va.clone(), b: vb.clone(), r: hb[7], zone: hb[8] });
+    for (let i = 0; i < HITBOXES.length; i++) {
+      const hb = HITBOXES[i], m = bones[hb[0]].matrixWorld;
+      const o = out[i] || (out[i] = { a: new Vector3(), b: new Vector3(), r: 0, zone: "" });
+      o.a.set(hb[1], hb[2], hb[3]).applyMatrix4(m);
+      o.b.set(hb[4], hb[5], hb[6]).applyMatrix4(m);
+      o.r = hb[7];
+      o.zone = hb[8];
     }
+    out.length = HITBOXES.length;
     return out;
   }
   var B2, PIV, PARENT, tmp3, HITBOXES, va, vb;
@@ -37909,6 +38495,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     dz.classList.add("anim");
     $("dzNotes").textContent = D.notes;
     $("dzWarn").textContent = D.warn;
+    const F = D.field || {}, R = F.range || 800;
+    const dope = dopeTable(RIFLES.rook7, [500, 600, 700, 800, 900, 1e3]);
+    const at = dopeTable(RIFLES.rook7, [R])[0];
+    $("dzField").innerHTML = [["Range (slant)", "\u2248 " + R + " m"], ["Hold at range", at.dropMil.toFixed(1) + " mil up \xB7 TOF " + at.tof.toFixed(2) + " s"], ["Wind", F.wind || "\u2014"], ["Light", F.light || "\u2014"], ["Temp", F.temp || "\u2014"]].map(([k, v3]) => `<tr><td>${esc(k)}</td><td>${esc(v3)}</td></tr>`).join("");
+    $("dzTraits").innerHTML = (D.traits || []).map(([l]) => `<span>${esc(l)}</span>`).join("") + (D.noTarget ? `<span class="no">${esc(D.noTarget)}</span>` : "");
+    $("dzDope").innerHTML = "<tr><th>RANGE</th><th>DROP</th><th>WIND /1 m/s</th><th>TOF</th><th>VEL</th></tr>" + dope.map((d) => `<tr class="${Math.abs(d.range - R) < 50 ? "hl" : ""}"><td>${d.range} m</td><td>${d.dropMil.toFixed(2)}</td><td>${d.windMil.toFixed(3)}</td><td>${d.tof.toFixed(2)} s</td><td>${Math.round(d.vel)}</td></tr>`).join("");
     $("bNum").textContent = "CONTRACT " + String(def.num).padStart(2, "0");
     $("bTitle").textContent = def.title;
     $("bPlace").textContent = def.place;
@@ -38027,6 +38619,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   var $, SCREENS, esc, OPTS;
   var init_screens = __esm({
     "src/ui/screens.js"() {
+      init_sim();
       init_three_module();
       init_state();
       init_missions();
@@ -38042,6 +38635,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         ["difficulty", "Difficulty", "sel", [["recruit", "Recruit"], ["marksman", "Marksman"], ["ghost", "Ghost"]]],
         ["quality", "Graphics quality", "sel", [["auto", "Auto"], ["low", "Low"], ["medium", "Medium"], ["high", "High"]]],
         ["sens", "Aim sensitivity", "range", [0.3, 2.5, 0.05]],
+        ["touchSens", "Touch drag sensitivity", "range", [0.3, 2.5, 0.05]],
+        ["fineMul", "Fine-aim strength (scope)", "range", [0.15, 0.7, 0.05]],
         ["invertY", "Invert Y", "bool"],
         ["gyro", "Gyro aim (mobile)", "bool"],
         ["sway", "Scope sway", "range", [0.3, 1.5, 0.05]],
@@ -38106,7 +38701,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.lastShot = -99;
           this.reaction = null;
           this.inCar = null;
-          this.extraAnim = { seed: this.seed, briefcase: !!def.look?.briefcase, rifle: !!def.look?.rifle, female: def.look?.female ?? def.look?.hairStyle === "long" };
+          this.extraAnim = { seed: this.seed, briefcase: !!def.look?.briefcase, rifle: !!def.look?.rifle, female: def.look?.female ?? def.look?.hairStyle === "long", fall: 0, fallDir: 0, panic: false };
         }
         get alive_() {
           return this.alive;
@@ -38122,7 +38717,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           return this.hbCache;
         }
         headPos(out = new Vector3()) {
-          return out.copy(this.pos).add(new Vector3(0, this.alive ? 1.65 : 0.3, 0));
+          out.copy(this.pos);
+          out.y += this.alive ? 1.65 : 0.3;
+          return out;
         }
         current() {
           return this.reaction ? this.reaction[this.ri] : this.tasks[this.ti];
@@ -38130,7 +38727,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         next() {
           if (this.reaction) {
             this.ri++;
-            if (this.ri >= this.reaction.length) this.ri = this.reaction.length - 1, this.reactionDone = true;
+            if (this.ri >= this.reaction.length) {
+              this.ri = this.reaction.length;
+              this.reactionDone = true;
+              this.taskT = 0;
+              this.pathI = 0;
+              return;
+            }
           } else {
             this.ti++;
             if (this.ti >= this.tasks.length) this.ti = this.tasks.length;
@@ -38301,6 +38904,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         drive(route) {
           if (this.disabled) return;
+          if (typeof route === "string") route = this.world.routes?.[route] || null;
+          if (!route) return;
           this.route = route;
           this.ri = 0;
           this.state = "driving";
@@ -38459,7 +39064,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         // degrees: direction wind blows TOWARD, 0 = -Z (downrange), 90 = +X (right)
         sample(p, t, out = this.v) {
           const c = this.cfg;
-          const gust = 1 + c.gust * (0.6 * noise1(t * 0.23, c.seed) + 0.4 * noise1(t * 0.9, c.seed + 3));
+          const dg = G.settings.difficulty === "ghost" ? 1 : G.settings.difficulty === "marksman" ? 0.7 : 0.55, fast = G.settings.difficulty === "ghost" ? 0.4 : 0.12;
+          const gust = 1 + c.gust * dg * ((1 - fast) * noise1(t * 0.16, c.seed) + fast * noise1(t * 0.9, c.seed + 3));
           const dir = (c.dir + this.extraDir + c.shift * noise1(t * 0.05, c.seed + 9)) * Math.PI / 180;
           let sp = c.speed * this.mul * Math.max(0.05, gust) * G.debug.windMul;
           if (p) {
@@ -38471,7 +39077,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         // Average wind along a line (what a gauge would integrate)
         average(a, b, t, n = 8) {
-          const acc = new Vector3(), p = new Vector3(), w = new Vector3();
+          const acc = this._acc || (this._acc = new Vector3()), p = this._p || (this._p = new Vector3()), w = this._w || (this._w = new Vector3());
+          acc.set(0, 0, 0);
           for (let i = 0; i < n; i++) {
             p.lerpVectors(a, b, (i + 0.5) / n);
             acc.add(this.sample(p, t, w));
@@ -38661,6 +39268,49 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           }
           this.lastShotHeard = this.mt;
         }
+        /** Rough seconds until the target gets away (null if not fleeing / unknown). */
+        escapeETA() {
+          const t = this.npcs.find((n) => n.role === "target");
+          if (!t || !t.alive || this.alarm !== "alarm") return null;
+          const routeLeft = (v3, r, ri) => {
+            let d = 0, px3 = v3 ? v3.pos.x : 0, pz3 = v3 ? v3.pos.z : 0;
+            for (let i = ri; i < r.length; i++) {
+              d += Math.hypot(r[i][0] - px3, r[i][1] - pz3);
+              px3 = r[i][0];
+              pz3 = r[i][1];
+            }
+            return d;
+          };
+          if (t.inCar) {
+            const v3 = t.inCar;
+            if (v3.disabled || v3.state !== "driving" || !v3.route) return null;
+            return routeLeft(v3, v3.route, v3.ri) / Math.max(v3.speed, v3.maxSpeed * 0.7);
+          }
+          if (!t.reaction) return null;
+          let s = 0, px2 = t.pos.x, pz2 = t.pos.z, car = false;
+          for (let i = t.ri; i < t.reaction.length; i++) {
+            const k = t.reaction[i];
+            if (k.type === "goto") {
+              const sp = k.speed || (k.anim === "run" ? 3.6 : 1.4);
+              for (let j = i === t.ri ? t.pathI || 0 : 0; j < k.path.length; j++) {
+                s += Math.hypot(k.path[j][0] - px2, k.path[j][1] - pz2) / sp;
+                px2 = k.path[j][0];
+                pz2 = k.path[j][1];
+              }
+            } else if (k.type === "wait" && k.dur) s += k.dur;
+            else if (k.type === "car") {
+              const v3 = this.vehicles[k.car], r = this.world.routes?.[k.route];
+              if (!v3 || v3.disabled || !r) continue;
+              s += 2 + routeLeft(null, r, 0) / (v3.maxSpeed * 0.8) - Math.hypot(r[0][0], r[0][1]) / (v3.maxSpeed * 0.8) + Math.hypot(r[0][0] - v3.pos.x, r[0][1] - v3.pos.z) / (v3.maxSpeed * 0.8);
+              car = true;
+              break;
+            } else if (k.type === "event" && k.name === "escaped") {
+              car = true;
+              break;
+            }
+          }
+          return car ? s : null;
+        }
         raiseAlarm(reason) {
           if (this.alarm === "alarm" || this.ended) return;
           this.alarm = "alarm";
@@ -38683,16 +39333,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             return;
           }
           if (!n.visible) return;
-          const near = (pts) => pts.reduce((b, p) => !b || Math.hypot(p[0] - n.pos.x, p[1] - n.pos.z) < Math.hypot(b[0] - n.pos.x, b[1] - n.pos.z) ? p : b, null);
+          const near2 = (pts) => pts.reduce((b, p) => !b || Math.hypot(p[0] - n.pos.x, p[1] - n.pos.z) < Math.hypot(b[0] - n.pos.x, b[1] - n.pos.z) ? p : b, null);
           if (n.role === "guard") {
             if (n.fixedY != null) {
               n.setReaction([{ type: "wait", until: 1e9, anim: "aim", face: [0, 0] }]);
               return;
             }
-            const c = near(this.def.cover);
+            const c = near2(this.def.cover);
             n.setReaction([{ type: "goto", path: [c], anim: "run" }, { type: "wait", until: 1e9, anim: "aim", face: [0, 0] }]);
           } else {
-            const s = near(this.def.safe);
+            const s = near2(this.def.safe);
             if (n.fixedY != null || Math.hypot(s[0] - n.pos.x, s[1] - n.pos.z) > 45) n.setReaction([{ type: "wait", until: 1e9, anim: (n.seed || 0) % 2 > 1 ? "cover" : "cower" }]);
             else n.setReaction([{ type: "goto", path: [s], anim: "run" }, { type: "hide" }]);
           }
@@ -38854,7 +39504,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             if (!this.ended) this.hearShot();
           }
           for (const n of this.npcs) n.update(dt, mt);
-          for (const v3 of Object.values(this.vehicles)) {
+          const VL = this._vl || (this._vl = Object.values(this.vehicles));
+          for (let vi = 0; vi < VL.length; vi++) {
+            const v3 = VL[vi];
             v3.update(dt);
             v3.smokeFx.origin.copy(v3.pos).y += 1.2;
             v3.smokeFx.update(dt, this.wind.sample(null, mt));
@@ -38884,9 +39536,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           if (!this.primaryDone && mt > this.def.duration + 40) this.fail("time");
         }
         checkBodies(dt) {
-          const bodies = this.npcs.filter((n) => !n.alive && !n.found && n.visible && !(n.killedBy && n.killedBy.explosion));
-          if (!bodies.length) return;
-          for (const b of bodies) {
+          for (let bi = 0; bi < this.npcs.length; bi++) {
+            const b = this.npcs[bi];
+            if (b.alive || b.found || !b.visible || b.killedBy && b.killedBy.explosion) continue;
             const concealed = b.fixedY != null && b.fixedY > this.world.height(b.pos.x, b.pos.z) + 2;
             if (concealed) continue;
             for (const n of this.npcs) {
@@ -39010,7 +39662,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (h > 600) return null;
       if (fbm(x / 200, z / 200, 3, 4) < 0.5) return null;
       return { x, y: h, z, r: rng() * 6, s: 0.8 + rng() * 0.6 };
-    }));
+    }, { isNear: (p) => -p.z < 400 }));
     setupShadow(w, new Vector3(0, 40, -500), 1300, tier);
     w.titleCam = { pos: new Vector3(-1.5, ny + 2.2, 2.5), look: new Vector3(0, 45, -600) };
     return w;
@@ -39192,7 +39844,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/bulletcam/bulletcam.js
-  var BulletCam;
+  var _d2, _pp, _t, _s, _o, _up, BulletCam;
   var init_bulletcam = __esm({
     "src/bulletcam/bulletcam.js"() {
       init_three_module();
@@ -39200,6 +39852,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_BufferGeometryUtils();
       init_common();
       init_audio();
+      _d2 = new Vector3();
+      _pp = new Vector3();
+      _t = new Vector3();
+      _s = new Vector3();
+      _o = new Vector3();
+      _up = new Vector3(0, 1, 0);
       BulletCam = class {
         constructor() {
           const body = mergeGeometries([
@@ -39257,7 +39915,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           stopWhiz();
         }
         skip() {
-          if (this.active) this.skipReq = true;
+          if (this.active && this.real >= 0.5) this.skipReq = true;
         }
         update(dtReal, cam) {
           if (!this.active) return;
@@ -39268,16 +39926,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             let scale = this.baseScale;
             if (remain < 40) scale = Math.min(scale, 0.025 + remain / 40 * 0.05);
             G.timeScale = this.skipReq ? 1 : scale;
-            const dir = p.v.clone().normalize();
-            this.mesh.position.copy(p.p);
-            this.mesh.lookAt(p.p.clone().sub(dir));
+            const dir = _d2.copy(p.v).normalize();
+            const pp = _pp.copy(p.p).addScaledVector(p.v, p.done ? 0 : (G.simAlpha || 0) * (1 / 60) * G.timeScale);
+            this.mesh.position.copy(pp);
+            this.mesh.lookAt(_t.copy(pp).sub(dir));
             this.mesh.rotateZ(this.real * 26);
-            this.orbit += dtReal * 0.7;
-            const up = new Vector3(0, 1, 0), side = new Vector3().crossVectors(dir, up).normalize();
-            const off = side.multiplyScalar(Math.cos(this.orbit) * 0.28).add(up.clone().multiplyScalar(0.14 + Math.sin(this.orbit) * 0.16));
-            cam.position.copy(p.p).addScaledVector(dir, -0.95).add(off);
+            this.orbit += dtReal * 0.55;
+            const side = _s.crossVectors(dir, _up).normalize();
+            _o.copy(side).multiplyScalar(Math.cos(this.orbit) * 0.28).addScaledVector(_up, 0.14 + Math.sin(this.orbit) * 0.16);
+            cam.position.copy(pp).addScaledVector(dir, -0.95).add(_o);
             cam.up.set(0, 1, 0);
-            cam.lookAt(p.p.clone().addScaledVector(dir, 8));
+            cam.lookAt(_t.copy(pp).addScaledVector(dir, 8));
             cam.fov = 34;
             cam.near = 0.2;
             cam.updateProjectionMatrix();
@@ -39290,17 +39949,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             if (p.done) {
               this.phase = "impact";
               this.holdT = 0;
-              this.impactPos = p.hitPoint ? p.hitPoint.clone() : p.p.clone();
-              this.impDir = dir.clone();
+              this.impactPos = (this.impactPos || new Vector3()).copy(p.hitPoint || p.p);
+              this.impDir = (this.impDir || new Vector3()).copy(dir);
             }
           } else if (this.phase === "impact") {
             this.holdT += dtReal;
             G.timeScale = this.skipReq ? 1 : this.holdT < 0.25 ? 0.05 : 0.35;
             this.mesh.visible = false;
-            const d = this.impDir, side = new Vector3().crossVectors(d, new Vector3(0, 1, 0)).normalize();
-            const k = Math.min(1, this.holdT / 1.6);
-            cam.position.copy(this.impactPos).addScaledVector(d, -3.2 - k * 1).addScaledVector(side, 2.6 + k * 0.8).add(new Vector3(0, 0.5 + k * 0.4, 0));
-            cam.lookAt(this.impactPos.clone().add(new Vector3(0, -0.3 * k, 0)));
+            const d = this.impDir, side = _s.crossVectors(d, _up).normalize();
+            const k0 = Math.min(1, this.holdT / 1.6), k = k0 * k0 * (3 - 2 * k0);
+            cam.position.copy(this.impactPos).addScaledVector(d, -3.2 - k * 1).addScaledVector(side, 2.6 + k * 0.8);
+            cam.position.y += 0.5 + k * 0.4;
+            cam.lookAt(_t.copy(this.impactPos).setY(this.impactPos.y - 0.3 * k));
             cam.fov = 38;
             cam.near = 0.2;
             cam.updateProjectionMatrix();
@@ -39313,7 +39973,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/core/player.js
-  var STEP2, BRASS_MAT, Player;
+  var STEP2, _p0, _c, BRASS_GEO, BRASS_MAT, Player;
   var init_player = __esm({
     "src/core/player.js"() {
       init_three_module();
@@ -39328,6 +39988,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_audio();
       init_rng();
       STEP2 = 1 / 240;
+      G._step = stepProjectile;
+      _p0 = new Vector3();
+      _c = new Vector3();
+      BRASS_GEO = new CylinderGeometry(6e-3, 6e-3, 0.05, 8);
       BRASS_MAT = new MeshStandardMaterial({ color: "#c9a04a", metalness: 0.9, roughness: 0.3 });
       Player = class {
         constructor(world) {
@@ -39354,15 +40018,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.bc = new BulletCam();
           this.fp = makeRifle({ suppressor: G.settings.suppressor });
           this.brass = [];
+          this.brassPool = [];
           this.boltBob = 0;
           G.fpCam.add(this.fp);
           G.fpScene.add(G.fpCam);
           this.kickT = 0;
         }
         ejectBrass() {
-          const m = new Mesh(new CylinderGeometry(6e-3, 6e-3, 0.05, 8), BRASS_MAT);
-          m.position.copy(this.fp.position).add(new Vector3(0.03, 0.01, 0));
-          m.rotation.z = Math.PI / 2;
+          const m = this.brassPool.pop() || new Mesh(BRASS_GEO, BRASS_MAT);
+          m.position.copy(this.fp.position);
+          m.position.x += 0.03;
+          m.position.y += 0.01;
+          m.rotation.set(0, 0, Math.PI / 2);
           G.fpCam.add(m);
           this.brass.push({ m, v: new Vector3(0.9 + Math.random() * 0.4, 0.9 + Math.random() * 0.3, 0.2), life: 0.9 });
           brass && brass();
@@ -39377,6 +40044,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.view = v3;
           G.view = v3;
           ui("zoom");
+          document.body.classList.toggle("vscope", v3 === "scope");
           if (v3 === "scope") this.optics.magS = Math.max(2.5, this.optics.magT * 0.6);
           emit("view", v3);
         }
@@ -39441,7 +40109,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             ui("click");
           }
           const fov2 = this.view === "eye" ? EYE_FOV : fovFor(this.mag);
-          const k = 21e-4 * s.sens * (fov2 / EYE_FOV) * (this.view === "eye" ? 1 : 0.8);
+          if (consume("fine")) {
+            IN.fine = !IN.fine;
+            ui("click");
+          }
+          const fine = this.view === "scope" && (IN.fine || IN.keys.has("ControlLeft") || IN.keys.has("KeyC"));
+          if (this.fineOn !== fine || this._fineCls !== !!IN.fine) {
+            this._fineCls = !!IN.fine;
+            document.body.classList.toggle("fineon", this._fineCls);
+          }
+          this.fineOn = fine;
+          const k = 21e-4 * s.sens * (fov2 / EYE_FOV) * (this.view === "eye" ? 1 : 0.8) * (fine ? s.fineMul || 0.35 : 1);
           this.yaw -= IN.dx * k;
           this.pitch -= IN.dy * k * (s.invertY ? -1 : 1);
           IN.dx = IN.dy = 0;
@@ -39488,13 +40166,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             b.m.rotation.z += dt * 9;
             b.life -= dt;
           }
-          this.brass = this.brass.filter((b) => {
+          for (let i = this.brass.length - 1; i >= 0; i--) {
+            const b = this.brass[i];
             if (b.life <= 0) {
               b.m.removeFromParent();
-              b.m.geometry.dispose();
+              this.brassPool.push(b.m);
+              this.brass.splice(i, 1);
             }
-            return b.life > 0;
-          });
+          }
           if (!this.boltReady) {
             this.boltT -= dt;
             if (this.boltT <= 0) {
@@ -39655,7 +40334,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         stepProjectiles(sdt) {
           if (!this.projectiles.length) return;
           const M2 = G.mission, spin = G.settings.difficulty === "ghost";
-          const p0 = new Vector3();
+          const p0 = _p0;
           for (const pr of this.projectiles) {
             if (pr.done) continue;
             let remaining = sdt;
@@ -39666,12 +40345,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               stepProjectile(pr, dt, M2.wind, M2.mt + pr.age, spin);
               pr.traveled += p0.distanceTo(pr.p);
               if (pr.aimed) {
-                const c = pr.aimed.holder ? pr.aimed.pos.clone().add(new Vector3(0, 1.25, 0)) : pr.aimed.pos;
+                const c = pr.aimed.holder ? _c.copy(pr.aimed.pos).setY(pr.aimed.pos.y + 1.25) : pr.aimed.pos;
                 if (c) {
                   const d = pr.p.distanceTo(c);
                   if (d < pr.minD) {
                     pr.minD = d;
-                    pr.missVec = pr.p.clone().sub(c);
+                    (pr.missVec || (pr.missVec = new Vector3())).copy(pr.p).sub(c);
                   }
                 }
               }
@@ -39687,7 +40366,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               }
             }
           }
-          this.projectiles = this.projectiles.filter((p) => !p.done);
+          for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].done) this.projectiles.splice(i, 1);
         }
         resolveHit(pr, h) {
           const M2 = G.mission;
@@ -39713,13 +40392,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           } else if (res.text) {
             this.lastHit = { text: res.text, t: G.time, ok: !!res.ok };
           } else {
-            let txt2 = "MISS \xB7 " + R + " m";
+            let txt2 = "MISS \xB7 " + R + " m", corr = null;
             if (pr.aimed && pr.missVec && pr.minD < 6) {
               const up = new Vector3(0, 1, 0), right = new Vector3().crossVectors(pr.v.clone().normalize(), up).normalize();
               const vy = pr.missVec.dot(up), vx = pr.missVec.dot(right);
               txt2 = `MISS \xB7 ${Math.abs(vy).toFixed(1)} m ${vy > 0 ? "HIGH" : "LOW"} \xB7 ${Math.abs(vx).toFixed(1)} m ${vx > 0 ? "RIGHT" : "LEFT"}`;
+              const my = vy / dist * 1e3, mx = vx / dist * 1e3;
+              corr = `CORRECT ${Math.abs(my).toFixed(1)}${my > 0 ? "\u2193" : "\u2191"} ${Math.abs(mx).toFixed(1)}${mx > 0 ? "\u2190" : "\u2192"} mil`;
             }
-            this.lastHit = { text: txt2, t: G.time, ok: false, splash: h.point.clone() };
+            this.lastHit = { text: txt2, t: G.time, ok: false, splash: h.point.clone(), corr: G.settings.difficulty === "ghost" ? null : corr };
           }
           G.save.records.shots++;
           if (res.killed) G.save.records.hits++;
@@ -39886,6 +40567,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_bloom();
       var $2 = (id) => document.getElementById(id);
       var SIM_DT = 1 / 60;
+      var _ad = new Vector3();
+      var _an = new Vector3();
+      var STORM_C = new Color("#b48a5c");
       var titleWorld = null;
       var weather = null;
       var player = null;
@@ -39905,6 +40589,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       var hintT = 0;
       var endTimer = null;
       window.LS = G;
+      G.Raycaster = Raycaster;
       function setLoading(p, t) {
         $2("loadbar").style.width = Math.round(p * 100) + "%";
         if (t) $2("loadtxt").textContent = t;
@@ -40194,6 +40879,32 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         player = new Player(M2.world);
         G.player = player;
         setupWeather(M2.world);
+        if (!M2.world.nearProps) {
+          M2.world.nearProps = [];
+          const np = M2.world.nest.pos;
+          for (const o of M2.world.scene.children) {
+            if (!o.isMesh || !o.geometry) continue;
+            o.geometry.computeBoundingSphere();
+            const bs = o.geometry.boundingSphere;
+            if (bs.radius < 14 && _an.copy(bs.center).applyMatrix4(o.matrixWorld).distanceTo(np) < bs.radius + 7) M2.world.nearProps.push(o);
+          }
+        }
+        if (!G.quality.shadows && M2.world.height && M2.world.sunDir && !M2.world._sunChecked) {
+          M2.world._sunChecked = true;
+          const T = M2.kind === "range" ? null : M2.def.id === "villa" ? [30, -776] : [-60, -930];
+          if (T) {
+            const h0 = M2.world.height(T[0], T[1]) + 2, d = M2.world.sunDir;
+            let blocked = false;
+            for (let t = 20; t < 6e3 && !blocked; t += 20) {
+              const x = T[0] + d.x * t, z = T[1] + d.z * t, y = h0 + d.y * t;
+              if (M2.world.height(x, z) > y) blocked = true;
+            }
+            if (blocked) {
+              M2.world.preset.sunI *= 0.12;
+              M2.world.sun.intensity = M2.world.preset.sunI;
+            }
+          }
+        }
         G.mode = "play";
         paused = false;
         intelOpen = false;
@@ -40313,13 +41024,20 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           return;
         }
         frameN++;
+        G.frameN = frameN;
         G.time = now2;
+        G.dtReal = dt;
         if (G.contextLost) return;
+        const _t0 = performance.now();
         pollGamepad(dt);
         if (consume("debug")) toggleDebug();
         if (G.mode === "play") playFrame(dt);
         else titleFrame(dt);
+        const _t1 = performance.now();
         render(dt);
+        const _t2 = performance.now(), st = G.stats;
+        st.simMs = (st.simMs || 0) * 0.95 + (_t1 - _t0) * 0.05;
+        st.renderMs = (st.renderMs || 0) * 0.95 + (_t2 - _t1) * 0.05;
         fpsAcc += dt;
         fpsN++;
         if (fpsAcc > 0.5) {
@@ -40446,23 +41164,41 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           G.simTime += sdt;
         }
         if (steps >= 8) acc = 0;
+        G.simAlpha = acc / SIM_DT;
         const simDt = dt * G.timeScale * speed;
         G.timeScaleReal = G.timeScale;
         HAZE.uTime.value += simDt;
         const wind = M2.wind.sample(G.camera.position, M2.mt);
         HAZE.uWind.value.copy(wind);
         for (const u of M2.world.updaters) u(simDt, wind);
+        orientWindFlags(M2.world, M2.wind, M2.mt, simDt);
+        {
+          const optic = G.view === "scope" || G.view === "bino";
+          for (const o of M2.world.nearProps || []) if (o.visible === optic) o.visible = !optic;
+        }
         updateFX(simDt, wind);
         const optics = G.view !== "eye";
-        for (const n of M2.npcs) if (n.holder.visible && (optics || (frameN + n.seed * 10 | 0) % 2 === 0)) n.pose(G.simTime);
+        {
+          const cam = G.camera;
+          _ad.set(0, 0, -1).applyQuaternion(cam.quaternion);
+          const cosLim = Math.cos(Math.min(1.2, cam.fov * Math.PI / 180 * 0.85));
+          for (const n of M2.npcs) {
+            if (!n.holder.visible) continue;
+            _an.copy(n.pos).sub(cam.position);
+            const d = _an.length();
+            const inView = _an.dot(_ad) > d * cosLim;
+            const full = optics && inView;
+            if (full || (frameN + (n.seed * 10 | 0) & 3) === 0) n.pose(G.simTime);
+          }
+        }
         if (weather) {
           weather.intensity = M2.world.snow ? 1 : (M2.storm || 0) * 1.6;
           weather.update(simDt, G.camera, wind, G.view === "scope" || G.view === "bino" ? 1 : 0);
         }
         if (M2.storm > 1e-3) {
           const st = M2.storm;
-          HAZE.uHazeDensity.value = M2.world.preset.hazeDensity * (1 + st * 14);
-          HAZE.uHazeColor.value.set(M2.world.preset.haze).lerp(new Color("#b48a5c"), st);
+          HAZE.uHazeDensity.value = M2.world.preset.hazeDensity * (1 + st * (G.view === "scope" ? 7 : 14));
+          HAZE.uHazeColor.value.set(M2.world.preset.haze).lerp(STORM_C, st);
           M2.world.sky.userData.u.uStorm.value = st * 0.85;
           M2.world.sun.intensity = M2.world.preset.sunI * (1 - st * 0.55);
         }
@@ -40490,6 +41226,23 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const a = $2("hAlarm");
         a.className = "alarm " + M2.alarm;
         a.textContent = M2.kind === "range" ? `STAGE ${Math.min(M2.si + 1, M2.stages.length)}/${M2.stages.length} \xB7 ${M2.score} PTS` : M2.alarm.toUpperCase();
+        if (M2.kind !== "range") {
+          const e = $2("hEscape"), eta = M2.alarm === "alarm" && !M2.ended ? M2.escapeETA() : null;
+          if (M2.alarm === "alarm" && !M2.ended) {
+            const t = M2.npcs.find((n) => n.role === "target");
+            e.className = "hescape" + (eta != null && eta < 12 ? " urgent" : "");
+            e.children[0].textContent = "\u26A0 ALARM RAISED" + (M2.alarmReason ? " \xB7 " + ({ shots: "SHOTS HEARD", body: "BODY FOUND", explosion: "EXPLOSION", nearMiss: "NEAR MISS SEEN" }[M2.alarmReason] || String(M2.alarmReason).toUpperCase()) : "");
+            e.children[1].textContent = !t?.alive ? "Target down \u2014 extract" : eta != null ? (t.inCar ? "TARGET IN VEHICLE \u2014 " : "TARGET FLEEING \u2014 ") + "ESCAPES IN ~" + Math.max(0, Math.ceil(eta)) + " s" : "Guards in cover \xB7 target moving";
+            if (M2._eta0 == null && eta != null) M2._eta0 = eta;
+            e.children[2].style.transform = "scaleX(" + (eta != null && M2._eta0 ? Math.max(0, Math.min(1, eta / M2._eta0)) : 0) + ")";
+          } else if (M2.alarm === "suspicious" && !M2.ended) {
+            e.className = "hescape sus";
+            e.children[0].textContent = "SUSPICIOUS";
+            e.children[1].textContent = "Guards are searching \u2014 hold fire " + Math.max(0, Math.ceil(M2.suspicionUntil - M2.mt)) + " s";
+            e.children[2].style.transform = "scaleX(0)";
+          } else if (!e.classList.contains("hidden")) e.className = "hescape hidden";
+          if (M2.alarm !== "alarm") M2._eta0 = null;
+        }
         const now2 = $2("tlNow");
         if (now2) now2.style.left = Math.min(100, M2.mt / M2.def.duration * 100) + "%";
         if (M2.kind === "range") $2("hObj").innerHTML = `Target: <b>${M2.stage === "mover" ? "MOVING 420 m" : (M2.stage?.d || "-") + " m plate"}</b> \xB7 shots ${M2.stats.shots}/${M2.shotsMax}`;
@@ -40547,6 +41300,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uOffset.value.set(view === "scope" && player ? player.optics.swayX * 10 : 0, view === "scope" && player ? player.optics.swayY * 10 : 0);
         L.uBlur.value = view === "bulletcam" ? 1 : 0;
         L.uVig.value = view === "eye" ? 0.45 : 0.25;
+        L.uGrain.value = view === "scope" ? 0.016 : view === "bino" ? 0.024 : 0.035;
         flashAmt = Math.max(0, flashAmt - dt * 4);
         L.uFlash.value = flashAmt;
         L.uScopeBlur.value = view === "scope" && player ? Math.min(0.7, player.optics.recoil * 18) : 0;
@@ -40555,7 +41309,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uSun.value.set((_sun.x + 1) / 2, (_sun.y + 1) / 2, facing ? (view === "scope" ? 0.55 : view === "eye" ? 0.25 : 0.35) * (1 - (G.mission?.storm || 0)) * (G.settings.reduceFlash ? 0.4 : 1) : 0);
         L.uBloom.value = G.quality.bloom ? w.bloom ?? 0.35 : 0;
         L.uSunPos.value.set((_sun.x + 1) / 2, (_sun.y + 1) / 2);
-        const onScreen = _sun.z < 1 && Math.abs(_sun.x) < 1.6 && Math.abs(_sun.y) < 1.6;
+        const lim = view === "eye" ? 1.6 : 0.95;
+        const onScreen = _sun.z < 1 && Math.abs(_sun.x) < lim && Math.abs(_sun.y) < lim;
         L.uRays.value = G.quality.bloom && onScreen && view !== "bulletcam" ? (w.rays ?? 0.5) * (1 - (G.mission?.storm || 0)) * (1 - Math.min(1, Math.max(0, Math.max(Math.abs(_sun.x), Math.abs(_sun.y)) - 0.6))) : 0;
         L.uCold.value = w.cold || 0;
         L.uFocus.value = view === "scope" && player ? player.optics.focusBlur || 0 : 0;
