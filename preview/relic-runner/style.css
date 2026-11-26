@@ -180,6 +180,10 @@ body.touch .opt { min-height: 52px; } body.touch .opt input[type=checkbox] { wid
 body.touch.short:not(.portrait) .danger { height: 30vh; top: 46%; }
 body.touch.short:not(.portrait) #speedo { width: calc(var(--s,1) * 176px); height: calc(var(--s,1) * 153px); }
 body.touch.short:not(.portrait) .bark { bottom: auto; top: calc(var(--s,1) * 84px); max-width: 54vw; }
+/* pass 9: dialogue and popups/relic banners own separate slots: while a line is up, popups drop below the dialogue box */
+
+body.touch.short:not(.portrait) .barkOn .pop.big { font-size: 1.9em; }
+
 @media (max-height: 500px) and (orientation: landscape) { .screen .panel { max-height: 94vh; padding: 12px 18px; } .panel h1 { font-size: 1.5rem; margin: 2px 0 8px; } .rank { font-size: 2.6rem; } }
 /* portrait: menus stack, controls own the bottom third */
 body.portrait .panel { width: 94vw; padding: 16px 14px; max-height: 88vh; }
