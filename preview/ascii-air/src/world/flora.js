@@ -1,18 +1,18 @@
 import * as THREE from "three";
 import { MAT, QUALITY } from "../core/config.js";
-import { retagGeometry } from "../render/idMaterial.js";
+import { retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { fbm } from "./noise.js";
 
 function makeBroadleaf() {
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(
     retagGeometry(new THREE.CylinderGeometry(0.28, 0.45, 4.2, 5), MAT.WOOD),
-    new THREE.MeshLambertMaterial({ color: 0x5a3a1e, flatShading: true })
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x5a3a1e, flatShading: true }))
   );
   trunk.position.y = 2.1;
   const canopy = new THREE.Mesh(
     retagGeometry(new THREE.IcosahedronGeometry(2.4, 0), MAT.FOLIAGE),
-    new THREE.MeshLambertMaterial({ color: 0x2f7a38, flatShading: true })
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2f7a38, flatShading: true }))
   );
   canopy.position.y = 4.6;
   canopy.scale.set(1, 0.9, 1.05);
@@ -24,12 +24,12 @@ function makePalm() {
   const g = new THREE.Group();
   const trunk = new THREE.Mesh(
     retagGeometry(new THREE.CylinderGeometry(0.18, 0.32, 7.5, 5), MAT.WOOD),
-    new THREE.MeshLambertMaterial({ color: 0x8a6230, flatShading: true })
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x8a6230, flatShading: true }))
   );
   trunk.position.y = 3.7;
   trunk.rotation.z = 0.08;
   g.add(trunk);
-  const leafMat = new THREE.MeshLambertMaterial({ color: 0x3a9a4a, flatShading: true, side: THREE.DoubleSide });
+  const leafMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a9a4a, flatShading: true, side: THREE.DoubleSide }));
   for (let i = 0; i < 6; i++) {
     const leaf = new THREE.Mesh(retagGeometry(new THREE.ConeGeometry(0.4, 3.6, 3), MAT.FOLIAGE), leafMat);
     leaf.position.set(0, 7.4, 0);

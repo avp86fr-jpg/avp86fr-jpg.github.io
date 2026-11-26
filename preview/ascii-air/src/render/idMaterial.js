@@ -34,6 +34,7 @@ export function tagMesh(object, matId, hero = 0) {
     if (!o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh) return;
     o.userData.matId = matId;
     o.userData.hero = hero;
+    if (o.material) patchMaterialIdAlpha(o.material);
     const geo = o.geometry;
     if (!geo) return;
     const pos = geo.getAttribute("position");
@@ -64,4 +65,52 @@ export function retagGeometry(geometry, matId, hero = 0) {
   }
   geometry.setAttribute("aId", new THREE.BufferAttribute(arr, 2));
   return geometry;
+}
+
+
+/** Write aId.x / 255 into fragment alpha so the color pass also carries a material ID. */
+export function patchMaterialIdAlpha(material) {
+  if (!material || material.userData._idAlpha) return material;
+  // Sky, water and other custom shaders already pack a mat-id in alpha. Do not rewrite them.
+  if (material.isShaderMaterial || material.isRawShaderMaterial || material.isPointsMaterial || material.isLineBasicMaterial || material.isLineDashedMaterial) {
+    return material;
+  }
+  material.userData._idAlpha = true;
+  const prev = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    if (typeof prev === "function") prev(shader, renderer);
+    const vs = shader.vertexShader || "";
+    const hasCommon = vs.indexOf("#include <common>") >= 0;
+    if (!hasCommon) return; // built-in materials only
+    if (vs.indexOf("attribute vec2 aId") < 0) {
+      shader.vertexShader = vs.replace(
+        "#include <common>",
+        "#include <common>\nattribute vec2 aId;\nvarying vec2 vId;"
+      );
+      if (shader.vertexShader.indexOf("#include <begin_vertex>") >= 0) {
+        shader.vertexShader = shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          "#include <begin_vertex>\nvId = aId;"
+        );
+      }
+    }
+    const fs = shader.fragmentShader || "";
+    if (fs.indexOf("#include <common>") < 0) return;
+    if (fs.indexOf("varying vec2 vId") < 0) {
+      shader.fragmentShader = fs.replace(
+        "#include <common>",
+        "#include <common>\nvarying vec2 vId;"
+      );
+    }
+    if (shader.fragmentShader.indexOf("vId.x / 255.0") < 0 && shader.fragmentShader.indexOf("#include <dithering_fragment>") >= 0) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <dithering_fragment>",
+        "#include <dithering_fragment>\ngl_FragColor.a = vId.x / 255.0;\n"
+      );
+    }
+  };
+  const prevKey = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => (prevKey ? prevKey() : "") + "|id-alpha-v2";
+  material.needsUpdate = true;
+  return material;
 }

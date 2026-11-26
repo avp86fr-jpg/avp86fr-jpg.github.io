@@ -32,18 +32,18 @@ void main() {
   float sk = dot(d, normalize(uSunDir));
   float disc = smoothstep(uSunSize, uSunSize - 0.004, 1.0 - sk);
   float glow = pow(max(sk, 0.0), 24.0) * (1.0 - uNight * 0.7);
-  col += uSunCol * (disc * 2.2 + glow * 0.65);
+  col += uSunCol * (disc * 1.5 + glow * 0.12);
   // night stars are a separate point cloud
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col, 21.0 / 255.0); // MAT.SKY packed in alpha
 }
 `;
 
 export function createSky(scene) {
-  const hemi = new THREE.HemisphereLight(0x9ec8ff, 0x3a4a28, 0.7);
-  const sun = new THREE.DirectionalLight(0xfff3d0, 1.2);
+  const hemi = new THREE.HemisphereLight(0xc8e8ff, 0x4a6a30, 1.0);
+  const sun = new THREE.DirectionalLight(0xfff6d8, 1.8);
   sun.position.set(200, 400, 100);
   sun.castShadow = false;
-  const amb = new THREE.AmbientLight(0x405040, 0.15);
+  const amb = new THREE.AmbientLight(0x6a7a58, 0.28);
 
   const skyGeo = new THREE.SphereGeometry(4800, 24, 16);
   retagGeometry(skyGeo, MAT.SKY, 0);
@@ -61,6 +61,7 @@ export function createSky(scene) {
     fragmentShader: SKY_FRAG,
     side: THREE.BackSide,
     depthWrite: false,
+    toneMapped: false,
   });
   const skyMesh = new THREE.Mesh(skyGeo, skyMat);
   skyMesh.frustumCulled = false;
@@ -122,8 +123,8 @@ export function createSky(scene) {
       { t: 0,  z: 0x02030a, ho: 0x0a1020, g: 0x05060c, s: 0xb0c4ff, i: 0.05, si: 0.0, hc: 0x1a2230, ac: 0x0a0c18, fog: 0x0a1020 },
       { t: 5,  z: 0x0a1230, ho: 0x2a2048, g: 0x100818, s: 0xffc8a0, i: 0.12, si: 0.05, hc: 0x3a2858, ac: 0x120818, fog: 0x1a1430 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
-      { t: 9,  z: 0x3aa0d8, ho: 0xc5e6f4, g: 0x7aaaa0, s: 0xfff4d0, i: 0.75, si: 1.0,  hc: 0xa8d8ff, ac: 0x3a4a28, fog: 0xb8d8e8 },
-      { t: 12, z: 0x2e90d0, ho: 0xb8e0f4, g: 0x6aa0a0, s: 0xfff8e0, i: 1.0, si: 1.55, hc: 0xb0d8ff, ac: 0x5a6a38, fog: 0xa8d0e4 },
+      { t: 9,  z: 0x3aa0e0, ho: 0xc8e6f4, g: 0x78b8b4, s: 0xfff2d0, i: 0.8,  si: 1.25, hc: 0xb4d4ee, ac: 0x4a6a30, fog: 0xc0dcee },
+      { t: 12, z: 0x2a90dc, ho: 0xc8e8f8, g: 0x6aa8b0, s: 0xfff4d4, i: 0.85, si: 1.35, hc: 0xb8d8f0, ac: 0x4a6a30, fog: 0xb4d4ea },
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
       { t: 20.5,z:0x050818, ho: 0x14182c, g: 0x08060c, s: 0xc0d0ff, i: 0.08, si: 0.02, hc: 0x1a2238, ac: 0x0a0c18, fog: 0x0c101c },
@@ -176,11 +177,11 @@ export function createSky(scene) {
     hemi.intensity = pal.hemiInt;
     sun.color.copy(pal.sun);
     sun.intensity = pal.sunInt;
-    amb.intensity = 0.08 + (1 - night) * 0.12;
+    amb.intensity = 0.16 + (1 - night) * 0.22;
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 400 : 900;
-    fog.far = night > 0.6 ? 2400 : 4200;
+    fog.near = night > 0.6 ? 500 : 2200;
+    fog.far = night > 0.6 ? 2800 : 7600;
     scene.fog = fog;
 
     stars.material.opacity = saturate((night - 0.35) * 2);

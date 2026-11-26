@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MAT, QUALITY, LANDMARKS } from "../core/config.js";
-import { retagGeometry, tagMesh } from "../render/idMaterial.js";
+import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { TAU } from "../core/utils.js";
 
 function cloudPuff(mat) {
@@ -23,10 +23,12 @@ export function createSkyProps(scene, quality = "medium") {
   const group = new THREE.Group();
   group.name = "skyprops";
 
-  const cloudMat = new THREE.MeshLambertMaterial({
-    color: 0xf4f8ff,
+  const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0xf8fbff,
+    emissive: 0x6677aa,
+    emissiveIntensity: 0.18,
     flatShading: true,
-  });
+  }));
   const clouds = new THREE.Group();
   const nCloud = Math.floor(28 * q.clouds);
   const puff = cloudPuff(cloudMat);
@@ -88,6 +90,7 @@ export function createSkyProps(scene, quality = "medium") {
 
   scene.add(group);
 
+  group.traverse((o) => { if (o.material) patchMaterialIdAlpha(o.material); });
   return {
     group, cloudInst, cloudData, balloons, blimp, birds,
     update(dt, time) {

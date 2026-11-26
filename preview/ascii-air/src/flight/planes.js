@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { MAT, PLANES } from "../core/config.js";
-import { retagGeometry, tagMesh } from "../render/idMaterial.js";
+import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
 function mat(color, matId = MAT.PLANE, hero = 1) {
   const m = new THREE.MeshLambertMaterial({ color, flatShading: true });
   m.userData.matId = matId;
+  patchMaterialIdAlpha(m);
   return m;
 }
 function add(g, geo, material, matId, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {

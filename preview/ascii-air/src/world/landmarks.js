@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import { MAT, LANDMARKS } from "../core/config.js";
-import { tagMesh, retagGeometry } from "../render/idMaterial.js";
+import { tagMesh, retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
 const _col = new THREE.Color();
 
 function lam(color, opts = {}) {
-  return new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
+  const m = new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
+  patchMaterialIdAlpha(m);
+  return m;
 }
 
 function mesh(geo, color, matId, hero = 0) {
@@ -81,12 +83,12 @@ function makeTower() {
 function makeChurch() {
   const g = new THREE.Group();
   add(g, box(12, 10, 18, 0xf2efe6, MAT.BUILDING), 0, 5, 0);
-  const roof = mesh(new THREE.ConeGeometry(11, 6, 4), 0x6a3a3a, MAT.ROOF);
+  const roof = mesh(new THREE.ConeGeometry(11, 6, 4), 0xe02018, MAT.ROOF);
   roof.rotation.y = Math.PI / 4;
   roof.position.y = 13;
   g.add(roof);
   add(g, box(4, 16, 4, 0xf2efe6, MAT.BUILDING), 0, 8, -8);
-  add(g, cone(3, 7, 4, 0x6a3a3a, MAT.ROOF), 0, 20, -8);
+  add(g, cone(3, 7, 4, 0xe02018, MAT.ROOF), 0, 20, -8);
   add(g, box(0.4, 3.5, 0.4, 0xeeeeee, MAT.METAL), 0, 24.5, -8);
   add(g, box(1.6, 0.4, 0.4, 0xeeeeee, MAT.METAL), 0, 25.5, -8); // cross
   return g;
@@ -274,22 +276,54 @@ function makeWaterfall() {
   return g;
 }
 
+function paintDigit(g, ch, x, y, z, scale = 1) {
+  // 5x7 strokes using bright hero bars, readable in ASCII
+  const on = {
+    "0": ["111","101","101","101","111"],
+    "9": ["111","101","111","001","111"],
+    "2": ["111","001","111","100","111"],
+    "7": ["111","001","010","010","010"],
+  }[ch];
+  if (!on) return;
+  const w = 2.2 * scale, h = 2.4 * scale, t = 0.7 * scale;
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (on[r][c] === "1") add(g, box(w, 0.28, h, 0xffffff, MAT.LIGHT, 1), x + (c - 1) * w * 1.15, y, z + (2 - r) * h * 1.15);
+    }
+  }
+}
+
 function makeRunwayLights(parent, x0, x1, z, y) {
   const g = new THREE.Group();
-  for (let x = x0; x <= x1; x += 30) {
-    for (const s of [-16, 16]) {
-      const l = box(0.6, 0.4, 0.6, 0xfff2c0, MAT.LIGHT, 1);
+  const len = Math.abs(x1 - x0);
+  const wide = len > 500; // main runway
+  const edge = wide ? 17 : 10;
+  for (let x = x0; x <= x1; x += wide ? 22 : 28) {
+    for (const s of [-edge, edge]) {
+      const l = box(0.9, 0.55, 0.9, 0xfff4c0, MAT.LIGHT, 1);
       l.position.set(x, y, z + s);
       g.add(l);
     }
   }
-  // threshold bars
-  for (const x of [x0 + 8, x1 - 8]) {
-    add(g, box(2, 0.15, 24, 0xf4f4f0, MAT.RUNWAY, 0), x, y, z);
+  // edge lines
+  add(g, box(len, 0.22, 1.1, 0xf8f6e8, MAT.LIGHT, 1), (x0 + x1) / 2, y, z - edge);
+  add(g, box(len, 0.22, 1.1, 0xf8f6e8, MAT.LIGHT, 1), (x0 + x1) / 2, y, z + edge);
+  // threshold bars (several close stripes)
+  for (const side of [x0, x1]) {
+    const dir = side === x0 ? 1 : -1;
+    for (let i = 0; i < (wide ? 6 : 3); i++) {
+      add(g, box(2.2, 0.26, wide ? 22 : 12, 0xffffff, MAT.LIGHT, 1), side + dir * (6 + i * 3.4), y, z);
+    }
   }
   // centerline ticks
-  for (let x = x0 + 20; x < x1 - 20; x += 24) {
-    add(g, box(8, 0.12, 0.6, 0xf4f4e0, MAT.RUNWAY), x, y, z);
+  for (let x = x0 + 28; x < x1 - 28; x += wide ? 18 : 22) {
+    add(g, box(wide ? 12 : 8, 0.24, 1.3, 0xffffff, MAT.LIGHT, 1), x, y, z);
+  }
+  if (wide) {
+    paintDigit(g, "0", x0 + 36, y + 0.2, z - 6, 1.1);
+    paintDigit(g, "9", x0 + 36, y + 0.2, z + 6, 1.1);
+    paintDigit(g, "2", x1 - 36, y + 0.2, z - 6, 1.1);
+    paintDigit(g, "7", x1 - 36, y + 0.2, z + 6, 1.1);
   }
   parent.add(g);
   return g;
@@ -410,9 +444,43 @@ export function createLandmarks(scene, terrain, sky) {
   group.add(tower);
   sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xaaffcc, 4, 80);
 
+
+  // Mount Glyph: glowing crater, lava and smoke
+  {
+    const vx = 0, vz = 200;
+    const vy = H(vx, vz);
+    const lava = cyl(28, 36, 3.2, 14, 0xff3a12, MAT.LIGHT, 1);
+    lava.position.set(vx, vy - 6, vz);
+    lava.name = "lava";
+    group.add(lava);
+    const glow = cyl(18, 22, 2.2, 12, 0xffc050, MAT.LIGHT, 1);
+    glow.position.set(vx, vy - 4.2, vz);
+    glow.name = "lava";
+    group.add(glow);
+    const n = 70;
+    const p = new Float32Array(n * 3);
+    const id = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      p[i * 3] = (Math.random() - 0.5) * 40;
+      p[i * 3 + 1] = Math.random() * 90;
+      p[i * 3 + 2] = (Math.random() - 0.5) * 40;
+      id[i * 2] = MAT.CLOUD; id[i * 2 + 1] = 0;
+    }
+    const pg = new THREE.BufferGeometry();
+    pg.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    pg.setAttribute("aId", new THREE.BufferAttribute(id, 2));
+    const smoke = new THREE.Points(pg, new THREE.PointsMaterial({
+      color: 0xb8b0a8, size: 7, sizeAttenuation: true, transparent: true, opacity: 0.65, depthWrite: false,
+    }));
+    smoke.name = "smoke";
+    smoke.position.set(vx, vy + 4, vz);
+    group.add(smoke);
+    anim.push({ smoke, t: 0 });
+  }
+
   // Town houses
   const houseColors = [0xf2e6d0, 0xe8d8c0, 0xf0efe8, 0xe6d2b8, 0xf6e8d8];
-  const roofColors = [0xc04a3a, 0x8a3a2a, 0xd8a03a, 0x4a6a8a, 0x6a3a2a];
+  const roofColors = [0xe22a1c, 0xc41a14, 0xe03820, 0xd02018, 0xee4a28];
   const spots = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
@@ -534,7 +602,7 @@ export function createLandmarks(scene, terrain, sky) {
     sky.addLamp(bulb.position.clone(), 0xffc878, 2.2, 28);
   }
 
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "boat"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "boat", "smoke", "lava"]));
   // keep boat meshes (they bob)
   scene.add(group);
 
@@ -548,8 +616,8 @@ export function createLandmarks(scene, terrain, sky) {
       const beam = light.userData.beam;
       if (beam) {
         beam.rotation.y += dt * 0.6;
-        beam.visible = night > 0.25;
-        beam.material.opacity = 0.08 + night * 0.22;
+        beam.visible = true;
+        beam.material.opacity = 0.10 + night * 0.22;
       }
       for (const b of boats) {
         b.position.y = 0.4 + Math.sin(time * 0.7 + b.position.x * 0.05) * 0.15;
@@ -562,6 +630,21 @@ export function createLandmarks(scene, terrain, sky) {
           if (arr[i + 1] < -36) arr[i + 1] = 36;
         }
         falls.userData.mist.geometry.attributes.position.needsUpdate = true;
+      }
+      for (const a of anim) {
+        if (!a.smoke) continue;
+        const arr = a.smoke.geometry.attributes.position.array;
+        for (let i = 0; i < arr.length; i += 3) {
+          arr[i + 1] += dt * (10 + (i % 5) * 2);
+          arr[i] += Math.sin(time * 0.6 + i) * dt * 2.2;
+          arr[i + 2] += Math.cos(time * 0.4 + i * 0.3) * dt * 1.6;
+          if (arr[i + 1] > 120) {
+            arr[i + 1] = 0;
+            arr[i] = (Math.random() - 0.5) * 40;
+            arr[i + 2] = (Math.random() - 0.5) * 40;
+          }
+        }
+        a.smoke.geometry.attributes.position.needsUpdate = true;
       }
     },
   };

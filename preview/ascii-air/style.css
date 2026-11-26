@@ -153,3 +153,62 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
   .hud-line { font-size: 11px; }
   button.ascii-btn { min-width: 52px; min-height: 52px; }
 }
+
+
+/* Terminal HUD panels — bordered, high-readability */
+.term-panel {
+  position: absolute;
+  background: rgba(4, 12, 22, 0.72);
+  border: 2px solid rgba(170, 220, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.55), 0 0 16px rgba(70, 160, 255, 0.16), inset 0 0 18px rgba(20, 40, 70, 0.25);
+  color: #d7f2ff;
+  text-shadow: 0 0 6px rgba(120, 200, 255, 0.35);
+  white-space: pre;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  font-size: 12px;
+  padding: 6px 8px;
+  pointer-events: none;
+}
+.term-panel .k { color: #8ec8e8; }
+.term-panel .v { color: #f4fffb; }
+.term-panel.ready { border-color: rgba(255, 210, 80, 0.85); box-shadow: 0 0 16px rgba(255, 190, 60, 0.35); }
+#hud-stats { min-width: 148px; }
+#hud-compass {
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 12px;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+#hud-mission { min-width: 160px; max-width: 280px; text-align: left; }
+#hud-minimap {
+  width: 148px;
+  height: 132px;
+  padding: 5px 6px;
+  font-size: 9px;
+  line-height: 1.05;
+  overflow: hidden;
+}
+#hud-flight {
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  font-size: 12px;
+  white-space: pre;
+}
+#hud-photo {
+  width: 132px;
+  min-height: 72px;
+  font-size: 11px;
+}
+#hud-fs.ascii-btn {
+  position: absolute;
+  min-width: 44px;
+  min-height: 44px;
+  pointer-events: auto;
+}
+@media (max-width: 700px) {
+  .term-panel { font-size: 11px; padding: 4px 6px; }
+  #hud-minimap { width: 120px; height: 108px; font-size: 8px; }
+}

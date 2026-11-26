@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { CAM, PHYS, DEFAULT_SETTINGS, PLANES, SPAWN, STAR_UNLOCKS, VERSION } from "./core/config.js";
+import { CAM, PHYS, DEFAULT_SETTINGS, PLANES, SPAWN, STAR_UNLOCKS, VERSION, MAT } from "./core/config.js";
 import { isMobileUA, isIOS, isStandalone, nowMs, clamp } from "./core/utils.js";
 import { createAsciiPipeline, computeGrid } from "./ascii/asciiPass.js";
-import { getIdMaterial, tagMesh } from "./render/idMaterial.js";
+import { getIdMaterial, tagMesh, patchMaterialIdAlpha, retagGeometry } from "./render/idMaterial.js";
 import { makeColorDepthRT, makeRT } from "./render/targets.js";
 import { createBloom } from "./post/bloom.js";
 import { createIsland } from "./world/island.js";
@@ -89,7 +89,7 @@ function allocTargets() {
   const outH = Math.max(180, Math.round(cssH * dpr));
   renderer.setSize(outW, outH, false);
   const q = QUALITY[settings.quality] || QUALITY.medium;
-  grid = computeGrid(cssW, cssH, settings.charSize || "medium", q.gridScale);
+  grid = computeGrid(cssW, cssH, settings.charSize || "medium", q.gridScale, dpr);
   const dispose = (rt) => { if (rt) rt.dispose(); };
   dispose(colorRT); dispose(idRT); dispose(asciiRT); dispose(bloomA); dispose(bloomB);
   colorRT = makeColorDepthRT(grid.cols, grid.rows);
@@ -111,8 +111,10 @@ ui.setLoad(0.05, "raising the island…");
 let island = null;
 let craft = createCraft(save.plane || "trainer");
 let planeMesh = null;
+let contrail = null;
 let missions = null;
 const dbg = createDebug(uiRoot);
+contrail = createContrail(scene);
 
 function rebuildPlane(id) {
   if (planeMesh) scene.remove(planeMesh);
@@ -293,6 +295,11 @@ function syncPlaneMesh() {
   if (planeMesh.userData.prop && craft.def.engine) {
     planeMesh.userData.prop.rotation.z += (0.4 + craft.throttle * 2.2 + craft.airspeed * 0.03);
   }
+  if (contrail) {
+    const airborne = !craft.onGround && !craft.crashed && craft.airspeed > 18;
+    const tail = new THREE.Vector3(0, 0.2, 4).applyQuaternion(craft.quat).add(craft.pos);
+    contrail.update(tail, airborne);
+  }
 }
 
 function coastalAmt() {
@@ -300,6 +307,41 @@ function coastalAmt() {
   if (h < 6) return clamp(1 - h / 6, 0, 1);
   // also near shoreline by altitude? use distance to water: if agl high, still hear waves if over water
   return h < 0.5 ? 1 : 0;
+}
+
+
+function createContrail(sc) {
+  const N = 56;
+  const geo = retagGeometry(new THREE.SphereGeometry(0.32, 5, 4), MAT.CLOUD, 1);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xf2f8ff });
+  patchMaterialIdAlpha(mat);
+  const inst = new THREE.InstancedMesh(geo, mat, N);
+  inst.frustumCulled = false;
+  inst.count = 0;
+  inst.name = "contrail";
+  sc.add(inst);
+  const dummy = new THREE.Object3D();
+  const hist = [];
+  return {
+    clear() { hist.length = 0; inst.count = 0; inst.instanceMatrix.needsUpdate = true; },
+    update(pos, flying) {
+      if (flying && pos) {
+        if (!hist.length || hist[hist.length - 1].distanceTo(pos) > 1.6) {
+          hist.push(pos.clone());
+          if (hist.length > N) hist.shift();
+        }
+      } else if (hist.length) hist.shift();
+      inst.count = hist.length;
+      for (let i = 0; i < hist.length; i++) {
+        const t = i / Math.max(1, hist.length - 1);
+        dummy.position.copy(hist[i]);
+        dummy.scale.setScalar(0.35 + t * 1.8);
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
+      }
+      inst.instanceMatrix.needsUpdate = true;
+    },
+  };
 }
 
 function renderFrame(time) {
@@ -337,22 +379,13 @@ function renderFrame(time) {
   renderer.clear();
   renderer.render(scene, camera);
 
-  // 2. ID pass (hide points/lines — override shader is mesh-only)
-  const hidden = [];
-  scene.traverse((o) => {
-    if (o.isPoints || o.isLine || o.isLineSegments) { hidden.push([o, o.visible]); o.visible = false; }
-  });
-  scene.overrideMaterial = idMat;
-  renderer.setRenderTarget(idRT);
-  renderer.clear();
-  renderer.render(scene, camera);
-  scene.overrideMaterial = null;
-  for (const [o, v] of hidden) o.visible = v;
+  // Material IDs are packed in the color RT alpha (see patchMaterialIdAlpha).
+  // Skip the second override pass so desktop draw calls stay under 150.
 
-  // 3. ASCII compose
+  // 2. ASCII compose
   ascii.uniforms.tColor.value = colorRT.texture;
   ascii.uniforms.tDepth.value = colorRT.depthTexture;
-  ascii.uniforms.tId.value = idRT.texture;
+  ascii.uniforms.tId.value = colorRT.texture;
   renderer.setRenderTarget(asciiRT);
   renderer.clear();
   renderer.render(ascii.scene, ascii.camera);

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { WORLD, MAT, LANDMARKS } from "../core/config.js";
 import { clamp, lerp, smoothstep, saturate } from "../core/utils.js";
 import { fbm, ridge, valueNoise } from "./noise.js";
-import { tagMesh } from "../render/idMaterial.js";
+import { tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 
 const N = 192;
 const SIZE = WORLD.size;
@@ -264,16 +264,16 @@ export function createTerrain() {
   const matColor = (m, h, x, z) => {
     const n = fbm(x * 0.02, z * 0.02, 2, 3);
     switch (m) {
-      case MAT.SEA: return [0.15 + n * 0.06, 0.55, 0.68];
-      case MAT.WATER_DEEP: return [0.06, 0.22, 0.40];
-      case MAT.SAND: return [0.95, 0.86, 0.58 + n * 0.06];
-      case MAT.GRASS: return [0.38 + n * 0.12, 0.72 + n * 0.12, 0.22];
-      case MAT.FOREST: return [0.16, 0.48 + n * 0.1, 0.18];
-      case MAT.ROCK: return [0.52 + n * 0.12, 0.46, 0.42];
-      case MAT.SNOW: return [0.95, 0.96, 0.98];
-      case MAT.DIRT: return [0.58, 0.48, 0.28];
-      case MAT.RUNWAY: return [0.32, 0.33, 0.36];
-      default: return [0.5, 0.55, 0.35];
+      case MAT.SEA: return [0.08, 0.42 + n * 0.08, 0.78];
+      case MAT.WATER_DEEP: return [0.05, 0.22, 0.52];
+      case MAT.SAND: return [0.86, 0.74, 0.46 + n * 0.05];
+      case MAT.GRASS: return [0.26 + n * 0.18, 0.62 + n * 0.20, 0.16 + n * 0.06];
+      case MAT.FOREST: return [0.10, 0.38 + n * 0.08, 0.12];
+      case MAT.ROCK: return [0.62 + n * 0.10, 0.56, 0.50];
+      case MAT.SNOW: return [0.90, 0.92, 0.95];
+      case MAT.DIRT: return [0.66, 0.52, 0.30];
+      case MAT.RUNWAY: return [0.22, 0.23, 0.26];
+      default: return [0.48, 0.62, 0.32];
     }
   };
 
@@ -316,8 +316,10 @@ export function createTerrain() {
   const sunX = 0.45, sunY = 0.8, sunZ = 0.25;
   for (let o = 0; o < verts * verts; o++) {
     const ndl = Math.max(0, nrm[o*3]*sunX + nrm[o*3+1]*sunY + nrm[o*3+2]*sunZ);
-    const sh = 0.42 + 0.7 * ndl;
-    col[o*3] *= sh; col[o*3+1] *= sh; col[o*3+2] *= sh;
+    const sh = 0.48 + 0.50 * ndl;
+    const x = pos[o*3], z = pos[o*3+2];
+    const n2 = 0.88 + 0.24 * fbm(x * 0.035, z * 0.035, 3, 2.2);
+    col[o*3] *= sh * n2; col[o*3+1] *= sh * n2; col[o*3+2] *= sh * n2;
   }
   geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
@@ -342,6 +344,7 @@ export function createTerrain() {
     vertexColors: true,
     flatShading: false,
   });
+  patchMaterialIdAlpha(mat);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   mesh.userData.matId = MAT.GRASS;

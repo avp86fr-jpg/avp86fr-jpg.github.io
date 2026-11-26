@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MAT, LANDING } from "../core/config.js";
-import { retagGeometry, tagMesh } from "../render/idMaterial.js";
+import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { clamp, saturate, formatTime, wrapAngle, shortestAngle } from "../core/utils.js";
 import { makeBalloon } from "../world/skyprops.js";
 import { MISSIONS, getMission } from "./data.js";
@@ -9,19 +9,19 @@ import { resetCraft, launchCraft } from "../flight/physics.js";
 function ringMesh(radius = 14) {
   const geo = new THREE.TorusGeometry(radius, 0.7, 8, 20);
   retagGeometry(geo, MAT.RING, 1);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x66ffc0 });
+  const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xff8a28 }));
   const m = new THREE.Mesh(geo, mat);
   m.userData.hero = 1;
   return m;
 }
 
-function markerPole(color = 0xffee88) {
+function markerPole(color = 0xffee88) { // color passed to MeshBasic
   const g = new THREE.Group();
   const p = new THREE.Mesh(retagGeometry(new THREE.CylinderGeometry(0.3, 0.3, 10, 6), MAT.HERO, 1),
-    new THREE.MeshBasicMaterial({ color }));
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color })));
   p.position.y = 5;
   const top = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(1.2, 8, 6), MAT.HERO, 1),
-    new THREE.MeshBasicMaterial({ color }));
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color })));
   top.position.y = 11;
   g.add(p, top);
   return g;
@@ -112,7 +112,7 @@ export function createMissionSystem(scene, world, audio) {
         const dz = (m.rings[Math.min(i + 1, m.rings.length - 1)].z - (m.rings[Math.max(0, i - 1)].z));
         mesh.rotation.y = Math.atan2(dx, dz);
       }
-      mesh.material = new THREE.MeshBasicMaterial({ color: i === 0 ? 0xa8ffd0 : 0x2a6650 });
+      mesh.material = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: i === 0 ? 0xffc45a : 0x8a3a12 }));
       add(mesh);
     });
   }
@@ -168,7 +168,7 @@ export function createMissionSystem(scene, world, audio) {
     const r = ringMesh(10);
     r.position.set(m.view.x, m.view.y, m.view.z);
     r.lookAt(m.subject.x, m.subject.y, m.subject.z);
-    r.material.color.set(0x88ccff);
+    r.material.color.set(0xffb056);
     add(r);
   }
 
@@ -270,13 +270,13 @@ export function createMissionSystem(scene, world, audio) {
         const p = ringWorldPos(cur, time);
         cur.position.copy(p);
         cur.rotation.z = time * 0.6;
-        cur.material.color.set(0xa8ffd0);
+        cur.material.color.set(0xffc45a);
         const d = craft.pos.distanceTo(p);
         if (d < cur.userData.base.r + 5.5) {
           state.next++;
           state.ringsPassed++;
           audio?.play("ring");
-          cur.material.color.set(0x1a3028);
+          cur.material.color.set(0x5a2208);
           cur.visible = false;
           if (state.next >= meshes.length) {
             const stars = starsFromTime(m, state.t);

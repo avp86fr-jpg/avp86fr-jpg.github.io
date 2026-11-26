@@ -76,7 +76,7 @@ function drawSpecial(ctx, ch, x, y, s) {
   ctx.strokeStyle = "#fff";
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.lineWidth = Math.max(3, s * 0.08);
+  ctx.lineWidth = Math.max(4, s * 0.11);
 
   if (ch === "≈") {
     ctx.beginPath();
@@ -205,7 +205,7 @@ export function buildGlyphAtlas() {
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
-  tex.magFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter; // linear inside the cell; compose smoothstep keeps it sharp
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.colorSpace = THREE.NoColorSpace;

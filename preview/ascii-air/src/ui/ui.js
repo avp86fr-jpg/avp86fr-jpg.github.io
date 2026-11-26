@@ -86,14 +86,14 @@ export function createUI(root, hooks) {
   hud.className = "hidden";
   hud.style.cssText = "position:absolute;inset:0;pointer-events:none;";
   hud.innerHTML = `
-    <div class="hud-line" id="hud-tl" style="position:absolute;left:12px;top:12px;"></div>
-    <div class="hud-line" id="hud-tr" style="position:absolute;right:12px;top:12px;text-align:right;"></div>
-    <div class="hud-line" id="hud-bl" style="position:absolute;left:12px;bottom:12px;"></div>
-    <div class="hud-line" id="hud-bc" style="position:absolute;left:50%;bottom:12px;transform:translateX(-50%);text-align:center;"></div>
-    <div class="hud-line" id="hud-br" style="position:absolute;right:12px;bottom:12px;text-align:right;"></div>
+    <div class="term-panel" id="hud-stats"></div>
+    <div class="term-panel" id="hud-compass"></div>
+    <div class="term-panel" id="hud-mission"></div>
     <div class="banner hud-line" id="hud-msg" style="top:18%;font-size:18px;"></div>
-    <div class="ascii-panel hidden" id="minimap" style="position:absolute;right:12px;bottom:88px;width:132px;height:132px;padding:4px;font-size:9px;line-height:1;overflow:hidden;"></div>
-    <button class="ascii-btn hidden" id="hud-fs" style="position:absolute;top:8px;right:8px;min-width:44px;min-height:44px;pointer-events:auto;">FULL</button>
+    <div class="term-panel hidden" id="hud-minimap"></div>
+    <div class="term-panel" id="hud-flight"></div>
+    <div class="term-panel hidden" id="hud-photo"></div>
+    <button class="ascii-btn hidden" id="hud-fs">FULL</button>
   `;
   wrap.appendChild(hud);
 
@@ -420,63 +420,102 @@ time  ${formatTime(result.time || 0)}
     const padB = 10 + ins.bottom + (mobileChrome ? (portrait ? 160 : 96) : 0);
     const padL = 10 + ins.left;
     const padR = 10 + ins.right;
-    const tl = hud.querySelector("#hud-tl");
-    const tr = hud.querySelector("#hud-tr");
-    const bl = hud.querySelector("#hud-bl");
-    const bc = hud.querySelector("#hud-bc");
-    const br = hud.querySelector("#hud-br");
+    const stats = hud.querySelector("#hud-stats");
+    const comp = hud.querySelector("#hud-compass");
+    const miss = hud.querySelector("#hud-mission");
+    const mmap = hud.querySelector("#hud-minimap");
+    const flight = hud.querySelector("#hud-flight");
+    const photo = hud.querySelector("#hud-photo");
+    const fsBtn = hud.querySelector("#hud-fs");
     const msg = hud.querySelector("#hud-msg");
-    tl.style.top = padT + "px"; tl.style.left = padL + "px";
-    tr.style.top = padT + "px"; tr.style.right = padR + "px";
-    bl.style.bottom = padB + "px"; bl.style.left = padL + "px";
-    br.style.bottom = padB + "px"; br.style.right = padR + "px";
-    bc.style.bottom = padB + "px";
 
-    const spd = Math.round(craft.airspeed * 1.94384); // knots, arcade flavor
+    stats.style.top = padT + "px"; stats.style.left = padL + "px";
+    comp.style.top = padT + "px";
+    fsBtn.style.top = padT + "px"; fsBtn.style.right = padR + "px";
+    miss.style.top = (padT + 52) + "px"; miss.style.right = padR + "px";
+    mmap.style.left = padL + "px"; mmap.style.bottom = (padB + 52) + "px";
+    flight.style.bottom = padB + "px";
+    photo.style.right = padR + "px"; photo.style.bottom = (padB + 52) + "px";
+
+    const spd = Math.round(craft.airspeed * 1.94384);
     const alt = Math.round(Math.max(0, craft.altitude));
-    const vs = Math.round(craft.vspeed * 196.85); // ft/min-ish
+    const vs = Math.round(craft.vspeed * 196.85);
     const vsS = (vs >= 0 ? "+" : "") + vs;
     const thr = Math.round(craft.throttle * 100);
     const hdg = ((Math.round((headingToNorth(craft.heading) * 180 / Math.PI) + 360) % 360));
     const stall = craft.stalled ? "  ▸ STALL ◂" : "";
     const gear = craft.gearDown ? "GEAR DN" : "GEAR UP";
     const asp = bar(craft.throttle, 8, "█", "░");
+    const spdBar = bar(Math.min(1, (craft.airspeed || 0) / 70), 8, "█", "░");
 
-    tl.textContent = `IAS ${String(spd).padStart(3)} kt    ALT ${String(alt).padStart(4)} m\nVS ${vsS.padStart(5)}      ${gear}${stall}`;
-    tr.textContent = `${hourToClock(hour)}   ${compass(craft.heading)} ${String(hdg).padStart(3, "0")}°\nTHR ${asp} ${String(thr).padStart(3)}%`;
-
-    if (portrait) {
-      // keep HUD in top third / very bottom so the road/sky stays clear? For a flyer, horizon is center.
-      bl.textContent = "";
-      br.textContent = "";
-    }
-
+    stats.textContent = `IAS  ${String(spd).padStart(3)} kt\nALT  ${String(alt).padStart(4)} m\nVS   ${vsS.padStart(5)}\n${gear}${stall}`;
+    comp.textContent = compassStrip(craft.heading, hdg);
+    miss.style.display = "";
     if (mission?.active && !mission.result) {
       const m = mission.active;
-      let line = m.title;
-      if (m.activity === "rings") line += `   RING ${mission.ringsPassed + 1}/${m.rings.length}   ${formatTime(mission.t)}`;
-      if (m.activity === "landing") line += `   ${m.target.type.toUpperCase()}   lined up when the posts fill the view`;
-      if (m.activity === "balloons") line += `   ${mission.popped}/${mission.balloons.length}   ${formatTime(Math.max(0, (m.timeLimit || 90) - mission.t))}`;
-      if (m.activity === "photo") line += mission.photoReady ? "   ▸ IN FRAME — ACTION" : "   find the framing ring";
-      bc.textContent = line;
+      let lines = [m.title];
+      if (m.activity === "rings") lines.push(`RING ${mission.ringsPassed + 1}/${m.rings.length}   ${formatTime(mission.t)}`);
+      if (m.activity === "landing") lines.push(`${m.target.type.toUpperCase()}  line up the posts`);
+      if (m.activity === "balloons") lines.push(`${mission.popped}/${mission.balloons.length}   ${formatTime(Math.max(0, (m.timeLimit || 90) - mission.t))}`);
+      if (m.activity === "photo") lines.push(mission.photoReady ? "▸ IN FRAME — ACTION" : "find the framing ring");
+      miss.textContent = lines.join("\n");
     } else if (mission?.result) {
-      bc.textContent = mission.message || "";
+      miss.textContent = mission.message || "";
     } else {
-      bc.textContent = craft.thermal > 3 ? "THERMAL ▴" : "";
+      miss.textContent = `${hourToClock(hour)}\n${craft.thermal > 3 ? "THERMAL ▴" : "FREE FLIGHT"}`;
     }
+
+    flight.textContent = `SPD ${String(spd).padStart(3)} ${spdBar}   ${attitude(craft)}   ALT ${String(alt).padStart(4)}   THR ${asp} ${String(thr).padStart(3)}%   ${planeIcon(craft)}`;
+
     msg.textContent = craft.crashed ? "RECOVERING…" : (mission?.result ? mission.message : "");
 
-    // minimap
-    const mm = hud.querySelector("#minimap");
-    if (!portrait && window.innerWidth > 800) {
-      mm.classList.remove("hidden");
-      mm.style.right = padR + "px";
-      mm.style.bottom = (padB + 70) + "px";
-      mm.textContent = drawMini(craft);
-    } else mm.classList.add("hidden");
+    if (!portrait && !mobileChrome && window.innerWidth > 900 && window.innerHeight > 560) {
+      mmap.classList.remove("hidden");
+      mmap.textContent = "MAP\n" + drawMini(craft);
+    } else mmap.classList.add("hidden");
+
+    if (mission?.active?.activity === "photo" && !mission.result) {
+      photo.classList.remove("hidden");
+      const sub = mission.active.subject?.name || "subject";
+      photo.classList.toggle("ready", !!mission.photoReady);
+      photo.textContent = `PHOTO\n┌────────────┐\n│ ${String(sub).slice(0, 10).padEnd(10)} │\n│ ${mission.photoReady ? "  IN FRAME  " : "  find it   "} │\n└────────────┘`;
+    } else {
+      photo.classList.add("hidden");
+      photo.classList.remove("ready");
+    }
 
     mobile.layout(portrait, state.screen === "fly");
     mobile.setThrottle(craft.throttle);
+  }
+
+  function compassStrip(hdg, deg) {
+    const n = wrapPos(headingToNorth(hdg) / (Math.PI * 2));
+    const width = 29;
+    const span = 120;
+    let s = "";
+    for (let i = 0; i < width; i++) {
+      const ang = ((n * 360 - span / 2) + (i / (width - 1)) * span + 360) % 360;
+      const near = (d) => Math.min(Math.abs(ang - d), 360 - Math.abs(ang - d)) < (span / width) * 0.7;
+      if (near(0)) s += "N";
+      else if (near(90)) s += "E";
+      else if (near(180)) s += "S";
+      else if (near(270)) s += "W";
+      else s += (i % 2 === 0) ? "·" : " ";
+    }
+    return `⟨${s}⟩  ${String(deg).padStart(3, "0")}° ${compass(hdg)}`;
+  }
+
+  function attitude(craft) {
+    const b = craft.roll || 0;
+    const p = craft.pitch || 0;
+    const mid = p > 0.15 ? "▴" : p < -0.15 ? "▾" : "●";
+    if (b > 0.28) return `\\\\${mid}\\\\`;
+    if (b < -0.28) return `/${mid}/`;
+    return `-${mid}-`;
+  }
+
+  function planeIcon(craft) {
+    return craft.gearDown ? "▸═▼═◂" : "▸═●═◂";
   }
 
   function bar(t, n, on, off) {
@@ -518,7 +557,7 @@ time  ${formatTime(result.time || 0)}
     elements() {
       // all visible interactive + hud boxes for overlap tests
       const els = [];
-      wrap.querySelectorAll("button, .menu-item, .stick-base, .throttle-track, .ascii-panel, .hud-line, #hud-msg").forEach((e) => {
+      wrap.querySelectorAll("button, .menu-item, .stick-base, .throttle-track, .ascii-panel, .term-panel, .hud-line, #hud-msg").forEach((e) => {
         if (e.offsetParent === null && !e.getClientRects().length) return;
         const r = e.getBoundingClientRect();
         if (r.width > 2 && r.height > 2) els.push({ id: e.id || e.className, r });

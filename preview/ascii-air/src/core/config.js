@@ -64,14 +64,15 @@ export const MAT = {
 export const MAT_COUNT = 25;
 
 export const CHAR_SIZE = {
-  large:  { desktop: 16, mobile: 14 },
-  medium: { desktop: 12, mobile: 9 },
-  fine:   { desktop: 8,  mobile: 6 },
+  // CSS pixels per cell before DPR tightening. Medium PC at 1920 is ~213×120 (~1.33× denser than 160×90).
+  large:  { desktop: 11, mobile: 10 },
+  medium: { desktop: 8,  mobile: 7 },
+  fine:   { desktop: 6,  mobile: 6 },
 };
 
 export const GRID_CAPS = {
-  desktop: { cols: 240, rows: 135 },
-  mobile:  { cols: 160, rows: 90 },
+  desktop: { cols: 280, rows: 160 },
+  mobile:  { cols: 160, rows: 96 },
 };
 
 export const DISPLAY_MODES = ["color", "green", "amber", "paper"];
@@ -114,8 +115,8 @@ export const PLANES = {
     gearHeight: 1.15,
     waterCapable: false,
     engine: true,
-    color: "#f2e2c4",
-    accent: "#e06a4f",
+    color: "#f4f4f8",
+    accent: "#e01820",
     engineSound: "engine_trainer",
   },
   seaplane: {
@@ -184,7 +185,7 @@ export const LANDING = {
 export const DEFAULT_SETTINGS = {
   charSize: "medium",
   displayMode: "color",
-  glow: 0.7,
+  glow: 0.85,
   crt: 0.0,
   assist: "full",          // full | light | off
   invertPitch: false,

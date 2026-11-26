@@ -31,6 +31,7 @@ uniform vec3 uSunDir;
 uniform vec3 uSunCol;
 uniform vec3 uSky;
 uniform float uTime;
+uniform float uMatId;
 float sat(float x){ return clamp(x, 0.0, 1.0); }
 void main() {
   vec3 N = normalize(vN);
@@ -43,7 +44,7 @@ void main() {
   // sparkle
   float sp = pow(sat(dot(reflect(-normalize(uSunDir), N), V)), 40.0);
   vec3 col = water + uSky * fres * 0.45 + uSunCol * sp * 0.65;
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col, uMatId / 255.0);
 }
 `;
 
@@ -56,11 +57,12 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x0a3a58) },
-      uShallow: { value: new THREE.Color(0x2bb3c4) },
+      uDeep: { value: new THREE.Color(0x0a4a8c) },
+      uShallow: { value: new THREE.Color(0x2ec8dc) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x87c8ea) },
+      uMatId: { value: 1.0 },
     },
     vertexShader: VERT,
     fragmentShader: FRAG,
@@ -84,6 +86,7 @@ export function createWater() {
   } else {
     lakeMat.uniforms.uDeep.value.set(0x1a3a6a);
     lakeMat.uniforms.uShallow.value.set(0x3a7aaa);
+    if (lakeMat.uniforms.uMatId) lakeMat.uniforms.uMatId.value = 16.0;
   }
   const lake = new THREE.Mesh(lakeGeo, lakeMat);
   lake.position.set(0, 236, 200);
