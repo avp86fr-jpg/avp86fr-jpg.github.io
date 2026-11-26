@@ -1202,7 +1202,7 @@
     }
     throw new Error(`THREE.TextureUtils: Unknown texture type ${type}.`);
   }
-  var REVISION, CullFaceNone, CullFaceBack, CullFaceFront, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap, FrontSide, BackSide, DoubleSide, NoBlending, NormalBlending, AdditiveBlending, SubtractiveBlending, MultiplyBlending, CustomBlending, AddEquation, SubtractEquation, ReverseSubtractEquation, MinEquation, MaxEquation, ZeroFactor, OneFactor, SrcColorFactor, OneMinusSrcColorFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, DstAlphaFactor, OneMinusDstAlphaFactor, DstColorFactor, OneMinusDstColorFactor, SrcAlphaSaturateFactor, ConstantColorFactor, OneMinusConstantColorFactor, ConstantAlphaFactor, OneMinusConstantAlphaFactor, NeverDepth, AlwaysDepth, LessDepth, LessEqualDepth, EqualDepth, GreaterEqualDepth, GreaterDepth, NotEqualDepth, MultiplyOperation, MixOperation, AddOperation, NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping, AgXToneMapping, NeutralToneMapping, AttachedBindMode, DetachedBindMode, UVMapping, CubeReflectionMapping, CubeRefractionMapping, EquirectangularReflectionMapping, EquirectangularRefractionMapping, RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearFilter, LinearMipmapNearestFilter, LinearMipmapLinearFilter, UnsignedByteType, ByteType, ShortType, UnsignedShortType, IntType, UnsignedIntType, FloatType, HalfFloatType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedInt248Type, UnsignedInt5999Type, UnsignedInt101111Type, AlphaFormat, RGBFormat, RGBAFormat, DepthFormat, DepthStencilFormat, RedFormat, RedIntegerFormat, RGFormat, RGIntegerFormat, RGBAIntegerFormat, RGB_S3TC_DXT1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_PVRTC_2BPPV1_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGBA_ETC2_EAC_Format, R11_EAC_Format, SIGNED_R11_EAC_Format, RG11_EAC_Format, SIGNED_RG11_EAC_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_10x10_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_BPTC_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RED_RGTC1_Format, SIGNED_RED_RGTC1_Format, RED_GREEN_RGTC2_Format, SIGNED_RED_GREEN_RGTC2_Format, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InterpolateBezier, ZeroCurvatureEnding, ZeroSlopeEnding, WrapAroundEnding, BasicDepthPacking, TangentSpaceNormalMap, ObjectSpaceNormalMap, NoColorSpace, SRGBColorSpace, LinearSRGBColorSpace, LinearTransfer, SRGBTransfer, KeepStencilOp, AlwaysStencilFunc, NeverCompare, LessCompare, EqualCompare, LessEqualCompare, GreaterCompare, NotEqualCompare, GreaterEqualCompare, AlwaysCompare, StaticDrawUsage, GLSL3, WebGLCoordinateSystem, WebGPUCoordinateSystem, _cache, _setConsoleFunction, ReversedDepthFuncs, EventDispatcher, _lut, _seed, DEG2RAD, RAD2DEG, MathUtils, Vector2, Quaternion, Vector3, _vector$c, _quaternion$5, Matrix3, _m3, LINEAR_REC709_TO_XYZ, XYZ_TO_LINEAR_REC709, ColorManagement, _canvas, ImageUtils, _sourceId, TextureSource, _textureId, _tempVec3, Texture, Vector4, RenderTarget, WebGLRenderTarget, DataArrayTexture, Data3DTexture, Matrix4, _v1$7, _m1$2, _zero, _one, _x, _y, _z, _matrix$2, _quaternion$4, Euler, Layers, _object3DId, _v1$6, _q1, _m1$1, _target, _position$4, _scale$3, _quaternion$3, _xAxis, _yAxis, _zAxis, _addedEvent, _removedEvent, _childaddedEvent, _childremovedEvent, Object3D, Group, _moveEvent, WebXRController, _colorKeywords, _hslA, _hslB, Color, _color, Scene, _v0$2, _v1$5, _v2$4, _v3$2, _vab, _vac, _vbc, _vap, _vbp, _vcp, _v40, _v41, _v42, Triangle, Box3, _points, _vector$b, _box$4, _v0$1, _v1$4, _v2$3, _f0, _f1, _f2, _center, _extents, _triangleNormal, _testAxis, _vector$a, _vector2$1, _id$2, BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute, Float32BufferAttribute, _box$3, _v1$3, _v2$2, Sphere, _id$1, _m1, _obj, _offset, _box$2, _boxMorphTargets, _vector$9, BufferGeometry, InterleavedBuffer, _vector$8, InterleavedBufferAttribute, _vector1, _vector2, _normalMatrix, Plane, _materialId, Material, SpriteMaterial, _geometry, _intersectPoint, _worldScale, _mvPosition, _alignedPosition, _rotatedPosition, _viewWorldMatrix, _vA$1, _vB$1, _vC$1, _uvA, _uvB, _uvC, Sprite, _vector$7, _segCenter, _segDir, _diff, Ray, MeshBasicMaterial, _inverseMatrix$3, _ray$3, _sphere$6, _sphereHitAt, _vA, _vB, _vC, _tempA, _morphA, _intersectionPoint, _intersectionPointWorld, Mesh, _baseVector, _skinIndex, _skinWeight, _vector4, _matrix4, _vertex, _sphere$5, _inverseMatrix$2, _ray$2, SkinnedMesh, Bone, DataTexture, _offsetMatrix, _identityMatrix, Skeleton, InstancedBufferAttribute, _instanceLocalMatrix, _instanceWorldMatrix, _instanceIntersects, _box3, _identity, _mesh$1, _sphere$4, InstancedMesh, _sphere$3, _defaultSpriteCenter, _vector$6, Frustum, _projScreenMatrix$1, FrustumArray, PointsMaterial, _inverseMatrix, _ray, _sphere, _position$3, Points, CubeTexture, CanvasTexture, DepthTexture, CubeDepthTexture, ExternalTexture, BoxGeometry, CapsuleGeometry, CircleGeometry, CylinderGeometry, ConeGeometry, PolyhedronGeometry, Curve, EllipseCurve, ArcCurve, tmp, tmp2, px, py, pz, CatmullRomCurve3, CubicBezierCurve, CubicBezierCurve3, LineCurve, LineCurve3, QuadraticBezierCurve, QuadraticBezierCurve3, SplineCurve, Curves, CurvePath, Path, Shape, Earcut, ShapeUtils, ExtrudeGeometry, WorldUVGenerator, IcosahedronGeometry, PlaneGeometry, RingGeometry, SphereGeometry, TorusGeometry, UniformsUtils, default_vertex, default_fragment, ShaderMaterial, RawShaderMaterial, MeshStandardMaterial, MeshDepthMaterial, MeshDistanceMaterial, Interpolant, CubicInterpolant, LinearInterpolant, DiscreteInterpolant, BezierInterpolant, KeyframeTrack, BooleanKeyframeTrack, ColorKeyframeTrack, NumberKeyframeTrack, QuaternionLinearInterpolant, QuaternionKeyframeTrack, StringKeyframeTrack, VectorKeyframeTrack, LoadingManager, DefaultLoadingManager, Loader, Light, HemisphereLight, _projScreenMatrix, _lightPositionWorld, _lookTarget, LightShadow, _position$2, _quaternion$2, _scale$2, Camera, _v3$1, _minTarget, _maxTarget, PerspectiveCamera, PointLightShadow, PointLight, OrthographicCamera, DirectionalLightShadow, DirectionalLight, fov, aspect, CubeCamera, ArrayCamera, _RESERVED_CHARS_RE, _reservedRe, _wordChar, _wordCharOrDot, _directoryRe, _nodeRe, _objectRe, _propertyRe, _trackRe, _supportedObjectNames, Composite, PropertyBinding, _controlInterpolantsResultBuffer, Matrix2;
+  var REVISION, CullFaceNone, CullFaceBack, CullFaceFront, PCFShadowMap, PCFSoftShadowMap, VSMShadowMap, FrontSide, BackSide, DoubleSide, NoBlending, NormalBlending, AdditiveBlending, SubtractiveBlending, MultiplyBlending, CustomBlending, AddEquation, SubtractEquation, ReverseSubtractEquation, MinEquation, MaxEquation, ZeroFactor, OneFactor, SrcColorFactor, OneMinusSrcColorFactor, SrcAlphaFactor, OneMinusSrcAlphaFactor, DstAlphaFactor, OneMinusDstAlphaFactor, DstColorFactor, OneMinusDstColorFactor, SrcAlphaSaturateFactor, ConstantColorFactor, OneMinusConstantColorFactor, ConstantAlphaFactor, OneMinusConstantAlphaFactor, NeverDepth, AlwaysDepth, LessDepth, LessEqualDepth, EqualDepth, GreaterEqualDepth, GreaterDepth, NotEqualDepth, MultiplyOperation, MixOperation, AddOperation, NoToneMapping, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, ACESFilmicToneMapping, CustomToneMapping, AgXToneMapping, NeutralToneMapping, AttachedBindMode, DetachedBindMode, UVMapping, CubeReflectionMapping, CubeRefractionMapping, EquirectangularReflectionMapping, EquirectangularRefractionMapping, RepeatWrapping, ClampToEdgeWrapping, MirroredRepeatWrapping, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearFilter, LinearMipmapNearestFilter, LinearMipmapLinearFilter, UnsignedByteType, ByteType, ShortType, UnsignedShortType, IntType, UnsignedIntType, FloatType, HalfFloatType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedInt248Type, UnsignedInt5999Type, UnsignedInt101111Type, AlphaFormat, RGBFormat, RGBAFormat, DepthFormat, DepthStencilFormat, RedFormat, RedIntegerFormat, RGFormat, RGIntegerFormat, RGBAIntegerFormat, RGB_S3TC_DXT1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGB_PVRTC_4BPPV1_Format, RGB_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_PVRTC_2BPPV1_Format, RGB_ETC1_Format, RGB_ETC2_Format, RGBA_ETC2_EAC_Format, R11_EAC_Format, SIGNED_R11_EAC_Format, RG11_EAC_Format, SIGNED_RG11_EAC_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_10x10_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_BPTC_Format, RGB_BPTC_SIGNED_Format, RGB_BPTC_UNSIGNED_Format, RED_RGTC1_Format, SIGNED_RED_RGTC1_Format, RED_GREEN_RGTC2_Format, SIGNED_RED_GREEN_RGTC2_Format, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InterpolateBezier, ZeroCurvatureEnding, ZeroSlopeEnding, WrapAroundEnding, BasicDepthPacking, TangentSpaceNormalMap, ObjectSpaceNormalMap, NoColorSpace, SRGBColorSpace, LinearSRGBColorSpace, LinearTransfer, SRGBTransfer, KeepStencilOp, AlwaysStencilFunc, NeverCompare, LessCompare, EqualCompare, LessEqualCompare, GreaterCompare, NotEqualCompare, GreaterEqualCompare, AlwaysCompare, StaticDrawUsage, GLSL3, WebGLCoordinateSystem, WebGPUCoordinateSystem, _cache, _setConsoleFunction, ReversedDepthFuncs, EventDispatcher, _lut, _seed, DEG2RAD, RAD2DEG, MathUtils, Vector2, Quaternion, Vector3, _vector$c, _quaternion$5, Matrix3, _m3, LINEAR_REC709_TO_XYZ, XYZ_TO_LINEAR_REC709, ColorManagement, _canvas, ImageUtils, _sourceId, TextureSource, _textureId, _tempVec3, Texture, Vector4, RenderTarget, WebGLRenderTarget, DataArrayTexture, Data3DTexture, Matrix4, _v1$7, _m1$2, _zero, _one, _x, _y, _z, _matrix$2, _quaternion$4, Euler, Layers, _object3DId, _v1$6, _q1, _m1$1, _target, _position$4, _scale$3, _quaternion$3, _xAxis, _yAxis, _zAxis, _addedEvent, _removedEvent, _childaddedEvent, _childremovedEvent, Object3D, Group, _moveEvent, WebXRController, _colorKeywords, _hslA, _hslB, Color, _color, Scene, _v0$2, _v1$5, _v2$4, _v3$2, _vab, _vac, _vbc, _vap, _vbp, _vcp, _v40, _v41, _v42, Triangle, Box3, _points, _vector$b, _box$4, _v0$1, _v1$4, _v2$3, _f0, _f1, _f2, _center, _extents, _triangleNormal, _testAxis, _vector$a, _vector2$1, _id$2, BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute, Float32BufferAttribute, _box$3, _v1$3, _v2$2, Sphere, _id$1, _m1, _obj, _offset, _box$2, _boxMorphTargets, _vector$9, BufferGeometry, InterleavedBuffer, _vector$8, InterleavedBufferAttribute, _vector1, _vector2, _normalMatrix, Plane, _materialId, Material, SpriteMaterial, _geometry, _intersectPoint, _worldScale, _mvPosition, _alignedPosition, _rotatedPosition, _viewWorldMatrix, _vA$1, _vB$1, _vC$1, _uvA, _uvB, _uvC, Sprite, _vector$7, _segCenter, _segDir, _diff, Ray, MeshBasicMaterial, _inverseMatrix$3, _ray$3, _sphere$6, _sphereHitAt, _vA, _vB, _vC, _tempA, _morphA, _intersectionPoint, _intersectionPointWorld, Mesh, _baseVector, _skinIndex, _skinWeight, _vector4, _matrix4, _vertex, _sphere$5, _inverseMatrix$2, _ray$2, SkinnedMesh, Bone, DataTexture, _offsetMatrix, _identityMatrix, Skeleton, InstancedBufferAttribute, _instanceLocalMatrix, _instanceWorldMatrix, _instanceIntersects, _box3, _identity, _mesh$1, _sphere$4, InstancedMesh, _sphere$3, _defaultSpriteCenter, _vector$6, Frustum, _projScreenMatrix$1, FrustumArray, PointsMaterial, _inverseMatrix, _ray, _sphere, _position$3, Points, CubeTexture, CanvasTexture, DepthTexture, CubeDepthTexture, ExternalTexture, BoxGeometry, CapsuleGeometry, CircleGeometry, CylinderGeometry, ConeGeometry, PolyhedronGeometry, Curve, EllipseCurve, ArcCurve, tmp, tmp2, px, py, pz, CatmullRomCurve3, CubicBezierCurve, CubicBezierCurve3, LineCurve, LineCurve3, QuadraticBezierCurve, QuadraticBezierCurve3, SplineCurve, Curves, CurvePath, Path, Shape, Earcut, ShapeUtils, ExtrudeGeometry, WorldUVGenerator, IcosahedronGeometry, LatheGeometry, PlaneGeometry, RingGeometry, SphereGeometry, TorusGeometry, UniformsUtils, default_vertex, default_fragment, ShaderMaterial, RawShaderMaterial, MeshStandardMaterial, MeshDepthMaterial, MeshDistanceMaterial, Interpolant, CubicInterpolant, LinearInterpolant, DiscreteInterpolant, BezierInterpolant, KeyframeTrack, BooleanKeyframeTrack, ColorKeyframeTrack, NumberKeyframeTrack, QuaternionLinearInterpolant, QuaternionKeyframeTrack, StringKeyframeTrack, VectorKeyframeTrack, LoadingManager, DefaultLoadingManager, Loader, Light, HemisphereLight, _projScreenMatrix, _lightPositionWorld, _lookTarget, LightShadow, _position$2, _quaternion$2, _scale$2, Camera, _v3$1, _minTarget, _maxTarget, PerspectiveCamera, PointLightShadow, PointLight, OrthographicCamera, DirectionalLightShadow, DirectionalLight, fov, aspect, CubeCamera, ArrayCamera, _RESERVED_CHARS_RE, _reservedRe, _wordChar, _wordCharOrDot, _directoryRe, _nodeRe, _objectRe, _propertyRe, _trackRe, _supportedObjectNames, Composite, PropertyBinding, _controlInterpolantsResultBuffer, Matrix2;
   var init_three_core = __esm({
     "node_modules/three/build/three.core.js"() {
       REVISION = "187";
@@ -2647,10 +2647,10 @@
          * @param {number} step - The angular step in radians.
          * @return {Quaternion} A reference to this quaternion.
          */
-        rotateTowards(q, step2) {
+        rotateTowards(q, step) {
           const angle = this.angleTo(q);
           if (angle === 0) return this;
-          const t = Math.min(1, step2 / angle);
+          const t = Math.min(1, step / angle);
           this.slerp(q, t);
           return this;
         }
@@ -17977,6 +17977,122 @@
           return new _IcosahedronGeometry(data2.radius, data2.detail);
         }
       };
+      LatheGeometry = class _LatheGeometry extends BufferGeometry {
+        /**
+         * Constructs a new lathe geometry.
+         *
+         * @param {Array<Vector2|Vector3>} [points] - An array of points in 2D space. The x-coordinate of each point
+         * must be greater than zero.
+         * @param {number} [segments=12] - The number of circumference segments to generate.
+         * @param {number} [phiStart=0] - The starting angle in radians.
+         * @param {number} [phiLength=Math.PI*2] - The radian (0 to 2PI) range of the lathed section 2PI is a
+         * closed lathe, less than 2PI is a portion.
+         */
+        constructor(points = [new Vector2(0, -0.5), new Vector2(0.5, 0), new Vector2(0, 0.5)], segments = 12, phiStart = 0, phiLength = Math.PI * 2) {
+          super();
+          this.type = "LatheGeometry";
+          this.parameters = {
+            points,
+            segments,
+            phiStart,
+            phiLength
+          };
+          segments = Math.floor(segments);
+          phiLength = clamp(phiLength, 0, Math.PI * 2);
+          const indices = [];
+          const vertices = [];
+          const uvs = [];
+          const initNormals = [];
+          const normals = [];
+          const inverseSegments = 1 / segments;
+          const vertex2 = new Vector3();
+          const uv = new Vector2();
+          const normal = new Vector3();
+          const curNormal = new Vector3();
+          const prevNormal = new Vector3();
+          let dx = 0;
+          let dy = 0;
+          for (let j = 0; j <= points.length - 1; j++) {
+            switch (j) {
+              case 0:
+                dx = points[j + 1].x - points[j].x;
+                dy = points[j + 1].y - points[j].y;
+                normal.x = dy * 1;
+                normal.y = -dx;
+                normal.z = dy * 0;
+                prevNormal.copy(normal);
+                normal.normalize();
+                initNormals.push(normal.x, normal.y, normal.z);
+                break;
+              case points.length - 1:
+                prevNormal.normalize();
+                initNormals.push(prevNormal.x, prevNormal.y, prevNormal.z);
+                break;
+              default:
+                dx = points[j + 1].x - points[j].x;
+                dy = points[j + 1].y - points[j].y;
+                normal.x = dy * 1;
+                normal.y = -dx;
+                normal.z = dy * 0;
+                curNormal.copy(normal);
+                normal.x += prevNormal.x;
+                normal.y += prevNormal.y;
+                normal.z += prevNormal.z;
+                normal.normalize();
+                initNormals.push(normal.x, normal.y, normal.z);
+                prevNormal.copy(curNormal);
+            }
+          }
+          for (let i = 0; i <= segments; i++) {
+            const phi = phiStart + i * inverseSegments * phiLength;
+            const sin = Math.sin(phi);
+            const cos = Math.cos(phi);
+            for (let j = 0; j <= points.length - 1; j++) {
+              vertex2.x = points[j].x * sin;
+              vertex2.y = points[j].y;
+              vertex2.z = points[j].x * cos;
+              vertices.push(vertex2.x, vertex2.y, vertex2.z);
+              uv.x = i / segments;
+              uv.y = j / (points.length - 1);
+              uvs.push(uv.x, uv.y);
+              const x = initNormals[3 * j + 0] * sin;
+              const y = initNormals[3 * j + 1];
+              const z = initNormals[3 * j + 0] * cos;
+              normals.push(x, y, z);
+            }
+          }
+          for (let i = 0; i < segments; i++) {
+            for (let j = 0; j < points.length - 1; j++) {
+              const base = j + i * points.length;
+              const a = base;
+              const b = base + points.length;
+              const c = base + points.length + 1;
+              const d = base + 1;
+              indices.push(a, b, d);
+              indices.push(c, d, b);
+            }
+          }
+          this.setIndex(indices);
+          this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+          this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+          this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+        }
+        copy(source) {
+          super.copy(source);
+          this.parameters = Object.assign({}, source.parameters);
+          return this;
+        }
+        /**
+         * Factory method for creating an instance of this class from the given
+         * JSON object.
+         *
+         * @param {Object} data - A JSON object representing the serialized geometry.
+         * @return {LatheGeometry} A new instance.
+         */
+        static fromJSON(data2) {
+          return new _LatheGeometry(data2.points, data2.segments, data2.phiStart, data2.phiLength);
+        }
+      };
       PlaneGeometry = class _PlaneGeometry extends BufferGeometry {
         /**
          * Constructs a new plane geometry.
@@ -32570,6 +32686,8 @@ void main() {
         master: 0.8,
         music: 0.55,
         sfx: 0.9,
+        amb: 0.8,
+        suppressor: false,
         quality: "auto",
         fpsCap: 60,
         gyro: false,
@@ -32616,9 +32734,9 @@ void main() {
     "src/core/quality.js"() {
       init_state();
       TIERS = {
-        low: { name: "low", pr: 0.75, maxPr: 1, shadows: false, shadowSize: 0, msaa: 0, terrainSeg: 170, trees: 0.45, particles: 600, crowd: 0.6, far: 9e3, hdr: false, grass: 0 },
-        medium: { name: "medium", pr: 1, maxPr: 1.5, shadows: true, shadowSize: 1024, msaa: 0, terrainSeg: 240, trees: 0.75, particles: 1400, crowd: 0.85, far: 14e3, hdr: true, grass: 1 },
-        high: { name: "high", pr: 1, maxPr: 2, shadows: true, shadowSize: 2048, msaa: 4, terrainSeg: 320, trees: 1, particles: 2600, crowd: 1, far: 18e3, hdr: true, grass: 1 }
+        low: { name: "low", pr: 0.75, maxPr: 1, shadows: false, shadowSize: 0, msaa: 0, terrainSeg: 170, trees: 0.38, particles: 600, crowd: 0.6, far: 9e3, hdr: false, grass: 0, bloom: false },
+        medium: { name: "medium", pr: 1, maxPr: 1.5, shadows: true, shadowSize: 1024, msaa: 0, terrainSeg: 240, trees: 0.75, particles: 1400, crowd: 0.85, far: 14e3, hdr: true, grass: 1, bloom: true },
+        high: { name: "high", pr: 1, maxPr: 2, shadows: true, shadowSize: 2048, msaa: 4, terrainSeg: 320, trees: 1, particles: 2600, crowd: 1, far: 18e3, hdr: true, grass: 1, bloom: true }
       };
       lowTime = 0;
       highTime = 0;
@@ -32651,7 +32769,13 @@ void main() {
       uVig: { value: 0.35 },
       uHdr: { value: 1 },
       uScopeBlur: { value: 0 },
-      uRedTint: { value: 0 }
+      uRedTint: { value: 0 },
+      tBloom: { value: null },
+      uBloom: { value: 0 },
+      uRays: { value: 0 },
+      uSunPos: { value: new Vector2(0.5, 0.5) },
+      uFocus: { value: 0 },
+      uCold: { value: 0 }
     };
     const m = new ShaderMaterial({
       uniforms: u,
@@ -32662,7 +32786,7 @@ void main() {
         /* glsl */
         `
       precision highp float;
-      uniform sampler2D tScene; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
+      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uBloom, uRays, uFocus, uCold; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uTime, uScopeR, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
       uniform vec2 uOffset; uniform vec3 uLift, uGain, uSun, uDustCol;
       varying vec2 vUv;
       float hh(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
@@ -32681,6 +32805,7 @@ void main() {
           vec2 q = uv * vec2(18.0, 46.0) + vec2(0.0, uTime * 2.3);
           uv += hz * vec2(nn(q) - 0.5, nn(q + 17.0) - 0.5) * (0.6 + 0.4 * sin(uTime * 3.0 + uv.y * 40.0));
         }
+        if (uCold > 0.0 && uMode == 1) { float w = sin(uv.y * 160.0 + uTime * 5.0) * 0.5 + 0.5 * sin(uv.y * 97.0 - uTime * 3.1); uv.x += w * 0.00035 * uCold * uZoom / 8.0; }
         if (uMode == 1) { // scope
           vec2 c = p - uOffset;
           float r = length(c) / uScopeR;
@@ -32694,6 +32819,7 @@ void main() {
           sc.g = sampleC(duv).g;
           sc.b = sampleC(duv - dir * ca * vec2(1.0/asp,1.0)).b;
           if (uScopeBlur > 0.0) { vec3 bl = sampleC(duv + vec2(0.003,0.0)) + sampleC(duv - vec2(0.003,0.0)) + sampleC(duv + vec2(0.0,0.004)) + sampleC(duv - vec2(0.0,0.004)); sc = mix(sc, bl*0.25, uScopeBlur); }
+          if (uFocus > 0.0) { vec3 fb = (sampleC(duv + vec2(0.0018,0.0)) + sampleC(duv - vec2(0.0018,0.0)) + sampleC(duv + vec2(0.0,0.0024)) + sampleC(duv - vec2(0.0,0.0024))) * 0.25; sc = mix(sc, fb, uFocus * smoothstep(0.25, 0.9, r)); }
           col = sc;
           mask = 1.0 - smoothstep(0.985, 1.0, r);
           // eyebox shadow: off-center ring darkening (parallax)
@@ -32729,6 +32855,14 @@ void main() {
           g += 0.08 * exp(-length(p + sp * 1.1) * 14.0);
           g += 0.05 * smoothstep(0.03, 0.0, abs(length(p + sp * 0.3) - 0.09));
           col += vec3(1.0, 0.8, 0.55) * g * uSun.z;
+        }
+        // bloom + crepuscular rays (sampled from the bloom buffer toward the sun)
+        vec3 bl = texture2D(tBloom, vUv).rgb;
+        col += bl * uBloom;
+        if (uRays > 0.0) {
+          vec2 d = (uSunPos - vUv) / 18.0; vec2 q = vUv; float dec = 1.0; vec3 acc = vec3(0.0);
+          for (int i = 0; i < 18; i++) { q += d; acc += texture2D(tBloom, q).rgb * dec; dec *= 0.93; }
+          col += acc * (uRays / 18.0) * vec3(1.0, 0.82, 0.62);
         }
         // sandstorm tint
         col = mix(col, uDustCol * (0.9 + 0.1 * nn(uv * 6.0 + uTime * 0.2)), uDust);
@@ -32766,6 +32900,83 @@ void main() {
     }
   });
 
+  // src/post/bloom.js
+  function quadScene(mat2) {
+    const s = new Scene();
+    const q = new Mesh(new PlaneGeometry(2, 2), mat2);
+    q.frustumCulled = false;
+    s.add(q);
+    return s;
+  }
+  function initBloom() {
+    const bright = new ShaderMaterial({
+      uniforms: { tSrc: { value: null }, uTh: { value: 1 }, uTexel: { value: new Vector2() } },
+      vertexShader: VS,
+      depthTest: false,
+      depthWrite: false,
+      fragmentShader: `uniform sampler2D tSrc; uniform float uTh; uniform vec2 uTexel; varying vec2 vUv;
+      void main(){ vec3 c = vec3(0.0);
+        c += texture2D(tSrc, vUv + uTexel * vec2(-1.0,-1.0)).rgb; c += texture2D(tSrc, vUv + uTexel * vec2(1.0,-1.0)).rgb;
+        c += texture2D(tSrc, vUv + uTexel * vec2(-1.0,1.0)).rgb; c += texture2D(tSrc, vUv + uTexel * vec2(1.0,1.0)).rgb; c *= 0.25;
+        float l = max(c.r, max(c.g, c.b)); float k = max(0.0, l - uTh) / max(l, 1e-4);
+        gl_FragColor = vec4(min(c * k, vec3(12.0)), 1.0); }`
+    });
+    const blur = new ShaderMaterial({
+      uniforms: { tSrc: { value: null }, uDir: { value: new Vector2() } },
+      vertexShader: VS,
+      depthTest: false,
+      depthWrite: false,
+      fragmentShader: `uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv;
+      void main(){ vec3 c = texture2D(tSrc, vUv).rgb * 0.227;
+        c += (texture2D(tSrc, vUv + uDir * 1.385).rgb + texture2D(tSrc, vUv - uDir * 1.385).rgb) * 0.316;
+        c += (texture2D(tSrc, vUv + uDir * 3.231).rgb + texture2D(tSrc, vUv - uDir * 3.231).rgb) * 0.070;
+        gl_FragColor = vec4(c, 1.0); }`
+    });
+    B = { bright, blur, sBright: quadScene(bright), sBlur: quadScene(blur), cam: new OrthographicCamera(-1, 1, 1, -1, 0, 1), a: null, b: null };
+  }
+  function resizeBloom(w, h) {
+    if (!B) initBloom();
+    B.a?.dispose();
+    B.b?.dispose();
+    const bw = Math.max(32, Math.floor(w / 4)), bh = Math.max(32, Math.floor(h / 4));
+    const o = { type: HalfFloatType, depthBuffer: false, minFilter: LinearFilter, magFilter: LinearFilter };
+    B.a = new WebGLRenderTarget(bw, bh, o);
+    B.b = new WebGLRenderTarget(bw, bh, o);
+    B.w = bw;
+    B.h = bh;
+  }
+  function renderBloom(r, src, threshold) {
+    if (!G.quality.bloom || !B?.a) return BLACK;
+    B.bright.uniforms.tSrc.value = src;
+    B.bright.uniforms.uTh.value = threshold;
+    B.bright.uniforms.uTexel.value.set(1 / (B.w * 4), 1 / (B.h * 4));
+    r.setRenderTarget(B.a);
+    r.render(B.sBright, B.cam);
+    for (let i = 0; i < 2; i++) {
+      B.blur.uniforms.tSrc.value = B.a.texture;
+      B.blur.uniforms.uDir.value.set(1 / B.w * (1 + i), 0);
+      r.setRenderTarget(B.b);
+      r.render(B.sBlur, B.cam);
+      B.blur.uniforms.tSrc.value = B.b.texture;
+      B.blur.uniforms.uDir.value.set(0, 1 / B.h * (1 + i));
+      r.setRenderTarget(B.a);
+      r.render(B.sBlur, B.cam);
+    }
+    r.setRenderTarget(null);
+    return B.a.texture;
+  }
+  var VS, B, BLACK;
+  var init_bloom = __esm({
+    "src/post/bloom.js"() {
+      init_three_module();
+      init_state();
+      VS = "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
+      B = null;
+      BLACK = new DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+      BLACK.needsUpdate = true;
+    }
+  });
+
   // src/render/renderer.js
   function initRenderer(canvas) {
     const r = new WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance", alpha: false, stencil: false });
@@ -32781,9 +32992,12 @@ void main() {
     G.fpScene = new Scene();
     G.fpCam = new PerspectiveCamera(50, 1, 0.02, 10);
     G.fpScene.add(new HemisphereLight("#b8c4dc", "#403830", 1));
-    G.fpSun = new DirectionalLight("#ffd0a0", 2);
-    G.fpSun.position.set(1, 1, -0.5);
+    G.fpSun = new DirectionalLight("#ffc890", 2.6);
+    G.fpSun.position.set(0.8, 1, -0.7);
     G.fpScene.add(G.fpSun);
+    const fpFill = new DirectionalLight("#9fb4e0", 1.1);
+    fpFill.position.set(-1, 0.5, 0.8);
+    G.fpScene.add(fpFill);
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault();
       G.contextLost = true;
@@ -32814,6 +33028,7 @@ void main() {
     G.rt = new WebGLRenderTarget(rw, rh, { type: q.hdr ? HalfFloatType : UnsignedByteType, samples: q.msaa, depthBuffer: true });
     G.lens.u.tScene.value = G.rt.texture;
     G.lens.u.uRes.value.set(rw, rh);
+    resizeBloom(rw, rh);
     G.lens.u.uHdr.value = 1;
     G.camera.aspect = w / h;
     G.camera.updateProjectionMatrix();
@@ -32826,6 +33041,7 @@ void main() {
       init_three_module();
       init_state();
       init_lens();
+      init_bloom();
     }
   });
 
@@ -33240,15 +33456,26 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (!ctx) return;
     const s = G.settings;
     master.gain.value = s.master;
-    music.gain.value = s.music * 0.55;
+    music.gain.value = s.music * 0.6;
     sfx.gain.value = s.sfx;
-    amb.gain.value = s.sfx * 0.6;
+    amb.gain.value = (s.amb ?? 0.8) * 0.75;
   }
   function noiseSrc(loop = false) {
     const s = ctx.createBufferSource();
     s.buffer = noiseBuf;
     s.loop = loop;
     s.loopStart = Math.random();
+    const st = s.start.bind(s), sp = s.stop.bind(s);
+    let started = false, pend = null;
+    s.start = (...a) => {
+      st(...a);
+      started = true;
+      if (pend != null) sp(pend);
+    };
+    s.stop = (t) => {
+      if (started) sp(t);
+      else pend = t ?? 0;
+    };
     return s;
   }
   function env(g, t, a, peak, d, sus = 1e-4) {
@@ -33265,6 +33492,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       }
     }
     ambNodes = [];
+    A.envKind = kind || A.envKind;
     if (!kind) return;
     const w = noiseSrc(true);
     const bp = ctx.createBiquadFilter();
@@ -33324,6 +33552,49 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     if (kind === "mountain") {
       A.birdTimer = 5;
+      const mur = noiseSrc(true);
+      const f1 = ctx.createBiquadFilter();
+      f1.type = "bandpass";
+      f1.frequency.value = 520;
+      f1.Q.value = 1.4;
+      const f2 = ctx.createBiquadFilter();
+      f2.type = "lowpass";
+      f2.frequency.value = 1400;
+      const mg = ctx.createGain();
+      mg.gain.value = 0;
+      const syl = ctx.createOscillator();
+      syl.frequency.value = 3.3;
+      const sg = ctx.createGain();
+      sg.gain.value = 0.012;
+      syl.connect(sg);
+      sg.connect(mg.gain);
+      const syl2 = ctx.createOscillator();
+      syl2.frequency.value = 0.37;
+      const sg2 = ctx.createGain();
+      sg2.gain.value = 160;
+      syl2.connect(sg2);
+      sg2.connect(f1.frequency);
+      const base = ctx.createConstantSource ? ctx.createConstantSource() : null;
+      if (base) {
+        base.offset.value = 0.02;
+        base.connect(mg.gain);
+        base.start();
+        ambNodes.push(base);
+      }
+      mur.connect(f1);
+      f1.connect(f2);
+      f2.connect(mg);
+      mg.connect(amb);
+      mur.start();
+      syl.start();
+      syl2.start();
+      ambNodes.push(mur, syl, syl2, mg);
+      A.murmur = mg;
+      A.clinkTimer = 3;
+    }
+    if (kind === "desert") {
+      A.steamTimer = 4;
+      A.thumpTimer = 0;
     }
   }
   function ambienceTick(dt, windSpeed, storm = 0) {
@@ -33331,10 +33602,68 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     A.windGain.gain.setTargetAtTime(0.1 + Math.min(1, windSpeed / 8) * 0.25 + storm * 0.35, now(), 0.5);
     A.windBp.Q.setTargetAtTime(0.6 - storm * 0.3, now(), 0.5);
     A.birdTimer = (A.birdTimer ?? 9) - dt;
-    if (A.birdTimer < 0) {
+    if (A.envKind !== "desert" && A.birdTimer < 0) {
       A.birdTimer = 8 + Math.random() * 14;
       bird();
     }
+    if (A.envKind === "mountain" && A.clinkTimer != null) {
+      A.clinkTimer -= dt;
+      if (A.clinkTimer < 0) {
+        A.clinkTimer = 2 + Math.random() * 6;
+        clink();
+      }
+    }
+    if (A.envKind === "desert") {
+      A.steamTimer -= dt;
+      if (A.steamTimer < 0) {
+        A.steamTimer = 5 + Math.random() * 9;
+        steam();
+      }
+      A.thumpTimer -= dt;
+      if (A.thumpTimer < 0) {
+        A.thumpTimer = 0.72;
+        const t = now();
+        const o = ctx.createOscillator();
+        o.frequency.setValueAtTime(58, t);
+        o.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+        const g = ctx.createGain();
+        env(g, t, 0.01, 0.035, 0.25);
+        o.connect(g);
+        g.connect(amb);
+        o.start(t);
+        o.stop(t + 0.35);
+      }
+    }
+  }
+  function clink() {
+    const t = now();
+    for (const [d, f] of [[0, 3200 + Math.random() * 900], [0.06, 4100 + Math.random() * 600]]) {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      const g = ctx.createGain();
+      env(g, t + d, 2e-3, 6e-3, 0.3);
+      o.connect(g);
+      g.connect(amb);
+      if (verb) g.connect(verb);
+      o.start(t + d);
+      o.stop(t + d + 0.4);
+    }
+  }
+  function steam() {
+    const t = now();
+    const n = noiseSrc();
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 2500;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(1e-4, t);
+    g.gain.exponentialRampToValueAtTime(0.03, t + 0.3);
+    g.gain.exponentialRampToValueAtTime(1e-4, t + 2.4);
+    n.connect(hp);
+    hp.connect(g);
+    g.connect(amb);
+    n.start(t);
+    n.stop(t + 2.5);
   }
   function bird() {
     const t = now();
@@ -33359,42 +33688,86 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function shot(range = 700) {
     if (!ctx) return;
     const t = now();
+    const sup = !!G.settings.suppressor;
+    duck(0.35, 1.6);
+    const out = ctx.createGain();
+    out.gain.value = 1;
+    out.connect(sfx);
     const n = noiseSrc();
+    n.stop(t + 0.6);
     const hp = ctx.createBiquadFilter();
     hp.type = "highpass";
-    hp.frequency.value = 700;
+    hp.frequency.value = sup ? 1800 : 900;
+    const ws = ctx.createWaveShaper();
+    const cv2 = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const x = i / 128 - 1;
+      cv2[i] = Math.tanh(x * 3);
+    }
+    ws.curve = cv2;
     const g = ctx.createGain();
-    env(g, t, 2e-3, 1.4, 0.28);
+    env(g, t, 15e-4, sup ? 0.45 : 1.5, sup ? 0.09 : 0.22);
     n.connect(hp);
-    hp.connect(g);
-    g.connect(sfx);
-    g.connect(verb);
+    hp.connect(ws);
+    ws.connect(g);
+    g.connect(out);
     n.start(t);
-    n.stop(t + 0.5);
+    const n2 = noiseSrc();
+    n2.stop(t + 0.6);
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = sup ? 700 : 320;
+    bp.Q.value = sup ? 1.6 : 0.7;
+    const g2 = ctx.createGain();
+    env(g2, t, 3e-3, sup ? 0.55 : 1.1, sup ? 0.12 : 0.4);
+    n2.connect(bp);
+    bp.connect(g2);
+    g2.connect(out);
+    n2.start(t);
     const o = ctx.createOscillator();
     o.type = "sine";
-    o.frequency.setValueAtTime(150, t);
-    o.frequency.exponentialRampToValueAtTime(38, t + 0.35);
+    o.frequency.setValueAtTime(sup ? 110 : 140, t);
+    o.frequency.exponentialRampToValueAtTime(34, t + 0.3);
     const og = ctx.createGain();
-    env(og, t, 3e-3, 1.2, 0.45);
+    env(og, t, 3e-3, sup ? 0.5 : 1.25, sup ? 0.2 : 0.5);
     o.connect(og);
-    og.connect(sfx);
+    og.connect(out);
     o.start(t);
-    o.stop(t + 0.6);
-    for (const [d, a] of [[0.55, 0.22], [1.3, 0.14], [2.4, 0.08]]) {
+    o.stop(t + 0.7);
+    const n3 = noiseSrc();
+    n3.stop(t + 0.2);
+    const bp3 = ctx.createBiquadFilter();
+    bp3.type = "bandpass";
+    bp3.frequency.value = 3800;
+    bp3.Q.value = 5;
+    const g3 = ctx.createGain();
+    env(g3, t + 0.01, 1e-3, 0.12, 0.06);
+    n3.connect(bp3);
+    bp3.connect(g3);
+    g3.connect(out);
+    n3.start(t);
+    const ev = ECHO[A.envKind] || ECHO.mountain, eScale = sup ? 0.35 : 1;
+    for (const [d, a, lpf, pan] of ev) {
       const e = noiseSrc();
       const lp = ctx.createBiquadFilter();
       lp.type = "lowpass";
-      lp.frequency.value = 900 - d * 250;
+      lp.frequency.value = lpf;
+      const p = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+      if (p.pan) p.pan.value = pan;
       const eg = ctx.createGain();
-      env(eg, t + d, 0.02, a, 0.9);
+      env(eg, t + d, 0.012, a * eScale, 0.5 + d * 0.35);
       e.connect(lp);
       lp.connect(eg);
-      eg.connect(sfx);
+      eg.connect(p);
+      p.connect(sfx);
       eg.connect(verb);
       e.start(t + d);
-      e.stop(t + d + 1.2);
+      e.stop(t + d + 1.6);
     }
+    const tg = ctx.createGain();
+    tg.gain.value = sup ? 0.15 : 0.5;
+    g2.connect(tg);
+    tg.connect(verb);
   }
   function bolt() {
     if (!ctx) return;
@@ -33582,6 +33955,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function radio() {
     if (!ctx) return;
     const t = now();
+    duck(0.55, 3);
     const n = noiseSrc();
     const bp = ctx.createBiquadFilter();
     bp.type = "bandpass";
@@ -33606,6 +33980,91 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function ui(kind = "click") {
     if (!ctx) return;
     const t = now();
+    if (kind === "confirm" || kind === "ping") {
+      const fs = kind === "ping" ? [1760, 2637] : [392, 587];
+      fs.forEach((f2, i) => {
+        const o2 = ctx.createOscillator();
+        o2.type = kind === "ping" ? "sine" : "triangle";
+        o2.frequency.value = f2;
+        const g2 = ctx.createGain();
+        env(g2, t + i * 0.09, 4e-3, kind === "ping" ? 0.05 : 0.09, kind === "ping" ? 0.5 : 0.6);
+        o2.connect(g2);
+        g2.connect(sfx);
+        if (verb) g2.connect(verb);
+        o2.start(t + i * 0.09);
+        o2.stop(t + i * 0.09 + 0.8);
+      });
+      return;
+    }
+    if (kind === "tick") {
+      const o2 = ctx.createOscillator();
+      o2.type = "square";
+      o2.frequency.value = 2400;
+      const g2 = ctx.createGain();
+      env(g2, t, 1e-3, 0.02, 0.025);
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 1500;
+      o2.connect(hp);
+      hp.connect(g2);
+      g2.connect(sfx);
+      o2.start(t);
+      o2.stop(t + 0.05);
+      return;
+    }
+    if (kind === "stamp") {
+      const n = noiseSrc();
+      n.stop(t + 1);
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 700;
+      const g2 = ctx.createGain();
+      env(g2, t, 2e-3, 0.18, 0.7);
+      n.connect(lp);
+      lp.connect(g2);
+      g2.connect(sfx);
+      n.start(t);
+      const o2 = ctx.createOscillator();
+      o2.frequency.setValueAtTime(140, t);
+      o2.frequency.exponentialRampToValueAtTime(45, t + 0.2);
+      const g22 = ctx.createGain();
+      env(g22, t, 2e-3, 0.22, 0.8);
+      o2.connect(g22);
+      g22.connect(sfx);
+      o2.start(t);
+      o2.stop(t + 0.4);
+      return;
+    }
+    if (kind === "whoosh") {
+      const n = noiseSrc();
+      n.stop(t + 0.8);
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.Q.value = 1.2;
+      bp.frequency.setValueAtTime(300, t);
+      bp.frequency.exponentialRampToValueAtTime(2400, t + 0.35);
+      const g2 = ctx.createGain();
+      env(g2, t, 0.15, 0.3, 0.18);
+      n.connect(bp);
+      bp.connect(g2);
+      g2.connect(sfx);
+      n.start(t);
+      return;
+    }
+    if (kind === "type") {
+      const n = noiseSrc();
+      n.stop(t + 0.06);
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 3e3 + Math.random() * 1500;
+      const g2 = ctx.createGain();
+      env(g2, t, 1e-3, 0.015, 0.05);
+      n.connect(bp);
+      bp.connect(g2);
+      g2.connect(sfx);
+      n.start(t);
+      return;
+    }
     const o = ctx.createOscillator();
     o.type = kind === "tag" ? "triangle" : "sine";
     const f = { click: 900, tag: 1250, range: 1900, deny: 220, zoom: 600, fail: 160, success: 740 }[kind] || 900;
@@ -33622,77 +34081,377 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     o.start(t);
     o.stop(t + 0.7);
   }
+  function stem(name, vol) {
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.connect(M.duck);
+    if (verb && name !== "bass" && name !== "perc") {
+      const s = ctx.createGain();
+      s.gain.value = name === "motif" ? 0.6 : 0.25;
+      g.connect(s);
+      s.connect(verb);
+    }
+    M.stems[name] = { g, vol };
+    return g;
+  }
   function startMusic() {
-    if (musicTimer) return;
-    const pad = [];
-    for (const f of [55, 82.4, 110.2, 130.8]) {
+    if (M.timer) return;
+    M.duck = ctx.createGain();
+    M.duck.connect(music);
+    stem("pad", 1);
+    stem("pulse", 1);
+    stem("bass", 1);
+    stem("perc", 1);
+    stem("trem", 1);
+    stem("motif", 1);
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 600;
+    lp.Q.value = 0.4;
+    lp.connect(M.stems.pad.g);
+    M.padLp = lp;
+    for (let i = 0; i < 4; i++) for (const det of [-9, 9]) {
+      const o = ctx.createOscillator();
+      o.type = i === 0 ? "triangle" : "sawtooth";
+      o.detune.value = det;
+      const g = ctx.createGain();
+      g.gain.value = i === 0 ? 0.05 : 0.018;
+      const l = ctx.createOscillator();
+      l.frequency.value = 0.07 + Math.random() * 0.08;
+      const lg = ctx.createGain();
+      lg.gain.value = 6;
+      l.connect(lg);
+      lg.connect(o.detune);
+      l.start();
+      o.connect(g);
+      g.connect(lp);
+      o.start();
+      M.pad.push({ o, i });
+    }
+    const tl = ctx.createBiquadFilter();
+    tl.type = "bandpass";
+    tl.frequency.value = 900;
+    tl.Q.value = 0.7;
+    const tg = ctx.createGain();
+    tg.gain.value = 0.5;
+    const trem = ctx.createOscillator();
+    trem.frequency.value = 11;
+    const tdep = ctx.createGain();
+    tdep.gain.value = 0.5;
+    trem.connect(tdep);
+    tdep.connect(tg.gain);
+    trem.start();
+    tl.connect(tg);
+    tg.connect(M.stems.trem.g);
+    M.tremVoices = [];
+    for (let i = 0; i < 3; i++) {
       const o = ctx.createOscillator();
       o.type = "sawtooth";
-      o.frequency.value = f;
-      o.detune.value = (Math.random() - 0.5) * 14;
-      const lp = ctx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.value = 380;
+      o.detune.value = (i - 1) * 7;
       const g = ctx.createGain();
-      g.gain.value = 0.028;
-      o.connect(lp);
-      lp.connect(g);
-      g.connect(music);
+      g.gain.value = 0.03;
+      o.connect(g);
+      g.connect(tl);
       o.start();
-      pad.push({ o, lp, g });
+      M.tremVoices.push(o);
     }
-    A.pad = pad;
-    const bpm = 72, spb = 60 / bpm / 2;
-    musicTimer = setInterval(() => {
-      if (!ctx || ctx.state !== "running") return;
-      const t = now() + 0.05, I = A.intensity;
-      for (const p of pad) p.lp.frequency.setTargetAtTime(320 + I * 900, t, 1.5);
-      if (step % 2 === 0) {
+    setChord(0, now());
+    M.next = now() + 0.1;
+    M.timer = setInterval(schedule, 40);
+  }
+  function setChord(ci, t) {
+    const T = THEMES[M.theme];
+    const ch = T.prog[ci % T.prog.length];
+    for (const v3 of M.pad) v3.o.frequency.setTargetAtTime(mtof(T.root + 12 + ch[v3.i] + (v3.i === 0 ? -12 : 0)), t, 0.25);
+    M.tremVoices?.forEach((o, i) => o.frequency.setTargetAtTime(mtof(T.root + 36 + ch[(i + 1) % 4]), t, 0.1));
+    M.chord = ch;
+  }
+  function schedule() {
+    if (!ctx || ctx.state !== "running") return;
+    const T = THEMES[M.theme], spb = 60 / T.bpm / 4;
+    M.I += (M.It - M.I) * 0.04;
+    const I = M.I, t0 = now();
+    const set = (n, v3) => M.stems[n].g.gain.setTargetAtTime(v3, t0, 0.8);
+    set("pad", 0.9 - I * 0.25);
+    set("pulse", Math.max(0, Math.min(1, (I - 0.12) * 2.2)));
+    set("bass", Math.min(1, 0.25 + I * 1.1));
+    set("perc", Math.max(0, (I - 0.5) * 2.4));
+    set("trem", Math.max(0, (I - 0.62) * 2.2) * 0.8);
+    set("motif", Math.max(0, 0.9 - I * 1.6));
+    M.padLp.frequency.setTargetAtTime(450 + I * 1500, t0, 1.2);
+    while (M.next < t0 + 0.2) {
+      const t = M.next, st = M.step, bar = Math.floor(st / 16), s16 = st % 16;
+      if (s16 === 0 && bar % 2 === 0) setChord(bar / 2, t);
+      const ch = M.chord || T.prog[0];
+      if (I > 0.12 && (I > 0.45 || s16 % 2 === 0)) {
+        const n = T.root + 24 + ch[0] + T.arp[s16 % 8] - (T.arp[s16 % 8] > 12 ? 12 : 0);
         const o = ctx.createOscillator();
-        o.type = "square";
-        o.frequency.value = [41.2, 41.2, 49, 36.7][Math.floor(step / 8) % 4];
-        const lp = ctx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 180 + I * 200;
+        o.type = "sawtooth";
+        o.frequency.value = mtof(n);
+        const f = ctx.createBiquadFilter();
+        f.type = "lowpass";
+        f.Q.value = 6;
+        f.frequency.setValueAtTime(400 + I * 2600, t);
+        f.frequency.exponentialRampToValueAtTime(220, t + 0.14);
         const g = ctx.createGain();
-        env(g, t, 0.01, 0.09 + I * 0.08, 0.35);
-        o.connect(lp);
-        lp.connect(g);
-        g.connect(music);
+        env(g, t, 3e-3, s16 % 4 === 0 ? 0.07 : 0.045, 0.16);
+        o.connect(f);
+        f.connect(g);
+        g.connect(M.stems.pulse.g);
         o.start(t);
-        o.stop(t + 0.5);
+        o.stop(t + 0.25);
       }
-      if (I > 0.35 && step % 1 === 0) {
-        const n = noiseSrc();
-        const hp = ctx.createBiquadFilter();
-        hp.type = "highpass";
-        hp.frequency.value = 6e3;
-        const g = ctx.createGain();
-        env(g, t, 1e-3, 0.025 * I, 0.05);
-        n.connect(hp);
-        hp.connect(g);
-        g.connect(music);
-        n.start(t);
-        n.stop(t + 0.1);
-      }
-      if (I > 0.6 && step % 4 === 2) {
+      if (s16 === 0 || s16 === 6 || I > 0.55 && s16 === 10) {
         const o = ctx.createOscillator();
-        o.frequency.setValueAtTime(110, t);
-        o.frequency.exponentialRampToValueAtTime(45, t + 0.2);
+        o.type = "sine";
+        o.frequency.value = mtof(T.root + ch[0]);
+        const o2 = ctx.createOscillator();
+        o2.type = "triangle";
+        o2.frequency.value = mtof(T.root + 12 + ch[0]);
         const g = ctx.createGain();
-        env(g, t, 3e-3, 0.18, 0.25);
+        env(g, t, 0.02, 0.22, s16 === 0 ? spb * 7 : spb * 3);
+        const g2 = ctx.createGain();
+        g2.gain.value = 0.25;
         o.connect(g);
-        g.connect(music);
+        o2.connect(g2);
+        g2.connect(g);
+        g.connect(M.stems.bass.g);
         o.start(t);
-        o.stop(t + 0.35);
+        o2.start(t);
+        o.stop(t + spb * 8);
+        o2.stop(t + spb * 8);
       }
-      step++;
-    }, spb * 1e3);
+      if (T.perc === "frame" || I > 0.5) {
+        if (s16 === 0 || s16 === 10 || I > 0.75 && s16 === 7) drum(t, "low", M.stems.perc.g);
+        if (s16 === 4 || s16 === 12) drum(t, T.perc === "frame" ? "frame" : "snare", M.stems.perc.g);
+        if (s16 % 2 === 1) drum(t, "hat", M.stems.perc.g, s16 % 4 === 3 ? 1 : 0.5);
+      }
+      if (T.perc === "tick" && I > 0.2 && s16 % 4 === 2) drum(t, "tick", M.stems.pulse.g);
+      if ((s16 === 0 || s16 === 6 || s16 === 12) && Math.random() < 0.38 && bar % 4 !== 3) {
+        const deg = T.scale[(Math.floor(Math.random() * 5) + bar % 2 * 2) % T.scale.length];
+        note(t, mtof(T.root + 36 + ch[0] % 12 + deg), T.motif, M.stems.motif.g);
+      }
+      M.step++;
+      M.next += spb;
+    }
+  }
+  function drum(t, kind, out, a = 1) {
+    if (kind === "low") {
+      const o = ctx.createOscillator();
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(42, t + 0.18);
+      const g2 = ctx.createGain();
+      env(g2, t, 2e-3, 0.35, 0.35);
+      o.connect(g2);
+      g2.connect(out);
+      o.start(t);
+      o.stop(t + 0.5);
+      return;
+    }
+    const n = noiseSrc();
+    const f = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    if (kind === "hat") {
+      f.type = "highpass";
+      f.frequency.value = 7e3;
+      env(g, t, 1e-3, 0.03 * a, 0.04);
+    } else if (kind === "tick") {
+      f.type = "bandpass";
+      f.frequency.value = 4200;
+      f.Q.value = 8;
+      env(g, t, 1e-3, 0.05, 0.03);
+    } else if (kind === "frame") {
+      f.type = "bandpass";
+      f.frequency.value = 260;
+      f.Q.value = 2;
+      env(g, t, 2e-3, 0.25, 0.2);
+      const o = ctx.createOscillator();
+      o.frequency.setValueAtTime(190, t);
+      o.frequency.exponentialRampToValueAtTime(140, t + 0.1);
+      const og = ctx.createGain();
+      env(og, t, 2e-3, 0.12, 0.14);
+      o.connect(og);
+      og.connect(out);
+      o.start(t);
+      o.stop(t + 0.3);
+    } else {
+      f.type = "bandpass";
+      f.frequency.value = 1800;
+      f.Q.value = 0.8;
+      env(g, t, 2e-3, 0.14, 0.14);
+    }
+    n.connect(f);
+    f.connect(g);
+    g.connect(out);
+    n.start(t);
+    n.stop(t + 0.3);
+  }
+  function note(t, fr, kind, out) {
+    if (kind === "bell") {
+      for (const [m, a, d] of [[1, 0.05, 2.4], [2.76, 0.02, 1.2], [5.4, 8e-3, 0.5]]) {
+        const o = ctx.createOscillator();
+        o.frequency.value = fr * m;
+        const g = ctx.createGain();
+        env(g, t, 4e-3, a, d);
+        o.connect(g);
+        g.connect(out);
+        o.start(t);
+        o.stop(t + d + 0.2);
+      }
+    } else {
+      const o = ctx.createOscillator();
+      o.type = "triangle";
+      o.frequency.value = fr;
+      const g = ctx.createGain();
+      env(g, t, 2e-3, 0.06, 0.9);
+      o.connect(g);
+      g.connect(out);
+      o.start(t);
+      o.stop(t + 1.2);
+      const n = noiseSrc();
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = fr * 2;
+      bp.Q.value = 18;
+      const ng = ctx.createGain();
+      env(ng, t, 1e-3, 0.3, 0.25);
+      n.connect(bp);
+      bp.connect(ng);
+      ng.connect(out);
+      n.start(t);
+      n.stop(t + 0.3);
+    }
+  }
+  function setMusicTheme(name) {
+    if (THEMES[name]) M.theme = name;
   }
   function setIntensity(v3) {
     A.intensity = v3;
+    M.It = v3;
   }
-  var ctx, master, music, sfx, amb, verb, noiseBuf, A, now, ambNodes, heartT, musicTimer, step;
+  function stinger(kind) {
+    if (!ctx || !M.duck) return;
+    const t = now(), T = THEMES[M.theme];
+    M.duck.gain.cancelScheduledValues(t);
+    M.duck.gain.setValueAtTime(M.duck.gain.value, t);
+    M.duck.gain.linearRampToValueAtTime(0.25, t + 0.05);
+    M.duck.gain.linearRampToValueAtTime(1, t + 2.5);
+    const out = ctx.createGain();
+    out.gain.value = 1;
+    out.connect(music);
+    if (verb) {
+      const s = ctx.createGain();
+      s.gain.value = 0.5;
+      out.connect(s);
+      s.connect(verb);
+    }
+    const chord = kind === "kill" ? [0, 7, 12, 15, 19] : kind === "alarm" ? [0, 1, 6, 12] : [0, 3, 6, 10];
+    chord.forEach((iv, i) => {
+      const o = ctx.createOscillator();
+      o.type = i ? "sawtooth" : "triangle";
+      o.frequency.value = mtof(T.root + 12 + iv);
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(kind === "alarm" ? 2500 : 1600, t);
+      lp.frequency.exponentialRampToValueAtTime(300, t + 3);
+      const g = ctx.createGain();
+      env(g, t + i * (kind === "kill" ? 0.04 : 0), 0.02, 0.05, 3.2);
+      o.connect(lp);
+      lp.connect(g);
+      g.connect(out);
+      o.start(t);
+      o.stop(t + 3.6);
+    });
+    drum(t, "low", out);
+    if (kind !== "fail") {
+      const n = noiseSrc();
+      const f = ctx.createBiquadFilter();
+      f.type = "bandpass";
+      f.frequency.setValueAtTime(400, t);
+      f.frequency.exponentialRampToValueAtTime(5e3, t + 1.4);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(1e-4, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 1.3);
+      g.gain.exponentialRampToValueAtTime(1e-4, t + 1.5);
+      if (kind === "alarm") {
+        n.connect(f);
+        f.connect(g);
+        g.connect(out);
+        n.start(t);
+        n.stop(t + 1.6);
+      }
+    }
+  }
+  function duck(depth = 0.4, rel = 1.2) {
+    if (!ctx || !M.duck) return;
+    const t = now();
+    M.duck.gain.cancelScheduledValues(t);
+    M.duck.gain.setValueAtTime(depth, t);
+    M.duck.gain.linearRampToValueAtTime(1, t + rel);
+  }
+  function alarmSiren(on2) {
+    if (!ctx) return;
+    if (!on2) {
+      if (siren) {
+        const t2 = now();
+        siren.g.gain.setTargetAtTime(1e-4, t2, 0.5);
+        const s = siren;
+        setTimeout(() => {
+          try {
+            s.o.stop();
+            s.l.stop();
+          } catch {
+          }
+        }, 2500);
+        siren = null;
+      }
+      return;
+    }
+    if (siren) return;
+    const t = now(), desert = A.envKind === "desert";
+    const o = ctx.createOscillator();
+    o.type = desert ? "sawtooth" : "square";
+    o.frequency.value = desert ? 520 : 880;
+    const l = ctx.createOscillator();
+    l.type = desert ? "sine" : "square";
+    l.frequency.value = desert ? 0.22 : 1.6;
+    const lg = ctx.createGain();
+    lg.gain.value = desert ? 260 : 120;
+    l.connect(lg);
+    lg.connect(o.frequency);
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 1400;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "highpass";
+    bp.frequency.value = 300;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(1e-4, t);
+    g.gain.exponentialRampToValueAtTime(0.03, t + 1.5);
+    o.connect(lp);
+    lp.connect(bp);
+    bp.connect(g);
+    g.connect(amb);
+    if (verb) g.connect(verb);
+    o.start(t);
+    l.start(t);
+    siren = { o, l, g };
+  }
+  function brass() {
+    if (!ctx) return;
+    const t = now() + 0.45;
+    for (const [d, f, a] of [[0, 5200, 0.03], [0.11, 4700, 0.018], [0.19, 5600, 0.01]]) {
+      const o = ctx.createOscillator();
+      o.frequency.value = f;
+      const g = ctx.createGain();
+      env(g, t + d, 1e-3, a, 0.12);
+      o.connect(g);
+      g.connect(sfx);
+      o.start(t + d);
+      o.stop(t + d + 0.2);
+    }
+  }
+  var ctx, master, music, sfx, amb, verb, noiseBuf, A, now, ambNodes, ECHO, heartT, THEMES, M, mtof, siren;
   var init_audio = __esm({
     "src/audio/audio.js"() {
       init_state();
@@ -33700,9 +34459,22 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       A = { ready: false, intensity: 0, heart: 0 };
       now = () => ctx.currentTime;
       ambNodes = [];
+      ECHO = {
+        // per-environment reflections: [delay s, gain, lowpass Hz, pan]
+        mountain: [[0.42, 0.32, 1400, -0.6], [0.95, 0.24, 1e3, 0.7], [1.6, 0.17, 800, -0.3], [2.5, 0.11, 600, 0.5], [3.6, 0.06, 450, -0.7]],
+        desert: [[0.28, 0.14, 1600, 0.4], [1.1, 0.09, 500, -0.5]],
+        range: [[0.33, 0.2, 1500, 0.5], [0.8, 0.13, 1e3, -0.5], [1.5, 0.07, 700, 0.2]]
+      };
       heartT = 0;
-      musicTimer = null;
-      step = 0;
+      THEMES = {
+        menu: { bpm: 84, root: 38, prog: [[0, 3, 7, 10], [-4, 0, 3, 7], [-2, 2, 5, 9], [-5, -1, 2, 7]], scale: [0, 2, 3, 5, 7, 8, 10], motif: "bell", perc: "soft", arp: [0, 7, 12, 7, 15, 12, 7, 3] },
+        villa: { bpm: 76, root: 38, prog: [[0, 3, 7, 10], [-4, 0, 3, 7], [-7, -3, 0, 5], [-5, -1, 2, 7]], scale: [0, 2, 3, 5, 7, 8, 11], motif: "bell", perc: "tick", arp: [0, 12, 7, 12, 3, 12, 7, 15] },
+        refinery: { bpm: 92, root: 40, prog: [[0, 1, 7, 12], [0, 3, 7, 10], [-2, 1, 5, 10], [-4, 0, 3, 8]], scale: [0, 1, 4, 5, 7, 8, 10], motif: "pluck", perc: "frame", arp: [0, 7, 1, 7, 12, 7, 4, 7] },
+        range: { bpm: 70, root: 36, prog: [[0, 7, 10, 15], [-2, 5, 10, 14]], scale: [0, 2, 3, 5, 7, 9, 10], motif: "bell", perc: "soft", arp: [0, 7, 12, 14, 12, 7, 3, 7] }
+      };
+      M = { theme: "menu", I: 0, It: 0, step: 0, next: 0, timer: null, bus: null, stems: {}, pad: [], duck: null };
+      mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+      siren = null;
     }
   });
 
@@ -33722,6 +34494,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         constructor() {
           this.zooms = [4, 8, 12];
           this.zi = 1;
+          this.magS = 8;
+          this.focusBlur = 0;
           this.breath = 1;
           this.holding = false;
           this.holdK = 0;
@@ -33734,6 +34508,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.t = Math.random() * 100;
         }
         get mag() {
+          return this.magS;
+        }
+        get magT() {
           return this.zooms[this.zi];
         }
         zoom(d) {
@@ -33748,6 +34525,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         update(dt, wantHold, scoped) {
           const s = G.settings;
+          this.magS += (this.magT - this.magS) * Math.min(1, dt * 7);
+          this.focusBlur = Math.min(0.85, Math.abs(this.magT - this.magS) * 0.3) + 0.06 * this.magS / 12 + (this.exhausted > 0 ? 0.25 : 0);
           const holdMax = 5 * G.debug.breathMul;
           const canHold = wantHold && scoped && this.breath > 0 && this.exhausted <= 0;
           if (canHold && !this.holding) {
@@ -34022,10 +34801,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function rangeFind(origin, dir, maxD = 4e3) {
     const p0 = origin.clone(), p1 = new Vector3();
-    const step2 = 25;
+    const step = 25;
     const npcs = G.mission?.npcs;
-    for (let d = 0; d < maxD; d += step2) {
-      p1.copy(origin).addScaledVector(dir, d + step2);
+    for (let d = 0; d < maxD; d += step) {
+      p1.copy(origin).addScaledVector(dir, d + step);
       const h = traceSegment(G.world, p0, p1, npcs, d > 5);
       if (h) {
         const what = h.kind === "npc" ? "person" : h.kind === "collider" ? h.collider.name || h.collider.object?.name || (h.collider.vehicle ? "vehicle" : h.collider.plate ? "plate" : "structure") : "terrain";
@@ -34080,10 +34859,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (v2.z > 1 || v2.z < -1) return null;
     return { x: (v2.x + 1) / 2 * G.W, y: (1 - v2.y) / 2 * G.H };
   }
-  function drawHud(P, M) {
+  function drawHud(P, M2) {
     const W = G.W, H = G.H;
     cx.clearRect(0, 0, W, H);
-    if (G.mode !== "play" || !P || !M) return;
+    if (G.mode !== "play" || !P || !M2) return;
     const cam = G.camera, view = G.view;
     const gh = document.getElementById("ghud");
     if (gh.classList.contains("bc") !== (view === "bulletcam")) gh.classList.toggle("bc", view === "bulletcam");
@@ -34096,6 +34875,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const fov2 = view === "eye" ? EYE_FOV : fovFor(mag);
     const pxPerMil = H / (2 * Math.tan(fov2 * Math.PI / 360)) * 1e-3;
     const R = H * 0.46, cX = W / 2, cY = H / 2;
+    const labels = [];
     for (const o of G.world.taggables || []) {
       if (!o.tagged || !isVisible(o)) continue;
       const p = project(taggablePos(o, new Vector3()), cam);
@@ -34131,11 +34911,40 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         cx.stroke();
       }
       cx.restore();
-      if (view !== "eye") {
-        const d = Math.round(cam.position.distanceTo(o.pos));
-        txt((dead ? "\u2715 " : "") + tagLabel(o), p.x + 10, p.y - yOff - 7, { color: col, font: "700 10px ui-monospace, monospace" });
-        txt(d + " m", p.x + 10, p.y - yOff + 5, { color: "rgba(230,235,240,0.8)", font: "500 9px ui-monospace, monospace" });
+      if (view !== "eye") labels.push({ o, x: p.x, y: p.y - yOff, col, dead, c: Math.hypot(p.x - cX, p.y - cY) });
+    }
+    labels.sort((a, b) => a.c - b.c);
+    const placed = [];
+    cx.font = "700 10px ui-monospace, monospace";
+    for (const [i, L] of labels.entries()) {
+      const name = (L.dead ? "\u2715 " : "") + tagLabel(L.o), d = Math.round(cam.position.distanceTo(L.o.pos)) + " m";
+      const w = Math.max(cx.measureText(name).width, 40) + 4, h = 22;
+      const slots = [[10, -12], [-10 - w, -12], [10, -36], [-10 - w, -36], [10, 12], [-10 - w, 12], [10, -60]];
+      let at = null;
+      for (const [dx, dy] of slots) {
+        const r = { x: L.x + dx, y: L.y + dy, w, h };
+        if (!placed.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y)) {
+          at = r;
+          break;
+        }
       }
+      if (!at) continue;
+      placed.push(at);
+      if (Math.abs(at.y - (L.y - 12)) > 1 || at.x < L.x) {
+        cx.strokeStyle = L.col;
+        cx.globalAlpha = 0.5;
+        cx.lineWidth = 1;
+        cx.beginPath();
+        cx.moveTo(L.x, L.y);
+        cx.lineTo(at.x < L.x ? at.x + w : at.x, at.y + 11);
+        cx.stroke();
+        cx.globalAlpha = 1;
+      }
+      const dim = i > 0 && L.c > R * 0.35 ? 0.75 : 1;
+      cx.globalAlpha = dim;
+      txt(name, at.x, at.y + 5, { color: L.col, font: "700 10px ui-monospace, monospace" });
+      txt(d, at.x, at.y + 17, { color: "rgba(230,235,240,0.8)", font: "500 9px ui-monospace, monospace" });
+      cx.globalAlpha = 1;
     }
     if (P.lastHit && P.lastHit.splash && G.time - P.lastHit.t < 3 && view !== "eye") {
       const p = project(P.lastHit.splash, cam);
@@ -34148,7 +34957,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         txt("SPLASH", p.x + 10, p.y, { color: "#ffdc70", font: "600 9px ui-monospace, monospace" });
       }
     }
-    if (view === "scope") drawScope(P, M, pxPerMil, R);
+    if (view === "scope") drawScope(P, M2, pxPerMil, R);
     else if (view === "bino") drawBino(P);
     else {
       cx.fillStyle = "rgba(255,255,255,0.85)";
@@ -34156,9 +34965,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       cx.arc(cX, cY, 1.6, 0, Math.PI * 2);
       cx.fill();
     }
-    drawCommon(P, M);
+    drawCommon(P, M2);
   }
-  function drawScope(P, M, mil, R) {
+  function drawScope(P, M2, mil, R) {
     const W = G.W, H = G.H, cX = W / 2, cY = H / 2;
     cx.save();
     cx.beginPath();
@@ -34239,7 +35048,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const o = P.optics;
     const narrow = W < H * 1.3;
     const rx = narrow ? W - 14 : cX + R + 18, al = narrow ? "right" : "left";
-    txt(o.mag + "\xD7", rx, cY - R * 0.6, { color: "#f2f2f2", font: "700 20px ui-monospace, monospace", align: al });
+    txt(Math.round(o.magT) + "\xD7", rx, cY - R * 0.6, { color: "#f2f2f2", font: "700 20px ui-monospace, monospace", align: al });
     txt("ZOOM", rx, cY - R * 0.6 + 18, { color: "#9aa", font: "600 9px ui-monospace, monospace", align: al });
     const rr = P.lastRange;
     const rtxt = rr && rr.dist ? Math.round(rr.dist).toLocaleString("en-US") + " m" : "---- m";
@@ -34314,10 +35123,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     txt("RNG " + (rr && rr.dist ? Math.round(rr.dist) + " m" + (rr.what ? " \xB7 " + rr.what.toUpperCase() : "") : "----"), cX, cY + H * 0.33, { align: "center", font: "700 13px ui-monospace, monospace", color: "#ffde70" });
     txt("8\xD7 \xB7 TAG \xB7 RANGE", cX, cY + H * 0.33 + 18, { align: "center", font: "500 9px ui-monospace, monospace", color: "rgba(230,235,240,0.7)" });
   }
-  function drawCommon(P, M) {
+  function drawCommon(P, M2) {
     const W = G.W, H = G.H;
     if (G.settings.difficulty !== "ghost") {
-      const w = M.wind.sample(G.camera.position, M.mt);
+      const w = M2.wind.sample(G.camera.position, M2.mt);
       const sp = Math.hypot(w.x, w.z);
       const camYaw = G.camera.rotation.y;
       const ang = Math.atan2(w.x, -w.z) + camYaw;
@@ -34924,18 +35733,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function pineGeometry(snow = 0.6, seed = 0, palette = {}) {
     const parts = [];
     const trunk = palette.trunk || "#3a2a1c", leaf = new Color(palette.leaf || "#1f3524"), snowC = new Color(palette.snow || "#e8eef6");
-    parts.push([new CylinderGeometry(0.12, 0.22, 2.2, 6).translate(0, 1.1, 0), trunk]);
-    const tiers = 5;
+    const lite = !!palette.lite, seg = lite ? 6 : 8;
+    parts.push([new CylinderGeometry(0.12, 0.22, 2.2, lite ? 4 : 6).translate(0, 1.1, 0), trunk]);
+    const tiers = lite ? 4 : 5;
     for (let i = 0; i < tiers; i++) {
       const r = 2.4 * (1 - i / (tiers + 0.6)) + 0.3, h = 2.6;
       const y = 1.6 + i * 1.55;
-      const cone = new ConeGeometry(r, h, 8, 1);
+      const cone = new ConeGeometry(r, h, seg, 1);
       cone.translate(0, y + h / 2, 0);
       cone.rotateY(i * 0.7 + seed);
       const c = leaf.clone().multiplyScalar(0.8 + i * 0.07);
       parts.push([cone, "#" + c.getHexString()]);
       if (snow > 0) {
-        const sc = new ConeGeometry(r * 0.82, h * 0.42, 8, 1, true);
+        const sc = new ConeGeometry(r * 0.82, h * 0.42, seg, 1, true);
         sc.translate(0, y + h * 0.82, 0);
         sc.rotateY(i * 0.7 + seed + 0.2);
         parts.push([sc, "#" + leaf.clone().lerp(snowC, snow).getHexString()]);
@@ -35039,43 +35849,113 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     mesh.castShadow = true;
     return mesh;
   }
-  function makeRifle() {
+  function makeRifle(opts = {}) {
     const P = [];
-    const metal = "#202224", wood = "#4a3626", dark = "#121314";
-    P.push([tf(new CylinderGeometry(0.011, 0.014, 0.75, 10), 0, 0, -0.62, Math.PI / 2), metal]);
-    P.push([tf(new CylinderGeometry(0.018, 0.018, 0.12, 10), 0, 0, -1, Math.PI / 2), dark]);
-    P.push([tf(new BoxGeometry(0.06, 0.07, 0.5), 0, -0.01, -0.1), metal]);
-    P.push([tf(new BoxGeometry(0.075, 0.09, 0.55), 0, -0.05, -0.35), wood]);
-    P.push([tf(new BoxGeometry(0.06, 0.13, 0.42), 0, -0.07, 0.25, -0.12), wood]);
-    P.push([tf(new BoxGeometry(0.045, 0.06, 0.14), 0, -0.1, 0.05, 0.4), wood]);
-    P.push([tf(new CylinderGeometry(0.03, 0.03, 0.34, 14), 0, 0.075, -0.08, Math.PI / 2), dark]);
-    P.push([tf(new CylinderGeometry(0.045, 0.03, 0.12, 14), 0, 0.075, -0.3, Math.PI / 2), dark]);
-    P.push([tf(new CylinderGeometry(0.038, 0.03, 0.09, 14), 0, 0.075, 0.12, Math.PI / 2), dark]);
-    P.push([tf(new CylinderGeometry(0.018, 0.018, 0.045, 10), 0, 0.115, -0.08), metal]);
-    P.push([tf(new CylinderGeometry(0.018, 0.018, 0.045, 10), 0.045, 0.075, -0.08, 0, 0, Math.PI / 2), metal]);
-    P.push([tf(new CylinderGeometry(6e-3, 6e-3, 0.26, 6), 0.05, -0.18, -0.55, 0.25, 0, 0.35), dark]);
-    P.push([tf(new CylinderGeometry(6e-3, 6e-3, 0.26, 6), -0.05, -0.18, -0.55, 0.25, 0, -0.35), dark]);
-    P.push([tf(new BoxGeometry(0.012, 0.012, 0.05), 0.04, 0, 0.02, 0, 0, 0), "#9a9a9a"]);
-    P.push([tf(new SphereGeometry(0.015, 8, 6), 0.06, 0, 0.04), "#9a9a9a"]);
-    const geos = P.map(([g2, c]) => colorGeo(g2, c));
-    const g = mergeGeometries(geos.map((q) => {
+    const metal = "#2a2c2f", steel = "#4a4e52", cer = "#8a7a5a", dark = "#18191b", fde = "#a08e68", rubber = "#1e1e1e", glass = "#20344a";
+    const push = (g, c, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => P.push([tf(g, x, y, z, rx, ry, rz, sx, sy, sz), c]);
+    const RX = Math.PI / 2;
+    push(new CylinderGeometry(0.0105, 0.0145, 0.74, 14), steel, 0, 0, -0.62, RX);
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      push(new BoxGeometry(4e-3, 4e-3, 0.42), dark, Math.cos(a) * 0.0122, Math.sin(a) * 0.0122, -0.55);
+    }
+    push(new CylinderGeometry(0.017, 0.017, 0.085, 14), metal, 0, 0, -1.03, RX);
+    for (const z of [-1.01, -1.04]) for (const sx of [-1, 1]) push(new BoxGeometry(6e-3, 0.012, 0.018), dark, 0.015 * sx, 0, z);
+    push(new CylinderGeometry(0.03, 0.03, 0.24, 18), metal, 0, 0, -0.08, RX);
+    push(new BoxGeometry(0.03, 0.01, 0.07), "#2c2c2a", 0.026, 0.012, -0.03, 0, 0, -0.6);
+    push(new BoxGeometry(0.024, 0.012, 0.34), metal, 0, 0.034, -0.1);
+    for (let i = 0; i < 16; i++) push(new BoxGeometry(0.026, 6e-3, 8e-3), dark, 0, 0.041, -0.26 + i * 0.021);
+    push(new BoxGeometry(0.066, 0.072, 0.46), cer, 0, -0.045, -0.4);
+    push(new BoxGeometry(0.06, 0.012, 0.44), fde, 0, -9e-3, -0.4);
+    for (let i = 0; i < 5; i++) for (const sx of [-1, 1]) push(new BoxGeometry(2e-3, 0.016, 0.045), dark, 0.034 * sx, -0.045, -0.58 + i * 0.075);
+    push(new BoxGeometry(0.058, 0.05, 0.2), cer, 0, -0.05, -0.06);
+    push(new BoxGeometry(0.046, 0.11, 0.085), dark, 0, -0.12, -0.08, 0.08);
+    push(new BoxGeometry(0.05, 0.012, 0.09), rubber, 0, -0.178, -0.085);
+    push(new TorusGeometry(0.03, 5e-3, 6, 14, Math.PI), cer, 0, -0.075, 0.035, 0, RX, Math.PI);
+    push(new BoxGeometry(6e-3, 0.03, 8e-3), "#8a8a86", 0, -0.085, 0.03, 0.3);
+    push(new BoxGeometry(0.042, 0.13, 0.055), rubber, 0, -0.12, 0.085, 0.38);
+    for (let i = 0; i < 5; i++) push(new BoxGeometry(0.044, 4e-3, 0.056), "#202020", 0, -0.08 - i * 0.022, 0.07 + i * 8e-3, 0.38);
+    push(new BoxGeometry(0.05, 0.03, 0.36), cer, 0, -0.02, 0.29);
+    push(new BoxGeometry(0.045, 0.025, 0.3), cer, 0, -0.13, 0.33, -0.18);
+    push(new BoxGeometry(0.04, 0.13, 0.025), cer, 0, -0.08, 0.18, 0.1);
+    push(new BoxGeometry(0.05, 0.045, 0.16), fde, 0, 0.012, 0.32);
+    push(new BoxGeometry(0.056, 0.19, 0.03), rubber, 0, -0.07, 0.48, -0.06);
+    push(new CylinderGeometry(0.014, 0.014, 0.05, 10), dark, 0, -0.16, 0.42);
+    for (const z of [-0.17, 0.01]) {
+      push(new CylinderGeometry(0.036, 0.036, 0.022, 16), metal, 0, 0.078, z, RX);
+      push(new BoxGeometry(0.03, 0.03, 0.022), metal, 0, 0.05, z);
+    }
+    push(new CylinderGeometry(0.029, 0.029, 0.36, 18), dark, 0, 0.078, -0.08, RX);
+    push(new CylinderGeometry(0.046, 0.031, 0.1, 20), dark, 0, 0.078, -0.3, RX);
+    push(new CylinderGeometry(0.047, 0.047, 0.05, 20), dark, 0, 0.078, -0.37, RX);
+    push(new CylinderGeometry(0.043, 0.043, 4e-3, 20), glass, 0, 0.078, -0.396, RX);
+    push(new CylinderGeometry(0.021, 0.021, 0.048, 16), metal, 0, 0.128, -0.08);
+    for (let i = 0; i < 4; i++) push(new CylinderGeometry(0.0222, 0.0222, 4e-3, 16), "#2a2c2e", 0, 0.112 + i * 0.01, -0.08);
+    push(new CylinderGeometry(0.019, 0.019, 0.044, 16), metal, 0.052, 0.078, -0.08, 0, 0, Math.PI / 2);
+    push(new CylinderGeometry(0.03, 0.03, 0.014, 20), metal, -0.05, 0.078, -0.08, 0, 0, Math.PI / 2);
+    push(new CylinderGeometry(0.036, 0.036, 0.04, 18), "#25272a", 0, 0.078, 0.07, RX);
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2;
+      push(new BoxGeometry(4e-3, 4e-3, 0.036), "#121212", Math.cos(a) * 0.037, 0.078 + Math.sin(a) * 0.037, 0.07);
+    }
+    push(new BoxGeometry(6e-3, 0.03, 0.012), metal, 0.03, 0.105, 0.07, 0, 0, -0.5);
+    push(new CylinderGeometry(0.034, 0.03, 0.08, 18), dark, 0, 0.078, 0.13, RX);
+    push(new CylinderGeometry(0.037, 0.037, 0.03, 18), rubber, 0, 0.078, 0.18, RX);
+    push(new BoxGeometry(0.04, 0.025, 0.04), metal, 0, -0.09, -0.6);
+    for (const sx of [-1, 1]) {
+      push(new CylinderGeometry(65e-4, 65e-4, 0.24, 8), steel, 0.045 * sx, -0.19, -0.56, 0.22, 0, 0.32 * sx);
+      push(new CylinderGeometry(9e-3, 9e-3, 0.08, 8), metal, 0.035 * sx, -0.14, -0.57, 0.22, 0, 0.32 * sx);
+      push(new SphereGeometry(0.012, 8, 6), rubber, 0.085 * sx, -0.3, -0.53);
+    }
+    const clean = (q) => {
       for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
+      if (q.index) q = q.toNonIndexed();
       return q;
-    }), false);
-    const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.35 });
-    const mesh = new Mesh(g, m);
-    const hands = new Mesh(mergeGeometries([
-      colorGeo(tf(new SphereGeometry(0.045, 10, 8), 0, -0.09, 0.1, 0, 0, 0, 1, 0.8, 1.4), "#2b2a26"),
-      colorGeo(tf(new SphereGeometry(0.05, 10, 8), -0.03, -0.07, -0.42, 0, 0, 0, 1.1, 0.8, 1.6), "#2b2a26"),
-      colorGeo(tf(new CylinderGeometry(0.05, 0.065, 0.5, 10), 0.05, -0.12, 0.38, 1.2, 0, 0.2), "#4d5238"),
-      colorGeo(tf(new CylinderGeometry(0.055, 0.07, 0.5, 10), -0.14, -0.14, -0.2, 1.3, 0.5, 0), "#4d5238")
-    ].map((q) => {
-      for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
-      return q;
-    })), new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+    };
+    const build = (list) => mergeGeometries(list.map(([g, c]) => clean(colorGeo(g.index ? g.toNonIndexed() : g, c))), false);
+    const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.2 });
+    const mesh = new Mesh(build(P), m);
+    const BP = [];
+    BP.push([tf(new CylinderGeometry(0.0165, 0.0165, 0.16, 12), 0, 0, 0, RX), "#8c8f92"]);
+    BP.push([tf(new CylinderGeometry(55e-4, 55e-4, 0.06, 8), 0.03, -0.012, 0.03, 0, 0, 1.15), "#2b2d30"]);
+    BP.push([tf(new SphereGeometry(0.014, 10, 8), 0.058, -0.026, 0.03, 0, 0, 0, 1, 1, 1.1), "#151515"]);
+    BP.push([tf(new CylinderGeometry(0.012, 0.012, 0.03, 10), 0, 0, 0.09, RX), "#2b2d30"]);
+    const bolt2 = new Mesh(build(BP), m);
+    bolt2.position.set(0, 0, 0.02);
+    const SP = [[tf(new CylinderGeometry(0.024, 0.024, 0.2, 18), 0, 0, -1.12, RX), "#2a2b28"], [tf(new CylinderGeometry(0.02, 0.024, 0.02, 18), 0, 0, -1.23, RX), dark]];
+    for (let i = 0; i < 5; i++) SP.push([tf(new CylinderGeometry(0.0245, 0.0245, 4e-3, 18), 0, 0, -1.06 - i * 0.03, RX), "#3b3d3a"]);
+    const can = new Mesh(build(SP), new MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.2 }));
+    can.visible = !!opts.suppressor;
+    const glove = "#2b2a26", pad = "#3c3a33", sleeve = "#4d5238", cuff = "#3b3f2b";
+    const H = (list) => new Mesh(build(list), new MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }));
+    const R = [
+      [tf(new BoxGeometry(0.05, 0.07, 0.085), 0, 0, 0, 0.38), glove],
+      [tf(new BoxGeometry(0.052, 0.02, 0.03), 4e-3, 0.032, -0.03, 0.38), pad],
+      [tf(new CapsuleGeometry(0.0115, 0.04, 3, 6), -0.03, 5e-3, -0.03, 0.3, 0, 0.25), glove],
+      // thumb
+      [tf(new CylinderGeometry(0.048, 0.06, 0.34, 10), 0.03, -0.06, 0.22, 1.25, 0, 0.12), sleeve],
+      [tf(new CylinderGeometry(0.05, 0.05, 0.05, 10), 0.012, -0.025, 0.07, 1.25, 0, 0.12), cuff]
+    ];
+    for (let i = 0; i < 4; i++) R.push([tf(new CapsuleGeometry(0.0105, 0.03, 3, 6), -0.012, -0.022 - i * 0.017, -0.035 + i * 4e-3, 1.5, 0, 0.1), glove]);
+    const handR = H(R);
+    handR.position.set(0.012, -0.12, 0.09);
+    const Lh = [
+      [tf(new BoxGeometry(0.075, 0.035, 0.1), 0, 0, 0, 0, 0.25), glove],
+      [tf(new BoxGeometry(0.06, 0.012, 0.05), 0, -0.02, 0, 0, 0.25), pad],
+      [tf(new CylinderGeometry(0.052, 0.066, 0.42, 10), -0.1, -0.1, 0.17, 1.15, 0.45, 0), sleeve],
+      [tf(new CylinderGeometry(0.054, 0.054, 0.05, 10), -0.03, -0.035, 0.03, 1.15, 0.45, 0), cuff]
+    ];
+    for (let i = 0; i < 4; i++) Lh.push([tf(new CapsuleGeometry(0.0105, 0.035, 3, 6), 0.03 + i * 4e-3, 0.02 + i * 0, -0.02 - i * 0.017, 0.2, 0, -1.2), glove]);
+    const handL = H(Lh);
+    handL.position.set(-0.01, -0.095, -0.4);
+    const hands = new Group();
+    hands.add(handR, handL);
     const grp = new Group();
     grp.add(mesh);
     grp.add(hands);
+    grp.add(bolt2);
+    grp.add(can);
+    grp.userData = { bolt: bolt2, handR, can, handRHome: handR.position.clone(), boltHome: bolt2.position.clone() };
     return grp;
   }
   var glowTex, Smoke;
@@ -35094,7 +35974,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.vel = new Float32Array(n * 3);
           const g = new BufferGeometry();
           g.setAttribute("position", new BufferAttribute(this.p, 3));
-          g.setAttribute("aAge", new BufferAttribute(new Float32Array(n), 1));
+          g.setAttribute("aAge", new BufferAttribute(new Float32Array(n).fill(2), 1));
           this.mat = new ShaderMaterial({
             transparent: true,
             depthWrite: false,
@@ -35220,18 +36100,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     roadY[0] = PAD_Y + 0.1;
     roadY[1] = PAD_Y + 0.4;
     const w = baseWorld({
-      haze: "#8d93ad",
-      sunHaze: "#ffae70",
-      hazeDensity: 21e-5,
+      haze: "#7a84a8",
+      sunHaze: "#ffa060",
+      hazeDensity: 9e-5,
       hazeHeight: 1100,
       hazeBase: 0,
       sunEl: 4.5,
       sunAz: 38,
       sunColor: "#ffb27a",
       sunI: 3.2,
-      hemiSky: "#9fb2d8",
-      hemiGround: "#5a4a52",
-      hemiI: 0.85,
+      hemiSky: "#8fa4d4",
+      hemiGround: "#4a3e4a",
+      hemiI: 0.7,
       sky: { zenith: "#2c3f6e", horizon: "#f2a070", ground: "#8a8aa0", sunColor: "#ffb070", cloudColor: "#f3c7a7", cloudShade: "#6a5878", cloudCover: 0.5, glow: 1.15, horizonHaze: 0.55 }
     });
     w.height = height;
@@ -35241,7 +36121,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const nestY = height(0, 0);
     w.nest = { pos: new Vector3(0, nestY + 0.42, 0), yaw: -0.02, pitch: -0.18, yawRange: 70 * Math.PI / 180, pitchMin: -0.6, pitchMax: 0.42 };
     w.windCfg = { dir: 98, speed: 3.6, gust: 0.45, shift: 14, alt: 9e-4, local: 0.22, seed: 11, groundY: 150 };
-    w.tint = { lift: [0.02, 0.015, 0.035], gain: [1.06, 0.98, 0.94], sat: 1.08, contrast: 1.06, expo: 1 };
+    w.tint = { lift: [0, 4e-3, 0.02], gain: [1.1, 0.98, 0.92], sat: 1.18, contrast: 1.18, expo: 1.12 };
+    w.bloom = 0.32;
+    w.bloomTh = 1.9;
+    w.rays = 0.55;
+    w.cold = 0.35;
+    {
+    }
     w.snow = true;
     const terr = makeTerrain({
       xFocus: [0, 30],
@@ -35260,7 +36146,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const rk = rock.clone().lerp(rock2, vnoise(x / 40, z / 40, 4));
         const steep = smoothstep2(0.32, 0.55, slope2 + (vnoise(x / 25, z / 25, 9) - 0.5) * 0.15);
         c.copy(s).lerp(shade, vnoise(x / 70, z / 70, 1) * 0.5);
-        c.lerp(rk, steep);
+        {
+          const e = 6, hx = height(x + e, z) - height(x - e, z), hz = height(x, z + e) - height(x, z - e);
+          const nx = -hx, ny = 2 * e, nz = -hz, nl = Math.hypot(nx, ny, nz);
+          const ndl = (nx * SUN[0] + ny * SUN[1] + nz * SUN[2]) / nl;
+          const lit = smoothstep2(0.05, 0.4, ndl);
+          c.lerp(SHADOW_C, (1 - lit) * 0.55 * smoothstep2(200, 900, Math.hypot(x - 30, z + 400)));
+          c.lerp(RIM_C, lit * 0.35 * smoothstep2(300, 1500, h));
+        }
+        const nearPad = Math.abs(x - 30) < 150 && Math.abs(z + 768) < 110;
+        c.lerp(rk, steep * (nearPad ? 0.15 : 1));
         const r = z < -500 && z > -1e3 && x > 0 ? roadInfo(x, z).d : 99;
         if (r < 4.5) c.set("#6b6a70").lerp(new Color("#d8dde8"), 0.35);
         if (h < 24 && Math.abs(x + 40) < 520) c.lerp(new Color("#a9bfd6"), smoothstep2(24, 19, h));
@@ -35272,7 +36167,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     lake.position.set(-60, 19.3, -500);
     lake.receiveShadow = true;
     S.add(lake);
-    const pine = pineGeometry(0.75, 0.3);
+    const pine = pineGeometry(0.75, 0.3, { lite: tier.name !== "high" });
     const rnd = mulberry32(42);
     const nTrees = Math.floor(5200 * tier.trees);
     S.add(makeForest(pine, nTrees, () => {
@@ -35388,7 +36283,55 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     cabin(260, -1160, -0.2);
     cabin(-420, -880, 0.9, 0.8);
     cabin(380, -640, 0.1, 0.8);
-    const villaMesh = mergedMesh(P, { rough: 0.85 });
+    const frameC = "#2b1c12", shutterC = "#6e2a1e", flowerC = "#b0453a";
+    const frameWin = (x, y, z, ww, hh, shut) => {
+      P.push([tf(new BoxGeometry(ww + 0.24, 0.14, 0.2), x, y + hh / 2 + 0.07, z), frameC]);
+      P.push([tf(new BoxGeometry(ww + 0.34, 0.12, 0.34), x, y - hh / 2 - 0.06, z + 0.05), "#cfc6b8"]);
+      for (const sx of [-1, 1]) P.push([tf(new BoxGeometry(0.1, hh + 0.2, 0.18), x + sx * (ww / 2 + 0.07), y, z), frameC]);
+      P.push([tf(new BoxGeometry(0.06, hh, 0.14), x, y, z + 0.02), frameC]);
+      P.push([tf(new BoxGeometry(ww, 0.05, 0.12), x, y + hh * 0.18, z + 0.02), frameC]);
+      for (const sx of [-1, 1]) P.push([tf(new BoxGeometry(ww * 0.2, hh * 0.95, 0.04), x + sx * ww * 0.38, y - 0.02, z - 0.02), "#8a3a26"]);
+      P.push([tf(new BoxGeometry(ww, hh * 0.12, 0.04), x, y + hh * 0.42, z - 0.02), "#8a3a26"]);
+      if (shut) for (const sx of [-1, 1]) {
+        P.push([tf(new BoxGeometry(ww * 0.48, hh + 0.1, 0.08), x + sx * (ww * 0.78), y, z + 0.03, 0, sx * 0.25), shutterC]);
+      }
+      if (shut) {
+        P.push([tf(new BoxGeometry(ww + 0.2, 0.22, 0.3), x, y - hh / 2 - 0.22, z + 0.14), "#4a3020"]);
+        for (let k = 0; k < 5; k++) P.push([tf(new SphereGeometry(0.1, 6, 4), x - ww / 2 + 0.2 + k * (ww - 0.4) / 4, y - hh / 2 - 0.06, z + 0.16), k % 2 ? flowerC : "#d86a4a"]);
+      }
+    };
+    for (let i = 0; i < 6; i++) {
+      if (i === 2 || i === 3) continue;
+      frameWin(18.5 + i * 4.6, DECK + 1.6, -777.98, 2.4, 1.9, false);
+    }
+    for (let i = 0; i < 6; i++) frameWin(18.5 + i * 4.6, DECK + 5, -777.5, 2, 1.8, true);
+    for (let k = 0; k < 7; k++) P.push([tf(new BoxGeometry(28.7, 0.035, 0.05), 30, DECK + 3.55 + k * 0.46, -777.42), timberD]);
+    P.push([tf(new BoxGeometry(28.3, 0.25, 0.12), 30, DECK + 3.35, -777.95), "#6a645e"]);
+    for (const x of [16.2, 43.8]) for (let k = 0; k < 5; k++) P.push([tf(new BoxGeometry(0.6, 0.55, 0.16), x + (k % 2 ? 0.12 : -0.12) * (x < 30 ? 1 : -1), DECK + 0.35 + k * 0.66, -777.98), "#a39a90"]);
+    for (let i = 0; i < 16; i++) {
+      const x = 15 + i * 2;
+      for (const sx of [1, -1]) P.push([tf(new BoxGeometry(0.16, 0.2, 0.9), x, DECK + 6.45, -785 + sx * 8.55), timberD]);
+    }
+    for (const sx of [1, -1]) P.push([tf(new BoxGeometry(31.6, 0.32, 0.12), 30, DECK + 6.5, -785 + sx * 9), "#3a2617"]);
+    const icRng = mulberry32(77);
+    for (let i = 0; i < 60; i++) {
+      const x = 14.6 + icRng() * 30.8, l = 0.15 + icRng() * 0.55;
+      P.push([tf(new ConeGeometry(0.04, l, 4), x, DECK + 6.33 - l / 2, -776, Math.PI), "#e9f3ff"]);
+    }
+    P.push([tf(new BoxGeometry(0.2, 4.6, 0.12), 30, DECK + 8.9, -769.6), timberD]);
+    for (const [x, z] of [[19, -767.5], [37, -767.5]]) {
+      P.push([tf(new CylinderGeometry(0.04, 0.04, 2.6, 6), x, DECK + 1.3, z), "#d8d0c0"]);
+      P.push([tf(new ConeGeometry(0.13, 1.25, 8), x, DECK + 1.95, z), "#d9cdb4"]);
+      P.push([tf(new CylinderGeometry(0.4, 0.45, 0.12, 12), x, DECK + 0.06, z), "#2a2a2a"]);
+    }
+    for (const x of [13.5, 46.5]) {
+      P.push([tf(new BoxGeometry(1, 0.7, 1), x, DECK + 0.35, -775.5), "#7a7068"]);
+      P.push([tf(new ConeGeometry(0.6, 1.6, 7), x, DECK + 1.5, -775.5), "#24402e"]);
+    }
+    for (let i = 0; i < 14; i++) P.push([tf(new SphereGeometry(0.9 + icRng() * 0.8, 8, 5), 12 + i * 2.7, PAD_Y - 0.4, -762.8 + icRng() * 0.6, 0, 0, 0, 1.6, 0.35, 0.8), snowC]);
+    P.push([tf(new BoxGeometry(0.9, 2.2, 0.9), 21, DECK + 10.4, -782.5), stone]);
+    P.push([tf(new BoxGeometry(1.05, 0.25, 1.05), 21, DECK + 11.55, -782.5), snowC]);
+    const villaMesh = mergedMesh(P, { rough: 0.85, emissive: "#2a1a12" });
     S.add(villaMesh);
     const winGeo = [];
     const addWin = (x, y, z, ww, hh, ry = 0) => winGeo.push([tf(new BoxGeometry(ww, hh, 0.12), x, y, z, 0, ry), "#ffb35c"]);
@@ -35402,14 +36345,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     addWin(30, DECK + 9.2, -770.3, 1.4, 1.6);
     for (const [x, z, ry] of [[-70, -804, 0.2], [118, -816.8, -0.3], [-180, -1016.5, 0.5], [260, -1156.5, -0.2], [380, -636.6, 0.1]]) addWin(x, height(x, z) + 2.2, z, 1.6, 1.3, ry);
     const wins = mergedMesh(winGeo, { cast: false });
-    wins.material = mat("#ffb35c", { emissive: "#ff9a40", ei: 2.6 });
+    wins.material = mat("#ffb35c", { emissive: "#ff9a40", ei: 1.9 });
     S.add(wins);
     for (const x of [17, 41]) S.add(glow("#ff7a30", 2.2, x, DECK + 2.2, -772, 1.6));
     for (let i = 0; i < 4; i++) S.add(glow("#ffc070", 1.6, 62 + i * 7, PAD_Y + 2.5, -748, 1.4));
     for (let i = 0; i < 9; i++) S.add(glow("#ffcc88", 0.9, 14 + i * 4, DECK + 3.1, -764.6, 1));
-    const pl = new PointLight("#ffa060", 18, 40, 1.6);
-    pl.position.set(28, DECK + 3, -770);
+    const pl = new PointLight("#ffa060", 30, 34, 1.5);
+    pl.position.set(28, DECK + 3.2, -767);
     S.add(pl);
+    if (tier.name !== "low") {
+      const pl2 = new PointLight("#ffb070", 22, 26, 1.5);
+      pl2.position.set(40, DECK + 3, -766.5);
+      S.add(pl2);
+    }
     for (const x of [17.5, 42.5]) {
       const b = makeBanner(1.4, 4.2, "#9b1c1f");
       b.position.set(x, DECK + 6.4, -777.3);
@@ -35454,7 +36402,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.mapInfo = { center: [30, -770], size: 260, label: "VILLA RAVEL \u2014 Col de Sarne", roads: ROAD };
     return w;
   }
-  var PAD_Y, DECK, VILLA, PROF, ROAD, PADS, roadY, NEST0;
+  var PAD_Y, DECK, SUN, SHADOW_C, RIM_C, VILLA, PROF, ROAD, PADS, roadY, NEST0;
   var init_villa = __esm({
     "src/scene/villa/index.js"() {
       init_three_module();
@@ -35466,6 +36414,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_common();
       PAD_Y = 150;
       DECK = 150.6;
+      SUN = (() => {
+        const az = 38 * Math.PI / 180, el2 = 4.5 * Math.PI / 180;
+        return [Math.sin(az) * Math.cos(el2), Math.sin(el2), -Math.cos(az) * Math.cos(el2)];
+      })();
+      SHADOW_C = new Color("#8592bd");
+      RIM_C = new Color("#ffc49a");
       VILLA = { PAD_Y, DECK, BAL: 154 };
       PROF = [[-1500, 520], [-400, 300], [-60, 296], [0, 300], [70, 292], [200, 228], [380, 52], [470, 18], [560, 20], [660, 96], [770, PAD_Y], [900, 190], [1250, 330], [2200, 520], [3500, 700], [6e3, 1100], [12e3, 1500]];
       ROAD = [[78, -762], [118, -754], [190, -738], [290, -728], [400, -748], [520, -790], [660, -835], [820, -870], [1050, -900]];
@@ -35498,18 +36452,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function buildRefinery(tier) {
     const w = baseWorld({
-      haze: "#d9cbb3",
-      sunHaze: "#fff1d6",
-      hazeDensity: 16e-5,
+      haze: "#d8c2a0",
+      sunHaze: "#ffe0b0",
+      hazeDensity: 12e-5,
       hazeHeight: 700,
       hazeBase: 0,
-      sunEl: 66,
-      sunAz: 25,
-      sunColor: "#fff2dc",
-      sunI: 3.6,
-      hemiSky: "#c2d4ec",
-      hemiGround: "#b08a60",
-      hemiI: 1.05,
+      sunEl: 27,
+      sunAz: 58,
+      sunColor: "#ffdcaa",
+      sunI: 3.9,
+      hemiSky: "#a9c0e0",
+      hemiGround: "#9a7048",
+      hemiI: 0.8,
       sky: { zenith: "#5d8fc8", horizon: "#ece2cf", ground: "#d8c7a8", sunColor: "#fff4e0", sunSize: 0.9996, cloudColor: "#ffffff", cloudShade: "#c9c9cf", cloudCover: 0.18, cloudScale: 0.8, glow: 0.45, horizonHaze: 0.8, stormColor: "#c49a68" }
     });
     w.height = height2;
@@ -35518,7 +36472,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const nestY = height2(0, 0);
     w.nest = { pos: new Vector3(0, nestY + 0.45, 0), yaw: 0.02, pitch: -0.12, yawRange: 70 * Math.PI / 180, pitchMin: -0.55, pitchMax: 0.4 };
     w.windCfg = { dir: 260, speed: 3, gust: 0.32, shift: 10, alt: 6e-4, local: 0.18, seed: 23, groundY: 0 };
-    w.tint = { lift: [0.03, 0.02, 0], gain: [1.05, 1, 0.9], sat: 0.9, contrast: 1.08, expo: 0.9 };
+    w.tint = { lift: [0.012, 6e-3, 0], gain: [1.08, 1, 0.88], sat: 1.12, contrast: 1.2, expo: 0.95 };
+    w.bloom = 0.3;
+    w.bloomTh = 2.2;
+    w.rays = 0.3;
     w.heat = 1;
     w.dust = true;
     const terr = makeTerrain({
@@ -35570,6 +36527,84 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let k = 0; k < 3; k++) P.push([tf(new CylinderGeometry(0.35, 0.35, 70, 8), 30 + (k - 1) * 0.8, 4.5, -960 - 35, Math.PI / 2), steel]);
     P.push([tf(new CylinderGeometry(0.8, 1.4, 62, 10), 110, 31, -1070), "#bdb6aa"]);
     for (let k = 1; k < 6; k++) P.push([tf(new CylinderGeometry(1, 1, 1.6, 10, 1, true), 110, k * 11, -1070), k % 2 ? red : white]);
+    {
+      const beam = (x1, y1, z1, x2, y2, z2, t, c) => {
+        const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1, L = Math.hypot(dx, dy, dz);
+        const g = new BoxGeometry(t, L, t);
+        const q = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(dx / L, dy / L, dz / L));
+        g.applyQuaternion(q);
+        g.translate((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+        P.push([g, c]);
+      };
+      const lattice = (x0, z0, nx, nz, lv, bay, lh) => {
+        for (let i = 0; i <= nx; i++) for (let k = 0; k <= nz; k++) beam(x0 + i * bay, 0, z0 - k * bay, x0 + i * bay, lv * lh, z0 - k * bay, 0.45, "#4f5458");
+        for (let l = 1; l <= lv; l++) {
+          const y = l * lh;
+          for (let i = 0; i <= nx; i++) beam(x0 + i * bay, y, z0, x0 + i * bay, y, z0 - nz * bay, 0.35, "#5c6166");
+          for (let k = 0; k <= nz; k++) beam(x0, y, z0 - k * bay, x0 + nx * bay, y, z0 - k * bay, 0.35, "#5c6166");
+          P.push([tf(new BoxGeometry(nx * bay, 0.15, nz * bay), x0 + nx * bay / 2, y - 0.1, z0 - nz * bay / 2), "#3b3f43"]);
+          P.push([tf(new BoxGeometry(nx * bay + 0.2, 0.9, 0.06), x0 + nx * bay / 2, y + 0.55, z0 + 0.05), yellow]);
+          for (let i = 0; i < nx; i++) beam(x0 + i * bay, y - lh, z0, x0 + (i + 1) * bay, y, z0, 0.2, "#5c6166");
+        }
+      };
+      lattice(66, -948, 4, 2, 4, 6, 6);
+      for (let i = 0; i < 3; i++) P.push([tf(new CapsuleGeometry(1.5, 7, 4, 14), 72 + i * 7, 13.6, -954, 0, 0, Math.PI / 2), i === 1 ? "#d8d4cc" : "#b8b4ac"]);
+      for (let i = 0; i < 2; i++) {
+        P.push([tf(new CylinderGeometry(1.2, 1.2, 14, 14), 74 + i * 12, 31, -956), steel]);
+        P.push([tf(new SphereGeometry(1.2, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), 74 + i * 12, 38, -956), steel]);
+      }
+      w.colliders.push(boxCollider(78, 12, -954, 12.5, 12, 6.5, { name: "process unit", metal: true }));
+      for (const [x, z, H, r] of [[-12, -1072, 52, 3.2], [-2, -1080, 60, 2.4], [8, -1068, 44, 2.8], [140, -985, 48, 2.6]]) {
+        P.push([tf(new CylinderGeometry(r, r * 1.08, H, 18), x, H / 2, z), "#c9c6bf"]);
+        P.push([tf(new SphereGeometry(r, 18, 6, 0, Math.PI * 2, 0, Math.PI / 2), x, H, z), "#c9c6bf"]);
+        for (let k = 1; k < 6; k++) {
+          const y = k * H / 6;
+          P.push([tf(new CylinderGeometry(r + 1.4, r + 1.4, 0.2, 18, 1, false, 0, Math.PI * 1.4), x, y, z), "#4a4e52"]);
+          P.push([tf(new CylinderGeometry(r + 1.45, r + 1.45, 0.9, 18, 1, true, 0, Math.PI * 1.4), x, y + 0.55, z), yellow]);
+        }
+        P.push([tf(new BoxGeometry(0.6, H, 0.6), x + r + 0.4, H / 2, z), "#5a5e62"]);
+        P.push([tf(new CylinderGeometry(0.5, 0.5, H * 0.9, 8), x - r - 0.6, H * 0.45, z + 0.5), "#8f9396"]);
+        w.colliders.push(cylCollider(x, z, r, 0, H, { name: "column", metal: true }));
+      }
+      for (const [x, z] of [[150, -1040], [160, -1048]]) {
+        P.push([tf(new CylinderGeometry(1.6, 2.6, 78, 14), x, 39, z), "#d9d5cc"]);
+        for (let k = 0; k < 3; k++) P.push([tf(new CylinderGeometry(1.75 - k * 0, 1.75, 3, 14, 1, true), x, 70 - k * 7, z), k % 2 ? white : red]);
+        w.colliders.push(cylCollider(x, z, 2.4, 0, 78, { name: "stack", metal: true }));
+      }
+      for (let i = 0; i < 12; i++) {
+        const x = -20 + i * 12;
+        beam(x, 0, -1010, x, 9, -1010, 0.45, dark);
+        beam(x, 0, -1016, x, 9, -1016, 0.45, dark);
+        beam(x, 4.5, -1010, x, 4.5, -1016, 0.35, dark);
+        beam(x, 9, -1010, x, 9, -1016, 0.35, dark);
+      }
+      for (let k = 0; k < 6; k++) P.push([tf(new CylinderGeometry(0.4, 0.4, 132, 10), 46, k < 3 ? 4.95 : 9.45, -1011 - k % 3 * 2.2, 0, 0, Math.PI / 2), k === 1 ? "#c2b23a" : k === 4 ? "#7d8a96" : steel]);
+      for (let i = 0; i < 5; i++) {
+        P.push([tf(new BoxGeometry(10, 1.4, 6), -8 + i * 24, 10.6, -1013), "#8d9196"]);
+        for (const dx of [-2.5, 2.5]) P.push([tf(new CylinderGeometry(1.9, 1.9, 0.3, 14), -8 + i * 24 + dx, 11.4, -1013), "#2c2f33"]);
+      }
+      for (const [x, z] of [[150, -930], [175, -945]]) {
+        P.push([tf(new SphereGeometry(8, 22, 14), x, 11, z), white]);
+        for (let k = 0; k < 8; k++) {
+          const a = k / 8 * Math.PI * 2;
+          beam(x + Math.cos(a) * 7.2, 0, z + Math.sin(a) * 7.2, x + Math.cos(a) * 7.6, 11, z + Math.sin(a) * 7.6, 0.5, "#9a9da0");
+        }
+        P.push([tf(new CylinderGeometry(8.05, 8.05, 0.8, 22, 1, true), x, 11, z), rust]);
+        w.colliders.push(cylCollider(x, z, 8, 0, 19, { name: "sphere tank", metal: true }));
+      }
+      for (const [x, z] of [[-160, -840], [40, -840], [-200, -980], [120, -900], [-110, -1e3]]) {
+        P.push([tf(new CylinderGeometry(0.15, 0.25, 16, 6), x, 8, z), "#9a9da0"]);
+        P.push([tf(new BoxGeometry(2.2, 0.5, 0.6), x, 16, z), "#4a4e52"]);
+      }
+      for (const [x, z, sx, sz] of [[78, -955, 34, 22], [-2, -1074, 40, 30], [-115, -1033, 215, 42], [162, -938, 50, 34], [45, -1013, 140, 12], [36, -990, 62, 16]]) {
+        P.push([tf(new BoxGeometry(sx, 0.18, sz), x, 0.06, z), "#a39a8c"]);
+        for (const [dx, dz, w2, d2] of [[0, sz / 2, sx, 0.5], [0, -sz / 2, sx, 0.5], [sx / 2, 0, 0.5, sz], [-sx / 2, 0, 0.5, sz]]) P.push([tf(new BoxGeometry(w2, 0.7, d2), x + dx, 0.35, z + dz), "#b3aa9b"]);
+      }
+      for (let i = 0; i < 14; i++) {
+        const x = -900 + i * 120 + i % 3 * 25, z = -2600 - i % 4 * 90, H = 25 + i * 37 % 50;
+        P.push([tf(new CylinderGeometry(2 + i % 3, 3 + i % 3, H, 8), x, heightRaw(x, z) + H / 2, z), "#b9ad9a"]);
+      }
+    }
     P.push([tf(new BoxGeometry(26, 8, 14), -6, 4, -880), "#c8bba5"]);
     P.push([tf(new BoxGeometry(26.6, 0.4, 14.6), -6, 8.2, -880), "#9c907e"]);
     for (let i = 0; i < 7; i++) {
@@ -35766,7 +36801,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             { id: "noAlarm", text: "No alarm raised" }
           ],
           timeline: [
-            { t: 30, name: "SUV arrival", clock: true, do: (M) => M.drive("suv", "arrive", "suvArrived") },
+            { t: 30, name: "SUV arrival", clock: true, do: (M2) => M2.drive("suv", "arrive", "suvArrived") },
             { t: 75, name: "Terrace meeting", clock: true },
             { t: 158, name: "Balcony phone call", clock: true },
             { t: 222, name: "Departure", clock: true }
@@ -35862,16 +36897,32 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 look: { top: "#ecebe6", bottom: "#151515", hair: "#2a1a12", tray: true, skin: "#c48e6a" },
                 routine: [{ type: "goto", path: [[27.6, -771.8]] }, { type: "wait", dur: 6, anim: "serve", face: [26, -770] }, { type: "goto", path: [[21.8, -768.6]] }, { type: "wait", dur: 4, anim: "serve" }, { type: "goto", path: [[30, -777.4]] }, { type: "wait", dur: 10, anim: "serve" }, { type: "loop" }]
               },
+              {
+                id: "guestC",
+                name: "Guest",
+                role: "civilian",
+                start: [36.2, -767.6],
+                look: { coat: true, coatColor: "#6b2f3a", top: "#6b2f3a", bottom: "#1c1a1c", hairStyle: "long", hair: "#2a1a14", skin: "#c99272", scarf: "#e8e0d0" },
+                routine: [{ type: "wait", until: 999, anim: "drink", face: [37.8, -768.4] }]
+              },
+              {
+                id: "guestD",
+                name: "Guest",
+                role: "civilian",
+                start: [37.8, -768.4],
+                look: { top: "#2e3e34", bottom: "#2a2a2e", hair: "#b8b2aa", skin: "#e2b498", glasses: true },
+                routine: [{ type: "wait", dur: 9, anim: "talk", face: [36.2, -767.6] }, { type: "wait", dur: 6, anim: "drink", face: [36.2, -767.6] }, { type: "loop" }]
+              },
               { id: "chef", name: "Cook", role: "civilian", start: [50.5, -776.4], look: { top: "#f2f2f0", bottom: "#30302e", hat: "beanie", hatColor: "#f2f2f0", skin: "#b88466" }, routine: [{ type: "wait", until: 999, anim: "smoke", face: nestFace }] },
-              { id: "g1", name: "Guard", role: "guard", start: [14, -765.6], look: TAC(), routine: [{ type: "goto", path: [[46, -765.6]], speed: 1.1, anim: "walk" }, { type: "wait", dur: 7, anim: "guard", face: nestFace }, { type: "goto", path: [[14, -765.6]], speed: 1.1 }, { type: "wait", dur: 7, anim: "guard", face: nestFace }, { type: "loop" }] },
+              { id: "g1", name: "Guard", role: "guard", start: [14, -765.6], look: TAC(), routine: [{ type: "goto", path: [[46, -765.6]], speed: 1.1, anim: "walk" }, { type: "wait", dur: 7, anim: "radio", face: nestFace }, { type: "goto", path: [[14, -765.6]], speed: 1.1 }, { type: "wait", dur: 7, anim: "guard", face: nestFace }, { type: "loop" }] },
               { id: "g2", name: "Guard", role: "guard", start: [64, -754], look: TAC({ hat: "cap" }), routine: [{ type: "wait", dur: 14, anim: "smoke", face: nestFace }, { type: "goto", path: [[84, -752]], speed: 1 }, { type: "wait", dur: 9, anim: "guard" }, { type: "goto", path: [[64, -754]], speed: 1 }, { type: "loop" }] },
               { id: "g3", name: "Guard", role: "guard", start: [-8, -744], look: TAC(), routine: [{ type: "goto", path: [[-12, -788], [8, -799]], speed: 1.15 }, { type: "wait", dur: 6, anim: "guard" }, { type: "goto", path: [[-12, -788], [-8, -744]], speed: 1.15 }, { type: "wait", dur: 8, anim: "guard", face: nestFace }, { type: "loop" }] },
-              { id: "g4", name: "Guard", role: "guard", start: [-16, -741], look: TAC({ hat: "cap", hatColor: "#30302a" }), heading: 0, routine: [{ type: "wait", until: 999, anim: "guard", face: 0.25 }] }
+              { id: "g4", name: "Guard", role: "guard", start: [-16, -741], look: TAC({ hat: "cap", hatColor: "#30302a" }), heading: 0, routine: [{ type: "wait", dur: 18, anim: "guard", face: 0.25 }, { type: "wait", dur: 7, anim: "radio", face: 0.25 }, { type: "loop" }] }
             ];
           },
           cover: [[12.5, -765], [47.5, -765], [62, -763], [-14, -748], [18, -778], [44, -778]],
           safe: [[30, -777.6]],
-          objects: (W, M) => [
+          objects: (W, M2) => [
             { id: "case", name: "Contract case", tagType: "intel", collider: { type: "box", c: [25.6, VILLA.DECK + 0.9, -769.8], h: [0.22, 0.14, 0.16] }, mesh: "case", explosive: false }
           ],
           vehicles: ["guardCar", "suv"],
@@ -35883,10 +36934,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           num: 2,
           title: "DESERT REFINERY",
           place: "Sal-Khamar refinery, eastern flats",
-          time: "Noon \xB7 41\xB0C \xB7 heat haze, sandstorm forecast",
+          time: "Late afternoon \xB7 39\xB0C \xB7 heat haze, sandstorm forecast",
           build: buildRefinery,
           ambience: "desert",
-          clockStart: 11 * 3600 + 52 * 60,
+          clockStart: 16 * 3600 + 12 * 60,
           clockRate: 6,
           duration: 340,
           music: 0.2,
@@ -35913,14 +36964,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             { id: "storm", text: "Kill during the sandstorm (over 850 m)" }
           ],
           timeline: [
-            { t: 20, name: "Convoy arrives", clock: true, do: (M) => {
-              M.drive("suvA", "inA", "suvAArrived");
-              M.drive("suvB", "inB", "suvBArrived");
-              M.drive("tech", "inT", "techArrived");
+            { t: 20, name: "Convoy arrives", clock: true, do: (M2) => {
+              M2.drive("suvA", "inA", "suvAArrived");
+              M2.drive("suvB", "inB", "suvBArrived");
+              M2.drive("tech", "inT", "techArrived");
             } },
             { t: 118, name: "Workers clear the walkway", clock: true },
             { t: 150, name: "Fuel line inspection", clock: true },
-            { t: 180, name: "Sandstorm", clock: true, do: (M) => M.startStorm() },
+            { t: 180, name: "Sandstorm", clock: true, do: (M2) => M2.startStorm() },
             { t: 226, name: "Rooftop view", clock: true },
             { t: 273, name: "Convoy departs", clock: true }
           ],
@@ -36011,7 +37062,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 routine: [{ type: "wait", flag: "suvBArrived" }, { type: "wait", dur: 1 }, { type: "show", at: [-50, -909] }, { type: "goto", path: [[-38, -893], [-10, -890]] }, { type: "wait", until: 999, anim: "guard", face: nestFace }]
               },
               { id: "tower", name: "Tower guard", role: "guard", start: [-232, -835.5], y: 9.15, heading: 0, look: SOL(), routine: [{ type: "wait", until: 999, anim: "guard", face: 0.3 }] },
-              { id: "gate1", name: "Gate guard", role: "guard", start: [-70, -822], look: SOL(), routine: [{ type: "wait", until: 999, anim: "guard", face: nestFace }] },
+              { id: "gate1", name: "Gate guard", role: "guard", start: [-70, -822], look: SOL(), routine: [{ type: "wait", dur: 22, anim: "guard", face: nestFace }, { type: "wait", dur: 6, anim: "radio", face: nestFace }, { type: "loop" }] },
               { id: "gate2", name: "Gate guard", role: "guard", start: [-50, -822], look: SOL({ hat: "beanie" }), routine: [{ type: "wait", dur: 10, anim: "smoke" }, { type: "goto", path: [[-20, -828], [-20, -850]] }, { type: "wait", dur: 8, anim: "guard" }, { type: "goto", path: [[-20, -828], [-50, -822]] }, { type: "loop" }] },
               { id: "patrol", name: "Patrol", role: "guard", start: [-200, -1e3], look: SOL(), routine: [{ type: "goto", path: [[-40, -1e3], [-40, -930], [-200, -930]], speed: 1.2 }, { type: "wait", dur: 6, anim: "guard" }, { type: "goto", path: [[-200, -1e3]] }, { type: "loop" }] },
               {
@@ -36026,12 +37077,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               { id: "w2", name: "Worker", role: "civilian", start: [-70, -907], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#b5845e" }, routine: [{ type: "wait", until: 121, anim: "lean", face: [-70, -912] }, { type: "goto", path: [[-90, -888], [-128, -880]] }, { type: "hide" }] },
               { id: "w3", name: "Worker", role: "civilian", start: [-180, -960], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#8a5a3c" }, routine: [{ type: "goto", path: [[-180, -1010], [-120, -1010]], speed: 1.1 }, { type: "wait", dur: 12, anim: "inspect" }, { type: "goto", path: [[-180, -960]] }, { type: "wait", dur: 10, anim: "lean" }, { type: "loop" }] },
               { id: "w4", name: "Worker", role: "civilian", start: [30, -975], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", skin: "#a87a58" }, routine: [{ type: "wait", dur: 15, anim: "inspect", face: [20, -990] }, { type: "goto", path: [[60, -975]] }, { type: "wait", dur: 12, anim: "inspect", face: [56, -990] }, { type: "goto", path: [[30, -975]] }, { type: "loop" }] },
-              { id: "w5", name: "Worker", role: "civilian", start: [-160, -882], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", hatColor: "#ffffff", skin: "#c49272" }, routine: [{ type: "wait", until: 999, anim: "sit", face: nestFace }] }
+              { id: "w5", name: "Worker", role: "civilian", start: [-160, -882], look: { top: "#e0641c", bottom: "#e0641c", hat: "hardhat", hatColor: "#ffffff", skin: "#c49272" }, routine: [{ type: "wait", until: 999, anim: "sit", face: nestFace }] },
+              { id: "w6", name: "Worker", role: "civilian", start: [-24, -940], look: { top: "#e0641c", bottom: "#2c3440", hat: "hardhat", skin: "#7c5038", gloves: "#d9c27a" }, routine: [{ type: "wait", dur: 8, anim: "drink", face: nestFace }, { type: "wait", dur: 5, anim: "wave", face: [-60, -930] }, { type: "wait", dur: 10, anim: "inspect", face: [-30, -950] }, { type: "loop" }] }
             ];
           },
           cover: [[-60, -905], [-30, -895], [-150, -955], [-90, -895], [-20, -873], [-70, -820]],
           safe: [[-20, -873], [-130, -882]],
-          objects: (W, M) => [
+          objects: (W, M2) => [
             { id: "valve", name: "Fuel manifold valve", tagType: "explosive", collider: { type: "box", c: [-83, 1.6, -907.6], h: [0.5, 0.55, 0.4] }, mesh: "valve", chain: true },
             { id: "truck", name: "Weapons truck", tagType: "vehicle", collider: { type: "box", c: [-140, 1, -905], h: [1.4, 0.6, 3.6], ry: 0.4 }, explosive: true, radius: 9 }
           ],
@@ -36072,61 +37124,78 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const L = Object.assign({ skin: "#d9a888", hair: "#3a2a20", hairStyle: "short", top: "#445566", bottom: "#2a2a30", shoes: "#1a1410", build: 1 }, look);
     const parts = [];
     const bw = L.build;
-    parts.push(part(capsule(0.165 * bw, 0.26, 9), B.spine, L.top, 0, 1.25, 0, 0, 0, 0, 1, 1, 0.72));
-    parts.push(part(capsule(0.15 * bw, 0.06, 8), B.root, L.bottom, 0, 0.96, 0, 0, 0, 0, 1.05, 1, 0.75));
-    if (L.vest) parts.push(part(new BoxGeometry(0.34 * bw, 0.32, 0.27), B.spine, L.vest, 0, 1.26, 0));
-    parts.push(part(new CylinderGeometry(0.05, 0.06, 0.1, 8), B.head, L.skin, 0, 1.52, 0));
-    parts.push(part(new SphereGeometry(0.105, 14, 10), B.head, L.skin, 0, 1.63, 5e-3, 0, 0, 0, 0.9, 1.12, 1));
-    parts.push(part(new ConeGeometry(0.018, 0.045, 5), B.head, L.skin, 0, 1.625, 0.105, Math.PI / 2, 0, 0));
-    parts.push(part(new BoxGeometry(0.03, 0.012, 0.01), B.head, "#1b1410", 0.035, 1.655, 0.09));
-    parts.push(part(new BoxGeometry(0.03, 0.012, 0.01), B.head, "#1b1410", -0.035, 1.655, 0.09));
-    if (L.beard) parts.push(part(new SphereGeometry(0.098, 12, 8, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.4), B.head, L.beard, 0, 1.635, 0.012, 0, 0, 0, 0.93, 1.1, 1.04));
-    if (L.hairStyle === "short") parts.push(part(new SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.48), B.head, L.hair, 0, 1.645, -8e-3, -0.25, 0, 0, 0.95, 1.05, 1.05));
-    if (L.hairStyle === "long") {
-      parts.push(part(new SphereGeometry(0.115, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B.head, L.hair, 0, 1.645, -0.01, -0.3, 0, 0, 0.98, 1.05, 1.08));
-      parts.push(part(new BoxGeometry(0.2, 0.22, 0.08), B.head, L.hair, 0, 1.53, -0.07));
+    const fem = L.female ?? L.hairStyle === "long", shW = fem ? 0.9 : 1.06;
+    const prof2 = [[1e-3, 1], [0.135, 1.02], [0.15, 1.1], [0.158, 1.22], [0.17 * shW, 1.33], [0.165 * shW, 1.41], [0.12, 1.47], [0.06, 1.5], [1e-3, 1.505]].map(([x, y]) => new Vector2(x * bw, y - 1.25));
+    parts.push(part(new LatheGeometry(prof2, 12), B2.spine, L.top, 0, 1.25, 0, 0, 0, 0, 1, 1, 0.68));
+    parts.push(part(new CylinderGeometry(0.065, 0.075, 0.05, 10), B2.spine, L.top, 0, 1.48, 0, 0, 0, 0, 1, 1, 0.9));
+    for (const sx of [1, -1]) parts.push(part(new SphereGeometry(0.07 * bw, 8, 6), sx > 0 ? B2.uaL : B2.uaR, L.coat ? L.coatColor : L.top, 0.19 * sx * shW, 1.415, 0, 0, 0, 0, 1.05, 0.9, 1));
+    parts.push(part(new BoxGeometry(0.3 * bw, 0.045, 0.2), B2.root, "#15120e", 0, 1.02, 0, 0, 0, 0, 1, 1, 1));
+    if (fem) parts.push(part(new SphereGeometry(0.16 * bw, 10, 6), B2.root, L.bottom, 0, 0.92, -5e-3, 0, 0, 0, 1.06, 0.6, 0.78));
+    parts.push(part(capsule(0.15 * bw, 0.06, 8), B2.root, L.bottom, 0, 0.96, 0, 0, 0, 0, 1.05, 1, 0.75));
+    if (L.vest) parts.push(part(new BoxGeometry(0.34 * bw, 0.32, 0.27), B2.spine, L.vest, 0, 1.26, 0));
+    parts.push(part(new CylinderGeometry(0.05, 0.06, 0.1, 8), B2.head, L.skin, 0, 1.52, 0));
+    parts.push(part(new SphereGeometry(0.105, 14, 10), B2.head, L.skin, 0, 1.63, 5e-3, 0, 0, 0, 0.9, 1.12, 1));
+    parts.push(part(new ConeGeometry(0.018, 0.045, 5), B2.head, L.skin, 0, 1.625, 0.105, Math.PI / 2, 0, 0));
+    parts.push(part(new SphereGeometry(0.07, 10, 6), B2.head, L.skin, 0, 1.585, 0.03, 0, 0, 0, 0.95, 0.75, 1));
+    for (const sx of [1, -1]) {
+      parts.push(part(new SphereGeometry(0.022, 6, 4), B2.head, L.skin, 0.098 * sx, 1.625, -5e-3, 0, 0, 0, 0.5, 1.1, 0.9));
+      parts.push(part(new SphereGeometry(0.016, 6, 4), B2.head, "#efe8e0", 0.035 * sx, 1.638, 0.088, 0, 0, 0, 1.2, 0.7, 0.5));
+      parts.push(part(new SphereGeometry(9e-3, 5, 4), B2.head, "#1a120c", 0.035 * sx, 1.638, 0.095));
     }
-    if (L.glasses) parts.push(part(new BoxGeometry(0.15, 0.03, 0.02), B.head, "#0a0a0c", 0, 1.64, 0.095));
-    if (L.hat === "beret") parts.push(part(new CylinderGeometry(0.12, 0.115, 0.05, 12), B.head, L.hatColor || "#151515", 0.015, 1.735, -0.01, 0.15, 0, -0.2, 1, 1, 1.05));
+    parts.push(part(new BoxGeometry(0.04, 8e-3, 0.01), B2.head, fem ? "#9a4848" : "#7a4a40", 0, 1.588, 0.096));
+    parts.push(part(new BoxGeometry(0.03, 0.012, 0.01), B2.head, "#1b1410", 0.035, 1.655, 0.09));
+    parts.push(part(new BoxGeometry(0.03, 0.012, 0.01), B2.head, "#1b1410", -0.035, 1.655, 0.09));
+    if (L.beard) parts.push(part(new SphereGeometry(0.098, 12, 8, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.4), B2.head, L.beard, 0, 1.635, 0.012, 0, 0, 0, 0.93, 1.1, 1.04));
+    if (L.hairStyle === "short") parts.push(part(new SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.48), B2.head, L.hair, 0, 1.645, -8e-3, -0.25, 0, 0, 0.95, 1.05, 1.05));
+    if (L.hairStyle === "long") {
+      parts.push(part(new SphereGeometry(0.115, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hair, 0, 1.645, -0.01, -0.3, 0, 0, 0.98, 1.05, 1.08));
+      parts.push(part(new BoxGeometry(0.2, 0.22, 0.08), B2.head, L.hair, 0, 1.53, -0.07));
+    }
+    if (L.glasses) parts.push(part(new BoxGeometry(0.15, 0.03, 0.02), B2.head, "#0a0a0c", 0, 1.64, 0.095));
+    if (L.hat === "beret") parts.push(part(new CylinderGeometry(0.12, 0.115, 0.05, 12), B2.head, L.hatColor || "#151515", 0.015, 1.735, -0.01, 0.15, 0, -0.2, 1, 1, 1.05));
     if (L.hat === "hardhat") {
-      parts.push(part(new SphereGeometry(0.125, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B.head, L.hatColor || "#f2c21b", 0, 1.67, 0));
-      parts.push(part(new CylinderGeometry(0.15, 0.15, 0.012, 14), B.head, L.hatColor || "#f2c21b", 0, 1.675, 0.02));
+      parts.push(part(new SphereGeometry(0.125, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hatColor || "#f2c21b", 0, 1.67, 0));
+      parts.push(part(new CylinderGeometry(0.15, 0.15, 0.012, 14), B2.head, L.hatColor || "#f2c21b", 0, 1.675, 0.02));
     }
     if (L.hat === "cap") {
-      parts.push(part(new SphereGeometry(0.115, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B.head, L.hatColor || "#2b3a2b", 0, 1.66, 0));
-      parts.push(part(new BoxGeometry(0.15, 0.012, 0.09), B.head, L.hatColor || "#2b3a2b", 0, 1.665, 0.11));
+      parts.push(part(new SphereGeometry(0.115, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), B2.head, L.hatColor || "#2b3a2b", 0, 1.66, 0));
+      parts.push(part(new BoxGeometry(0.15, 0.012, 0.09), B2.head, L.hatColor || "#2b3a2b", 0, 1.665, 0.11));
     }
-    if (L.hat === "beanie") parts.push(part(new SphereGeometry(0.118, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), B.head, L.hatColor || "#30343a", 0, 1.655, 0, 0, 0, 0, 1, 1.12, 1));
+    if (L.hat === "beanie") parts.push(part(new SphereGeometry(0.118, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), B2.head, L.hatColor || "#30343a", 0, 1.655, 0, 0, 0, 0, 1, 1.12, 1));
     if (L.scarf) {
-      parts.push(part(new TorusGeometry(0.075, 0.035, 6, 12), B.spine, L.scarf, 0, 1.47, 0.01, Math.PI / 2));
-      parts.push(part(new BoxGeometry(0.07, 0.24, 0.03), B.spine, L.scarf, 0.05, 1.33, 0.13, 0.1, 0, 0.1));
+      parts.push(part(new TorusGeometry(0.075, 0.035, 6, 12), B2.spine, L.scarf, 0, 1.47, 0.01, Math.PI / 2));
+      parts.push(part(new BoxGeometry(0.07, 0.24, 0.03), B2.spine, L.scarf, 0.05, 1.33, 0.13, 0.1, 0, 0.1));
     }
     const sleeve = L.coat ? L.coatColor : L.top;
-    for (const [ua, fa, sx] of [[B.uaL, B.faL, 1], [B.uaR, B.faR, -1]]) {
+    for (const [ua, fa, sx] of [[B2.uaL, B2.faL, 1], [B2.uaR, B2.faR, -1]]) {
       parts.push(part(capsule(0.055 * bw, 0.2), ua, sleeve, 0.205 * sx, 1.29, 0));
       parts.push(part(capsule(0.046 * bw, 0.18), fa, sleeve, 0.205 * sx, 1.02, 0));
-      parts.push(part(new SphereGeometry(0.045, 8, 6), fa, L.gloves || L.skin, 0.205 * sx, 0.87, 0.01, 0, 0, 0, 0.8, 1.15, 1));
+      parts.push(part(new CylinderGeometry(0.05 * bw, 0.044, 0.04, 8), fa, L.coat ? L.coatColor : L.top, 0.205 * sx, 0.92, 0));
+      parts.push(part(new BoxGeometry(0.045, 0.1, 0.085), fa, L.gloves || L.skin, 0.205 * sx, 0.85, 0.01, 0, 0, 0, 1, 1, 1));
+      parts.push(part(new CapsuleGeometry(0.014, 0.035, 2, 5), fa, L.gloves || L.skin, 0.205 * sx - 0.012 * sx, 0.87, 0.05, 0.5));
     }
-    for (const [th, sh, sx] of [[B.thL, B.shL, 1], [B.thR, B.shR, -1]]) {
+    for (const [th, sh, sx] of [[B2.thL, B2.shL, 1], [B2.thR, B2.shR, -1]]) {
       parts.push(part(capsule(0.072 * bw, 0.3), th, L.bottom, 0.1 * sx, 0.7, 0));
       parts.push(part(capsule(0.058, 0.32), sh, L.bottom, 0.1 * sx, 0.28, 0));
-      parts.push(part(new BoxGeometry(0.1, 0.07, 0.24), sh, L.shoes, 0.1 * sx, 0.035, 0.04));
+      parts.push(part(new BoxGeometry(0.105, 0.075, 0.25), sh, L.shoes, 0.1 * sx, 0.038, 0.035));
+      parts.push(part(new CylinderGeometry(0.062, 0.066, 0.12, 8), sh, L.shoes, 0.1 * sx, 0.1, 0));
+      parts.push(part(new BoxGeometry(0.11, 0.025, 0.26), sh, "#0c0a08", 0.1 * sx, 0.012, 0.035));
     }
     if (L.coat) {
-      parts.push(part(new CylinderGeometry(0.19 * bw, 0.25 * bw, 0.5, 12, 1, true), B.root, L.coatColor, 0, 0.74, 0, 0, 0, 0, 1, 1, 0.8));
-      parts.push(part(capsule(0.172 * bw, 0.26, 9), B.spine, L.coatColor, 0, 1.25, -6e-3, 0, 0, 0, 1.04, 1.02, 0.76));
-      if (L.scarf) parts.push(part(new BoxGeometry(0.07, 0.24, 0.03), B.spine, L.scarf, 0.05, 1.33, 0.14, 0.1, 0, 0.1));
+      parts.push(part(new CylinderGeometry(0.19 * bw, 0.25 * bw, 0.5, 12, 1, true), B2.root, L.coatColor, 0, 0.74, 0, 0, 0, 0, 1, 1, 0.8));
+      parts.push(part(capsule(0.172 * bw, 0.26, 9), B2.spine, L.coatColor, 0, 1.25, -6e-3, 0, 0, 0, 1.04, 1.02, 0.76));
+      if (L.scarf) parts.push(part(new BoxGeometry(0.07, 0.24, 0.03), B2.spine, L.scarf, 0.05, 1.33, 0.14, 0.1, 0, 0.1));
     }
-    if (L.briefcase) parts.push(part(new BoxGeometry(0.1, 0.3, 0.4), B.faR, "#141210", -0.21, 0.74, 0));
-    if (L.cane) parts.push(part(new CylinderGeometry(0.012, 0.012, 0.85, 5), B.faL, "#2a1a10", 0.215, 0.45, 0.06));
-    if (L.rifle) parts.push(part(new BoxGeometry(0.05, 0.09, 0.75), B.faR, "#1d1f1c", -0.2, 0.9, 0.18, -0.3));
-    if (L.tray) parts.push(part(new CylinderGeometry(0.16, 0.16, 0.015, 12), B.faL, "#c8c8c8", 0.22, 0.86, 0.12));
-    if (L.phone) parts.push(part(new BoxGeometry(0.02, 0.12, 0.06), B.faR, "#080808", -0.19, 0.86, 0.02));
+    if (L.briefcase) parts.push(part(new BoxGeometry(0.1, 0.3, 0.4), B2.faR, "#141210", -0.21, 0.74, 0));
+    if (L.cane) parts.push(part(new CylinderGeometry(0.012, 0.012, 0.85, 5), B2.faL, "#2a1a10", 0.215, 0.45, 0.06));
+    if (L.rifle) parts.push(part(new BoxGeometry(0.05, 0.09, 0.75), B2.faR, "#1d1f1c", -0.2, 0.9, 0.18, -0.3));
+    if (L.tray) parts.push(part(new CylinderGeometry(0.16, 0.16, 0.015, 12), B2.faL, "#c8c8c8", 0.22, 0.86, 0.12));
+    if (L.phone) parts.push(part(new BoxGeometry(0.02, 0.12, 0.06), B2.faR, "#080808", -0.19, 0.86, 0.02));
     const geo = mergeGeometries(parts, false);
     geo.computeBoundingSphere();
     const bones = PIV.map((p, i) => {
       const b = new Bone();
-      b.name = Object.keys(B)[i];
+      b.name = Object.keys(B2)[i];
       return b;
     });
     bones.forEach((b, i) => {
@@ -36155,9 +37224,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     r.position.set(0, 0.95, 0);
     const s = Math.sin(ph * Math.PI * 2), c = Math.cos(ph * Math.PI * 2);
     const breathe = Math.sin(t * 1.6 + (extra.seed || 0)) * 0.02;
-    b[B.spine].rotation.x = breathe;
-    b[B.uaL].rotation.z = 0.08;
-    b[B.uaR].rotation.z = -0.08;
+    b[B2.spine].rotation.x = breathe;
+    b[B2.uaL].rotation.z = 0.08;
+    b[B2.uaR].rotation.z = -0.08;
     switch (pose) {
       case "walk":
       case "run":
@@ -36166,158 +37235,261 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const amp = run ? 0.85 : 0.5;
         const limp = pose === "limp";
         const aL = limp ? 0.6 : 1, aR = 1;
-        b[B.thL].rotation.x = -s * amp * aL;
-        b[B.thR].rotation.x = s * amp * aR;
-        b[B.shL].rotation.x = Math.max(0, c) * (run ? 1.4 : 0.7) * aL + 0.05;
-        b[B.shR].rotation.x = Math.max(0, -c) * (run ? 1.4 : 0.7) + 0.05;
-        b[B.uaL].rotation.x = s * amp * 0.75;
-        b[B.uaR].rotation.x = -s * amp * 0.75;
-        b[B.faL].rotation.x = -(run ? 1.3 : 0.25);
-        b[B.faR].rotation.x = -(run ? 1.3 : 0.25);
+        b[B2.thL].rotation.x = -s * amp * aL;
+        b[B2.thR].rotation.x = s * amp * aR;
+        b[B2.shL].rotation.x = Math.max(0, c) * (run ? 1.4 : 0.7) * aL + 0.05;
+        b[B2.shR].rotation.x = Math.max(0, -c) * (run ? 1.4 : 0.7) + 0.05;
+        b[B2.uaL].rotation.x = s * amp * 0.75;
+        b[B2.uaR].rotation.x = -s * amp * 0.75;
+        b[B2.faL].rotation.x = -(run ? 1.3 : 0.25);
+        b[B2.faR].rotation.x = -(run ? 1.3 : 0.25);
         r.position.y = 0.95 - Math.abs(c) * (run ? 0.06 : 0.03) + (limp ? Math.max(0, s) * -0.035 : 0);
-        b[B.spine].rotation.x = run ? 0.25 : 0.04;
+        b[B2.spine].rotation.x = run ? 0.25 : 0.04;
         if (limp) {
           r.rotation.z = Math.max(0, s) * 0.06;
-          b[B.uaL].rotation.x = -0.25;
-          b[B.faL].rotation.x = -0.35;
+          b[B2.uaL].rotation.x = -0.25;
+          b[B2.faL].rotation.x = -0.35;
         }
         r.rotation.y = s * 0.06;
+        b[B2.spine].rotation.y = -s * (run ? 0.16 : 0.1);
+        b[B2.head].rotation.y = s * 0.05;
+        r.rotation.z = s * (extra.female ? 0.05 : 0.025);
+        b[B2.spine].rotation.z = -r.rotation.z * 0.8;
+        if (extra.panic) {
+          b[B2.uaL].rotation.x = -2.5;
+          b[B2.uaR].rotation.x = -2.5;
+          b[B2.faL].rotation.x = -1.9;
+          b[B2.faR].rotation.x = -1.9;
+          b[B2.uaL].rotation.z = -0.5;
+          b[B2.uaR].rotation.z = 0.5;
+          b[B2.spine].rotation.x = 0.4;
+          b[B2.head].rotation.x = 0.3;
+        }
         if (extra.briefcase) {
-          b[B.uaR].rotation.x *= 0.4;
-          b[B.faR].rotation.x = -0.05;
+          b[B2.uaR].rotation.x *= 0.4;
+          b[B2.faR].rotation.x = -0.05;
         }
         if (extra.rifle) {
-          b[B.uaR].rotation.x = -0.4;
-          b[B.faR].rotation.x = -1.25;
-          b[B.uaL].rotation.x = -0.6;
-          b[B.faL].rotation.x = -1.2;
-          b[B.uaL].rotation.z = -0.35;
+          b[B2.uaR].rotation.x = -0.4;
+          b[B2.faR].rotation.x = -1.25;
+          b[B2.uaL].rotation.x = -0.6;
+          b[B2.faL].rotation.x = -1.2;
+          b[B2.uaL].rotation.z = -0.35;
         }
         break;
       }
       case "phone":
-        b[B.uaR].rotation.x = -0.35;
-        b[B.uaR].rotation.z = -0.55;
-        b[B.faR].rotation.x = -2.4;
-        b[B.faR].rotation.z = 0.5;
-        b[B.head].rotation.z = -0.12;
-        b[B.head].rotation.y = Math.sin(t * 0.4) * 0.3;
-        b[B.uaL].rotation.x = Math.sin(t * 0.9) * 0.15 - 0.1;
-        b[B.thL].rotation.x = -0.05;
-        b[B.thR].rotation.x = 0.06;
+        b[B2.uaR].rotation.x = -0.35;
+        b[B2.uaR].rotation.z = -0.55;
+        b[B2.faR].rotation.x = -2.4;
+        b[B2.faR].rotation.z = 0.5;
+        b[B2.head].rotation.z = -0.12;
+        b[B2.head].rotation.y = Math.sin(t * 0.4) * 0.3;
+        b[B2.uaL].rotation.x = Math.sin(t * 0.9) * 0.15 - 0.1;
+        b[B2.thL].rotation.x = -0.05;
+        b[B2.thR].rotation.x = 0.06;
         break;
       case "talk":
       case "inspect":
-        b[B.uaR].rotation.x = -0.4 - Math.max(0, Math.sin(t * 2.2 + (extra.seed || 0))) * 0.5;
-        b[B.faR].rotation.x = -0.9;
-        b[B.uaL].rotation.x = pose === "inspect" ? -1.2 : -0.15;
-        b[B.faL].rotation.x = pose === "inspect" ? -0.2 : -0.5;
-        if (pose === "inspect") b[B.uaL].rotation.z = -0.2;
-        b[B.head].rotation.y = Math.sin(t * 0.7 + (extra.seed || 0)) * 0.35;
-        b[B.head].rotation.x = pose === "inspect" ? -0.25 : 0;
+        b[B2.uaR].rotation.x = -0.4 - Math.max(0, Math.sin(t * 2.2 + (extra.seed || 0))) * 0.5;
+        b[B2.faR].rotation.x = -0.9;
+        b[B2.uaL].rotation.x = pose === "inspect" ? -1.2 : -0.15;
+        b[B2.faL].rotation.x = pose === "inspect" ? -0.2 : -0.5;
+        if (pose === "inspect") b[B2.uaL].rotation.z = -0.2;
+        b[B2.head].rotation.y = Math.sin(t * 0.7 + (extra.seed || 0)) * 0.35;
+        b[B2.head].rotation.x = pose === "inspect" ? -0.25 : 0;
         break;
       case "smoke": {
         const up = Math.max(0, Math.sin(t * 0.6 + (extra.seed || 0)));
-        b[B.uaR].rotation.x = -0.3 - up * 0.5;
-        b[B.faR].rotation.x = -1.2 - up * 1;
-        b[B.uaR].rotation.z = -0.2 - up * 0.3;
-        b[B.uaL].rotation.x = -0.25;
-        b[B.faL].rotation.x = -1.3;
-        b[B.uaL].rotation.z = -0.25;
+        b[B2.uaR].rotation.x = -0.3 - up * 0.5;
+        b[B2.faR].rotation.x = -1.2 - up * 1;
+        b[B2.uaR].rotation.z = -0.2 - up * 0.3;
+        b[B2.uaL].rotation.x = -0.25;
+        b[B2.faL].rotation.x = -1.3;
+        b[B2.uaL].rotation.z = -0.25;
         break;
       }
       case "guard":
       case "aim":
-        b[B.uaR].rotation.x = pose === "aim" ? -1.25 : -0.35;
-        b[B.faR].rotation.x = pose === "aim" ? -0.35 : -1.25;
-        b[B.uaL].rotation.x = pose === "aim" ? -1.4 : -0.6;
-        b[B.faL].rotation.x = pose === "aim" ? -0.2 : -1.2;
-        b[B.uaL].rotation.z = -0.45;
-        b[B.head].rotation.y = pose === "aim" ? 0 : Math.sin(t * 0.35 + (extra.seed || 0)) * 0.6;
+        b[B2.uaR].rotation.x = pose === "aim" ? -1.25 : -0.35;
+        b[B2.faR].rotation.x = pose === "aim" ? -0.35 : -1.25;
+        b[B2.uaL].rotation.x = pose === "aim" ? -1.4 : -0.6;
+        b[B2.faL].rotation.x = pose === "aim" ? -0.2 : -1.2;
+        b[B2.uaL].rotation.z = -0.45;
+        b[B2.head].rotation.y = pose === "aim" ? 0 : Math.sin(t * 0.35 + (extra.seed || 0)) * 0.6;
         if (pose === "aim") {
           r.position.y = 0.8;
-          b[B.thL].rotation.x = -0.6;
-          b[B.shL].rotation.x = 0.9;
-          b[B.thR].rotation.x = 0.3;
-          b[B.shR].rotation.x = 0.4;
+          b[B2.thL].rotation.x = -0.6;
+          b[B2.shL].rotation.x = 0.9;
+          b[B2.thR].rotation.x = 0.3;
+          b[B2.shR].rotation.x = 0.4;
         }
         break;
       case "serve":
-        b[B.uaL].rotation.x = -0.5;
-        b[B.faL].rotation.x = -1.1;
-        b[B.uaL].rotation.z = 0.1;
-        b[B.head].rotation.y = Math.sin(t * 0.5 + (extra.seed || 0)) * 0.25;
+        b[B2.uaL].rotation.x = -0.5;
+        b[B2.faL].rotation.x = -1.1;
+        b[B2.uaL].rotation.z = 0.1;
+        b[B2.head].rotation.y = Math.sin(t * 0.5 + (extra.seed || 0)) * 0.25;
         break;
       case "lean":
-        b[B.spine].rotation.x = 0.35;
-        b[B.uaL].rotation.x = -0.9;
-        b[B.uaR].rotation.x = -0.9;
-        b[B.faL].rotation.x = -0.4;
-        b[B.faR].rotation.x = -0.4;
-        b[B.head].rotation.y = Math.sin(t * 0.3 + (extra.seed || 0)) * 0.4;
+        b[B2.spine].rotation.x = 0.35;
+        b[B2.uaL].rotation.x = -0.9;
+        b[B2.uaR].rotation.x = -0.9;
+        b[B2.faL].rotation.x = -0.4;
+        b[B2.faR].rotation.x = -0.4;
+        b[B2.head].rotation.y = Math.sin(t * 0.3 + (extra.seed || 0)) * 0.4;
         break;
       case "sit":
         r.position.y = 0.52;
-        b[B.thL].rotation.x = -1.5;
-        b[B.thR].rotation.x = -1.5;
-        b[B.shL].rotation.x = 1.5;
-        b[B.shR].rotation.x = 1.5;
-        b[B.uaL].rotation.x = -0.4;
-        b[B.faL].rotation.x = -0.8;
-        b[B.uaR].rotation.x = -0.3 - Math.max(0, Math.sin(t * 1.5 + (extra.seed || 0))) * 0.4;
-        b[B.faR].rotation.x = -1;
+        b[B2.thL].rotation.x = -1.5;
+        b[B2.thR].rotation.x = -1.5;
+        b[B2.shL].rotation.x = 1.5;
+        b[B2.shR].rotation.x = 1.5;
+        b[B2.uaL].rotation.x = -0.4;
+        b[B2.faL].rotation.x = -0.8;
+        b[B2.uaR].rotation.x = -0.3 - Math.max(0, Math.sin(t * 1.5 + (extra.seed || 0))) * 0.4;
+        b[B2.faR].rotation.x = -1;
         break;
       case "cower":
         r.position.y = 0.5;
-        b[B.spine].rotation.x = 0.7;
-        b[B.thL].rotation.x = -1.7;
-        b[B.thR].rotation.x = -1.5;
-        b[B.shL].rotation.x = 2.2;
-        b[B.shR].rotation.x = 2.1;
-        b[B.uaL].rotation.x = -2.6;
-        b[B.uaR].rotation.x = -2.6;
-        b[B.faL].rotation.x = -1.6;
-        b[B.faR].rotation.x = -1.6;
+        b[B2.spine].rotation.x = 0.7;
+        b[B2.thL].rotation.x = -1.7;
+        b[B2.thR].rotation.x = -1.5;
+        b[B2.shL].rotation.x = 2.2;
+        b[B2.shR].rotation.x = 2.1;
+        b[B2.uaL].rotation.x = -2.6;
+        b[B2.uaR].rotation.x = -2.6;
+        b[B2.faL].rotation.x = -1.6;
+        b[B2.faR].rotation.x = -1.6;
         break;
       case "look":
-        b[B.head].rotation.y = Math.sin(t * 2.5 + (extra.seed || 0)) * 0.8;
-        b[B.head].rotation.x = -0.1;
-        b[B.uaR].rotation.x = -0.2;
+        b[B2.head].rotation.y = Math.sin(t * 2.5 + (extra.seed || 0)) * 0.8;
+        b[B2.head].rotation.x = -0.1;
+        b[B2.uaR].rotation.x = -0.2;
+        break;
+      case "cover": {
+        const peek = Math.max(0, Math.sin(t * 0.7 + (extra.seed || 0)) - 0.6) * 2.5;
+        r.position.y = 0.55 + peek * 0.12;
+        b[B2.spine].rotation.x = 0.55 - peek * 0.3;
+        b[B2.thL].rotation.x = -1.6;
+        b[B2.thR].rotation.x = -1.1;
+        b[B2.shL].rotation.x = 2;
+        b[B2.shR].rotation.x = 1.8;
+        b[B2.uaL].rotation.x = -1.9;
+        b[B2.uaR].rotation.x = -2.1;
+        b[B2.faL].rotation.x = -1.7;
+        b[B2.faR].rotation.x = -1.5;
+        b[B2.head].rotation.y = Math.sin(t * 1.9 + (extra.seed || 0)) * 0.6 * peek;
+        b[B2.head].rotation.x = 0.3 - peek * 0.4;
+        break;
+      }
+      case "wave":
+        b[B2.uaR].rotation.x = -2.6;
+        b[B2.uaR].rotation.z = -0.3 + Math.sin(t * 7) * 0.25;
+        b[B2.faR].rotation.x = -0.4;
+        b[B2.faR].rotation.z = Math.sin(t * 7) * 0.4;
+        b[B2.head].rotation.x = -0.1;
+        break;
+      case "drink": {
+        const sip = Math.max(0, Math.sin(t * 0.5 + (extra.seed || 0)) - 0.5) * 2;
+        b[B2.uaR].rotation.x = -0.35 - sip * 0.35;
+        b[B2.faR].rotation.x = -1.5 - sip * 0.8;
+        b[B2.uaR].rotation.z = -0.15;
+        b[B2.head].rotation.x = -sip * 0.25;
+        b[B2.head].rotation.y = Math.sin(t * 0.3 + (extra.seed || 0)) * 0.3 * (1 - sip);
+        b[B2.uaL].rotation.x = -0.1;
+        b[B2.thL].rotation.x = -0.05;
+        b[B2.thR].rotation.x = 0.08;
+        r.rotation.z = 0.03;
+        break;
+      }
+      case "radio":
+      case "point":
+        if (pose === "radio") {
+          b[B2.uaL].rotation.x = -0.5;
+          b[B2.uaL].rotation.z = 0.9;
+          b[B2.faL].rotation.x = -2.3;
+          b[B2.head].rotation.z = 0.15;
+        } else {
+          b[B2.uaR].rotation.x = -1.6;
+          b[B2.uaR].rotation.z = -0.1;
+          b[B2.faR].rotation.x = -0.1;
+          b[B2.head].rotation.x = -0.05;
+        }
+        b[B2.head].rotation.y += Math.sin(t * 1.1 + (extra.seed || 0)) * 0.2;
+        if (extra.rifle && pose === "radio") {
+          b[B2.uaR].rotation.x = -0.35;
+          b[B2.faR].rotation.x = -1.25;
+        }
         break;
       default:
-        b[B.head].rotation.y = Math.sin(t * 0.23 + (extra.seed || 0)) * 0.3;
-        b[B.thL].rotation.x = -0.03;
-        b[B.thR].rotation.x = 0.04;
+        b[B2.head].rotation.y = Math.sin(t * 0.23 + (extra.seed || 0)) * 0.3;
+        b[B2.thL].rotation.x = -0.03;
+        b[B2.thR].rotation.x = 0.04;
         if (extra.rifle) {
-          b[B.uaR].rotation.x = -0.35;
-          b[B.faR].rotation.x = -1.25;
-          b[B.uaL].rotation.x = -0.6;
-          b[B.faL].rotation.x = -1.2;
-          b[B.uaL].rotation.z = -0.45;
+          b[B2.uaR].rotation.x = -0.35;
+          b[B2.faR].rotation.x = -1.25;
+          b[B2.uaL].rotation.x = -0.6;
+          b[B2.faL].rotation.x = -1.2;
+          b[B2.uaL].rotation.z = -0.45;
         }
     }
     if (extra.briefcase && pose !== "walk" && pose !== "run") {
-      b[B.uaR].rotation.x = Math.min(b[B.uaR].rotation.x, 0);
+      b[B2.uaR].rotation.x = Math.min(b[B2.uaR].rotation.x, 0);
     }
     if (extra.fall > 0) {
-      const f = extra.fall;
-      const e = f < 1 ? 1 - Math.pow(1 - f, 3) : 1;
+      const f = Math.min(extra.fall, 1.3);
       const dir = extra.fallDir || 1;
-      r.rotation.x = -dir * e * 1.45;
-      r.position.y = 0.95 - e * 0.72 + Math.sin(Math.min(f, 1) * Math.PI) * 0.05;
-      r.position.z = -dir * e * 0.35;
-      b[B.uaL].rotation.x = -e * 2.4;
-      b[B.uaR].rotation.x = -e * 2;
-      b[B.uaL].rotation.z = e * 0.6;
-      b[B.uaR].rotation.z = -e * 0.5;
-      b[B.faL].rotation.x = 0;
-      b[B.faR].rotation.x = 0;
-      b[B.thL].rotation.x = e * 0.25;
-      b[B.thR].rotation.x = -e * 0.15;
-      b[B.shL].rotation.x = e * 0.5;
-      b[B.shR].rotation.x = 0;
-      b[B.head].rotation.set(0, e * 0.6, 0);
+      const k1 = Math.min(1, f / 0.32), e1 = 1 - Math.pow(1 - k1, 2);
+      const k2 = Math.max(0, Math.min(1, (f - 0.22) / 0.7)), e2 = k2 * k2 * (3 - 2 * k2);
+      const jolt = Math.sin(Math.min(1, f / 0.12) * Math.PI) * (1 - e2);
+      r.rotation.x = -dir * (e2 * 1.5 + jolt * 0.18);
+      r.rotation.z = e2 * 0.18 * dir;
+      r.position.y = 0.95 - e1 * 0.38 - e2 * 0.42 + Math.max(0, Math.sin((k2 - 0.85) / 0.15 * Math.PI)) * 0.03 * (k2 > 0.85 ? 1 : 0);
+      r.position.z = -dir * (e2 * 0.5);
+      b[B2.spine].rotation.x = dir * (jolt * -0.35) + e1 * 0.35 * (1 - e2);
+      b[B2.thL].rotation.x = -e1 * 1.1 * (1 - e2 * 0.7);
+      b[B2.thR].rotation.x = -e1 * 0.8 * (1 - e2 * 0.6);
+      b[B2.shL].rotation.x = e1 * 1.6 * (1 - e2 * 0.6);
+      b[B2.shR].rotation.x = e1 * 1.2 * (1 - e2 * 0.7);
+      b[B2.uaL].rotation.set(-jolt * 1.2 - e2 * 2.2 * dir * 0.5 - e2 * 0.4, 0, 0.3 + e2 * 0.6);
+      b[B2.uaR].rotation.set(-jolt * 1 - e2 * 1.6 * dir * 0.5 - e2 * 0.3, 0, -0.3 - e2 * 0.5);
+      b[B2.faL].rotation.set(-0.3 * (1 - e2), 0, 0);
+      b[B2.faR].rotation.set(-0.5 * (1 - e2), 0, 0);
+      b[B2.head].rotation.set(dir * jolt * -0.4 + e1 * 0.3, e2 * 0.7, 0);
     }
+    const ud = h.userData;
+    if (!ud.prev) {
+      ud.prev = new Float32Array(b.length * 3 + 3);
+      ud.lastT = t;
+      for (let i = 0; i < b.length; i++) {
+        ud.prev[i * 3] = b[i].rotation.x;
+        ud.prev[i * 3 + 1] = b[i].rotation.y;
+        ud.prev[i * 3 + 2] = b[i].rotation.z;
+      }
+      ud.prev.set([r.position.x, r.position.y, r.position.z], b.length * 3);
+    }
+    const dtb = Math.min(0.25, Math.max(0, t - ud.lastT));
+    ud.lastT = t;
+    const key = pose + (extra.fall > 0 ? "#f" : "") + (extra.panic ? "#p" : "");
+    if (ud.pose !== key) {
+      ud.pose = key;
+      ud.bw = ud.pose0 === void 0 ? 0 : 1;
+      ud.pose0 = key;
+    }
+    ud.bw = Math.max(0, (ud.bw || 0) - dtb * 3.2);
+    const kb = 1 - ud.bw * ud.bw * (3 - 2 * ud.bw) * 0.92;
+    const pv = ud.prev;
+    for (let i = 0; i < b.length; i++) {
+      const R = b[i].rotation, o = i * 3;
+      R.x = pv[o] += (R.x - pv[o]) * kb;
+      R.y = pv[o + 1] += (R.y - pv[o + 1]) * kb;
+      R.z = pv[o + 2] += (R.z - pv[o + 2]) * kb;
+    }
+    const po = b.length * 3;
+    r.position.x = pv[po] += (r.position.x - pv[po]) * kb;
+    r.position.y = pv[po + 1] += (r.position.y - pv[po + 1]) * kb;
+    r.position.z = pv[po + 2] += (r.position.z - pv[po + 2]) * kb;
   }
   function worldHitboxes(h, out = []) {
     const bones = h.userData.bones;
@@ -36331,13 +37503,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     return out;
   }
-  var B, PIV, PARENT, tmp3, HITBOXES, va, vb;
+  var B2, PIV, PARENT, tmp3, HITBOXES, va, vb;
   var init_humanoid = __esm({
     "src/npcs/humanoid.js"() {
       init_three_module();
       init_BufferGeometryUtils();
       init_materials();
-      B = { root: 0, spine: 1, head: 2, uaL: 3, faL: 4, uaR: 5, faR: 6, thL: 7, shL: 8, thR: 9, shR: 10 };
+      B2 = { root: 0, spine: 1, head: 2, uaL: 3, faL: 4, uaR: 5, faR: 6, thL: 7, shL: 8, thR: 9, shR: 10 };
       PIV = [
         [0, 0.95, 0],
         [0, 1.03, 0],
@@ -36354,17 +37526,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       PARENT = [-1, 0, 1, 1, 3, 1, 5, 0, 7, 0, 9];
       tmp3 = new Vector3();
       HITBOXES = [
-        [B.head, 0, 0.1, 0.01, 0, 0.23, 0.01, 0.115, "head"],
-        [B.spine, 0, 0.05, 0, 0, 0.42, 0, 0.2, "torso"],
-        [B.root, 0, -0.06, 0, 0, 0.08, 0, 0.18, "torso"],
-        [B.uaL, 0, -0.02, 0, 0, -0.26, 0, 0.065, "limb"],
-        [B.uaR, 0, -0.02, 0, 0, -0.26, 0, 0.065, "limb"],
-        [B.faL, 0, 0, 0, 0, -0.3, 0, 0.055, "limb"],
-        [B.faR, 0, 0, 0, 0, -0.3, 0, 0.055, "limb"],
-        [B.thL, 0, 0, 0, 0, -0.42, 0, 0.085, "limb"],
-        [B.thR, 0, 0, 0, 0, -0.42, 0, 0.085, "limb"],
-        [B.shL, 0, 0, 0, 0, -0.45, 0, 0.07, "limb"],
-        [B.shR, 0, 0, 0, 0, -0.45, 0, 0.07, "limb"]
+        [B2.head, 0, 0.1, 0.01, 0, 0.23, 0.01, 0.115, "head"],
+        [B2.spine, 0, 0.05, 0, 0, 0.42, 0, 0.2, "torso"],
+        [B2.root, 0, -0.06, 0, 0, 0.08, 0, 0.18, "torso"],
+        [B2.uaL, 0, -0.02, 0, 0, -0.26, 0, 0.065, "limb"],
+        [B2.uaR, 0, -0.02, 0, 0, -0.26, 0, 0.065, "limb"],
+        [B2.faL, 0, 0, 0, 0, -0.3, 0, 0.055, "limb"],
+        [B2.faR, 0, 0, 0, 0, -0.3, 0, 0.055, "limb"],
+        [B2.thL, 0, 0, 0, 0, -0.42, 0, 0.085, "limb"],
+        [B2.thR, 0, 0, 0, 0, -0.42, 0, 0.085, "limb"],
+        [B2.shL, 0, 0, 0, 0, -0.45, 0, 0.07, "limb"],
+        [B2.shR, 0, 0, 0, 0, -0.45, 0, 0.07, "limb"]
       ];
       va = new Vector3();
       vb = new Vector3();
@@ -36377,8 +37549,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let i = 0; i < th.length; i++) if (score >= th[i]) r = i;
     return RANKS[r];
   }
-  function computeScore(M) {
-    const def = M.def, st = M.stats, k = M.targetKill || {};
+  function computeScore(M2) {
+    const def = M2.def, st = M2.stats, k = M2.targetKill || {};
     const lines = [];
     let total = 0;
     const add = (label, pts, detail = "") => {
@@ -36387,31 +37559,31 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     };
     const sec = {};
     for (const s of def.objectives.secondary) {
-      let ok = !!M.secondary[s.id];
+      let ok = !!M2.secondary[s.id];
       if (s.id === "tagGuards") ok = !!st.tagsBeforeShotAll;
-      if (s.id === "tagVosk") ok = !!(M.byId.vosk?.tagged && M.byId.major?.tagged);
+      if (s.id === "tagVosk") ok = !!(M2.byId.vosk?.tagged && M2.byId.major?.tagged);
       sec[s.id] = ok;
     }
     const ch = {};
     for (const c of def.challenges) {
       let ok = false;
-      if (c.id === "oneShot") ok = M.primaryDone && st.shots === 1;
-      if (c.id === "head") ok = M.primaryDone && k.zone === "head";
-      if (c.id === "noAlarm") ok = M.primaryDone && M.alarm !== "alarm";
-      if (c.id === "accident") ok = M.primaryDone && !!k.accident;
-      if (c.id === "storm") ok = M.primaryDone && !k.explosion && M.storm > 0.3 && (k.dist || 0) > 850;
+      if (c.id === "oneShot") ok = M2.primaryDone && st.shots === 1;
+      if (c.id === "head") ok = M2.primaryDone && k.zone === "head";
+      if (c.id === "noAlarm") ok = M2.primaryDone && M2.alarm !== "alarm";
+      if (c.id === "accident") ok = M2.primaryDone && !!k.accident;
+      if (c.id === "storm") ok = M2.primaryDone && !k.explosion && M2.storm > 0.3 && (k.dist || 0) > 850;
       ch[c.id] = ok;
     }
-    if (M.failed) {
-      return { failed: M.failed, total: 0, lines, rank: "\u2014", sec, ch, kill: k };
+    if (M2.failed) {
+      return { failed: M2.failed, total: 0, lines, rank: "\u2014", sec, ch, kill: k };
     }
     add("Primary objective", 5e3, def.objectives.primary.text);
     if (k.dist) add("Distance bonus", Math.round(k.dist * 3), Math.round(k.dist) + " m");
     if (k.zone === "head") add("Headshot", 1500);
     if (st.shots <= 1) add("Efficiency", 1500, "1 shot");
     else add("Efficiency", Math.max(0, 1500 - (st.shots - 1) * 300), st.shots + " shots");
-    add("Time", Math.max(0, Math.round((def.duration - (k.t || def.duration)) * 4)), M.clockAt(k.t || 0));
-    if (M.alarm !== "alarm") add("Discretion", 2e3, "no alarm");
+    add("Time", Math.max(0, Math.round((def.duration - (k.t || def.duration)) * 4)), M2.clockAt(k.t || 0));
+    if (M2.alarm !== "alarm") add("Discretion", 2e3, "no alarm");
     if (k.accident) add("Style \xB7 accident", 2500);
     if (k.moving) add("Style \xB7 moving target", 1e3);
     if (k.bulletCam) add("Style \xB7 bullet cam", 500);
@@ -36432,7 +37604,12 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   // src/ui/screens.js
   function show(id) {
     hideAll();
-    $(id).classList.remove("hidden");
+    const el2 = $(id);
+    el2.classList.remove("hidden");
+    el2.classList.remove("enter");
+    void el2.offsetWidth;
+    el2.classList.add("enter");
+    if (G.audioReady !== false) ui("whoosh");
   }
   function hideAll() {
     for (const s of SCREENS) $(s).classList.add("hidden");
@@ -36700,13 +37877,36 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     c.font = "600 9px ui-monospace, monospace";
     c.fillText("200 m", 10, H - 18);
   }
+  function typewrite(el2, text, cps = 48, sound = true) {
+    clearInterval(el2._tw);
+    el2.textContent = "";
+    el2.classList.add("typing");
+    let i = 0;
+    const t0 = performance.now();
+    el2._tw = setInterval(() => {
+      const n = Math.min(text.length, Math.floor((performance.now() - t0) / 1e3 * cps));
+      if (n > i) {
+        el2.textContent = text.slice(0, n);
+        if (sound && n % 3 === 0 && text[n - 1] !== " ") ui("type");
+        i = n;
+      }
+      if (n >= text.length) {
+        clearInterval(el2._tw);
+        el2.classList.remove("typing");
+      }
+    }, 30);
+  }
   function renderBriefing(def) {
     const D = def.dossier;
     $("dzRef").textContent = D.ref;
     $("dzName").textContent = D.target;
     $("dzAlias").textContent = D.alias;
     $("dzDesc").textContent = D.desc;
-    $("dzClues").innerHTML = D.clues.map((c) => `<li>${esc(c)}</li>`).join("");
+    $("dzClues").innerHTML = D.clues.map((c, i) => `<li style="--i:${i}"><mark>${esc(c)}</mark></li>`).join("");
+    const dz = document.querySelector("#briefing .dossier");
+    dz.classList.remove("anim");
+    void dz.offsetWidth;
+    dz.classList.add("anim");
     $("dzNotes").textContent = D.notes;
     $("dzWarn").textContent = D.warn;
     $("bNum").textContent = "CONTRACT " + String(def.num).padStart(2, "0");
@@ -36714,7 +37914,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     $("bPlace").textContent = def.place;
     $("bTime").textContent = def.time;
     $("bObjs").innerHTML = `<h4>Primary</h4><div class="obj p">\u25C9 ${esc(def.objectives.primary.text)}</div><h4>Secondary</h4>` + def.objectives.secondary.map((s) => `<div class="obj">\u25CB ${esc(s.text)}</div>`).join("") + "<h4>Challenges</h4>" + def.challenges.map((s) => `<div class="obj ch">\u2605 ${esc(s.text)}</div>`).join("") + "<h4>Timeline</h4>" + def.timeline.filter((t) => t.name).map((t) => `<div class="obj tl">${clockOf(def, t.t)} \xB7 ${esc(t.name)}</div>`).join("");
-    $("bMoth").textContent = def.radio[0]?.text || "";
+    setTimeout(() => typewrite($("bMoth"), def.radio[0]?.text || ""), 900);
     $("bDiff").value = G.settings.difficulty;
   }
   function clockOf(def, t) {
@@ -36722,40 +37922,72 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60;
     return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
   }
-  function renderIntel(M, P) {
-    if (M.kind === "range") {
-      $("iObj").innerHTML = `<div>Stage ${Math.min(M.si + 1, M.stages.length)} / ${M.stages.length}</div><div>Score ${M.score}</div>`;
+  function renderIntel(M2, P) {
+    if (M2.kind === "range") {
+      $("iObj").innerHTML = `<div>Stage ${Math.min(M2.si + 1, M2.stages.length)} / ${M2.stages.length}</div><div>Score ${M2.score}</div>`;
       $("iCh").innerHTML = "";
       $("iTime").innerHTML = "";
       $("iDoss").innerHTML = "";
     } else {
-      const d = M.def;
-      $("iObj").innerHTML = `<div class="${M.primaryDone ? "ok" : ""}">${M.primaryDone ? "\u2713" : "\u25C9"} ${esc(d.objectives.primary.text)}</div>` + d.objectives.secondary.map((s) => `<div class="${M.secondary[s.id] ? "ok" : ""}">${M.secondary[s.id] ? "\u2713" : "\u25CB"} ${esc(s.text)}</div>`).join("");
+      const d = M2.def;
+      $("iObj").innerHTML = `<div class="${M2.primaryDone ? "ok" : ""}">${M2.primaryDone ? "\u2713" : "\u25C9"} ${esc(d.objectives.primary.text)}</div>` + d.objectives.secondary.map((s) => `<div class="${M2.secondary[s.id] ? "ok" : ""}">${M2.secondary[s.id] ? "\u2713" : "\u25CB"} ${esc(s.text)}</div>`).join("");
       $("iCh").innerHTML = d.challenges.map((s) => `<div>\u2605 ${esc(s.text)}</div>`).join("");
-      $("iTime").innerHTML = d.timeline.filter((t) => t.name).map((t) => `<div class="${M.mt >= t.t ? "past" : ""}">${clockOf(d, t.t)} \xB7 ${esc(t.name)}</div>`).join("");
+      $("iTime").innerHTML = d.timeline.filter((t) => t.name).map((t) => `<div class="${M2.mt >= t.t ? "past" : ""}">${clockOf(d, t.t)} \xB7 ${esc(t.name)}</div>`).join("");
       $("iDoss").innerHTML = `<b>${esc(d.dossier.target)}</b><ul>${d.dossier.clues.map((c) => `<li>${esc(c)}</li>`).join("")}</ul><p class="warn">${esc(d.dossier.warn)}</p>`;
     }
     const rows = P.dope.map((r) => `<tr><td>${r.range}</td><td>${r.dropMil.toFixed(1)}</td><td>${r.windMil.toFixed(2)}</td><td>${r.tof.toFixed(2)}</td></tr>`).join("");
     $("iDope").innerHTML = `<table><tr><th>m</th><th>drop mil</th><th>wind mil per m/s</th><th>TOF s</th></tr>${rows}</table><p>Zero 100 m \xB7 ROOK-7 \xB7 840 m/s. Hold = aim that many mils above / into the wind. Arrow keys or \u25B2\u25BC\u25C0\u25B6 dial the turrets instead.</p>`;
   }
-  function renderResults(M, res, rec) {
+  function renderResults(M2, res, rec) {
     const ok = !res.failed;
-    $("rStatus").textContent = M.kind === "range" ? "RANGE COMPLETE" : ok ? "CONTRACT COMPLETE" : "CONTRACT FAILED";
+    $("rStatus").textContent = M2.kind === "range" ? "RANGE COMPLETE" : ok ? "CONTRACT COMPLETE" : "CONTRACT FAILED";
     $("rStatus").className = "rstatus " + (ok ? "ok" : "fail");
-    $("rTitle").textContent = M.kind === "range" ? "SHOOTING RANGE" : "M" + M.def.num + " \xB7 " + M.def.title;
-    $("rLines").innerHTML = (res.failed ? `<div class="line fail"><span>${esc(res.failed)}</span></div>` : "") + res.lines.map((l) => `<div class="line"><span>${esc(l.label)}${l.detail ? ` <i>${esc(l.detail)}</i>` : ""}</span><b class="${l.pts < 0 ? "neg" : ""}">${l.pts > 0 ? "+" : ""}${l.pts}</b></div>`).join("");
-    $("rRank").textContent = res.rank;
-    $("rTotal").textContent = res.total.toLocaleString("en-US");
+    $("rTitle").textContent = M2.kind === "range" ? "SHOOTING RANGE" : "M" + M2.def.num + " \xB7 " + M2.def.title;
+    const FAILS = { civilian: "A civilian was killed \u2014 contract terminated", escaped: "The target escaped", time: "Out of time \u2014 the window closed" };
+    const lines = res.lines;
+    $("rLines").innerHTML = (res.failed ? `<div class="line fail" style="--i:0"><span>${esc(FAILS[res.failed] || res.failed)}</span></div>` : "") + lines.map((l, i) => `<div class="line" style="--i:${i + 1}"><span>${esc(l.label)}${l.detail ? ` <i>${esc(l.detail)}</i>` : ""}</span><b class="${l.pts < 0 ? "neg" : ""}" data-v="${l.pts}">0</b></div>`).join("");
+    const rr = $("rRank");
+    rr.textContent = res.rank || "\u2014";
+    rr.className = "stamp";
+    rr.parentElement.classList.remove("show");
+    const tot = $("rTotal");
+    tot.textContent = "0";
+    clearInterval(renderResults._t);
+    clearTimeout(renderResults._s);
+    const cells = [...$("rLines").querySelectorAll("b[data-v]")];
+    const t0 = performance.now(), per = 170, start = 350;
+    let lastTick = -1;
+    renderResults._t = setInterval(() => {
+      const e = performance.now() - t0;
+      cells.forEach((c, i) => {
+        const k = Math.max(0, Math.min(1, (e - start - i * per) / per));
+        const v3 = Math.round(+c.dataset.v * k);
+        c.textContent = (v3 > 0 ? "+" : "") + v3.toLocaleString("en-US");
+      });
+      const kt = Math.max(0, Math.min(1, (e - start - cells.length * per) / 600));
+      const ease = 1 - Math.pow(1 - kt, 3);
+      tot.textContent = Math.round(res.total * ease).toLocaleString("en-US");
+      const tick = Math.floor((e - start) / 90);
+      if (tick !== lastTick && kt < 1 && e > start) {
+        lastTick = tick;
+        ui("tick");
+      }
+      if (kt >= 1) {
+        clearInterval(renderResults._t);
+        rr.parentElement.classList.add("show");
+        ui(ok ? "stamp" : "fail");
+      }
+    }, 33);
     const s = getSave();
-    if (M.kind === "range") $("rBest").innerHTML = "<b>Range leaderboard</b>" + s.range.slice(0, 5).map((e, i) => `<div>${i + 1}. ${e.score} <i>${e.date}</i></div>`).join("");
+    if (M2.kind === "range") $("rBest").innerHTML = "<b>Range leaderboard</b>" + s.range.slice(0, 5).map((e, i) => `<div>${i + 1}. ${e.score} <i>${e.date}</i></div>`).join("");
     else $("rBest").innerHTML = `Best ${rec?.best || 0} ${rec?.rank ? "\xB7 " + rec.rank : ""}`;
-    $("rChk").innerHTML = M.kind === "range" ? "" : M.def.challenges.map((c) => `<div class="${res.ch?.[c.id] ? "ok" : ""}">${res.ch?.[c.id] ? "\u2605" : "\u2606"} ${esc(c.text)}</div>`).join("") + M.def.objectives.secondary.map((c) => `<div class="${res.sec?.[c.id] ? "ok" : ""}">${res.sec?.[c.id] ? "\u2713" : "\u25CB"} ${esc(c.text)}</div>`).join("");
-    const id = M.kind === "range" ? "RNG" : "M" + M.def.num;
+    $("rChk").innerHTML = M2.kind === "range" ? "" : M2.def.challenges.map((c) => `<div class="${res.ch?.[c.id] ? "ok" : ""}">${res.ch?.[c.id] ? "\u2605" : "\u2606"} ${esc(c.text)}</div>`).join("") + M2.def.objectives.secondary.map((c) => `<div class="${res.sec?.[c.id] ? "ok" : ""}">${res.sec?.[c.id] ? "\u2713" : "\u25CB"} ${esc(c.text)}</div>`).join("");
+    const id = M2.kind === "range" ? "RNG" : "M" + M2.def.num;
     const str = `${id}-${res.total}-${(res.rank || "").slice(0, 3)}`;
     let h = 0;
     for (const ch of str) h = h * 31 + ch.charCodeAt(0) >>> 0;
     $("rShare").textContent = "LONG SHOT \xB7 " + str + "-" + (h % 9973).toString(36).toUpperCase();
-    $("rNext").textContent = M.kind === "range" ? "AGAIN" : M.def.num < 2 && ok ? "NEXT CONTRACT" : "CONTRACTS";
+    $("rNext").textContent = M2.kind === "range" ? "AGAIN" : M2.def.num < 2 && ok ? "NEXT CONTRACT" : "CONTRACTS";
   }
   function renderOptions(onChange) {
     const f = $("optsForm");
@@ -36821,7 +38053,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         ["subtitle", "Subtitle size", "range", [0.8, 1.6, 0.05]],
         ["master", "Master volume", "range", [0, 1, 0.05]],
         ["music", "Music", "range", [0, 1, 0.05]],
-        ["sfx", "Effects", "range", [0, 1, 0.05]]
+        ["sfx", "Effects", "range", [0, 1, 0.05]],
+        ["amb", "Ambience", "range", [0, 1, 0.05]],
+        ["suppressor", "Suppressor fitted (quieter shot, shorter echo)", "bool"]
       ];
     }
   });
@@ -36872,7 +38106,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.lastShot = -99;
           this.reaction = null;
           this.inCar = null;
-          this.extraAnim = { seed: this.seed, briefcase: !!def.look?.briefcase, rifle: !!def.look?.rifle };
+          this.extraAnim = { seed: this.seed, briefcase: !!def.look?.briefcase, rifle: !!def.look?.rifle, female: def.look?.female ?? def.look?.hairStyle === "long" };
         }
         get alive_() {
           return this.alive;
@@ -36985,16 +38219,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               const d = Math.hypot(dx, dz);
               let sp = t.speed ?? (t.anim === "run" ? 4.2 : 1.35);
               if (this.state === "suspicious" && !this.reaction) sp = 0;
-              const step2 = sp * dt;
-              if (d <= step2 || d < 0.05) {
+              const step = sp * dt;
+              if (d <= step || d < 0.05) {
                 this.pos.x = tgt[0];
                 this.pos.z = tgt[1];
                 if (tgt[2] != null) this.fixedY = tgt[2];
                 this.pathI++;
                 if (this.pathI >= path.length) this.next();
               } else if (sp > 0) {
-                this.pos.x += dx / d * step2;
-                this.pos.z += dz / d * step2;
+                this.pos.x += dx / d * step;
+                this.pos.z += dz / d * step;
                 const want = Math.atan2(dx, dz);
                 let da = want - this.heading;
                 da = Math.atan2(Math.sin(da), Math.cos(da));
@@ -37032,6 +38266,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           if (!this.holder.visible) return;
           this.extraAnim.fall = this.alive ? 0 : this.fallT;
           this.extraAnim.fallDir = this.fallDir;
+          this.extraAnim.panic = this.state === "alarm" && this.role === "civilian" && this.anim === "run";
           animate(this.holder, this.anim, this.phase, this.speed, t, this.extraAnim);
         }
         setTagged(on2, colors) {
@@ -37434,6 +38669,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.trigger("alarm");
           emit("alarm", { reason });
           setIntensity(0.85);
+          stinger("alarm");
+          setTimeout(() => !this.ended && alarmSiren(true), 1500);
           for (const n of this.npcs) this.react(n);
           const ev = this.vehicles[this.def.escapeVehicle];
           if (ev && ev.passengers.some((p) => p.role === "target") && ev.state !== "driving") ev.drive(this.world.routes.exit || this.world.routes.outA);
@@ -37456,7 +38693,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             n.setReaction([{ type: "goto", path: [c], anim: "run" }, { type: "wait", until: 1e9, anim: "aim", face: [0, 0] }]);
           } else {
             const s = near(this.def.safe);
-            if (n.fixedY != null || Math.hypot(s[0] - n.pos.x, s[1] - n.pos.z) > 45) n.setReaction([{ type: "wait", until: 1e9, anim: "cower" }]);
+            if (n.fixedY != null || Math.hypot(s[0] - n.pos.x, s[1] - n.pos.z) > 45) n.setReaction([{ type: "wait", until: 1e9, anim: (n.seed || 0) % 2 > 1 ? "cover" : "cower" }]);
             else n.setReaction([{ type: "goto", path: [s], anim: "run" }, { type: "hide" }]);
           }
         }
@@ -37565,6 +38802,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             this.trigger("targetDown");
             emit("toast", "PRIMARY \xB7 " + this.def.objectives.primary.text + " \u2713");
             ui("success");
+            stinger("kill");
+            alarmSiren(false);
             this.exfilAt = this.mt + 45;
             setIntensity(0.3);
           }
@@ -37575,6 +38814,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.ended = true;
           this.endT = G.time;
           ui("fail");
+          stinger("fail");
+          alarmSiren(false);
           emit("missionEnd", { mission: this });
         }
         complete() {
@@ -37736,9 +38977,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       S.add(f);
     }
     const mz = -420, my = height3(0, mz);
-    P.push([tf(new BoxGeometry(40, 0.15, 0.3), 0, my + 0.1, mz), "#4a4a4a"]);
-    P.push([tf(new BoxGeometry(40, 1.2, 1.4), 0, my - 0.3, mz + 1.5), "#8a7a5a"]);
-    w.mover = { z: mz, y: my + 0.95, x: 0, r: 0.35, speed: 2.2, range: 17 };
+    P.push([tf(new BoxGeometry(34, 0.15, 0.3), -24, my + 0.1, mz), "#4a4a4a"]);
+    P.push([tf(new BoxGeometry(34, 1.2, 1.4), -24, my - 0.3, mz + 1.5), "#8a7a5a"]);
+    w.mover = { z: mz, y: my + 0.95, x: -24, cx: -24, vx: 0, r: 0.5, speed: 1.1, range: 12 };
     const rng = mulberry32(3);
     for (let i = 0; i < 40; i++) {
       const x = (rng() < 0.5 ? -1 : 1) * (60 + rng() * 300), z = -rng() * 1300;
@@ -37757,8 +38998,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       ring.position.set(0, 0, 0.02);
       m.add(ring);
     }
-    const mv = new Mesh(new CylinderGeometry(0.35, 0.35, 0.03, 24).rotateX(Math.PI / 2), mat("#f0b020", { rough: 0.5, metal: 0.3 }));
-    mv.position.set(0, w.mover.y, mz);
+    const mv = new Mesh(new CylinderGeometry(0.5, 0.5, 0.03, 24).rotateX(Math.PI / 2), mat("#f0b020", { rough: 0.5, metal: 0.3 }));
+    mv.position.set(-24, w.mover.y, mz);
     S.add(mv);
     w.mover.mesh = mv;
     const pine = pineGeometry(0, 1, { leaf: "#2a3b22" });
@@ -37930,7 +39171,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             emit("radio", { who: "moth", text: "Range is hot. Plates from 200 to 1100 metres, one mover at 420. Wind changes every stage \u2014 read the flags.", hint: "intel" });
           }
           const mv = this.world.mover;
-          mv.x = Math.sin(this.mt * mv.speed / mv.range) * mv.range;
+          const ph = this.mt * mv.speed / mv.range, sx = Math.max(-1, Math.min(1, Math.sin(ph) * 1.35));
+          const nx = (mv.cx || 0) + sx * mv.range;
+          mv.vx = dt > 0 ? (nx - mv.x) / dt : 0;
+          mv.x = nx;
           mv.mesh.position.x = mv.x;
           mv.col.c.set(mv.x, mv.y, mv.z);
           for (const p of [...this.world.plates, mv]) {
@@ -37967,8 +39211,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const ring = new Mesh(new TorusGeometry(4e-3, 6e-4, 4, 14), new MeshStandardMaterial({ color: "#7a4a20", metalness: 1, roughness: 0.3 }));
           ring.position.z = 4e-3;
           this.mesh.add(ring);
-          const tg = new ConeGeometry(6e-3, 1.4, 12, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.72);
-          this.trail = new Mesh(tg, new MeshBasicMaterial({ color: "#cfe6ff", transparent: true, opacity: 0.09, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
+          const tg = new ConeGeometry(45e-4, 0.7, 12, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.37);
+          this.trail = new Mesh(tg, new MeshBasicMaterial({ color: "#9fb8d8", transparent: true, opacity: 0.03, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
           this.mesh.add(this.trail);
           this.mesh.scale.setScalar(6);
           this.rings = [];
@@ -38069,7 +39313,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   });
 
   // src/core/player.js
-  var STEP2, Player;
+  var STEP2, BRASS_MAT, Player;
   var init_player = __esm({
     "src/core/player.js"() {
       init_three_module();
@@ -38084,6 +39328,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_audio();
       init_rng();
       STEP2 = 1 / 240;
+      BRASS_MAT = new MeshStandardMaterial({ color: "#c9a04a", metalness: 0.9, roughness: 0.3 });
       Player = class {
         constructor(world) {
           this.world = world;
@@ -38107,12 +39352,23 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.hint = null;
           this.hintT = 0;
           this.bc = new BulletCam();
-          this.fp = makeRifle();
+          this.fp = makeRifle({ suppressor: G.settings.suppressor });
+          this.brass = [];
+          this.boltBob = 0;
           G.fpCam.add(this.fp);
           G.fpScene.add(G.fpCam);
           this.kickT = 0;
         }
+        ejectBrass() {
+          const m = new Mesh(new CylinderGeometry(6e-3, 6e-3, 0.05, 8), BRASS_MAT);
+          m.position.copy(this.fp.position).add(new Vector3(0.03, 0.01, 0));
+          m.rotation.z = Math.PI / 2;
+          G.fpCam.add(m);
+          this.brass.push({ m, v: new Vector3(0.9 + Math.random() * 0.4, 0.9 + Math.random() * 0.3, 0.2), life: 0.9 });
+          brass && brass();
+        }
         dispose() {
+          for (const b of this.brass) b.m.removeFromParent();
           this.fp.removeFromParent();
           G.fpCam.removeFromParent();
         }
@@ -38121,6 +39377,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.view = v3;
           G.view = v3;
           ui("zoom");
+          if (v3 === "scope") this.optics.magS = Math.max(2.5, this.optics.magT * 0.6);
           emit("view", v3);
         }
         get mag() {
@@ -38197,14 +39454,47 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const swayMul = this.view === "eye" ? 0.3 : 1;
           cam.position.copy(nest.pos);
           cam.position.y += Math.sin(G.time * 1.3) * 4e-3;
-          cam.rotation.set(this.pitch + (o.swayY * swayMul + o.recoil), this.yaw + o.swayX * swayMul + o.recoilYaw, 0, "YXZ");
+          cam.rotation.set(this.pitch + (o.swayY * swayMul + o.recoil) + (this.boltBob || 0), this.yaw + o.swayX * swayMul + o.recoilYaw, 0, "YXZ");
           cam.fov = fov2;
           cam.near = this.view === "eye" ? 0.12 : 1;
           cam.updateProjectionMatrix();
           this.kickT = Math.max(0, this.kickT - dt * 3);
           this.fp.visible = this.view === "eye";
-          this.fp.position.set(0.2, -0.235 + o.swayY * 3, -0.58 + this.kickT * 0.08);
-          this.fp.rotation.set(0.05 + this.kickT * 0.15 + o.swayY * 4, 0.1 + o.swayX * 4, 0);
+          const U = this.fp.userData, bt = this.boltReady ? 1 : 1 - Math.max(0, this.boltT) / this.rifle.bolt;
+          const seg = (a, b) => {
+            const k2 = Math.min(1, Math.max(0, (bt - a) / (b - a)));
+            return k2 * k2 * (3 - 2 * k2);
+          };
+          const lift = seg(0.26, 0.36) - seg(0.72, 0.8), draw = seg(0.38, 0.5) - seg(0.6, 0.7), reach = seg(0.16, 0.28) - seg(0.82, 0.95);
+          if (U.bolt) {
+            U.bolt.rotation.z = lift * 1.15;
+            U.bolt.position.z = U.boltHome.z + draw * 0.095;
+            U.handR.position.set(U.handRHome.x + reach * 0.05, U.handRHome.y + reach * 0.105 + lift * 0.02, U.handRHome.z - reach * 0.03 + draw * 0.095);
+            U.handR.rotation.set(-reach * 0.6, 0, reach * 0.5 + lift * 0.6);
+            if (!this.boltReady && !this._ejected && bt > 0.48) {
+              this._ejected = true;
+              this.ejectBrass();
+            }
+            if (this.boltReady) this._ejected = false;
+          }
+          const kick = this.kickT * this.kickT;
+          this.fp.position.set(0.2 + kick * 0.01, -0.235 + o.swayY * 3 - lift * 0.01, -0.58 + kick * 0.11 + reach * 0.015);
+          this.fp.rotation.set(0.05 + kick * 0.22 + o.swayY * 4 + lift * 0.03, 0.1 + o.swayX * 4 - kick * 0.03, -kick * 0.06 - reach * 0.08);
+          this.boltBob = (lift * 35e-4 + draw * 2e-3) * (this.view === "scope" ? 1 : 0);
+          for (const b of this.brass) {
+            b.v.y -= 9.8 * dt;
+            b.m.position.addScaledVector(b.v, dt);
+            b.m.rotation.x += dt * 14;
+            b.m.rotation.z += dt * 9;
+            b.life -= dt;
+          }
+          this.brass = this.brass.filter((b) => {
+            if (b.life <= 0) {
+              b.m.removeFromParent();
+              b.m.geometry.dispose();
+            }
+            return b.life > 0;
+          });
           if (!this.boltReady) {
             this.boltT -= dt;
             if (this.boltT <= 0) {
@@ -38239,20 +39529,20 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           return T[T.length - 1];
         }
         computeHint() {
-          const M = G.mission;
-          if (!M) return;
+          const M2 = G.mission;
+          if (!M2) return;
           const r = rangeFind(G.camera.position, this.aimDir(), 2500);
           this.hint = r ? this.pointAt(r.dist) : null;
         }
         /** Where the bullet would be when it has travelled `dist` metres down the line of sight (ignores obstacles). */
         pointAt(dist) {
-          const M = G.mission;
+          const M2 = G.mission;
           const dir = this.aimDir();
           const proj = this.makeProjectile();
           const q = { p: proj.p.clone(), v: proj.v.clone(), k: proj.k, age: 0, right: proj.right };
           const o = G.camera.position, rel = new Vector3();
           while (q.age < 5) {
-            stepProjectile(q, STEP2, M.wind, M.mt + q.age, G.settings.difficulty === "ghost");
+            stepProjectile(q, STEP2, M2.wind, M2.mt + q.age, G.settings.difficulty === "ghost");
             if (rel.copy(q.p).sub(o).dot(dir) >= dist) break;
           }
           return q.p.clone();
@@ -38278,22 +39568,22 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         predict(proj) {
           const q = { p: proj.p.clone(), v: proj.v.clone(), k: proj.k, age: 0, right: proj.right };
-          const M = G.mission, t0 = M.mt, spin = G.settings.difficulty === "ghost";
+          const M2 = G.mission, t0 = M2.mt, spin = G.settings.difficulty === "ghost";
           const p0 = new Vector3();
           let traveled = 0;
           while (q.age < 6) {
             p0.copy(q.p);
-            stepProjectile(q, STEP2, M.wind, t0 + q.age, spin);
+            stepProjectile(q, STEP2, M2.wind, t0 + q.age, spin);
             traveled += p0.distanceTo(q.p);
-            const h = traceSegment(G.world, p0, q.p, M.npcs, traveled > 4);
+            const h = traceSegment(G.world, p0, q.p, M2.npcs, traveled > 4);
             if (h) return { point: h.point, tof: q.age, hit: h, dist: h.point.distanceTo(proj.start) };
             if (traveled > 4500) break;
           }
           return { point: null, tof: q.age, hit: null, dist: traveled };
         }
         fire() {
-          const M = G.mission;
-          if (!M || M.ended) return;
+          const M2 = G.mission;
+          if (!M2 || M2.ended) return;
           if (!this.boltReady) {
             ui("deny");
             return;
@@ -38303,7 +39593,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             emit("hint", { text: "Out of ammunition" });
             return;
           }
-          if (M.kind === "range" && M.stats.shots >= M.shotsMax) {
+          if (M2.kind === "range" && M2.stats.shots >= M2.shotsMax) {
             ui("deny");
             return;
           }
@@ -38320,15 +39610,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.optics.kick(0.032);
           this.kickT = 1;
           if (!G.settings.reduceFlash) emit("flash", 0.12);
-          spawnFX(this.world.snow ? "snow" : "dust", G.camera.position.clone().add(this.aimDir().multiplyScalar(2.2)).add(new Vector3(0, -0.4, 0)), { scale: 0.8 });
-          M.onShotFired(proj);
+          spawnFX(this.world.snow ? "snow" : "dust", G.camera.position.clone().add(this.aimDir().multiplyScalar(2.2)).add(new Vector3(0, -0.4, 0)), { scale: 0.35 });
+          M2.onShotFired(proj);
           const h = pred.hit;
           const qualifies = h && (h.kind === "npc" && h.npc.alive && h.npc.role !== "civilian" && (pred.dist > 300 || h.zone === "head" || h.npc.role === "target") || h.kind === "collider" && h.collider.object && (h.collider.object.chain || h.collider.object.explosive) || h.kind === "collider" && h.collider.plate && pred.dist > 850);
           proj.bulletCam = !!(qualifies && G.settings.bulletCam);
           this.projectiles.push(proj);
           if (proj.bulletCam) {
             this.bc.start(proj, pred);
-            M.stats.bulletCams++;
+            M2.stats.bulletCams++;
           }
         }
         aimedThing() {
@@ -38364,7 +39654,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         stepProjectiles(sdt) {
           if (!this.projectiles.length) return;
-          const M = G.mission, spin = G.settings.difficulty === "ghost";
+          const M2 = G.mission, spin = G.settings.difficulty === "ghost";
           const p0 = new Vector3();
           for (const pr of this.projectiles) {
             if (pr.done) continue;
@@ -38373,7 +39663,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               const dt = Math.min(STEP2, remaining);
               remaining -= dt;
               p0.copy(pr.p);
-              stepProjectile(pr, dt, M.wind, M.mt + pr.age, spin);
+              stepProjectile(pr, dt, M2.wind, M2.mt + pr.age, spin);
               pr.traveled += p0.distanceTo(pr.p);
               if (pr.aimed) {
                 const c = pr.aimed.holder ? pr.aimed.pos.clone().add(new Vector3(0, 1.25, 0)) : pr.aimed.pos;
@@ -38385,7 +39675,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                   }
                 }
               }
-              const h = traceSegment(G.world, p0, pr.p, M.npcs, pr.traveled > 4);
+              const h = traceSegment(G.world, p0, pr.p, M2.npcs, pr.traveled > 4);
               if (h) {
                 pr.done = true;
                 pr.hitPoint = h.point;
@@ -38393,17 +39683,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
               } else if (pr.age > 6 || pr.traveled > 4500) {
                 pr.done = true;
                 this.lastHit = { text: "MISS \xB7 no impact observed", t: G.time, ok: false };
-                if (M.kind === "range") M.miss();
+                if (M2.kind === "range") M2.miss();
               }
             }
           }
           this.projectiles = this.projectiles.filter((p) => !p.done);
         }
         resolveHit(pr, h) {
-          const M = G.mission;
+          const M2 = G.mission;
           const dist = h.point.distanceTo(pr.start);
           const dirFlat = new Vector3(pr.v.x, 0, pr.v.z).normalize();
-          const res = M.onBulletHit(h, { dist, dirFlat, bulletCam: pr.bulletCam, proj: pr });
+          const res = M2.onBulletHit(h, { dist, dirFlat, bulletCam: pr.bulletCam, proj: pr });
           const kind = res.kind;
           const fxPos = h.point.clone();
           if (kind === "body") {
@@ -38433,6 +39723,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           }
           G.save.records.shots++;
           if (res.killed) G.save.records.hits++;
+          emit("hitConfirm", { killed: res.killed, zone: h.zone, kind, dist: R, tof: pr.age, miss: !res.killed && !res.text && kind !== "plate", plate: kind === "plate" || !!res.ok });
         }
       };
     }
@@ -38533,31 +39824,31 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         G.debug[i.dataset.d] = parseFloat(i.value);
       }));
       el.querySelector("#dbgScrub").addEventListener("change", (e) => {
-        const M = G.mission;
-        if (!M) return;
+        const M2 = G.mission;
+        if (!M2) return;
         const t = parseFloat(e.target.value);
-        if (t > M.mt) G.fastForwardTo = t;
+        if (t > M2.mt) G.fastForwardTo = t;
       });
       el.querySelector("#dbgSkip").addEventListener("click", () => {
-        const M = G.mission;
-        if (M && M.target) {
-          M.target.killedBy = { zone: "torso", dist: 700, t: M.mt };
-          M.target.kill(1);
-          M.complete();
+        const M2 = G.mission;
+        if (M2 && M2.target) {
+          M2.target.killedBy = { zone: "torso", dist: 700, t: M2.mt };
+          M2.target.kill(1);
+          M2.complete();
         }
       });
     }
   }
   function updateDebug() {
     if (!G.debug.on || !el) return;
-    const M = G.mission, s = G.stats;
+    const M2 = G.mission, s = G.stats;
     let w = "";
-    if (M) {
-      const v3 = M.wind.sample(G.camera.position, M.mt);
+    if (M2) {
+      const v3 = M2.wind.sample(G.camera.position, M2.mt);
       w = `wind ${v3.x.toFixed(2)},${v3.z.toFixed(2)} m/s (${Math.hypot(v3.x, v3.z).toFixed(2)})`;
     }
     const pr = G.debug.predicted ? "pred " + G.debug.predicted.distanceTo(G.camera.position).toFixed(0) + " m" : "";
-    el.querySelector("#dbgTxt").innerHTML = `fps ${s.fps.toFixed(0)} \xB7 ${s.frameMs.toFixed(1)} ms<br>calls ${s.calls} \xB7 tris ${(s.tris / 1e3).toFixed(0)}k \xB7 tier ${G.quality.name} pr ${G.dpr.toFixed(2)}<br>${w}<br>t ${M ? M.mt.toFixed(1) : "-"} \xB7 alarm ${M ? M.alarm : "-"} \xB7 ${pr}`;
+    el.querySelector("#dbgTxt").innerHTML = `fps ${s.fps.toFixed(0)} \xB7 ${s.frameMs.toFixed(1)} ms<br>calls ${s.calls} \xB7 tris ${(s.tris / 1e3).toFixed(0)}k \xB7 tier ${G.quality.name} pr ${G.dpr.toFixed(2)}<br>${w}<br>t ${M2 ? M2.mt.toFixed(1) : "-"} \xB7 alarm ${M2 ? M2.alarm : "-"} \xB7 ${pr}`;
   }
   var el, built;
   var init_debug = __esm({
@@ -38592,6 +39883,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_common();
       init_debug();
       init_scope();
+      init_bloom();
       var $2 = (id) => document.getElementById(id);
       var SIM_DT = 1 / 60;
       var titleWorld = null;
@@ -38704,6 +39996,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         show("title");
         setAmbience("mountain");
         setIntensity(0.1);
+        setMusicTheme("menu");
+        alarmSiren(false);
       }
       function wireUI() {
         document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => {
@@ -38753,15 +40047,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         $2("iClose").addEventListener("click", () => toggleIntel(false));
         $2("exfilBtn").addEventListener("click", () => G.mission?.complete());
         $2("rRetry").addEventListener("click", () => {
-          const M = lastMission;
-          if (M.kind === "range") startRange();
-          else openBriefing(M.def.id, true);
+          const M2 = lastMission;
+          if (M2.kind === "range") startRange();
+          else openBriefing(M2.def.id, true);
         });
         $2("rMenu").addEventListener("click", () => goTitle());
         $2("rNext").addEventListener("click", () => {
-          const M = lastMission;
-          if (M.kind === "range") startRange();
-          else if (M.def.num < 2 && !M.failed) openBriefing(MISSIONS[M.def.num].id);
+          const M2 = lastMission;
+          if (M2.kind === "range") startRange();
+          else if (M2.def.num < 2 && !M2.failed) openBriefing(MISSIONS[M2.def.num].id);
           else {
             renderCards(openBriefing);
             show("contracts");
@@ -38769,11 +40063,31 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         });
         on("radio", (r) => {
           radio();
-          $2("hRadioTxt").textContent = r.text;
+          typewrite($2("hRadioTxt"), r.text, 60, false);
           $2("hRadioWho").textContent = (r.who || "moth").toUpperCase();
           $2("hRadio").classList.remove("hidden");
           radioT = 6 + r.text.length * 0.035;
           if (r.hint) showHint(r.hint);
+        });
+        on("hitConfirm", (e) => {
+          const mk = $2("hMark"), kl = $2("hKill");
+          const retrig = (el2) => {
+            el2.classList.remove("on");
+            void el2.offsetWidth;
+            el2.classList.add("on");
+          };
+          if (e.killed || e.plate) {
+            mk.className = "hmark" + (e.killed ? " kill" : "") + (e.zone === "head" ? " head" : "");
+            retrig(mk);
+            ui(e.killed ? "confirm" : "ping");
+          }
+          if (e.killed) {
+            const n = e.killed, civ = n.role === "civilian";
+            kl.classList.toggle("bad", civ);
+            kl.querySelector("b").textContent = civ ? "CIVILIAN DOWN" : n.role === "target" ? "TARGET ELIMINATED" : e.zone === "head" ? "HEADSHOT" : "CONFIRMED";
+            kl.querySelector("span").textContent = (civ ? "CONTRACT VOID \xB7 " : n.role === "target" ? e.zone === "head" ? "HEADSHOT \xB7 " : "" : n.name.toUpperCase() + " \xB7 ") + e.dist + " m \xB7 " + e.tof.toFixed(2) + " s";
+            retrig(kl);
+          }
         });
         on("toast", (t) => {
           $2("hToast").textContent = t;
@@ -38829,6 +40143,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       async function openBriefing(id, direct = false) {
         const def = missionById(id);
         if (!def) return;
+        initAudio();
         pendingMissionId = id;
         renderBriefing(def);
         const npcDef = def.npcs({}).find((n) => n.id === def.dossier.photoNpc);
@@ -38856,14 +40171,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         hideAll();
         freeTitle();
         if (G.mission && G.mission !== G.prebuilt) teardownMission();
-        let M = G.prebuilt;
-        if (!M || M.def !== def) M = new Mission(def, G.quality);
-        else M = new Mission(def, G.quality);
-        if (G.prebuilt && G.prebuilt !== M) {
+        let M2 = G.prebuilt;
+        if (!M2 || M2.def !== def) M2 = new Mission(def, G.quality);
+        else M2 = new Mission(def, G.quality);
+        if (G.prebuilt && G.prebuilt !== M2) {
           disposeScene(G.prebuilt.world.scene);
           G.prebuilt = null;
         }
-        beginPlay(M);
+        beginPlay(M2);
       }
       function startRange() {
         initAudio();
@@ -38872,13 +40187,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (G.mission) teardownMission();
         beginPlay(new RangeMission(G.quality));
       }
-      function beginPlay(M) {
-        G.mission = M;
-        G.world = M.world;
-        lastMission = M;
-        player = new Player(M.world);
+      function beginPlay(M2) {
+        G.mission = M2;
+        G.world = M2.world;
+        lastMission = M2;
+        player = new Player(M2.world);
         G.player = player;
-        setupWeather(M.world);
+        setupWeather(M2.world);
         G.mode = "play";
         paused = false;
         intelOpen = false;
@@ -38888,34 +40203,39 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         $2("ghud").classList.remove("hidden");
         $2("hExfil").classList.add("hidden");
         $2("hRadio").classList.add("hidden");
-        $2("hMission").textContent = (M.kind === "range" ? "" : "M" + M.def.num + " \xB7 ") + M.def.title;
-        buildTimelineDom(M);
-        setAmbience(M.kind === "range" ? "range" : M.def.ambience);
-        setIntensity(M.def.music || 0.15);
+        $2("hMission").textContent = (M2.kind === "range" ? "" : "M" + M2.def.num + " \xB7 ") + M2.def.title;
+        buildTimelineDom(M2);
+        setAmbience(M2.kind === "range" ? "range" : M2.def.ambience);
+        setIntensity(M2.def.music || 0.15);
+        setMusicTheme(M2.kind === "range" ? "range" : M2.def.id);
+        alarmSiren(false);
         clearPressed();
         G.suppressPause = true;
         if (!IN.touch) $2("gl").requestPointerLock?.();
         if (G.settings.gyro && IN.touch) enableGyro();
+        if (G.settings.intro !== false) startIntro(M2);
       }
-      function buildTimelineDom(M) {
+      function buildTimelineDom(M2) {
         const el2 = $2("hTimeline");
         el2.innerHTML = "";
-        if (M.kind === "range") return;
-        const dur = M.def.duration;
-        for (const e of M.def.timeline.filter((e2) => e2.clock)) el2.insertAdjacentHTML("beforeend", `<i style="left:${e.t / dur * 100}%"></i><span style="left:${e.t / dur * 100}%">${M.clockAt(e.t)}</span>`);
+        if (M2.kind === "range") return;
+        const dur = M2.def.duration;
+        for (const e of M2.def.timeline.filter((e2) => e2.clock)) el2.insertAdjacentHTML("beforeend", `<i style="left:${e.t / dur * 100}%"></i><span style="left:${e.t / dur * 100}%">${M2.clockAt(e.t)}</span>`);
         el2.insertAdjacentHTML("beforeend", '<i class="now" id="tlNow"></i>');
       }
       function teardownMission() {
-        const M = G.mission;
-        if (!M) return;
-        M.dispose && M.dispose();
+        const M2 = G.mission;
+        if (!M2) return;
+        M2.dispose && M2.dispose();
+        alarmSiren(false);
+        endIntro();
         if (player) {
           player.dispose();
           player = null;
           G.player = null;
         }
         clearFX();
-        disposeScene(M.world.scene);
+        disposeScene(M2.world.scene);
         clearMatCache();
         G.mission = null;
       }
@@ -38947,17 +40267,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         $2("intel").classList.toggle("hidden", !intelOpen);
         if (intelOpen && G.mission && player) renderIntel(G.mission, player);
       }
-      function showResults(M) {
-        if (G.mission !== M) return;
-        const res = M.results();
+      function showResults(M2) {
+        if (G.mission !== M2) return;
+        const res = M2.results();
         let rec = null;
-        if (M.kind === "range") {
+        if (M2.kind === "range") {
           const s = getSave();
           s.range.push({ score: res.total, date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) });
           s.range.sort((a, b) => b.score - a.score);
           s.range = s.range.slice(0, 10);
         } else {
-          rec = missionRecord(M.def.id);
+          rec = missionRecord(M2.def.id);
           rec.plays++;
           if (!res.failed) {
             if (res.total > rec.best) {
@@ -38976,9 +40296,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         G.mode = "results";
         $2("ghud").classList.add("hidden");
         toggleIntel(false);
-        renderResults(M, res, rec);
+        renderResults(M2, res, rec);
         show("results");
         setIntensity(0.1);
+        alarmSiren(false);
+        setMusicTheme("menu");
         G.lastResults = res;
       }
       function loop(t) {
@@ -39009,13 +40331,72 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         adaptQuality(dt, () => resize());
         updateDebug();
       }
+      var _ip = new Vector3();
+      var _il = new Vector3();
+      function startIntro(M2) {
+        const w = M2.world, N = w.nest.pos.clone();
+        const T = M2.kind === "range" ? new Vector3(0, 0, -600) : M2.def.id === "villa" ? new Vector3(30, 153, -776) : new Vector3(-60, 8, -930);
+        if (M2.kind === "range") T.y = w.height(T.x, T.z) + 2;
+        const dir = T.clone().sub(N);
+        const flat = new Vector3(dir.x, 0, dir.z).normalize();
+        const side = new Vector3(-flat.z, 0, flat.x);
+        const pts = [
+          T.clone().addScaledVector(side, -110).addScaledVector(flat, 70).add(new Vector3(0, 45, 0)),
+          T.clone().addScaledVector(side, 60).addScaledVector(flat, -90).add(new Vector3(0, 28, 0)),
+          N.clone().lerp(T, 0.5).addScaledVector(side, 90).add(new Vector3(0, 70, 0)),
+          N.clone().addScaledVector(flat, -9).addScaledVector(side, 3).add(new Vector3(0, 3.2, 0)),
+          N.clone().add(new Vector3(0, 0.05, 0))
+        ];
+        const looks = [T.clone(), T.clone(), T.clone().lerp(N, 0.35), T.clone(), T.clone()];
+        G.intro = { t: 0, dur: 9, path: new CatmullRomCurve3(pts, false, "centripetal"), looks, T };
+        $2("ghud").classList.add("intro");
+        const card = $2("introCard");
+        card.querySelector("b").textContent = M2.kind === "range" ? "SHOOTING RANGE" : "M" + M2.def.num + " \xB7 " + M2.def.title;
+        card.querySelector("span").textContent = M2.kind === "range" ? "Calibration \xB7 200\u20131100 m" : M2.def.place + " \u2014 " + M2.def.time;
+        card.classList.remove("hidden");
+        card.classList.remove("out");
+        void card.offsetWidth;
+        card.classList.add("on");
+        ui("whoosh");
+        setTimeout(() => window.addEventListener("pointerdown", () => endIntro(), { once: true }), 400);
+      }
+      function endIntro() {
+        if (!G.intro) return;
+        G.intro = null;
+        $2("ghud").classList.remove("intro");
+        const card = $2("introCard");
+        card.classList.add("out");
+        setTimeout(() => card.classList.add("hidden"), 600);
+        clearPressed();
+      }
+      G.endIntro = endIntro;
+      function introFrame(dt, M2) {
+        const I = G.intro;
+        I.t += dt;
+        if (consume("fire") || consume("skip") || consume("confirm") || consume("scope") || consume("pause") || I.t >= I.dur) {
+          endIntro();
+          return false;
+        }
+        const k = I.t / I.dur, e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        I.path.getPointAt(Math.min(0.999, e), _ip);
+        const seg = Math.min(I.looks.length - 1.001, e * (I.looks.length - 1)), i0 = Math.floor(seg), f = seg - i0;
+        _il.copy(I.looks[i0]).lerp(I.looks[i0 + 1], f * f * (3 - 2 * f));
+        const c = G.camera;
+        c.position.copy(_ip);
+        c.lookAt(_il);
+        c.fov = 38 - 10 * Math.sin(Math.PI * Math.min(1, k * 1.2));
+        c.near = 0.5;
+        c.updateProjectionMatrix();
+        G.view = "eye";
+        return true;
+      }
       function titleFrame(dt) {
         const w = G.world;
         if (!w || !w.titleCam) return;
         const c = G.camera, tc = w.titleCam;
-        const s = Math.sin(G.time * 0.05) * 0.6;
-        c.position.copy(tc.pos).add(new Vector3(s, Math.sin(G.time * 0.07) * 0.1, 0));
-        c.fov = 40;
+        const s = Math.sin(G.time * 0.05) * 0.9, push = Math.sin(G.time * 0.031) * 0.5;
+        c.position.copy(tc.pos).add(new Vector3(s, Math.sin(G.time * 0.07) * 0.12 + 0.05 * Math.sin(G.time * 0.6), push));
+        c.fov = 40 + Math.sin(G.time * 0.043) * 1.5;
         c.near = 0.1;
         c.updateProjectionMatrix();
         c.lookAt(tc.look.clone().add(new Vector3(G.W < G.H ? 0 : -60, -10, 0)));
@@ -39028,28 +40409,29 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         G.view = "eye";
       }
       function playFrame(dt) {
-        const M = G.mission, P = player;
-        if (!M || !P) return;
+        const M2 = G.mission, P = player;
+        if (!M2 || !P) return;
         if (consume("pause")) {
           if (intelOpen) toggleIntel(false);
           else setPaused(!paused);
         }
         if (consume("intel")) toggleIntel();
-        if (consume("confirm") && M.primaryDone && !M.ended) M.complete();
-        if (paused || M.ended && !P.bc.active) {
-          if (M.ended) {
+        if (consume("confirm") && M2.primaryDone && !M2.ended) M2.complete();
+        if (paused || M2.ended && !P.bc.active) {
+          if (M2.ended) {
             P.bc.update(dt, G.camera);
           }
           return;
         }
-        const ff = (IN.keys.has("Space") || IN.ffwd) && !P.bc.active && M.kind !== "range";
+        const intro = G.intro ? introFrame(dt, M2) : false;
+        const ff = !intro && (IN.keys.has("Space") || IN.ffwd) && !P.bc.active && M2.kind !== "range";
         let speed = ff ? 4 : 1;
         if (G.fastForwardTo != null) {
           speed = 30;
-          if (M.mt >= G.fastForwardTo) G.fastForwardTo = null;
+          if (M2.mt >= G.fastForwardTo) G.fastForwardTo = null;
         }
         $2("hFF").classList.toggle("hidden", speed === 1);
-        P.update(dt);
+        if (!intro) P.update(dt);
         acc += dt;
         let steps = 0;
         while (acc >= SIM_DT && steps < 8) {
@@ -39059,7 +40441,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           G.simFrame = (G.simFrame || 0) + 1;
           for (let k = 0; k < speed && k < 30; k += 1) {
           }
-          M.update(sdt);
+          M2.update(sdt);
           P.stepProjectiles(sdt);
           G.simTime += sdt;
         }
@@ -39067,28 +40449,28 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const simDt = dt * G.timeScale * speed;
         G.timeScaleReal = G.timeScale;
         HAZE.uTime.value += simDt;
-        const wind = M.wind.sample(G.camera.position, M.mt);
+        const wind = M2.wind.sample(G.camera.position, M2.mt);
         HAZE.uWind.value.copy(wind);
-        for (const u of M.world.updaters) u(simDt, wind);
+        for (const u of M2.world.updaters) u(simDt, wind);
         updateFX(simDt, wind);
         const optics = G.view !== "eye";
-        for (const n of M.npcs) if (n.holder.visible && (optics || (frameN + n.seed * 10 | 0) % 2 === 0)) n.pose(G.simTime);
+        for (const n of M2.npcs) if (n.holder.visible && (optics || (frameN + n.seed * 10 | 0) % 2 === 0)) n.pose(G.simTime);
         if (weather) {
-          weather.intensity = M.world.snow ? 1 : (M.storm || 0) * 1.6;
+          weather.intensity = M2.world.snow ? 1 : (M2.storm || 0) * 1.6;
           weather.update(simDt, G.camera, wind, G.view === "scope" || G.view === "bino" ? 1 : 0);
         }
-        if (M.storm > 1e-3) {
-          const st = M.storm;
-          HAZE.uHazeDensity.value = M.world.preset.hazeDensity * (1 + st * 14);
-          HAZE.uHazeColor.value.set(M.world.preset.haze).lerp(new Color("#b48a5c"), st);
-          M.world.sky.userData.u.uStorm.value = st * 0.85;
-          M.world.sun.intensity = M.world.preset.sunI * (1 - st * 0.55);
+        if (M2.storm > 1e-3) {
+          const st = M2.storm;
+          HAZE.uHazeDensity.value = M2.world.preset.hazeDensity * (1 + st * 14);
+          HAZE.uHazeColor.value.set(M2.world.preset.haze).lerp(new Color("#b48a5c"), st);
+          M2.world.sky.userData.u.uStorm.value = st * 0.85;
+          M2.world.sun.intensity = M2.world.preset.sunI * (1 - st * 0.55);
         }
-        ambienceTick(dt, Math.hypot(wind.x, wind.z), M.storm || 0);
-        if (M.alarm !== "alarm") setIntensity((M.def.music || 0.15) + (G.view === "scope" ? 0.2 : 0) + (P.optics.holding ? 0.25 : 0));
-        updateDomHud(dt, M, P);
+        ambienceTick(dt, Math.hypot(wind.x, wind.z), M2.storm || 0);
+        if (M2.alarm !== "alarm") setIntensity((M2.def.music || 0.15) + (G.view === "scope" ? 0.2 : 0) + (P.optics.holding ? 0.25 : 0));
+        updateDomHud(dt, M2, P);
       }
-      function updateDomHud(dt, M, P) {
+      function updateDomHud(dt, M2, P) {
         hudDomT -= dt;
         if (radioT > 0) {
           radioT -= dt;
@@ -39104,27 +40486,35 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         }
         if (hudDomT > 0) return;
         hudDomT = 0.1;
-        $2("hClock").textContent = M.clockString();
+        $2("hClock").textContent = M2.clockString();
         const a = $2("hAlarm");
-        a.className = "alarm " + M.alarm;
-        a.textContent = M.kind === "range" ? `STAGE ${Math.min(M.si + 1, M.stages.length)}/${M.stages.length} \xB7 ${M.score} PTS` : M.alarm.toUpperCase();
+        a.className = "alarm " + M2.alarm;
+        a.textContent = M2.kind === "range" ? `STAGE ${Math.min(M2.si + 1, M2.stages.length)}/${M2.stages.length} \xB7 ${M2.score} PTS` : M2.alarm.toUpperCase();
         const now2 = $2("tlNow");
-        if (now2) now2.style.left = Math.min(100, M.mt / M.def.duration * 100) + "%";
-        if (M.kind === "range") $2("hObj").innerHTML = `Target: <b>${M.stage === "mover" ? "MOVING 420 m" : (M.stage?.d || "-") + " m plate"}</b> \xB7 shots ${M.stats.shots}/${M.shotsMax}`;
-        else $2("hObj").innerHTML = `<div class="${M.primaryDone ? "ok" : ""}">${M.primaryDone ? "\u2713" : "\u25C9"} ${M.def.objectives.primary.text}</div>` + M.def.objectives.secondary.map((s) => `<div class="${M.secondary[s.id] ? "ok" : ""}">${M.secondary[s.id] ? "\u2713" : "\u25CB"} ${s.text}</div>`).join("");
-        $2("hExfil").classList.toggle("hidden", !(M.primaryDone && !M.ended && M.kind !== "range"));
-        $2("hKeys").classList.toggle("hidden", M.mt > 40 && M.kind !== "range");
-        if (intelOpen) renderIntel(M, P);
+        if (now2) now2.style.left = Math.min(100, M2.mt / M2.def.duration * 100) + "%";
+        if (M2.kind === "range") $2("hObj").innerHTML = `Target: <b>${M2.stage === "mover" ? "MOVING 420 m" : (M2.stage?.d || "-") + " m plate"}</b> \xB7 shots ${M2.stats.shots}/${M2.shotsMax}`;
+        else $2("hObj").innerHTML = `<div class="${M2.primaryDone ? "ok" : ""}">${M2.primaryDone ? "\u2713" : "\u25C9"} ${M2.def.objectives.primary.text}</div>` + M2.def.objectives.secondary.map((s) => `<div class="${M2.secondary[s.id] ? "ok" : ""}">${M2.secondary[s.id] ? "\u2713" : "\u25CB"} ${s.text}</div>`).join("");
+        $2("hExfil").classList.toggle("hidden", !(M2.primaryDone && !M2.ended && M2.kind !== "range"));
+        $2("hKeys").classList.toggle("hidden", M2.mt > 40 && M2.kind !== "range");
+        if (intelOpen) renderIntel(M2, P);
       }
       var _sun = new Vector3();
       function render(dt) {
         const r = G.renderer, w = G.world;
         if (!w) return;
+        r.info.autoReset = false;
+        r.info.reset();
         const L = G.lens.u, cam = G.camera;
         if (shake > 0) {
           shake = Math.max(0, shake - dt * 2.5);
           cam.rotation.x += (Math.random() - 0.5) * 4e-3 * shake;
           cam.rotation.y += (Math.random() - 0.5) * 4e-3 * shake;
+        }
+        if (G.debugCam) {
+          const d = G.debugCam;
+          cam.position.set(...d.pos);
+          cam.lookAt(...d.look);
+          cam.fov = d.fov || 30;
         }
         cam.far = G.quality.far;
         cam.updateProjectionMatrix();
@@ -39132,12 +40522,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         r.setClearColor(0);
         r.clear();
         r.render(w.scene, cam);
-        if (G.mode === "play" && G.view === "eye" && player) {
+        if (G.mode === "play" && G.view === "eye" && player && !G.debugCam && !G.intro) {
           r.clearDepth();
           G.fpCam.quaternion.identity();
           r.render(G.fpScene, G.fpCam);
         }
         r.setRenderTarget(null);
+        L.tBloom.value = renderBloom(r, G.rt.texture, w.bloomTh ?? 1.6);
         G.stats.calls = r.info.render.calls;
         G.stats.tris = r.info.render.triangles;
         const view = G.mode === "play" ? G.view : "eye";
@@ -39162,8 +40553,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         _sun.copy(w.sunDir).multiplyScalar(5e3).add(cam.position).project(cam);
         const facing = _sun.z < 1 && Math.abs(_sun.x) < 1.2 && Math.abs(_sun.y) < 1.2;
         L.uSun.value.set((_sun.x + 1) / 2, (_sun.y + 1) / 2, facing ? (view === "scope" ? 0.55 : view === "eye" ? 0.25 : 0.35) * (1 - (G.mission?.storm || 0)) * (G.settings.reduceFlash ? 0.4 : 1) : 0);
+        L.uBloom.value = G.quality.bloom ? w.bloom ?? 0.35 : 0;
+        L.uSunPos.value.set((_sun.x + 1) / 2, (_sun.y + 1) / 2);
+        const onScreen = _sun.z < 1 && Math.abs(_sun.x) < 1.6 && Math.abs(_sun.y) < 1.6;
+        L.uRays.value = G.quality.bloom && onScreen && view !== "bulletcam" ? (w.rays ?? 0.5) * (1 - (G.mission?.storm || 0)) * (1 - Math.min(1, Math.max(0, Math.max(Math.abs(_sun.x), Math.abs(_sun.y)) - 0.6))) : 0;
+        L.uCold.value = w.cold || 0;
+        L.uFocus.value = view === "scope" && player ? player.optics.focusBlur || 0 : 0;
         r.render(G.lens.scene, G.lens.cam);
-        drawHud(player, G.mission);
+        drawHud(G.intro ? null : player, G.mission);
       }
       boot().catch((e) => {
         console.error(e);
