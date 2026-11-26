@@ -334,3 +334,8 @@ body.portrait #title .exps { max-width: 92vw; } body.portrait #title .exp { widt
 
 /* pass 13h: popups step below the zone title card while it is up */
 body.zoneOn .popups { top: 47%; transition: top .2s; }
+/* pass 13h: expedition medals */
+.md { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; text-decoration: none; }
+.md em { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #1a1008; background: transparent; display: inline-block; box-sizing: border-box; }
+.medalRow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0 2px; font: 14px/1.3 system-ui, sans-serif; }
+.medalRow .md em { width: 16px; height: 16px; }
