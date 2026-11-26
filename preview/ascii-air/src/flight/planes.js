@@ -77,12 +77,9 @@ function buildTrainer(s) {
   // Stagger: UPPER wing slightly AHEAD of the lower wing (classic biplane).
   // Flat, thin, straight panels — no dihedral curl, no bulbous tips.
   const zU = 0.62, zL = -0.08;
-  for (const side of [1, -1]) {
-    add(g, new THREE.BoxGeometry(6.2, 0.08, 1.95), red, MAT.PLANE, side * 3.15, 1.78, zU);
-    add(g, new THREE.BoxGeometry(0.22, 0.08, 1.95), red, MAT.PLANE, side * 6.26, 1.78, zU);
-    add(g, new THREE.BoxGeometry(5.6, 0.07, 1.72), red, MAT.PLANE, side * 2.85, 0.02, zL);
-    add(g, new THREE.BoxGeometry(0.20, 0.07, 1.72), red, MAT.PLANE, side * 5.66, 0.02, zL);
-  }
+  // Single full-span panels so the wings read as straight, thin and flat.
+  add(g, new THREE.BoxGeometry(12.6, 0.09, 1.95), red, MAT.PLANE, 0, 1.78, zU);
+  add(g, new THREE.BoxGeometry(11.4, 0.08, 1.72), red, MAT.PLANE, 0, 0.02, zL);
   envelopeDecal(g, cream, dark, 2.7, 1.90, zU);
   envelopeDecal(g, cream, dark, -2.7, 1.90, zU);
 
@@ -283,7 +280,7 @@ export function createPlaneMesh(id, colors) {
   // Builders place the nose at +Z; flight/camera forward is -Z, so flip the visual.
   visual.name = "plane-visual";
   visual.rotation.y = Math.PI;
-  visual.scale.setScalar(1.05);
+  visual.scale.setScalar(0.98);
   const g = new THREE.Group();
   g.name = "plane-" + id;
   g.add(visual);

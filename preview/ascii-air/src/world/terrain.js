@@ -103,7 +103,14 @@ export function computeHeight(x, z) {
   // Rolling foothills between the south coast and the cone (keeps runway flat)
   if (z > -850 && z < 160 && Math.abs(x) < 900) {
     const fw = smoothstep(-850, -620, z) * smoothstep(160, 10, z) * smoothstep(900, 520, Math.abs(x));
-    h += fw * (14 + 24 * fbm(x * 0.0020, z * 0.0020, 4, 7) + 8 * ridge(x * 0.006, z * 0.006, 2, 3));
+    h += fw * (18 + 32 * fbm(x * 0.0018, z * 0.0018, 4, 7) + 12 * ridge(x * 0.0055, z * 0.0055, 2, 3));
+  }
+
+  // South-face swells visible in the hero (just north of the runway, not on it)
+  if (z > -1040 && z < 280 && Math.abs(x) < 820) {
+    const runway = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 58, Math.abs(x) / 400)), 1.35);
+    const w = smoothstep(-1040, -900, z) * smoothstep(280, 40, z) * smoothstep(820, 480, Math.abs(x)) * runway;
+    h += w * (16 + 30 * fbm(x * 0.0017, z * 0.0016, 4, 11) + 11 * ridge((x + 90) * 0.0044, z * 0.0044, 2, 5));
   }
 
   // West mill hills
@@ -153,12 +160,12 @@ export function computeHeight(x, z) {
     h = Math.max(h, cliffH * ring * notAirport * (1 - cut * 0.7));
   }
 
-  // Airport flatten (runway east-west at z=-1100, y=4)
+  // Airport flatten — tight runway ribbon only, so the mid-island can roll.
   const ap = Math.max(
     0,
-    1 - Math.max(Math.abs(z + 1100) / 140, Math.abs(x) / 520)
+    1 - Math.max(Math.abs(z + 1100) / 62, Math.abs(x) / 420)
   );
-  const ap2 = Math.pow(saturate(ap), 1.2);
+  const ap2 = Math.pow(saturate(ap), 1.35);
   h = flatten(h, 4.2, ap2);
 
   // Town terrace slightly above airport

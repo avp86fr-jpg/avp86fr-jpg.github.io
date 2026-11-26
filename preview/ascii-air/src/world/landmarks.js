@@ -337,20 +337,25 @@ function makeWindmill() {
 
 function makeArch() {
   const g = new THREE.Group();
-  const ochre = 0xc99248;
-  const shade = 0xa07030;
-  // Standing ochre ring: the lower half sits in the water, leaving a natural sea-arch opening.
-  const torus = new THREE.TorusGeometry(16, 6.2, 8, 20);
-  torus.rotateY(0.35);
-  retagGeometry(torus, MAT.ROCK, 0);
-  const mesh = new THREE.Mesh(torus, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: ochre, flatShading: true })));
-  mesh.userData.matId = MAT.ROCK;
-  mesh.position.y = 10;
-  g.add(mesh);
-  add(g, box(10, 14, 12, shade, MAT.ROCK), -16, 5, 0);
-  add(g, box(10, 14, 12, shade, MAT.ROCK), 16, 5, 0);
-  add(g, box(8, 8, 10, ochre, MAT.ROCK), -16, 14, 2);
-  add(g, box(8, 8, 10, ochre, MAT.ROCK), 16, 14, -1);
+  const ochre = 0xc48a42;
+  const shade = 0x8a6230;
+  const dark = 0x6a4a28;
+  // Sea-window in a small rocky headland, opening facing south (toward the hero camera).
+  add(g, box(11, 20, 16, shade, MAT.ROCK), -13, 8, 0);
+  add(g, box(8, 12, 12, ochre, MAT.ROCK), -16, 14, 2, 0, 0.1, 0.12);
+  add(g, box(11, 18, 15, shade, MAT.ROCK), 13, 7, 1);
+  add(g, box(8, 11, 11, ochre, MAT.ROCK), 16, 13, -1, 0, -0.08, -0.1);
+  add(g, box(14, 5, 16, dark, MAT.ROCK), -13, 2, 0);
+  add(g, box(14, 5, 16, dark, MAT.ROCK), 13, 2, 0);
+  const cap = new THREE.TorusGeometry(13, 5.4, 8, 18, Math.PI);
+  retagGeometry(cap, MAT.ROCK, 0);
+  const capMesh = new THREE.Mesh(cap, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: ochre, flatShading: true })));
+  capMesh.userData.matId = MAT.ROCK;
+  capMesh.position.set(0, 16, 0);
+  g.add(capMesh);
+  add(g, box(16, 5, 12, shade, MAT.ROCK), 0, 24, 0);
+  add(g, box(6, 5, 7, dark, MAT.ROCK), -5, 22, 4);
+  add(g, box(5, 4, 6, dark, MAT.ROCK), 6, 23, -3);
   return g;
 }
 
@@ -622,7 +627,8 @@ function makeCoastalCliffs(H) {
   function vert(x, y, z, c) {
     const i = positions.length / 3;
     positions.push(x, y, z);
-    const hatch = (Math.sin(x * 0.62 + y * 0.85) * Math.sin(z * 0.18 + x * 0.08) > 0.28) ? 0.72 : 1;
+    const stripe = Math.sin(x * 1.25 + y * 1.7) + 0.55 * Math.sin((x - y) * 2.4 + z * 0.2);
+    const hatch = stripe > 0.35 ? 0.48 : stripe > 0.05 ? 0.7 : stripe > -0.25 ? 0.88 : 1;
     colors.push(c[0] * hatch, c[1] * hatch, c[2] * hatch);
     return i;
   }
@@ -859,9 +865,9 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   const arch = makeArch();
-  arch.scale.setScalar(1.45);
+  arch.scale.set(1.2, 1.15, 1.15);
   arch.position.set(LANDMARKS.arch.x, 0, LANDMARKS.arch.z);
-  arch.rotation.y = -0.5;
+  arch.rotation.y = 0.08;
   group.add(arch);
 
   const cave = makeCave();

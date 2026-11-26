@@ -37,6 +37,7 @@ export function createFlightCamera(camera) {
   }
 
   function collide(pos, look) {
+    if (state.hero || state.mode === "title" || state.mode === "cockpit") return;
     const world = state.world;
     if (world && typeof world.heightAt === "function") {
       const h = world.heightAt(pos.x, pos.z);
@@ -202,11 +203,12 @@ export function createFlightCamera(camera) {
     if (hero) {
       // 3/4 rear-above over the water, nearly level look INTO the island.
       // Tail nearest the camera, nose pointing away at the vista.
-      const dist = 34 + (portrait ? 4 : 0);
-      const height = 11 + (portrait ? 1.5 : 0);
-      const side = 5.0;
+      const dist = 40 + (portrait ? 4 : 0);
+      const height = 14 + (portrait ? 1.5 : 0);
+      const side = 6.2;
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
-      _look.set(0, 42, -450);
+      // Look a little lower so the plane sits in the lower-middle, not on the HUD.
+      _look.set(0, 26, -500);
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
@@ -243,7 +245,7 @@ export function createFlightCamera(camera) {
         88 + Math.sin(t * 0.35) * 8,
         -1720 + Math.cos(t * 0.5) * 36
       );
-      camera.lookAt(0, 44, -400);
+      camera.lookAt(0, 28, -480);
       camera.up.set(0, 1, 0);
       camera.updateProjectionMatrix();
       return;

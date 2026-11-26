@@ -119,7 +119,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       const inCove = dx * dx + dz * dz < 110 * 110;
       if (inCove && h < 8 && n > 0.3) {
         palms.push({ x: jx, y: h, z: jz, s: 0.9 + n * 0.45, r: n * 6 });
-      } else if (m === MAT.FOREST || (m === MAT.GRASS && n > 0.26 && h > 5)) {
+      } else if (m === MAT.FOREST || (m === MAT.GRASS && n > (z < -200 && z > -1000 ? 0.18 : 0.26) && h > 5)) {
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
         trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: n > 0.55 });
       }
@@ -132,6 +132,10 @@ export function createFlora(scene, terrain, quality = "medium") {
     [-80, 60], [40, -200], [220, -700], [90, -640],
     [-120, -720], [300, -780], [-40, -500], [40, -860],
     [180, -1080], [-160, -1080], [260, -940],
+    [40, -780], [-60, -680], [140, -620], [-200, -800],
+    [80, -560], [-140, -480], [200, -440], [-40, -360],
+    [120, -300], [0, -240], [-80, -180], [260, -600],
+    [-240, -400], [60, -720], [-160, -640], [180, -200],
   ];
   for (const [gx, gz] of groves) {
     const seed = fbm(gx * 0.01, gz * 0.01, 2, 19);

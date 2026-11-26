@@ -657,7 +657,6 @@ async function boot() {
   island = createIsland(scene, settings.quality || "medium");
   {
     const meshes = [];
-    if (island.terrain && island.terrain.mesh) meshes.push(island.terrain.mesh);
     const lg = island.landmarks && island.landmarks.group;
     if (lg) {
       const merged = lg.getObjectByName("landmarks-merged");
@@ -710,8 +709,8 @@ function heroShot(opts = {}) {
   const y = opts.y ?? 68;
   const z = opts.z ?? -1580;
   const tx = opts.tx ?? 0;
-  const ty = opts.ty ?? 42;
-  const tz = opts.tz ?? -450;
+  const ty = opts.ty ?? 26;
+  const tz = opts.tz ?? -500;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
