@@ -33,3 +33,26 @@ PASS 5 - FULL SCREEN + MOBILE PORTRAIT/LANDSCAPE
 - The canvas, pixel ratio and HUD rescale on resize, rotation and full-screen changes.
 - Portrait is fully playable (its own camera framing and HUD, controls in the bottom third). Pick
   "PLAY IN PORTRAIT" or the Options toggle and the choice is remembered.
+
+
+PASS 6 - MOBILE PERFORMANCE, MODELS, PRECISION, DEBUGGING
+- Draw calls cut about 33%. Peaks at 960x540: Low 130 -> 93, Medium 163 -> 128, High 186 -> 135.
+  The jeep and crew went from about 40 draw calls to 8: every part is merged into a few meshes, and each vertex
+  knows which moving part (wheel, crew head/arms, crates...) it belongs to. The canopy light shafts are one
+  instanced call, and the car casts its shadow with one simple shape.
+- No more stutters mid-run: three.js was rebuilding its shader setup about 14 times a frame in the shadow pass;
+  fixed with a separate material and shadow material per instanced pool.
+  Shaders are compiled behind a new loading card, so the title no longer shows white first frames.
+- Mobile: auto quality picks a tier from the GPU, each tier has a pixel budget, and the resolution adapts on the
+  fly at every quality setting. Foliage, blocks and planks no longer cast shadows on phones (cheaper shadow
+  filter there too). The headlight light is dropped on Low, the unused nitro light is gone, the spray particles
+  are capped in size and rate, and only the live part of the particle buffers is uploaded.
+- Crew: rebuilt heads (shaped skull/jaw, nose, brows, eyes with iris and pupil, eyelids that blink, a mouth that
+  opens to shout, freckles for Penny), hands with fingers, knees and boot soles. Dusty steers hand-over-hand, both
+  look into bends (Penny looks back at the boulder), they flinch on hits, and Penny cheers on big air. Smoother
+  jeep panels on Medium/High.
+- Gameplay: steering eases into small corrections and stays quick for big ones. A hard bottom-out now counts as
+  one hit (not one per contact point), and never during a graded landing. The suspension no longer bounces the
+  car into the air in fast dips (this fixes the seed 2 fall at 1.9 km). The autopilot is better at slowing for bends.
+- Debugging: pieces free their GPU memory when they are recycled (GPU geometry count used to grow every run).
+  Switching tabs pauses the run and mutes the sound. A 200-seed sweep (300 km) had 0 falls and 0 errors.
