@@ -1,0 +1,281 @@
+import * as THREE from "three";
+import { MAT, QUALITY, LANDMARKS } from "../core/config.js";
+import { retagGeometry, tagMesh } from "../render/idMaterial.js";
+import { TAU } from "../core/utils.js";
+
+function cloudPuff(mat) {
+  const g = new THREE.Group();
+  const geo = retagGeometry(new THREE.IcosahedronGeometry(1, 0), MAT.CLOUD);
+  const spots = [
+    [0, 0, 0, 1.6], [1.4, 0.2, 0.2, 1.2], [-1.3, 0.1, -0.2, 1.1], [0.3, 0.5, 0.6, 0.9],
+  ];
+  for (const [x, y, z, s] of spots) {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.scale.setScalar(s);
+    g.add(m);
+  }
+  return g;
+}
+
+export function createSkyProps(scene, quality = "medium") {
+  const q = QUALITY[quality] || QUALITY.medium;
+  const group = new THREE.Group();
+  group.name = "skyprops";
+
+  const cloudMat = new THREE.MeshLambertMaterial({
+    color: 0xf4f8ff,
+    flatShading: true,
+  });
+  const clouds = new THREE.Group();
+  const nCloud = Math.floor(28 * q.clouds);
+  const puff = cloudPuff(cloudMat);
+  puff.updateMatrixWorld(true);
+  // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
+  // To keep draw calls down, merge one puff and instance it.
+  const merged = new THREE.BufferGeometry();
+  const geos = [];
+  puff.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    geos.push(g);
+  });
+  let cloudGeo;
+  if (THREE.BufferGeometryUtils) {
+    cloudGeo = THREE.BufferGeometryUtils.mergeGeometries(geos);
+  } else {
+    // manual merge of positions
+    cloudGeo = mergeSimple(geos, MAT.CLOUD);
+  }
+  const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nCloud);
+  const dummy = new THREE.Object3D();
+  const cloudData = [];
+  for (let i = 0; i < nCloud; i++) {
+    const a = (i / nCloud) * TAU + 0.3;
+    const r = 200 + (i * 97) % 1400;
+    const x = Math.cos(a) * r;
+    const z = Math.sin(a) * r * 0.8;
+    const y = 280 + (i * 13) % 180;
+    const s = 8 + (i * 7) % 18;
+    dummy.position.set(x, y, z);
+    dummy.scale.set(s, s * 0.6, s);
+    dummy.rotation.y = a;
+    dummy.updateMatrix();
+    cloudInst.setMatrixAt(i, dummy.matrix);
+    cloudData.push({ x, y, z, s, a, r, speed: 2 + (i % 5) });
+  }
+  group.add(cloudInst);
+
+  // Balloons (ambient, plus mission ones are separate)
+  const balloons = [];
+  const balloonColors = [0xe06a4f, 0xf2c14e, 0x3aa0d0, 0xd45aaa, 0x3aa86a, 0xf4f0e6];
+  for (let i = 0; i < 8; i++) {
+    const b = makeBalloon(balloonColors[i % balloonColors.length]);
+    const a = i * 0.9;
+    b.position.set(Math.cos(a) * 700, 140 + i * 12, Math.sin(a) * 700 + 100);
+    group.add(b);
+    balloons.push({ mesh: b, home: b.position.clone(), phase: i });
+  }
+
+  // Blimp
+  const blimp = makeBlimp();
+  group.add(blimp);
+
+  // Birds
+  const birds = makeBirdFlock(18);
+  group.add(birds.group);
+
+  scene.add(group);
+
+  return {
+    group, cloudInst, cloudData, balloons, blimp, birds,
+    update(dt, time) {
+      // drift clouds slowly — skip matrix rewrite every frame if costly; update every 0.25s is ok
+      dummy.rotation.set(0, 0, 0);
+      for (let i = 0; i < cloudData.length; i++) {
+        const c = cloudData[i];
+        c.a += dt * 0.003 * c.speed;
+        c.x = Math.cos(c.a) * c.r;
+        c.z = Math.sin(c.a) * c.r * 0.8;
+        dummy.position.set(c.x, c.y, c.z);
+        dummy.scale.set(c.s, c.s * 0.6, c.s);
+        dummy.rotation.y = c.a;
+        dummy.updateMatrix();
+        cloudInst.setMatrixAt(i, dummy.matrix);
+      }
+      cloudInst.instanceMatrix.needsUpdate = true;
+
+      for (const b of balloons) {
+        b.mesh.position.x = b.home.x + Math.sin(time * 0.12 + b.phase) * 40;
+        b.mesh.position.z = b.home.z + Math.cos(time * 0.1 + b.phase) * 40;
+        b.mesh.position.y = b.home.y + Math.sin(time * 0.3 + b.phase) * 8;
+        b.mesh.rotation.y += dt * 0.2;
+      }
+      const ba = time * 0.03;
+      blimp.position.set(Math.cos(ba) * 900, 260, Math.sin(ba) * 900);
+      blimp.rotation.y = ba + Math.PI / 2;
+      birds.update(dt, time);
+    },
+  };
+}
+
+function mergeSimple(geos, matId) {
+  let n = 0;
+  for (const g of geos) n += g.getAttribute("position").count;
+  const pos = new Float32Array(n * 3);
+  const nrm = new Float32Array(n * 3);
+  const aid = new Float32Array(n * 2);
+  let o = 0;
+  const idx = [];
+  let base = 0;
+  for (const g of geos) {
+    const p = g.getAttribute("position");
+    const nn = g.getAttribute("normal");
+    for (let i = 0; i < p.count; i++) {
+      pos[(base + i) * 3] = p.getX(i);
+      pos[(base + i) * 3 + 1] = p.getY(i);
+      pos[(base + i) * 3 + 2] = p.getZ(i);
+      if (nn) {
+        nrm[(base + i) * 3] = nn.getX(i);
+        nrm[(base + i) * 3 + 1] = nn.getY(i);
+        nrm[(base + i) * 3 + 2] = nn.getZ(i);
+      }
+      aid[(base + i) * 2] = matId;
+      aid[(base + i) * 2 + 1] = 0;
+    }
+    if (g.index) {
+      const ia = g.index.array;
+      for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base);
+    } else {
+      for (let i = 0; i < p.count; i++) idx.push(base + i);
+    }
+    base += p.count;
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  out.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+  out.setAttribute("aId", new THREE.BufferAttribute(aid, 2));
+  out.setIndex(idx);
+  return out;
+}
+
+export function makeBalloon(color) {
+  const g = new THREE.Group();
+  const sph = new THREE.Mesh(
+    retagGeometry(new THREE.SphereGeometry(4.2, 10, 8), MAT.BALLOON, 1),
+    new THREE.MeshLambertMaterial({ color, flatShading: true })
+  );
+  sph.position.y = 6;
+  const basket = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(1.6, 1.2, 1.6), MAT.WOOD),
+    new THREE.MeshLambertMaterial({ color: 0x6a4a28, flatShading: true })
+  );
+  basket.position.y = 0;
+  g.add(sph, basket);
+  g.userData.hero = 1;
+  g.userData.matId = MAT.BALLOON;
+  g.userData.radius = 4.5;
+  return g;
+}
+
+function makeBlimp() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(
+    retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.CLOUD),
+    new THREE.MeshLambertMaterial({ color: 0xf6e8d0, flatShading: true })
+  );
+  body.scale.set(18, 6, 6);
+  const gondola = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(6, 2, 2.4), MAT.WOOD),
+    new THREE.MeshLambertMaterial({ color: 0x5a3a20, flatShading: true })
+  );
+  gondola.position.y = -5;
+  const fin = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(3, 4, 0.3), MAT.ROOF),
+    new THREE.MeshLambertMaterial({ color: 0xe06a4f, flatShading: true })
+  );
+  fin.position.set(-16, 2, 0);
+  g.add(body, gondola, fin);
+  return g;
+}
+
+function makeBirdFlock(n) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(n * 9); // 3 verts * n as little V shapes via lines? use triangles
+  // Use instanced simple V mesh
+  const v = new THREE.BufferGeometry();
+  const vp = new Float32Array([-1, 0, 0, 0, 0, 0.2, 1, 0, 0, 0, 0.15, 0, 0, 0, 0.2, 0, 0, -0.1]);
+  v.setAttribute("position", new THREE.BufferAttribute(vp, 3));
+  v.setIndex([0, 1, 3, 1, 2, 3, 3, 1, 5]);
+  retagGeometry(v, MAT.ROCK, 0);
+  const inst = new THREE.InstancedMesh(v, new THREE.MeshBasicMaterial({ color: 0x222220, side: THREE.DoubleSide }), n);
+  const dummy = new THREE.Object3D();
+  const data = [];
+  for (let i = 0; i < n; i++) {
+    data.push({
+      a: (i / n) * TAU,
+      r: 200 + i * 20,
+      y: 80 + (i % 7) * 10,
+      s: 1.2,
+    });
+  }
+  return {
+    group: inst,
+    update(dt, time) {
+      for (let i = 0; i < n; i++) {
+        const d = data[i];
+        d.a += dt * 0.4;
+        const x = Math.cos(d.a) * d.r + LANDMARKS.beach.x;
+        const z = Math.sin(d.a) * d.r * 0.4 + LANDMARKS.beach.z;
+        const y = d.y + Math.sin(time * 3 + i) * 2;
+        dummy.position.set(x, y, z);
+        dummy.rotation.set(0, -d.a, Math.sin(time * 8 + i) * 0.4);
+        dummy.scale.setScalar(1.6);
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
+      }
+      inst.instanceMatrix.needsUpdate = true;
+    },
+  };
+}
+
+/** Rising thermal particles (glyph-friendly bright points). */
+export function createThermals(scene, fields) {
+  const group = new THREE.Group();
+  const pieces = [];
+  for (const f of fields) {
+    const n = 36;
+    const pos = new Float32Array(n * 3);
+    const id = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * TAU;
+      const r = Math.random() * f.r * 0.6;
+      pos[i * 3] = f.x + Math.cos(a) * r;
+      pos[i * 3 + 1] = f.y + Math.random() * f.h;
+      pos[i * 3 + 2] = f.z + Math.sin(a) * r;
+      id[i * 2] = MAT.LIGHT; id[i * 2 + 1] = 0;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute("aId", new THREE.BufferAttribute(id, 2));
+    const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      color: 0xffe0a0, size: 4, sizeAttenuation: true, transparent: true, opacity: 0.7, depthWrite: false,
+    }));
+    group.add(pts);
+    pieces.push({ pts, f, n, pos });
+  }
+  scene.add(group);
+  return {
+    group, fields,
+    update(dt) {
+      for (const p of pieces) {
+        for (let i = 0; i < p.n; i++) {
+          p.pos[i * 3 + 1] += dt * (6 + (i % 5));
+          if (p.pos[i * 3 + 1] > p.f.y + p.f.h) p.pos[i * 3 + 1] = p.f.y;
+        }
+        p.pts.geometry.attributes.position.needsUpdate = true;
+      }
+    },
+  };
+}

@@ -1,0 +1,10 @@
+{
+  "name": "ASCII AIR",
+  "short_name": "ASCII AIR",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#07090b",
+  "theme_color": "#07090b",
+  "start_url": "./index.html",
+  "icons": []
+}
