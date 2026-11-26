@@ -270,6 +270,7 @@ export function createPlaneMesh(id, colors) {
   // Builders place the nose at +Z; flight/camera forward is -Z, so flip the visual.
   visual.name = "plane-visual";
   visual.rotation.y = Math.PI;
+  visual.scale.setScalar(1.2);
   const g = new THREE.Group();
   g.name = "plane-" + id;
   g.add(visual);

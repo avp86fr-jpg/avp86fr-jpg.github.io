@@ -12,6 +12,8 @@ export function defaultSave() {
     totalStars: 0,
     plane: "trainer",
     seenIntro: false,
+    lastMode: null,
+    lastMission: null,
   };
 }
 

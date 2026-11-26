@@ -78,10 +78,17 @@ export function createFlightCamera(camera) {
     camera.far = CAM.far;
 
     if (state.mode === "title") {
-      state.titleOrbit += dt * 0.05;
-      const r = 980;
-      camera.position.set(Math.cos(state.titleOrbit) * r, 340, Math.sin(state.titleOrbit) * r);
-      camera.lookAt(0, 20, 0);
+      state.titleOrbit += dt * 0.045;
+      const t = state.titleOrbit;
+      // Slow south-side flyby of the island, looking in toward the volcano.
+      const r = 1180;
+      camera.position.set(
+        Math.sin(t * 0.55) * 260,
+        168 + Math.sin(t * 0.4) * 20,
+        -1600 + Math.cos(t * 0.55) * 110
+      );
+      camera.lookAt(30, 56, -180);
+      camera.up.set(0, 1, 0);
       camera.updateProjectionMatrix();
       return;
     }

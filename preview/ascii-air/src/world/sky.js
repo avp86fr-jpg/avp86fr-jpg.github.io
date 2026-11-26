@@ -153,11 +153,12 @@ export function createSky(scene) {
   function setHour(hour) {
     state.hour = ((hour % 24) + 24) % 24;
     const pal = samplePalette(state.hour);
-    // Sun orbit: 6h rise in the east (+X), 18h set west (−X), slightly south (+Z)
+    // Sun orbit: 6h rise in the east (+X), 18h set west (−X), slightly south (−Z)
+    // so the postcard (south) face of the island is lit.
     const ang = ((state.hour - 6) / 24) * TAU;
     const elev = Math.sin(ang);
     const az = Math.cos(ang);
-    state.sunDir.set(az, Math.max(elev, -0.25), 0.28).normalize();
+    state.sunDir.set(az, Math.max(elev, -0.25), -0.45).normalize();
     sun.position.copy(state.sunDir).multiplyScalar(800);
     const night = saturate(-elev * 2 + 0.15);
     state.night = night;

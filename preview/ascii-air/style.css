@@ -711,3 +711,173 @@ body.touch-ui .speech-balloon { font-size: 15px; bottom: auto; top: 18%; max-wid
 body.touch-portrait #hud-compass { top: 36px; }
 body.touch-portrait #hud-stats { top: 36px; }
 body.touch-portrait #hud-mission { top: 36px; }
+
+/* ===== Album title / menus ===== */
+.title-cover {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(92vw, 720px);
+  padding: 0 8px max(12px, env(safe-area-inset-bottom));
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+.title-nav, .album-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  pointer-events: auto;
+}
+#title-menu.album-panel, #title-menu.title-nav {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  min-width: 0;
+  white-space: normal;
+}
+.album-cta {
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: clamp(15px, 2.4vw, 22px);
+  letter-spacing: 0.04em;
+  color: #1a140c;
+  background: #fffaf0;
+  border: 3px solid #1a140c;
+  box-shadow: 3px 3px 0 #1a140c;
+  border-radius: 12px;
+  padding: 8px 18px;
+  min-height: 44px;
+  min-width: 140px;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+.album-cta.primary {
+  background: #c01418;
+  color: #fffaf0;
+}
+.album-cta.active, .album-cta:hover, .album-cta:focus {
+  background: #ffe08a;
+  color: #1a140c;
+  outline: none;
+}
+.album-cta.primary.active, .album-cta.primary:hover, .album-cta.primary:focus {
+  background: #e04a3a;
+  color: #fffaf0;
+}
+.nav-hint {
+  flex-basis: 100%;
+  text-align: center;
+  font-family: "Patrick Hand", Itim, cursive;
+  font-size: 14px;
+  color: #1a140c;
+  text-shadow: 0 1px 0 #fffaf0;
+}
+#overlay {
+  transition: opacity 0.2s ease;
+  background: rgba(16, 12, 8, 0.42);
+}
+#overlay-panel {
+  background: #fffaf0;
+  color: #1a140c;
+  border: 3.5px solid #1a140c;
+  box-shadow: 6px 6px 0 #1a140c;
+  border-radius: 16px;
+  white-space: normal !important;
+  max-width: min(92vw, 820px);
+  max-height: 86vh;
+  overflow: auto;
+}
+.album-sheet { padding: 4px 2px; }
+.album-sheet h2 {
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: clamp(20px, 3vw, 28px);
+  margin: 0 0 10px;
+  letter-spacing: 0.03em;
+}
+.album-sheet h3 {
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: 16px;
+  margin: 0 0 6px;
+  border-bottom: 2px solid #1a140c;
+}
+.sheet-meta, .sheet-brief { margin: 0 0 8px; font-size: 16px; }
+.mission-map {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.mission-card, .opt-row {
+  font-family: Itim, "Patrick Hand", cursive;
+  background: #fffaf0;
+  color: #1a140c;
+  border: 2.5px solid #1a140c;
+  box-shadow: 2px 2px 0 #1a140c;
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+}
+.mission-card { display: flex; flex-direction: column; gap: 2px; }
+.mission-card:hover, .opt-row:hover { background: #ffe08a; }
+.mission-stars { font-size: 14px; }
+.opt-groups { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+.opt-list { display: flex; flex-direction: column; gap: 6px; }
+.opt-row { display: flex; justify-content: space-between; gap: 12px; width: 100%; align-items: center; }
+.photo-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.photo-card { width: 140px; font-size: 12px; }
+.photo-card img { width: 140px; height: 80px; object-fit: cover; border: 2px solid #1a140c; }
+.credits-sheet p { margin: 0 0 8px; font-size: 16px; max-width: 52ch; }
+
+@media (max-width: 900px), (max-height: 500px) {
+  .title-cover { width: min(96vw, 860px); gap: 6px; padding-bottom: 8px; }
+  .title-plaque { padding: 6px 12px 8px; margin-bottom: 4px; gap: 8px; }
+  .title-wordmark { font-size: clamp(22px, 5vw, 36px); }
+  .title-tag, .speech-balloon.title-balloon { font-size: 13px; }
+  .pilot-mark { width: 56px; height: 68px; }
+  .album-cta { min-width: 120px; min-height: 40px; padding: 6px 12px; font-size: 15px; }
+  .opt-groups { grid-template-columns: 1fr 1fr; }
+  #overlay-panel { max-height: 82vh; padding: 10px 12px !important; }
+}
+.album-sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 80vh;
+}
+.album-sheet .opt-groups,
+.album-sheet .mission-map,
+.album-sheet .credits-sheet p + p { min-height: 0; }
+.opt-groups { overflow: auto; }
+.album-sheet .album-nav {
+  position: sticky;
+  bottom: 0;
+  background: #fffaf0;
+  padding-top: 6px;
+  flex-shrink: 0;
+  z-index: 2;
+}
+@media (orientation: landscape) and (max-height: 430px) {
+  .title-cover { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 8px 16px; }
+  .title-cover .logo-slot { flex: 0 1 auto; }
+  .title-nav { flex: 1 1 280px; justify-content: flex-end; }
+  .album-cta { min-width: 110px; padding: 5px 12px; min-height: 36px; }
+  .title-plaque { margin-bottom: 0; }
+  .mission-map { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .opt-groups { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .album-sheet h2 { margin-bottom: 4px; font-size: 18px; }
+  .album-sheet h3 { font-size: 13px; margin-bottom: 4px; }
+  .opt-row, .mission-card { min-height: 32px; padding: 4px 8px; }
+  .nav-hint { display: none; }
+  .credits-sheet p { font-size: 14px; margin-bottom: 4px; }
+}
+@media (max-width: 820px) and (max-height: 380px) {
+  .title-cover .logo-slot .title-balloon { display: none; }
+  .nav-hint { display: none; }
+}

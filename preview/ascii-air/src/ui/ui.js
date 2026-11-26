@@ -54,12 +54,13 @@ export function createUI(root, hooks) {
   const title = document.createElement("div");
   title.id = "title-screen";
   title.className = "hidden";
-  title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8vh;pointer-events:none;";
+  title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none;";
   title.innerHTML = `
-    <div class="logo-slot" id="logo"></div>
-    <div class="hint" style="margin:6px 0 14px">Une île au soleil. Un courrier postal. Ciel clair devant.</div>
-    <div class="album-panel" id="title-menu" style="pointer-events:auto;min-width:min(80vw,360px);padding:10px 0;"></div>
-    <div id="ios-hint" class="hint hidden" style="margin-top:10px;max-width:90vw;text-align:center;white-space:normal;padding:0 12px"></div>
+    <div class="title-cover">
+      <div class="logo-slot" id="logo"></div>
+      <nav class="title-nav" id="title-menu"></nav>
+      <div id="ios-hint" class="hint hidden"></div>
+    </div>
   `;
   wrap.appendChild(title);
   wrap.querySelectorAll(".logo-slot").forEach((s) => s.appendChild(paintWordmark()));
@@ -122,14 +123,25 @@ export function createUI(root, hooks) {
 
   function showTitle(save) {
     hideAll();
+    closeOverlay();
     state.screen = "title";
+    state.optionsBack = "title";
     title.classList.remove("hidden");
+    const stars = totalStars(save);
+    const canContinue = !!(save.lastMode || save.lastMission || stars);
     const items = [
-      { label: "VOL LIBRE", fn: () => hooks.onFreeFlight?.() },
-      { label: "MISSIONS", fn: () => showMissions(save) },
-      { label: "HANGAR", fn: () => showHangar(save) },
-      { label: "ALBUM", fn: () => showAlbum(save) },
-      { label: "OPTIONS", fn: () => showOptions(save) },
+      {
+        label: canContinue ? "Continuer" : "JOUER",
+        primary: true,
+        fn: () => {
+          if (canContinue && save.lastMode === "mission" && save.lastMission) hooks.onStartMission?.(save.lastMission);
+          else hooks.onFreeFlight?.();
+        },
+      },
+      { label: "Missions", fn: () => showMissions(save) },
+      { label: "Vol libre", fn: () => hooks.onFreeFlight?.() },
+      { label: "Options", fn: () => showOptions(save, "title") },
+      { label: "Crédits", fn: () => showCredits(save) },
     ];
     renderMenu(title.querySelector("#title-menu"), items, save);
     const hint = title.querySelector("#ios-hint");
@@ -140,42 +152,73 @@ export function createUI(root, hooks) {
     mobile.layout(isPortrait(), false);
   }
 
-  function renderMenu(el, items, save) {
+  let menuArmedAt = 0;
+  function renderMenu(el, items, save, opts) {
+    opts = opts || {};
+    menuArmedAt = (typeof performance !== "undefined" ? performance.now() : Date.now()) + 180;
     state.menuItems = items;
     state.menuIndex = 0;
+    if (!el) return;
     const stars = totalStars(save);
+    el.classList.add("album-nav");
     el.innerHTML = items.map((it, i) =>
-      `<div class="menu-item${i === 0 ? " active" : ""}" data-i="${i}">${i === 0 ? "▸ " : "  "}${it.label}</div>`
-    ).join("") + `<div class="hint" style="padding:8px 14px;white-space:normal">★ ${stars}    ${isMobileUA() ? "tap to choose" : "W/S  Enter   F fullscreen"}</div>`;
-    el.querySelectorAll(".menu-item").forEach((n) => {
-      n.addEventListener("click", () => {
+      `<button type="button" class="album-cta${it.primary ? " primary" : ""}${i === 0 ? " active" : ""}" data-i="${i}">${it.label}</button>`
+    ).join("") + (opts.hideHint ? "" : `<div class="nav-hint">★ ${stars} · ${isMobileUA() || (typeof window !== "undefined" && window.innerWidth < 1100) ? "Touchez un bouton" : "↑↓  Entrée"}</div>`);
+    el.querySelectorAll(".album-cta").forEach((n) => {
+      n.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const i = +n.dataset.i;
+        state.menuIndex = i;
         hooks.audio?.play("ui_ok");
         items[i].fn();
       });
-      n.addEventListener("mouseenter", () => setMenuIndex(+n.dataset.i, el, items));
+      n.addEventListener("pointerenter", () => setMenuIndex(+n.dataset.i, el, items));
+      n.addEventListener("focus", () => setMenuIndex(+n.dataset.i, el, items));
     });
   }
 
   function setMenuIndex(i, el, items) {
+    if (!items || !items.length) return;
     state.menuIndex = (i + items.length) % items.length;
-    el.querySelectorAll(".menu-item").forEach((n, k) => {
+    const root = el || document;
+    root.querySelectorAll(".album-cta").forEach((n, k) => {
       n.classList.toggle("active", k === state.menuIndex);
-      n.textContent = (k === state.menuIndex ? "▸ " : "  ") + items[k].label;
     });
   }
 
   function menuMove(dir) {
     if (!state.menuItems.length) return;
     hooks.audio?.play("ui_move");
-    const el = document.querySelector("#title-menu, #overlay-panel");
+    const el = document.querySelector("#title-menu") || document.querySelector("#mlist") || document.querySelector(".album-nav");
     setMenuIndex(state.menuIndex + dir, el, state.menuItems);
+    const btn = el && el.querySelector(".album-cta.active");
+    if (btn && btn.focus) btn.focus({ preventScroll: true });
   }
   function menuOk() {
     if (!state.menuItems.length) return;
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now < menuArmedAt) return;
     hooks.audio?.play("ui_ok");
     state.menuItems[state.menuIndex].fn();
   }
+
+  window.addEventListener("keydown", (e) => {
+    const menuOpen = state.screen === "title" || state.screen === "missions" || state.screen === "pause"
+      || (overlay && !overlay.classList.contains("hidden"));
+    if (!menuOpen) return;
+    if (["ArrowDown", "ArrowRight", "KeyS", "KeyD"].includes(e.code)) {
+      e.preventDefault();
+      menuMove(1);
+    } else if (["ArrowUp", "ArrowLeft", "KeyW", "KeyA"].includes(e.code)) {
+      e.preventDefault();
+      menuMove(-1);
+    } else if (e.code === "Enter" || e.code === "NumpadEnter" || e.code === "Space") {
+      if (e.target && e.target.closest && e.target.closest("button")) return;
+      e.preventDefault();
+      menuOk();
+    }
+  });
 
   function box(title, body, footer) {
     const w = 48;
@@ -188,33 +231,56 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   }
 
   function openOverlay(html, interactive = true) {
+    title.classList.add("hidden");
     overlay.classList.remove("hidden");
     const p = overlay.querySelector("#overlay-panel");
     p.innerHTML = html;
     p.style.whiteSpace = interactive ? "normal" : "pre";
+    p.style.display = "flex";
+    p.style.flexDirection = "column";
+    p.style.minHeight = "0";
     return p;
   }
   function closeOverlay() { overlay.classList.add("hidden"); state.menuItems = []; }
 
+  const ACT_FR = { rings: "Anneaux", landing: "Atterrissages", balloons: "Ballons", photo: "Photos" };
+  const CLASS_FR = { beginner: "Débutant", pro: "Pro", ace: "As" };
+
   function showMissions(save) {
     state.screen = "missions";
-    const acts = ACTIVITIES.map((a) => {
+    const cards = ACTIVITIES.map((a) => {
       const all = MISSIONS.filter((m) => m.activity === a.id);
       const got = all.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
-      return { label: `${a.name}   ${got}/${all.length * 3} ★`, fn: () => showClass(save, a.id) };
+      const max = all.length * 3;
+      return `<button type="button" class="mission-card" data-act="${a.id}">
+        <strong>${ACT_FR[a.id] || a.name}</strong>
+        <span class="mission-stars">★ ${got} / ${max}</span>
+      </button>`;
+    }).join("");
+    const p = openOverlay(`<div class="album-sheet">
+      <h2>Carte des missions</h2>
+      <div class="mission-map">${cards}</div>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
+    p.querySelectorAll(".mission-card").forEach((btn) => {
+      btn.addEventListener("click", (e) => { e.preventDefault(); showClass(save, btn.dataset.act); });
     });
-    acts.push({ label: "RETOUR", fn: () => { closeOverlay(); showTitle(save); } });
-    const p = openOverlay(`<div style="white-space:pre;margin-bottom:8px">MISSIONS</div><div id="mlist"></div>`);
-    renderMenu(p.querySelector("#mlist"), acts, save);
+    renderMenu(p.querySelector("#mlist"), [
+      { label: "Retour", fn: () => { closeOverlay(); showTitle(save); } },
+    ], save, { hideHint: true });
   }
 
   function showClass(save, activity) {
-    const items = CLASSES.map((k) => ({
-      label: k.toUpperCase(),
-      fn: () => showMissionList(save, activity, k),
-    }));
-    items.push({ label: "RETOUR", fn: () => showMissions(save) });
-    const p = openOverlay(`<div style="white-space:pre;margin-bottom:8px">${activity.toUpperCase()}</div><div id="mlist"></div>`);
+    const items = CLASSES.map((k) => {
+      const list = missionsBy(activity, k);
+      const got = list.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
+      return { label: `${CLASS_FR[k] || k}  ★ ${got}/${list.length * 3}`, fn: () => showMissionList(save, activity, k) };
+    });
+    items.push({ label: "Retour", fn: () => showMissions(save) });
+    const p = openOverlay(`<div class="album-sheet">
+      <h2>${ACT_FR[activity] || activity}</h2>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
@@ -224,29 +290,30 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     state.activity = activity; state.klass = klass;
     const list = missionsBy(activity, klass);
     const items = list.map((m) => ({
-      label: `${m.title.padEnd(22)} ${starsStr(save.stars[m.id] | 0)}`,
+      label: `${m.title}  ${starsStr(save.stars[m.id] | 0)}`,
       fn: () => showBrief(save, m),
     }));
-    items.push({ label: "RETOUR", fn: () => showClass(save, activity) });
-    const p = openOverlay(`<div style="white-space:pre;margin-bottom:8px">${activity.toUpperCase()}  ·  ${klass.toUpperCase()}</div><div id="mlist"></div>`);
+    items.push({ label: "Retour", fn: () => showClass(save, activity) });
+    const p = openOverlay(`<div class="album-sheet">
+      <h2>${ACT_FR[activity] || activity} · ${CLASS_FR[klass] || klass}</h2>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
   function showBrief(save, m) {
     const lockedPlane = m.plane && m.plane !== "trainer" && !save.unlocked[m.plane];
     const need = m.plane === "seaplane" ? STAR_UNLOCKS.seaplane : STAR_UNLOCKS.glider;
-    const html = `
-      <pre style="margin:0 0 8px">${m.title.toUpperCase()}
-${m.klass.toUpperCase()}  ·  ${m.activity}
-plane  ${PLANES[m.plane || "trainer"].name}${lockedPlane ? `  (needs ${need} ★)` : ""}
-
-${wrapText(m.brief, 44)}
-</pre>
-      <div id="mlist"></div>`;
-    const p = openOverlay(html);
+    const planeName = PLANES[m.plane || "trainer"].name;
+    const p = openOverlay(`<div class="album-sheet">
+      <h2>${m.title}</h2>
+      <p class="sheet-meta">${CLASS_FR[m.klass] || m.klass} · ${ACT_FR[m.activity] || m.activity} · ${planeName}${lockedPlane ? "  (il faut " + need + " ★)" : ""}</p>
+      <p class="sheet-brief">${m.brief}</p>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
     const items = [];
-    if (!lockedPlane) items.push({ label: "EN VOL", fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
-    items.push({ label: "RETOUR", fn: () => showMissionList(save, m.activity, m.klass) });
+    if (!lockedPlane) items.push({ label: "En vol !", primary: true, fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
+    items.push({ label: "Retour", fn: () => showMissionList(save, m.activity, m.klass) });
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
@@ -255,108 +322,145 @@ ${wrapText(m.brief, 44)}
       const un = save.unlocked[p.id];
       const need = STAR_UNLOCKS[p.id] || 0;
       return {
-        label: un ? `${p.name}${save.plane === p.id ? "  ◂" : ""}` : `${p.name}  LOCKED (${need}★)`,
+        label: un ? `${p.name}${save.plane === p.id ? "  ✓" : ""}` : `${p.name}  (${need}★)`,
         fn: () => { if (un) { hooks.onSelectPlane?.(p.id); closeOverlay(); showTitle(save); } },
       };
     });
-    items.push({ label: "RETOUR", fn: () => { closeOverlay(); showTitle(save); } });
-    const p = openOverlay(`<div style="margin-bottom:8px">HANGAR</div><div id="mlist"></div>`);
+    items.push({ label: "Retour", fn: () => showOptions(save, "title") });
+    const p = openOverlay(`<div class="album-sheet"><h2>Hangar</h2><div id="mlist" class="album-nav"></div></div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
   function showAlbum(save) {
     const photos = save.photos || [];
-    let body = photos.length ? "" : "<div class='hint'>No photographs yet. Fly a photo mission.</div>";
-    const p = openOverlay(`<div>ALBUM</div>${body}<div id="photos" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;max-width:80vw"></div><div id="mlist"></div>`);
+    const body = photos.length ? "" : "<p class='hint'>Pas encore de photographie. Tentez une mission photo.</p>";
+    const p = openOverlay(`<div class="album-sheet"><h2>Album</h2>${body}<div id="photos" class="photo-row"></div><div id="mlist" class="album-nav"></div></div>`);
     const box = p.querySelector("#photos");
     photos.forEach((ph) => {
       const d = document.createElement("div");
-      d.style.cssText = "width:160px;font-size:10px;";
+      d.className = "photo-card";
       if (ph.data) {
         const img = document.createElement("img");
         img.src = ph.data;
-        img.style.cssText = "width:160px;height:90px;object-fit:cover;image-rendering:pixelated;border:1px solid rgba(140,255,200,0.35)";
+        img.alt = ph.title || "photo";
         d.appendChild(img);
       }
       const cap = document.createElement("div");
       cap.className = "hint";
-      cap.textContent = ph.title || "shot";
+      cap.textContent = ph.title || "cliché";
       d.appendChild(cap);
       box.appendChild(d);
     });
-    renderMenu(p.querySelector("#mlist"), [{ label: "RETOUR", fn: () => { closeOverlay(); showTitle(save); } }], save);
+    renderMenu(p.querySelector("#mlist"), [{ label: "Retour", fn: () => { closeOverlay(); showTitle(save); } }], save, { hideHint: true });
   }
 
-  function showOptions(save) {
+  function showOptions(save, back) {
+    state.optionsBack = back || state.optionsBack || "title";
     const s = save.settings;
-    const row = (k, v) => `<div style="display:flex;justify-content:space-between;gap:16px;margin:4px 0"><span>${k}</span><span>${v}</span></div>`;
-    const p = openOverlay(`<div style="margin-bottom:8px">OPTIONS</div>
-      <div class="hint">Tap a row to cycle it.</div>
-      <div id="opts"></div>
-      <div id="mlist"></div>`);
-    const opts = [
-      ["Flight assist", "assist", ["full", "light", "off"]],
-      ["Invert pitch", "invertPitch", "bool"],
-      ["Sensitivity", "sensitivity", "slider"],
-      ["Gyro sensitivity", "gyroSensitivity", "slider"],
-      ["Motion comfort", "motionComfort", "bool"],
-      ["High contrast", "highContrast", "bool"],
-      ["Colorblind markers", "colorblind", "bool"],
-      ["Quality", "quality", ["low", "medium", "high"]],
-      ["Frame cap", "fpsCap", [30, 60]],
-      ["Auto throttle", "autoThrottle", "bool"],
-      ["Master volume", "masterVol", "slider"],
-      ["Music volume", "musicVol", "slider"],
-      ["Sfx volume", "sfxVol", "slider"],
-    ];
-    const box = p.querySelector("#opts");
-    function refresh() {
+    const p = openOverlay(`<div class="album-sheet options-sheet">
+      <h2>Options</h2>
+      <div class="opt-groups">
+        <section><h3>Commandes</h3><div id="opts-controls" class="opt-list"></div></section>
+        <section><h3>Graphismes</h3><div id="opts-gfx" class="opt-list"></div></section>
+        <section><h3>Son</h3><div id="opts-sound" class="opt-list"></div></section>
+      </div>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
+    const groups = {
+      controls: [
+        ["Aide au vol", "assist", ["full", "light", "off"], { full: "Complète", light: "Légère", off: "Off" }],
+        ["Inverser le cabré", "invertPitch", "bool"],
+        ["Sensibilité", "sensitivity", "slider"],
+        ["Gyro", "gyroEnabled", "gyro"],
+        ["Sensibilité gyro", "gyroSensitivity", "slider"],
+      ],
+      gfx: [
+        ["Qualité", "quality", ["low", "medium", "high"], { low: "Basse", medium: "Moyenne", high: "Haute" }],
+        ["Limite d'images", "fpsCap", [30, 60]],
+        ["Confort visuel", "motionComfort", "bool"],
+        ["Contraste élevé", "highContrast", "bool"],
+      ],
+      sound: [
+        ["Volume général", "masterVol", "slider"],
+        ["Musique", "musicVol", "slider"],
+        ["Effets", "sfxVol", "slider"],
+      ],
+    };
+    function labelVal(kind, val, names) {
+      if (kind === "slider") return Math.round(val * 100) + " %";
+      if (kind === "bool" || kind === "gyro") return val ? "Oui" : "Non";
+      if (names && names[val] != null) return names[val];
+      return String(val).toUpperCase();
+    }
+    function paint(box, rows) {
       box.innerHTML = "";
-      opts.forEach(([label, key, kind]) => {
-        const d = document.createElement("div");
-        d.className = "menu-item";
-        d.style.display = "flex";
-        d.style.justifyContent = "space-between";
-        d.style.gap = "16px";
-        const val = s[key];
-        const shown = kind === "slider" ? Math.round(val * 100) + "%" : kind === "bool" ? (val ? "ON" : "OFF") : String(val).toUpperCase();
-        d.innerHTML = `<span>${label}</span><span>${shown}</span>`;
+      rows.forEach(([label, key, kind, names]) => {
+        const d = document.createElement("button");
+        d.type = "button";
+        d.className = "opt-row";
+        const shown = labelVal(kind, s[key], names);
+        d.innerHTML = `<span>${label}</span><span class="opt-val">${shown}</span>`;
         d.addEventListener("click", () => {
-          if (kind === "bool") s[key] = !s[key];
-          else if (kind === "slider") s[key] = Math.round(((val + 0.1) % 1.01) * 10) / 10;
+          if (kind === "gyro") { hooks.onToggleGyro?.(); }
+          else if (kind === "bool") s[key] = !s[key];
+          else if (kind === "slider") s[key] = Math.round((((s[key] || 0) + 0.1) % 1.01) * 10) / 10;
           else {
-            const i = kind.indexOf(val);
+            const i = kind.indexOf(s[key]);
             s[key] = kind[(i + 1) % kind.length];
           }
           hooks.onSettings?.(s);
           hooks.audio?.play("ui_move");
-          refresh();
+          paint(box, rows);
         });
         box.appendChild(d);
       });
-      // gyro button
-      const g = document.createElement("div");
-      g.className = "menu-item";
-      g.textContent = s.gyroEnabled ? "Disable gyro" : "Enable gyro (calibrate)";
-      g.addEventListener("click", () => hooks.onToggleGyro?.());
-      box.appendChild(g);
     }
-    refresh();
-    renderMenu(p.querySelector("#mlist"), [{ label: "RETOUR", fn: () => { closeOverlay(); hooks.onSettings?.(s); showTitle(save); } }], save);
+    paint(p.querySelector("#opts-controls"), groups.controls);
+    paint(p.querySelector("#opts-gfx"), groups.gfx);
+    paint(p.querySelector("#opts-sound"), groups.sound);
+    const backTo = back || state.optionsBack || "title";
+    state.optionsBack = backTo;
+    const backFn = () => {
+      closeOverlay();
+      hooks.onSettings?.(s);
+      if (backTo === "pause") showPause(save);
+      else showTitle(save);
+    };
+    renderMenu(p.querySelector("#mlist"), [
+      { label: "Hangar", fn: () => showHangar(save) },
+      { label: "Album", fn: () => showAlbum(save) },
+      { label: "Retour", fn: backFn },
+    ], save);
+  }
+
+  function showCredits(save) {
+    const p = openOverlay(`<div class="album-sheet credits-sheet">
+      <h2>Crédits</h2>
+      <p><strong>AEROPOSTALE AIR</strong> est un jeu d'aviation original.</p>
+      <p>Île, avions et interface dessinés en ligne claire. Aucune marque ni aucun personnage licencié.</p>
+      <p>Le <em>Courrier C-14</em> est un avion postal imaginaire.</p>
+      <p>Polices Itim et Patrick Hand, SIL Open Font License.</p>
+      <p>Merci de voler avec nous.</p>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
+    renderMenu(p.querySelector("#mlist"), [
+      { label: "Retour", fn: () => { closeOverlay(); showTitle(save); } },
+    ], save, { hideHint: true });
   }
 
   function showPause(save) {
     state.screen = "pause";
-    const p = openOverlay(`<div style="margin-bottom:8px">PAUSED</div><div id="mlist"></div>`);
-    const gearLabel = hooks.gearDown?.() === false ? "TRAIN  (rentré)" : "TRAIN  (sorti)";
+    state.optionsBack = "pause";
+    const gearLabel = hooks.gearDown?.() === false ? "Train  (rentré)" : "Train  (sorti)";
+    const p = openOverlay(`<div class="album-sheet"><h2>Pause</h2><div id="mlist" class="album-nav"></div></div>`);
     renderMenu(p.querySelector("#mlist"), [
-      { label: "REPRENDRE", fn: () => { closeOverlay(); hooks.onResume?.(); } },
-      { label: "PLEIN ÉCRAN", fn: () => hooks.onFullscreen?.() },
+      { label: "Reprendre", primary: true, fn: () => { closeOverlay(); hooks.onResume?.(); } },
+      { label: "Plein écran", fn: () => hooks.onFullscreen?.() },
       { label: gearLabel, fn: () => { hooks.onGear?.(); showPause(save); } },
-      { label: "CAMÉRA", fn: () => hooks.onCamera?.() },
-      { label: "OPTIONS", fn: () => showOptions(save) },
-      { label: "RECOMMENCER", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
-      { label: "MENU", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
+      { label: "Caméra", fn: () => hooks.onCamera?.() },
+      { label: "Options", fn: () => showOptions(save, "pause") },
+      { label: "Recommencer", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
+      { label: "Menu", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
     ], save);
   }
 
@@ -369,9 +473,9 @@ ${"★".repeat(stars)}${"☆".repeat(3 - stars)}   ${result.line || ""}
 time  ${formatTime(result.time || 0)}
 </pre><div id="mlist"></div>`);
     renderMenu(p.querySelector("#mlist"), [
-      { label: "RETRY", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
-      { label: "NEXT", fn: () => { closeOverlay(); hooks.onNextMission?.(); } },
-      { label: "MISSIONS", fn: () => { closeOverlay(); hooks.onQuit?.(); showMissions(save); } },
+      { label: "Réessayer", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
+      { label: "Suivant", primary: true, fn: () => { closeOverlay(); hooks.onNextMission?.(); } },
+      { label: "Missions", fn: () => { closeOverlay(); hooks.onQuit?.(); showMissions(save); } },
     ], save);
   }
 
@@ -698,7 +802,7 @@ time  ${formatTime(result.time || 0)}
   }
 
   return {
-    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showHangar, showOptions, showAlbum, showBrief,
+    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showHangar, showOptions, showAlbum, showBrief, showCredits,
     updateHUD, closeOverlay, menuMove, menuOk, isPortrait, state, wrap, loading, hud, overlay, mobile,
     elements() {
       // all visible interactive + hud boxes for overlap tests

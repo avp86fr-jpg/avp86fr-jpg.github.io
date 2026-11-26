@@ -50,7 +50,11 @@ export function createSkyProps(scene, quality = "medium") {
     // manual merge of positions
     cloudGeo = mergeSimple(geos, MAT.CLOUD);
   }
-  const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nCloud);
+  const heroSpots = [
+    [-380, 210, -1180, 34], [340, 230, -1100, 30], [-40, 250, -860, 36],
+    [560, 200, -1320, 26], [-620, 230, -980, 28], [180, 260, -1400, 22],
+  ];
+  const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nCloud + heroSpots.length);
   const dummy = new THREE.Object3D();
   const cloudData = [];
   for (let i = 0; i < nCloud; i++) {
@@ -67,21 +71,16 @@ export function createSkyProps(scene, quality = "medium") {
     cloudInst.setMatrixAt(i, dummy.matrix);
     cloudData.push({ x, y, z, s, a, r, speed: 2 + (i % 5) });
   }
-  group.add(cloudInst);
-  const heroSpots = [
-    [-420, 260, -1280, 36], [380, 280, -1200, 32], [-80, 310, -980, 40],
-    [620, 250, -1420, 28], [-700, 290, -1100, 30], [200, 340, -1500, 24],
-  ];
-  const heroInst = new THREE.InstancedMesh(cloudGeo, cloudMat, heroSpots.length);
   for (let i = 0; i < heroSpots.length; i++) {
     const [x, y, z, s] = heroSpots[i];
     dummy.position.set(x, y, z);
     dummy.scale.set(s, s * 0.55, s);
     dummy.rotation.y = i * 0.7;
     dummy.updateMatrix();
-    heroInst.setMatrixAt(i, dummy.matrix);
+    cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
   }
-  group.add(heroInst);
+  cloudInst.count = nCloud + heroSpots.length;
+  group.add(cloudInst);
 
   // Balloons — one instanced mesh (ambient; mission balloons stay separate)
   const balloonProto = makeBalloon(0xe06a4f);

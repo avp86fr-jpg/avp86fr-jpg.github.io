@@ -137,7 +137,7 @@ export const MISSIONS = [
     brief: "Settle onto the firm sand south of town. Keep the nose high and the vertical speed kind.",
     hour: 9, plane: "trainer",
     start: { x: -400, y: 70, z: -1500, heading: 0.3, speed: 42 },
-    target: { type: "beach", x: 80, z: -1280, heading: 0.2, len: 260, wid: 50 },
+    target: { type: "beach", x: -40, z: -1220, heading: 0.2, len: 180, wid: 46 },
   },
   {
     id: "land-b3", activity: "landing", klass: "beginner", title: "Ridge Strip",

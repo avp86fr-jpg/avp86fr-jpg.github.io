@@ -57,18 +57,33 @@ void main() {
   col = mix(col, floor(col * 6.0 + 0.5) / 6.0, 0.22);
 
   float d  = linDepth(texture2D(tDepth, vUv).r);
-  vec2 o1 = px * 1.4; // ~2px at 1080p
+  vec2 o1 = px * 1.6;
+  vec2 o2 = px * 2.6;
   float dL = linDepth(texture2D(tDepth, vUv + vec2(-o1.x, 0.0)).r);
   float dR = linDepth(texture2D(tDepth, vUv + vec2( o1.x, 0.0)).r);
   float dU = linDepth(texture2D(tDepth, vUv + vec2(0.0,  o1.y)).r);
   float dDn = linDepth(texture2D(tDepth, vUv + vec2(0.0, -o1.y)).r);
-  // Near-side occlusion only: a neighbour must be much farther than this pixel.
-  // Gradual slopes have a small jump and are ignored.
-  float jump = max(max(dL, dR), max(dU, dDn)) - d;
-  float rel = jump / max(d, 1.0);
-  float farCut = uNearFar.y * 0.80;
+  float dL2 = linDepth(texture2D(tDepth, vUv + vec2(-o2.x, 0.0)).r);
+  float dR2 = linDepth(texture2D(tDepth, vUv + vec2( o2.x, 0.0)).r);
+  float dU2 = linDepth(texture2D(tDepth, vUv + vec2(0.0,  o2.y)).r);
+  float dD2 = linDepth(texture2D(tDepth, vUv + vec2(0.0, -o2.y)).r);
+  // Silhouettes only: a one-sided depth step on the near surface.
+  // A receding slope has similar jumps both toward and away from the camera
+  // and must not fill with ink.
+  float dMin = min(min(dL, dR), min(dU, dDn));
+  float dMax = max(max(dL, dR), max(dU, dDn));
+  float jump = dMax - d;
+  float dMin2 = min(min(dL2, dR2), min(dU2, dD2));
+  float dMax2 = max(max(dL2, dR2), max(dU2, dD2));
+  float jump2 = dMax2 - d;
+  float farCut = uNearFar.y * 0.96;
   float notSky = step(d, farCut);
-  float sil = step(0.055 * uOutline, rel) * notSky;
+  float expected = (0.022 * d + 0.9) * uOutline;
+  float onNear = step(d - dMin, expected * 0.45 + 1.2);
+  float sil = step(expected, jump) * onNear * notSky;
+  float onNear2 = step(d - dMin2, expected * 0.5 + 1.6);
+  float silFar = step(expected * 1.2, jump2) * onNear2 * notSky * step(180.0, d);
+  sil = max(sil, silFar);
 
   vec3 cL = texture2D(tColor, vUv + vec2(-o1.x, 0.0)).rgb;
   vec3 cR = texture2D(tColor, vUv + vec2( o1.x, 0.0)).rgb;
@@ -76,12 +91,11 @@ void main() {
   vec3 cD = texture2D(tColor, vUv + vec2(0.0, -o1.y)).rgb;
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
   float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
-  // Colour seams only if they are a thin ridge (one side similar, the other jumps).
-  float colEdge = step(0.42, gCol) * step(minN, 0.10) * notSky;
+  float colEdge = step(0.28, gCol) * step(minN, 0.12) * notSky;
 
   float ink = max(sil, colEdge);
-  vec3 inkCol = vec3(0.10, 0.08, 0.06);
-  col = mix(col, inkCol, ink);
+  vec3 inkCol = vec3(0.09, 0.07, 0.05);
+  col = mix(col, inkCol, ink * 0.88);
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;

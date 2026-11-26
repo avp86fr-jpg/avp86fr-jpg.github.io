@@ -26,7 +26,7 @@ export function createInput(root) {
   };
 
   let actionWas = false;
-  const pulses = { camera: false, pause: false, gearToggle: false, map: false, fullscreen: false, debug: false };
+  const pulses = { camera: false, pause: false, gearToggle: false, map: false, fullscreen: false, debug: false, confirm: false };
 
   function onKey(e, down) {
     if (e.repeat) return;
@@ -37,6 +37,10 @@ export function createInput(root) {
     if (down && KEYS.map.includes(e.code)) pulses.map = true;
     if (down && KEYS.fullscreen.includes(e.code)) pulses.fullscreen = true;
     if (down && KEYS.debug.includes(e.code)) pulses.debug = true;
+    if (down && (e.code === "Enter" || e.code === "NumpadEnter")) {
+      const onField = e.target && e.target.closest && e.target.closest("button, input, textarea, select, a");
+      if (!onField) pulses.confirm = true;
+    }
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
   }
 
@@ -113,9 +117,10 @@ export function createInput(root) {
       map: pulses.map,
       fullscreen: pulses.fullscreen,
       debug: pulses.debug,
+      confirm: pulses.confirm,
       autoThrottle: settings?.autoThrottle,
     };
-    pulses.camera = pulses.pause = pulses.gearToggle = pulses.map = pulses.fullscreen = pulses.debug = false;
+    pulses.camera = pulses.pause = pulses.gearToggle = pulses.map = pulses.fullscreen = pulses.debug = pulses.confirm = false;
     state.touchCamera = false;
     Object.assign(state, out);
     return out;

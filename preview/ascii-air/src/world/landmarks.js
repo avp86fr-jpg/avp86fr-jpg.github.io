@@ -136,7 +136,7 @@ function makeLighthouse() {
   const beamMat = new THREE.MeshBasicMaterial({
     color: 0xfff2c0,
     transparent: true,
-    opacity: 0.18,
+    opacity: 0.38,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
@@ -424,8 +424,8 @@ function makeRunwayLights(parent, x0, x1, z, y) {
     // 09 at the west threshold, 27 at the east — large centreline numerals
     paintDigit(g, "0", x0 + 48, y + 0.25, z - 8, 2.4);
     paintDigit(g, "9", x0 + 48, y + 0.25, z + 8, 2.4);
-    paintDigit(g, "2", x1 - 70, y + 0.4, z - 16, 6.4);
-    paintDigit(g, "7", x1 - 70, y + 0.4, z + 16, 6.4);
+    paintDigit(g, "2", x1 - 48, y + 0.25, z - 8, 2.4);
+    paintDigit(g, "7", x1 - 48, y + 0.25, z + 8, 2.4);
     // green chevrons leading in: west of 09 (dir +X), east of 27 (dir -X)
     for (let i = 0; i < 5; i++) {
       chevronPair(g, x0 - 28 - i * 16, y, z, +1, 1.15);
@@ -466,7 +466,9 @@ function mergeStatic(group, skipNames = new Set()) {
     const idAttr = o.geometry.getAttribute("aId");
     const mid = (idAttr ? idAttr.getX(0) : (o.userData.matId || 8));
     const col = mat.color ? mat.color.getHex() : 0;
-    const key = mid + ":" + col + ":" + (mat.type || "") + ":" + (mat.flatShading ? 1 : 0);
+    // Quantize so close ochres / roof reds share a draw.
+    const q = (col & 0xf0f0f0);
+    const key = mid + ":" + q + ":" + (mat.type || "");
     if (!buckets.has(key)) buckets.set(key, { mat, geos: [] });
     const g = o.geometry.clone();
     g.applyMatrix4(o.matrixWorld);
@@ -609,9 +611,9 @@ export function createLandmarks(scene, terrain, sky) {
     puffMat.userData.matId = MAT.CLOUD;
     const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.CLOUD, 0);
     const spots = [
-      [0, 10, 0, 16], [10, 22, 4, 18], [-8, 28, -6, 15], [4, 42, 8, 20],
-      [-12, 50, 2, 17], [8, 64, -4, 22], [-6, 78, 6, 18], [2, 96, 0, 24],
-      [14, 88, 10, 16], [-16, 70, -8, 15],
+      [0, 16, 0, 22], [14, 32, 6, 26], [-12, 40, -8, 22], [6, 58, 10, 28],
+      [-16, 72, 4, 24], [12, 92, -6, 32], [-8, 114, 8, 26], [4, 138, 0, 34],
+      [20, 126, 14, 22], [-22, 100, -12, 22], [0, 160, 4, 28], [16, 150, -10, 20],
     ];
     const inst = new THREE.InstancedMesh(puffGeo, puffMat, spots.length);
     inst.name = "smoke";
@@ -635,7 +637,7 @@ export function createLandmarks(scene, terrain, sky) {
   const spots = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 42; i++) {
     const a = rnd() * Math.PI * 2;
     const r = 20 + rnd() * 140;
     const x = LANDMARKS.town.x + Math.cos(a) * r;
@@ -676,11 +678,11 @@ export function createLandmarks(scene, terrain, sky) {
 
   // Coastal traffic visible from the southern hero view (east is camera-right when looking north)
   const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(560, 0.9, -900);
+  steamer.position.set(420, 0.9, -1480);
   steamer.rotation.y = -0.9;
   group.add(steamer);
   boats.push(steamer);
-  const coastal = [[440, -1000, 0x2a6cb6], [620, -860, 0xe8e0c8], [700, -1100, 0xc05030], [500, -780, 0xc08020]];
+  const coastal = [[280, -1500, 0x2a6cb6], [520, -1400, 0xe8e0c8], [640, -1280, 0xc05030], [360, -1360, 0xc08020], [200, -1550, 0xf4ead0]];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.5, z);
@@ -708,18 +710,20 @@ export function createLandmarks(scene, terrain, sky) {
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.position.set(bx, 22, bz);
+  bridge.scale.set(1.8, 1.4, 1.6);
+  bridge.position.set(bx, 26, bz);
   // river goes roughly (720,640)->(780,520)->(980,440) so at bridge toward SE
   bridge.rotation.y = -0.6;
   group.add(bridge);
 
   const castle = makeCastle();
+  castle.scale.setScalar(1.45);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
   group.add(castle);
 
   const mills = [];
   const millSpots = [
-    [-480, 80], [-560, 20], [-400, 140], [-620, 120], [-520, -40],
+    [-400, -180], [-480, -40], [-360, 40], [-520, 80], [-420, 140],
   ];
   for (const [x, z] of millSpots) {
     const m = makeWindmill();
@@ -730,6 +734,7 @@ export function createLandmarks(scene, terrain, sky) {
   }
 
   const arch = makeArch();
+  arch.scale.setScalar(1.35);
   arch.position.set(LANDMARKS.arch.x, 0, LANDMARKS.arch.z);
   arch.rotation.y = -0.5;
   group.add(arch);
@@ -768,7 +773,7 @@ export function createLandmarks(scene, terrain, sky) {
     sky.addLamp(bulb.position.clone(), 0xffc878, 2.2, 28);
   }
 
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "boat", "smoke", "lava", "windsock", "steamer", "sock"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock"]));
   // keep boat meshes (they bob)
   scene.add(group);
 

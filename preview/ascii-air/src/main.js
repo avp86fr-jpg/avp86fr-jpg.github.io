@@ -161,6 +161,12 @@ let autoPilotTarget = null;
 let autoPilotOpts = {};
 let pendingResult = null;
 
+function markLast(mode, missionId) {
+  save.lastMode = mode;
+  if (missionId) save.lastMission = missionId;
+  persist(save);
+}
+
 function startFreeFlight() {
   audio.unlock();
   currentMissionId = null;
@@ -176,6 +182,7 @@ function startFreeFlight() {
   mode = "fly";
   paused = false;
   autoPilotOn = false;
+  markLast("free");
   autoPilotTarget = null;
   ui.showHUD();
   audio.setMusic(clock.hour > 19 || clock.hour < 6 ? "music_night" : "music_day", 0.55);
@@ -202,6 +209,7 @@ function startMission(id) {
   mode = "fly";
   paused = false;
   pendingResult = null;
+  markLast("mission", id);
   ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
 }
@@ -231,10 +239,10 @@ function backToTitle() {
   ui.showTitle(save);
   audio.setMusic("music_day", 0.45);
   // park a plane on the runway for the title loop
-  resetCraft(craft, { x: -80, y: 40, z: -900, heading: 0.3 }, 0.3, save.plane || "trainer");
+  resetCraft(craft, { x: 220, y: 70, z: -1500, heading: 2.4 }, 2.4, save.plane || "trainer");
   launchCraft(craft, 46, 0);
   autoPilotOn = true;
-  autoPilotTarget = { x: 200, y: 80, z: -700 };
+  autoPilotTarget = { x: -80, y: 90, z: -400 };
   autoPilotOpts = { speed: 44 };
 }
 
@@ -484,8 +492,9 @@ async function warmup() {
   ui.setLoad(1, "ready");
 }
 
+let menuAxis = 0;
 function bindKeys() {
-  // UI nav when menus open
+  // UI nav when menus open — handled in step() as edge triggers
 }
 
 function step(now) {
@@ -500,10 +509,15 @@ function step(now) {
   if (inp.pause && mode === "fly") togglePause();
   if (inp.camera && mode === "fly") flyCam.cycle();
 
-  if (mode === "title" || (ui.overlay && !ui.overlay.classList.contains("hidden") && mode !== "fly") || paused) {
-    if (inp.pitch > 0.5) ui.menuMove(1);
-    if (inp.pitch < -0.5) ui.menuMove(-1);
-    if (inp.actionPressed) ui.menuOk();
+  const menuOpen = mode === "title" || (ui.overlay && !ui.overlay.classList.contains("hidden")) || paused;
+  if (menuOpen) {
+    const dir = inp.pitch > 0.5 || inp.roll > 0.5 ? 1 : inp.pitch < -0.5 || inp.roll < -0.5 ? -1 : 0;
+    if (dir && dir !== menuAxis) ui.menuMove(dir);
+    menuAxis = dir;
+    const onField = typeof document !== "undefined" && document.activeElement && document.activeElement.closest && document.activeElement.closest("button, input, textarea, select, a");
+    if ((inp.actionPressed || inp.confirm) && !onField) ui.menuOk();
+  } else {
+    menuAxis = 0;
   }
 
   if (!paused && (mode === "fly" || mode === "title")) {
@@ -631,12 +645,12 @@ function hudShot() {
 }
 
 function heroShot(opts = {}) {
-  const x = opts.x ?? 240;
-  const y = opts.y ?? 68;
-  const z = opts.z ?? -1310;
-  const tx = opts.tx ?? -20;
-  const ty = opts.ty ?? 32;
-  const tz = opts.tz ?? -160;
+  const x = opts.x ?? 150;
+  const y = opts.y ?? 78;
+  const z = opts.z ?? -1620;
+  const tx = opts.tx ?? 20;
+  const ty = opts.ty ?? 40;
+  const tz = opts.tz ?? -180;
   startFreeFlight();
   if (weather) weather.set(opts.weather || "clear");
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
