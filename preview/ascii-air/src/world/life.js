@@ -131,6 +131,11 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       [160, -640, 36, -0.2, 0x9a8a72],
       [80, -580, 30, 0.15, 0x9a8a72],
       [360, -760, 24, -0.5, 0x9a8a72],
+      [200, -880, 32, 0.2, 0x9a8a72],
+      [-60, -620, 28, 0.6, 0x9a8a72],
+      [440, -520, 26, -0.25, 0x9a8a72],
+      [LM.town.x - 30, LM.town.z - 10, 22, 0.15, 0x9a8a72],
+      [120, -300, 24, 0.35, 0x9a8a72],
     ];
     for (const [x, z, len, yaw, c] of walls) {
       const nSeg = Math.max(2, Math.round(len / 6));
@@ -145,12 +150,19 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     }
     if (k > 0.45) {
       // Vineyard posts (short, so they follow the shelf instead of floating as 36 m slabs)
-      for (let r = 0; r < 6; r++) {
-        for (let c = 0; c < 10; c++) {
-          const x = 464 + c * 3.6, z = -640 + r * 7;
-          const h = H(x, z);
-          if (h < 8 || h > 70) continue;
-          place.push({ x, y: h + 0.7, z, sx: 0.18, sy: 1.4, sz: 0.18, c: 0x3a5a28 });
+      const vineyards = [
+        [464, -640, 10, 8, 3.6, 7],
+        [300, -830, 8, 6, 3.4, 6.5],
+        [130, -510, 8, 5, 3.5, 6.8],
+      ];
+      for (const [x0, z0, nc, nr, dc, dr] of vineyards) {
+        for (let r = 0; r < nr; r++) {
+          for (let c = 0; c < nc; c++) {
+            const x = x0 + c * dc, z = z0 + r * dr;
+            const h = H(x, z);
+            if (h < 8 || h > 70) continue;
+            place.push({ x, y: h + 0.7, z, sx: 0.18, sy: 1.4, sz: 0.18, c: 0x3a5a28 });
+          }
         }
       }
     }
@@ -187,13 +199,18 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
 
   // --- people dots (beach, quay, pier) ---
   {
-    const n = Math.floor(40 * k);
+    const n = Math.floor(72 * k);
     const place = [];
     const zones = [
       [LM.beach.x, LM.beach.z, 28],
-      [LM.harbor.x, LM.harbor.z, 22],
+      [LM.harbor.x, LM.harbor.z, 26],
       [LM.pier.x, LM.pier.z, 16],
-      [LM.town.x, LM.town.z + 20, 18],
+      [LM.town.x, LM.town.z + 12, 22],
+      [LM.market.x, LM.market.z, 14],
+      [LM.church.x, LM.church.z + 8, 10],
+      [LM.windmills.x, LM.windmills.z, 16],
+      [430, -720, 12],
+      [90, -380, 10],
     ];
     const cols = [0xc45a2a, 0x3a6cb6, 0xe8e0c8, 0x3a8a5a, 0xc08020, 0xf0c8a0, 0x4a3a2a];
     for (let i = 0; i < n; i++) {
@@ -208,6 +225,30 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     if (place.length) {
       const inst = instanced(new THREE.CapsuleGeometry(0.28, 0.7, 3, 6), lam(0xc45a2a, MAT.PLANE), place);
       inst.name = "life-people";
+      group.add(inst);
+    }
+  }
+
+
+  // --- cart / wagon silhouettes (static, one draw) ---
+  if (k > 0.35) {
+    const carts = [
+      [LM.market.x + 6, LM.market.z + 4, 0.4],
+      [LM.harbor.x - 12, LM.harbor.z + 2, 1.2],
+      [LM.town.x + 10, LM.town.z + 8, 0.1],
+      [LM.church.x - 8, LM.church.z + 6, -0.3],
+      [430, -716, 0.2],
+      [LM.pier.x - 6, LM.pier.z + 4, 0.8],
+    ];
+    const place = [];
+    for (const [x, z, yaw] of carts) {
+      const h = H(x, z);
+      if (h < 0.6) continue;
+      place.push({ x, y: h + 0.7, z, sx: 2.4, sy: 1.1, sz: 1.25, ry: yaw, c: 0x5a3a22 });
+    }
+    if (place.length) {
+      const inst = instanced(new THREE.BoxGeometry(1, 1, 1), lam(0x5a3a22, MAT.WOOD), place);
+      inst.name = "life-carts";
       group.add(inst);
     }
   }

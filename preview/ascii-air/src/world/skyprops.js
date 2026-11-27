@@ -103,6 +103,7 @@ function paintCloudAtlas() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   tex.anisotropy = 4;
+  tex.premultiplyAlpha = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.magFilter = THREE.LinearFilter;
   tex.generateMipmaps = true;
@@ -118,11 +119,18 @@ function makeCloudMaterial(tex) {
       uStorm: { value: 0 },
     },
     defines: { USE_INSTANCING: "" },
-    transparent: false,
-    depthWrite: true,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
     side: THREE.DoubleSide,
     fog: false,
     toneMapped: true,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
+    blendSrcAlpha: THREE.ZeroFactor,
+    blendDstAlpha: THREE.OneFactor,
     vertexShader: /* glsl */ `
       varying vec2 vUv;
       attribute float aTile;
@@ -148,13 +156,12 @@ function makeCloudMaterial(tex) {
       varying vec2 vUv;
       void main() {
         vec4 t = texture2D(uMap, vUv);
-        float a = t.a;
-        if (a < 0.08) discard;
-        float dith = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-        if (a < 0.48 && dith > a * 1.12) discard;
+        float a = smoothstep(0.04, 0.72, t.a);
+        if (a < 0.015) discard;
         vec3 col = t.rgb;
         col = mix(col, col * vec3(0.55, 0.60, 0.70), uStorm);
-        gl_FragColor = vec4(col, 7.0 / 255.0);
+        // Premultiplied RGB; dest alpha (matId) is preserved so outlines stay off.
+        gl_FragColor = vec4(col * a, a);
       }
     `,
   });
@@ -247,6 +254,7 @@ export function createSkyProps(scene, quality = "medium") {
   cloudGeo.setAttribute("aTile", new THREE.InstancedBufferAttribute(tileArr, 1));
   cloudInst.count = nTotal;
   cloudInst.frustumCulled = false;
+  cloudInst.renderOrder = 4;
   group.add(cloudInst);
 
   // Balloons — one instanced mesh (ambient; mission balloons stay separate)

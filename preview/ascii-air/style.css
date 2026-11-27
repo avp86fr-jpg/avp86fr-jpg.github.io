@@ -1213,3 +1213,50 @@ body.touch-portrait #hud-mission { top: 36px; }
   font-size: 11px;
   letter-spacing: 0.04em;
 }
+
+/* Warm poster paper — double-rule frames matching the cover */
+:root {
+  --poster-cream: #fff6e8;
+  --poster-ink: #1c140e;
+  --poster-rule: #c45a32;
+  --poster-gold: #d4a04a;
+}
+.title-plaque,
+.speech-balloon,
+.album-panel,
+#hud-stats, #hud-mission, #hud-photo, #hud-aux, #hud-minimap, #hud-compass, #hud-flight,
+button.album-btn, button.ascii-btn {
+  background: rgba(255, 246, 232, 0.90);
+  border: 1.5px solid var(--poster-ink);
+  box-shadow:
+    inset 0 0 0 3px var(--poster-cream),
+    inset 0 0 0 4.5px rgba(196, 90, 50, 0.55),
+    0 6px 18px rgba(40, 24, 12, 0.16);
+}
+#title-menu.album-panel, #title-menu.title-nav {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.title-wordmark {
+  color: #1c140e;
+  text-shadow: 0 1px 0 #fff3d8, 0 0 0 transparent;
+}
+.title-tag { color: #6a3a22; }
+.album-cta {
+  background: rgba(255, 246, 232, 0.96);
+  border: 1.5px solid var(--poster-ink);
+  box-shadow: inset 0 0 0 2px #fff6e8, 0 3px 10px rgba(40, 24, 12, 0.14);
+}
+.album-cta.primary {
+  background: #c01418;
+  color: #fff6e8;
+  border-color: #7a0c10;
+  box-shadow: inset 0 0 0 2px rgba(255, 246, 232, 0.25), 0 4px 14px rgba(160, 20, 24, 0.30);
+}
+#overlay {
+  background: rgba(40, 24, 12, 0.42);
+}
+#overlay .album-panel {
+  background: rgba(255, 246, 232, 0.96);
+}

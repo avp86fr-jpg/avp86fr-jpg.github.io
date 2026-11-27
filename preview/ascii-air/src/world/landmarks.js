@@ -765,13 +765,18 @@ function makeFallsMat() {
         float n = noise(uvw) * 0.55 + noise(uvw * 2.2 + vec2(0.0, -uTime * 0.8)) * 0.45;
         float ribbon = smoothstep(0.35, 0.75, n);
         float core = 1.0 - smoothstep(0.18, 0.48, abs(vUv.x - 0.5));
-        col = mix(col, foam, ribbon * (0.35 + down * 0.45) * (0.45 + core * 0.55));
-        col = mix(col, foam, smoothstep(0.72, 1.0, down) * 0.7);
-        // Soft side falloff, denser in the middle
-        float edge = smoothstep(0.0, 0.10, vUv.x) * smoothstep(1.0, 0.90, vUv.x);
-        float a = (0.42 + core * 0.48 + ribbon * 0.18) * edge;
-        a *= 0.55 + 0.45 * smoothstep(0.0, 0.12, down);
-        gl_FragColor = vec4(col, clamp(a, 0.0, 0.92));
+        col = mix(col, foam, ribbon * (0.40 + down * 0.50) * (0.40 + core * 0.60));
+        // Spray / mist along the veil
+        float spray = noise(vec2(vUv.x * 8.0, vUv.y * 3.0 - uTime * 0.9));
+        col = mix(col, foam, spray * core * 0.25);
+        // Heavy foam at the splash
+        float splash = smoothstep(0.70, 1.0, down) * (0.55 + 0.45 * noise(vec2(vUv.x * 10.0, uTime * 1.4)));
+        col = mix(col, foam, splash);
+        // Soft volumetric falloff
+        float edge = smoothstep(0.0, 0.14, vUv.x) * smoothstep(1.0, 0.86, vUv.x);
+        float a = (0.28 + core * 0.58 + ribbon * 0.22 + splash * 0.25) * edge;
+        a *= 0.50 + 0.50 * smoothstep(0.0, 0.10, down);
+        gl_FragColor = vec4(col, clamp(a, 0.0, 0.95));
       }
     `,
   });
@@ -1093,25 +1098,25 @@ function makeHangingKeep() {
         + 0.07 * Math.sin(ang * 13 + seed * 1.4);
       if (hsh(ang, 1.3) > 0.84) plan *= 0.62; // broken bites
       if (hsh(ang, 4.2) > 0.90) plan *= 1.18; // jutting buttress
-      const shelf = Math.floor((1 - ty) * 7);
-      const ledge = 1.0 + 0.11 * Math.sin(shelf * 2.3 + seed + ang);
+      // Continuous wavy profile — no stepped cake shelves
+      const wave = 1.0
+        + 0.07 * Math.sin(ty * 17 + seed * 2 + ang * 0.6)
+        + 0.045 * Math.sin(ty * 29 + seed * 0.7 + ang * 1.3);
       let prof;
       if (ty > 0.90) {
-        // Uneven crown, not a flat pancake
         prof = plan * (0.82 + 0.20 * Math.sin(ang * 4 + seed) + 0.08 * hsh(ang, 9));
       } else if (ty > 0.58) {
-        // Near-vertical upper walls, slight flare/inset
-        prof = plan * (0.96 + 0.16 * Math.sin(ang * 3.2 + seed) * (ty < 0.78 ? 1 : 0.25)) * ledge;
+        prof = plan * (0.96 + 0.16 * Math.sin(ang * 3.2 + seed) * (ty < 0.78 ? 1 : 0.25)) * wave;
       } else if (ty > 0.22) {
-        // Mid: overhangs and undercuts (wider than the crown in places)
         const over = 1.05 + 0.28 * Math.max(0, Math.sin(ang * 2.6 + seed * 1.3));
         const under = 1.0 - 0.18 * Math.max(0, Math.sin(ang * 4.1 + seed * 2.0 + 1));
-        prof = plan * over * under * ledge;
+        prof = plan * over * under * wave;
       } else {
-        // Broken tapering teeth — not a smooth cone
         const teeth = 0.28 + 0.48 * Math.abs(Math.sin(ang * 5 + seed)) + 0.22 * Math.abs(Math.sin(ang * 11 + seed * 1.1));
         prof = plan * teeth;
       }
+      // Occasional sharp notches, not full ledges
+      if (hsh(ang * 0.3, Math.floor(ty * 22)) > 0.84 && ty < 0.9 && ty > 0.22) prof *= 0.90;
       const rMul = (rad0 < 0.001 ? 0 : 1) * prof;
       let y = -depth + (top + depth) * ty;
       // Irregular top and strata notches
@@ -1119,22 +1124,23 @@ function makeHangingKeep() {
       y += 0.7 * Math.sin(ty * 22 + seed) * (ty < 0.92 ? 1 : 0.3);
       pos.setXYZ(i, x * rx * rMul, y, z * rz * rMul);
       // Horizontal strata tints + moss in folds
-      const band = shelf % 3;
+      const band = Math.floor((1 - ty) * 9) % 3;
       let r, gC, b;
-      if (band === 0) { r = 0.58; gC = 0.50; b = 0.40; }
-      else if (band === 1) { r = 0.72; gC = 0.64; b = 0.50; }
-      else { r = 0.48; gC = 0.44; b = 0.36; }
-      const shade = 0.82 + 0.18 * Math.sin(ang * 2.4 + seed) + 0.06 * Math.sin(ty * 14);
+      // Gentle tint only — the painted atlas carries the strata.
+      if (band === 0) { r = 0.92; gC = 0.88; b = 0.82; }
+      else if (band === 1) { r = 1.0; gC = 0.96; b = 0.88; }
+      else { r = 0.86; gC = 0.84; b = 0.80; }
+      const shade = 0.90 + 0.10 * Math.sin(ang * 2.4 + seed);
       const crease = plan < 0.62 || hsh(ang, ty) < 0.16;
-      if (crease && ty < 0.88) { r = 0.28; gC = 0.36; b = 0.20; } // mossy fold
-      if (ty > 0.90) { r = r * 0.55 + 0.28; gC = gC * 0.45 + 0.42; b = b * 0.5 + 0.16; }
+      if (crease && ty < 0.88) { r = 0.62; gC = 0.72; b = 0.48; } // mossy fold
+      if (ty > 0.90) { r = r * 0.7 + 0.18; gC = gC * 0.65 + 0.28; b = b * 0.7 + 0.10; }
       col[i * 3] = r * shade; col[i * 3 + 1] = gC * shade; col[i * 3 + 2] = b * shade;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.computeVertexNormals();
     retagGeometry(geo, MAT.ROCK, 0);
     const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-      vertexColors: true, flatShading: true,
+      vertexColors: true, flatShading: false,
     })));
     mesh.userData.matId = MAT.ROCK;
     return mesh;
@@ -1142,15 +1148,23 @@ function makeHangingKeep() {
 
   // Upper mass and a smaller, offset lower island (not a second cake).
   const upper = cragGeo({ rx: 42, rz: 34, top: 8.0, depth: 34, seed: 1.2 });
+  upper.name = "keep-rock";
   g.add(upper);
   const lower = cragGeo({ rx: 18, rz: 15, top: 4.2, depth: 16, segs: 28, rings: 16, seed: 4.8 });
+  lower.name = "keep-rock";
   lower.position.set(-8, -30, -22);
   g.add(lower);
 
   function turf(y, pts, grassCol) {
     for (const [x, z, s] of pts) {
-      const mound = mesh(new THREE.SphereGeometry(s, 8, 6), grassCol, MAT.FOLIAGE);
-      mound.scale.set(1.15, 0.38, 1.10);
+      const parts = [];
+      for (const [ox, oz, k] of [[0, 0, 1], [0.45, 0.2, 0.7], [-0.4, -0.15, 0.65], [0.15, -0.4, 0.6]]) {
+        const sg = new THREE.SphereGeometry(s * k, 7, 5);
+        sg.scale(1.15, 0.34, 1.05);
+        sg.translate(ox * s, 0, oz * s);
+        parts.push(retagGeometry(sg, MAT.FOLIAGE));
+      }
+      const mound = mesh(mergeGeos(parts, MAT.FOLIAGE), grassCol, MAT.FOLIAGE);
       mound.position.set(x, y, z);
       g.add(mound);
     }
@@ -1179,8 +1193,14 @@ function makeHangingKeep() {
     [4, 6.4, -20, 1.9], [-6, 6.4, 16, 1.5], [14, 7.0, 10, 1.3],
     [-16, -26, -28, 1.4], [-2, -26, -36, 1.3],
   ]) {
-    const bsh = mesh(new THREE.SphereGeometry(s, 6, 5), olive, MAT.FOLIAGE);
-    bsh.scale.set(1.2, 0.7, 1.1);
+    const parts = [];
+    for (const [ox, oy, oz, k] of [[0, 0, 0, 1], [0.4, 0.1, 0.15, 0.7], [-0.35, 0.05, -0.12, 0.65]]) {
+      const sg = new THREE.SphereGeometry(s * k, 6, 5);
+      sg.scale(1.15, 0.55, 1.05);
+      sg.translate(ox * s, oy * s, oz * s);
+      parts.push(retagGeometry(sg, MAT.FOLIAGE));
+    }
+    const bsh = mesh(mergeGeos(parts, MAT.FOLIAGE), olive, MAT.FOLIAGE);
     bsh.position.set(x, y, z);
     g.add(bsh);
   }
@@ -1289,51 +1309,142 @@ function makeHangingKeep() {
       color: c, flatShading: false,
     })));
   }
-  // 3 stacked arcade tiers dominating the crown
-  const facade = new THREE.Group();
-  const rowH = 11.2;
-  const t0 = colonnade(6, 5.6, rowH, 4.4, stoneLt, new Set());
-  t0.position.set(0, 0, 0);
-  facade.add(t0);
-  const t1 = colonnade(5, 5.4, rowH, 4.0, stone, new Set([3]));
-  t1.position.set(-1.2, rowH, 0.4);
-  facade.add(t1);
-  const t2 = colonnade(4, 5.0, 9.4, 3.6, stoneLt, new Set([0, 2]));
-  t2.position.set(1.0, rowH * 2, 0.9);
-  facade.add(t2);
-  facade.position.set(-2, 6.8, -11);
-  facade.rotation.y = 0.16;
-  g.add(facade);
-  // Side arcade, one storey plus a broken upper
+  // Real 3D stone ruins — columns, thick arches, cornices, broken masonry.
+  const ruins = new THREE.Group();
+  ruins.name = "keep-rock";
+  function pier(h, r, c) {
+    const grp = new THREE.Group();
+    add(grp, cyl(r * 1.25, r * 1.4, 0.7, 8, c, MAT.ROCK), 0, 0.35, 0);
+    add(grp, cyl(r, r * 1.06, Math.max(0.8, h - 1.3), 8, c, MAT.ROCK), 0, h * 0.5, 0);
+    add(grp, cyl(r * 1.28, r * 1.12, 0.55, 8, c, MAT.ROCK), 0, h - 0.28, 0);
+    return grp;
+  }
+  function thickArch(span, rise, depth, thick, c) {
+    const hw = span / 2;
+    const shape = new THREE.Shape();
+    shape.moveTo(-hw - thick, 0);
+    shape.lineTo(-hw - thick, rise * 0.42);
+    shape.absarc(0, rise * 0.42, hw + thick, Math.PI, 0, true);
+    shape.lineTo(hw + thick, 0);
+    shape.lineTo(hw + thick * 0.2, 0);
+    shape.lineTo(hw, 0.2);
+    shape.lineTo(hw, rise * 0.42);
+    shape.absarc(0, rise * 0.42, hw, 0, Math.PI, false);
+    shape.lineTo(-hw, 0.2);
+    shape.lineTo(-hw - thick * 0.2, 0);
+    shape.closePath();
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth, bevelEnabled: true, bevelThickness: 0.22, bevelSize: 0.16, bevelSegments: 2, curveSegments: 10,
+    });
+    geo.translate(0, 0, -depth / 2);
+    geo.computeVertexNormals();
+    retagGeometry(geo, MAT.ROCK, 0);
+    return new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+      color: c, flatShading: false,
+    })));
+  }
+  function arcadeRow(n, spacing, colH, archRise, depth, c, skip) {
+    const grp = new THREE.Group();
+    const total = n * spacing;
+    for (let i = 0; i <= n; i++) {
+      const x = -total / 2 + i * spacing;
+      if (skip && skip.has(i)) {
+        const stub = pier(colH * (0.32 + (i % 3) * 0.1), 0.9, c);
+        stub.position.x = x;
+        grp.add(stub);
+        add(grp, cyl(0.85, 0.85, 1.6, 8, c, MAT.ROCK), x + 1.15, 0.65, 1.35, 1.15, 0.3, 0.2);
+        continue;
+      }
+      const col = pier(colH, 0.95, c);
+      col.position.x = x;
+      grp.add(col);
+    }
+    for (let i = 0; i < n; i++) {
+      if (skip && skip.has(i)) continue;
+      const arch = thickArch(spacing * 0.78, archRise, depth, 0.75, c);
+      arch.position.set(-total / 2 + (i + 0.5) * spacing, colH - 0.15, 0);
+      grp.add(arch);
+    }
+    add(grp, box(total + 2.2, 0.6, depth + 1.1, c, MAT.ROCK), 0, colH + archRise + 0.15, 0);
+    add(grp, box(1.4, 1.05, 1.2, c, MAT.ROCK), total * 0.26, colH + archRise + 0.9, 0.2, 0.12, 0.18, 0.1);
+    return grp;
+  }
+  const row0 = arcadeRow(6, 5.6, 9.4, 5.2, 3.8, stoneLt, new Set());
+  const row1 = arcadeRow(5, 5.4, 8.6, 4.6, 3.5, stone, new Set([3]));
+  row1.position.set(-1.0, 14.8, 0.35);
+  const row2 = arcadeRow(4, 5.0, 7.4, 4.0, 3.2, stoneLt, new Set([0, 2]));
+  row2.position.set(1.0, 27.6, 0.8);
+  ruins.add(row0, row1, row2);
+  ruins.position.set(-2, 6.8, -11);
+  ruins.rotation.y = 0.16;
+  g.add(ruins);
+
   const side = new THREE.Group();
-  side.add(colonnade(4, 5.0, 10.0, 3.6, stone, new Set([1])));
-  const sideU = colonnade(3, 4.6, 8.5, 3.2, stoneDk, new Set([2]));
-  sideU.position.set(0, 10.0, 0.3);
+  side.name = "keep-rock";
+  side.add(arcadeRow(4, 5.0, 8.8, 4.6, 3.4, stone, new Set([1])));
+  const sideU = arcadeRow(3, 4.8, 7.2, 3.8, 3.0, stone, new Set([2]));
+  sideU.position.set(0, 13.6, 0.3);
   side.add(sideU);
   side.position.set(10, 6.8, 2);
   side.rotation.y = 1.05;
   g.add(side);
-  // Broken towers at the facade ends
-  function brokenTower(h, c, lean) {
+
+  // Cream-stone ruined turret (no tall dark brown pillar)
+  function turret(h, c) {
     const tw = new THREE.Group();
-    add(tw, box(3.6, h, 3.6, c, MAT.ROCK), 0, h / 2, 0, lean, 0, lean * 0.4);
-    add(tw, box(3.0, h * 0.22, 3.0, stoneDk, MAT.ROCK), 0.4, h * 0.92, -0.2, 0.15, 0.2, 0.1);
-    add(tw, box(1.6, h * 0.18, 1.6, c, MAT.ROCK), -0.6, h * 1.08, 0.3, 0.2, 0, -0.15);
+    tw.name = "keep-rock";
+    add(tw, cyl(3.1, 3.5, h, 10, c, MAT.ROCK), 0, h / 2, 0);
+    add(tw, cyl(3.4, 3.3, 0.7, 10, c, MAT.ROCK), 0, 0.35, 0);
+    add(tw, cyl(3.3, 3.0, 0.55, 10, c, MAT.ROCK), 0, h - 0.2, 0);
+    const win = thickArch(2.4, 2.2, 1.6, 0.45, c);
+    win.position.set(0, h * 0.42, 3.0);
+    tw.add(win);
+    for (let i = 0; i < 5; i++) {
+      if (i === 2) continue;
+      const a = (i / 5) * Math.PI * 2;
+      add(tw, box(0.7, 1.05 + (i % 2) * 0.45, 0.7, c, MAT.ROCK), Math.cos(a) * 2.8, h + 0.55, Math.sin(a) * 2.8);
+    }
     return tw;
   }
-  const twL = brokenTower(34, stoneDk, 0.04);
-  twL.position.set(-18, 6.8, -10);
+  const twL = turret(15.5, stoneLt);
+  twL.position.set(-20, 6.8, -9);
   g.add(twL);
-  const twR = brokenTower(28, stone, -0.05);
-  twR.position.set(16, 6.8, -8);
-  g.add(twR);
-  add(g, box(7.5, 3.4, 2.0, stone, MAT.ROCK), 12, 9.2, -6, 0, 0.4, 0.15);
-  const aWing = ruinArch(10, 16, 2.8, stone);
-  aWing.position.set(-14, 6.8, -6);
-  aWing.rotation.y = 1.05;
-  g.add(aWing);
+  // Short broken drum on the right, not a brown stick
+  const stub = new THREE.Group();
+  stub.name = "keep-rock";
+  add(stub, cyl(2.3, 2.7, 5.8, 9, stone, MAT.ROCK), 0, 2.9, 0);
+  add(stub, box(2.2, 1.1, 1.6, stoneLt, MAT.ROCK), 1.2, 5.6, 0.2, 0.25, 0.3, 0.1);
+  stub.position.set(16, 6.8, -8);
+  g.add(stub);
+  const lintel = new THREE.Group();
+  lintel.name = "keep-rock";
+  add(lintel, box(7.5, 1.15, 2.0, stone, MAT.ROCK), 0, 0, 0, 0, 0.4, 0.18);
+  lintel.position.set(10, 8.0, -6);
+  g.add(lintel);
 
-  // Trees and canopy clumps in and around the ruins
+  function leafMass(s, col) {
+    const parts = [];
+    const blobs = [
+      [0, 0, 0, 1.0, 0.48, 1.0],
+      [0.55, 0.08, 0.22, 0.72, 0.38, 0.7],
+      [-0.5, 0.06, -0.18, 0.68, 0.36, 0.66],
+      [0.15, 0.22, -0.45, 0.6, 0.34, 0.62],
+      [-0.2, 0.18, 0.48, 0.58, 0.32, 0.6],
+      [0.35, -0.12, 0.1, 0.5, 0.28, 0.55],
+      [-0.4, -0.08, 0.3, 0.48, 0.26, 0.5],
+    ];
+    for (const [x, y, z, sx, sy, sz] of blobs) {
+      const sg = new THREE.SphereGeometry(s, 6, 5);
+      sg.scale(sx, sy, sz);
+      sg.rotateZ(x * 0.28);
+      sg.rotateX(z * 0.22);
+      sg.translate(x * s, y * s, z * s);
+      parts.push(retagGeometry(sg, MAT.FOLIAGE));
+    }
+    return mesh(mergeGeos(parts, MAT.FOLIAGE), col, MAT.FOLIAGE);
+  }
+
+  // Trees and leafy masses draping the rims and ruins
   const tr = cyl(0.7, 1.15, 11, 7, 0x5a3a22, MAT.WOOD);
   tr.position.set(-14, 12.4, -4);
   g.add(tr);
@@ -1341,8 +1452,9 @@ function makeHangingKeep() {
     [0, 8.0, 0, 6.4], [4.2, 6.0, 2.0, 4.8], [-4.0, 6.2, -2.2, 4.6],
     [2.0, 9.6, -2.4, 4.0], [-2.2, 9.4, 2.6, 3.8], [4.8, 7.6, -1.0, 3.2],
     [-3.0, 5.0, 3.0, 3.4], [5.2, 4.4, 1.6, 2.8],
+    [1.5, 3.2, 4.0, 2.6], [-5.0, 3.6, 1.0, 2.4],
   ]) {
-    const leaf = mesh(new THREE.SphereGeometry(r, 9, 7), moss, MAT.FOLIAGE);
+    const leaf = leafMass(r, moss);
     leaf.position.set(-14 + ox, 12.4 + oy, -4 + oz);
     g.add(leaf);
   }
@@ -1355,9 +1467,19 @@ function makeHangingKeep() {
     const t2 = cyl(0.22 * s, 0.36 * s, 4.6 * s, 5, 0x5a3a22, MAT.WOOD);
     t2.position.set(x, y + 2.2 * s, z);
     g.add(t2);
-    const leaf = mesh(new THREE.SphereGeometry(2.4 * s, 7, 6), moss, MAT.FOLIAGE);
+    const leaf = leafMass(2.4 * s, moss);
     leaf.position.set(x, y + 5.6 * s, z);
     g.add(leaf);
+  }
+  // Ivy draping the left turret and facade piers
+  for (const [x, y, z, s] of [
+    [-20, 14, -6, 1.1], [-19, 11, -6.5, 0.9], [-21, 9, -7, 0.8],
+    [-8, 12, -12, 1.0], [6, 11, -12, 0.9], [-2, 20, -11, 0.85],
+    [4, 24, -10, 0.8], [-14, 10, -10, 0.9],
+  ]) {
+    const iv = leafMass(s, 0x2a5428);
+    iv.position.set(x, y, z);
+    g.add(iv);
   }
 
   const poolU = box(7, 0.3, 5, 0x2e8aaa, MAT.WATER_DEEP);
@@ -1533,6 +1655,76 @@ function mergeBucket(items, name, kind) {
   return mesh;
 }
 
+
+function keepRockMat() {
+  const mat = triplanarLambert({
+    map: loadTex("keep_rock.png"),
+    scale: 0.065,
+    color: 0xfff3e4,
+    vertexColors: true,
+    flatShading: false,
+    matId: MAT.ROCK,
+  });
+  mat.userData.matId = MAT.ROCK;
+  return mat;
+}
+
+function mergeNamed(group, name, material, meshName) {
+  const items = [];
+  const toRemove = [];
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  group.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh) return;
+    let n = o, hit = false;
+    while (n) {
+      if (n.name === name) { hit = true; break; }
+      n = n.parent;
+    }
+    if (!hit) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    g.applyMatrix4(inv);
+    const col = o.material && o.material.color ? o.material.color : new THREE.Color(0xffffff);
+    const vc = g.getAttribute("color");
+    const p = g.getAttribute("position");
+    if (!vc) {
+      const colors = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) {
+        colors[i * 3] = col.r; colors[i * 3 + 1] = col.g; colors[i * 3 + 2] = col.b;
+      }
+      g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    }
+    items.push(g);
+    toRemove.push(o);
+  });
+  for (const o of toRemove) { if (o.parent) o.parent.remove(o); }
+  if (!items.length) return null;
+  const geo = mergeGeos(items, MAT.ROCK);
+  // mergeGeos drops color; stitch it back so triplanar * vertex tint is not black.
+  let nVert = 0;
+  for (const g of items) nVert += g.getAttribute("position").count;
+  const colors = new Float32Array(nVert * 3);
+  let base = 0;
+  for (const g of items) {
+    const p = g.getAttribute("position");
+    const vc = g.getAttribute("color");
+    for (let i = 0; i < p.count; i++) {
+      colors[(base + i) * 3] = vc ? vc.getX(i) : 1;
+      colors[(base + i) * 3 + 1] = vc ? vc.getY(i) : 1;
+      colors[(base + i) * 3 + 2] = vc ? vc.getZ(i) : 1;
+    }
+    base += p.count;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  retagGeometry(geo, material.userData.matId || MAT.ROCK, 0);
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.name = meshName || name;
+  mesh.userData.matId = material.userData.matId;
+  group.add(mesh);
+  return mesh;
+}
 
 function mergeVertexColors(group, skipNames = new Set(), meshName = "keep-merged") {
   // Merge into a single untextured Lambert mesh. Avoids triplanar atlas tiling
@@ -1773,7 +1965,36 @@ function makeWestCapeCliffs(H) {
   })));
   mesh.userData.matId = MAT.ROCK;
   mesh.name = "west-cape-cliffs";
-  return mesh;
+  const group = new THREE.Group();
+  group.name = "west-cape-cliffs";
+  group.add(mesh);
+  // Leafy tufts on the south face and lip — never dark disks on the plateau.
+  const parts = [];
+  for (let i = 0; i < pts.length; i += 2) {
+    const p = pts[i];
+    const blobs = [
+      [p.x, p.h * 0.72, p.z - 1.6, 1.6],
+      [p.x + 1.2, p.h * 0.88, p.z + 1.2, 1.35],
+      [p.x - 0.8, p.h * 0.55, p.z - 2.2, 1.15],
+    ];
+    if (i % 4 === 0) blobs.push([p.x, p.h + 0.4, p.z + 5.5, 1.5]);
+    for (const [x, y, z, s] of blobs) {
+      const sg = new THREE.SphereGeometry(s, 6, 5);
+      sg.scale(1.25, 0.42, 1.05);
+      sg.translate(x, y, z);
+      parts.push(retagGeometry(sg, MAT.FOLIAGE));
+    }
+  }
+  if (parts.length) {
+    const foliage = new THREE.Mesh(
+      mergeGeos(parts, MAT.FOLIAGE),
+      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x4a7a38, flatShading: false }))
+    );
+    foliage.userData.matId = MAT.FOLIAGE;
+    foliage.name = "cape-green";
+    group.add(foliage);
+  }
+  return group;
 }
 
 function makeCoastalCliffs(H) {
@@ -2517,12 +2738,139 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     H
   ));
 
+  // Extra décor between missions — chapels, footbridges, dock life, orchards.
+  function makeWaysideChapel() {
+    const g = new THREE.Group();
+    add(g, box(5.4, 4.6, 7.2, 0xf6f0e4, MAT.BUILDING), 0, 2.3, 0);
+    const roof = mesh(new THREE.ConeGeometry(5.2, 3.4, 4), 0xb84a32, MAT.ROOF);
+    roof.rotation.y = Math.PI / 4;
+    roof.position.set(0, 6.3, 0);
+    g.add(roof);
+    add(g, box(1.8, 3.6, 1.8, 0xf6f0e4, MAT.BUILDING), 0, 6.6, -2.4);
+    add(g, cone(1.6, 2.2, 4, 0xb84a32, MAT.ROOF), 0, 9.4, -2.4);
+    add(g, box(0.22, 1.6, 0.22, 0xf4f0e6, MAT.METAL), 0, 10.7, -2.4);
+    add(g, box(0.9, 0.22, 0.22, 0xf4f0e6, MAT.METAL), 0, 11.3, -2.4);
+    add(g, box(1.4, 2.2, 0.28, 0x5a3a20, MAT.WOOD), 0, 1.2, 3.65);
+    return g;
+  }
+  function makeFootbridge(len, yaw) {
+    const g = new THREE.Group();
+    add(g, box(len, 0.35, 2.4, 0x6a4a28, MAT.WOOD), 0, 1.4, 0);
+    add(g, box(len, 0.7, 0.16, 0x9a8a72, MAT.ROCK), 0, 2.0, 1.15);
+    add(g, box(len, 0.7, 0.16, 0x9a8a72, MAT.ROCK), 0, 2.0, -1.15);
+    add(g, box(1.1, 2.8, 1.1, 0x8a7a62, MAT.ROCK), -len * 0.46, 1.0, 0);
+    add(g, box(1.1, 2.8, 1.1, 0x8a7a62, MAT.ROCK), len * 0.46, 1.0, 0);
+    g.rotation.y = yaw;
+    return g;
+  }
+  const chapels = [
+    { x: -80, z: -720, yaw: 0.3 },
+    { x: 360, z: -480, yaw: -0.2 },
+    { x: -320, z: -200, yaw: 0.5 },
+    { x: 80, z: -200, yaw: -0.4 },
+  ];
+  for (const c of chapels) {
+    const y = H(c.x, c.z);
+    if (y < 8) continue;
+    const ch = makeWaysideChapel();
+    ch.position.set(c.x, y, c.z);
+    ch.rotation.y = c.yaw;
+    group.add(ch);
+  }
+  const bridges = [
+    [40, -860, 16, 0.2],
+    [280, -760, 14, -0.4],
+    [-140, -640, 15, 0.5],
+  ];
+  for (const [x, z, len, yaw] of bridges) {
+    const br = makeFootbridge(len, yaw);
+    br.position.set(x, H(x, z), z);
+    group.add(br);
+  }
+  // Harbor dock dressing — crates, barrels, bollards
+  const hx = LANDMARKS.harbor.x, hz = LANDMARKS.harbor.z;
+  for (let i = 0; i < 10; i++) {
+    const cx = hx - 34 + i * 7.2, cz = hz - 3 + (i % 3) * 2.2;
+    add(group, box(1.6 + (i % 3) * 0.4, 1.1, 1.3, (i % 2) ? 0x6a4a28 : 0x8a6230, MAT.WOOD), cx, 2.0, cz, 0, (i % 5) * 0.2, 0);
+  }
+  for (let i = 0; i < 6; i++) {
+    add(group, cyl(0.55, 0.6, 1.15, 8, 0x5a3a1a, MAT.WOOD), hx - 28 + i * 10, 1.9, hz + 5.4);
+    add(group, cyl(0.28, 0.32, 0.9, 6, 0x8a8a82, MAT.METAL), hx - 36 + i * 14, 1.75, hz + 6.2);
+  }
+  // Extra market stalls filling the square
+  for (let i = 0; i < 5; i++) {
+    const st = makeMarketStall(rnd);
+    const x = LANDMARKS.market.x - 10 + (i % 3) * 7;
+    const z = LANDMARKS.market.z - 10 + Math.floor(i / 3) * 7;
+    st.position.set(x, H(x, z), z);
+    st.rotation.y = 0.3 + i * 0.15;
+    group.add(st);
+  }
+  // Orchards and a second vineyard (merged foliage/wood)
+  const orchards = [
+    { x: 420, z: -560, n: 18, yaw: 0.2 },
+    { x: -40, z: -500, n: 14, yaw: -0.15 },
+    { x: 200, z: -360, n: 16, yaw: 0.4 },
+  ];
+  for (const o of orchards) {
+    for (let i = 0; i < o.n; i++) {
+      const col = i % 6, row = Math.floor(i / 6);
+      const x = o.x + col * 7 * Math.cos(o.yaw) - row * 8 * Math.sin(o.yaw);
+      const z = o.z + col * 7 * Math.sin(o.yaw) + row * 8 * Math.cos(o.yaw);
+      const y = H(x, z);
+      if (y < 6) continue;
+      add(group, cyl(0.22, 0.32, 2.4, 5, 0x5a3a22, MAT.WOOD), x, y + 1.2, z);
+      const canopy = mesh(new THREE.SphereGeometry(2.15, 6, 5), (i % 2) ? 0x3a6a30 : 0x4a7a34, MAT.FOLIAGE);
+      canopy.scale.set(1.2, 0.7, 1.1);
+      canopy.position.set(x, y + 3.1, z);
+      group.add(canopy);
+    }
+  }
+  // Vine rows as low foliage strips (second ridge + mill hills)
+  for (const [vx, vz, len, yaw] of [
+    [470, -620, 36, 0.15], [478, -608, 36, 0.15], [486, -596, 36, 0.15],
+    [300, -840, 28, 0.4], [308, -828, 28, 0.4],
+    [140, -520, 24, -0.2], [148, -508, 24, -0.2],
+  ]) {
+    const row = box(len, 1.15, 1.4, 0x3a5a28, MAT.FOLIAGE);
+    row.position.set(vx, H(vx, vz) + 0.7, vz);
+    row.rotation.y = yaw;
+    group.add(row);
+  }
+  // Town street walls / low garden walls
+  for (const [x, z, len, yaw] of [
+    [LANDMARKS.town.x - 20, LANDMARKS.town.z + 8, 28, 0.1],
+    [LANDMARKS.town.x + 16, LANDMARKS.town.z - 6, 22, 1.2],
+    [LANDMARKS.town.x + 4, LANDMARKS.town.z + 24, 18, 0.05],
+    [LANDMARKS.harbor.x - 10, LANDMARKS.harbor.z + 18, 24, 0],
+  ]) {
+    const w = box(len, 1.25, 0.45, 0x9a8a72, MAT.ROCK);
+    w.position.set(x, H(x, z) + 0.55, z);
+    w.rotation.y = yaw;
+    group.add(w);
+  }
+  // A couple more fishing boats at east cove and the lagoon mouth
+  for (const [x, z, col, a0] of [
+    [LANDMARKS.eastCove.x - 20, LANDMARKS.eastCove.z + 10, 0xf0e6d0, 1.1],
+    [LANDMARKS.eastCove.x + 16, LANDMARKS.eastCove.z - 8, 0xe8dcc0, 2.6],
+    [LANDMARKS.lagoon.x + 40, LANDMARKS.lagoon.z + 20, 0xf4efe4, 0.7],
+  ]) {
+    const b = makeSailboat(col);
+    b.position.set(x, 0.45, z);
+    b.rotation.y = -0.4;
+    b.scale.setScalar(1.45);
+    b.userData.cruise = { cx: x, cz: z, rx: 24, rz: 16, a: a0, spd: 0.06 };
+    group.add(b);
+    boats.push(b);
+  }
+
   const hangingKeep = makeHangingKeep();
   hangingKeep.name = "hanging-keep";
   hangingKeep.position.set(LANDMARKS.hangingKeep.x, 280, LANDMARKS.hangingKeep.z);
   hangingKeep.rotation.y = 0.22;
   hangingKeep.scale.setScalar(2.15);
-  mergeVertexColors(hangingKeep, new Set(["falls", "mist"]));
+  mergeVertexColors(hangingKeep, new Set(["falls", "mist", "keep-rock"]));
+  mergeNamed(hangingKeep, "keep-rock", keepRockMat(), "keep-rock");
   group.add(hangingKeep);
 
   // Town lamps
@@ -2608,12 +2956,12 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       group.add(pne);
     }
   }
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "arch"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "keep-rock", "arch"]));
   {
     const cliffs = makeCoastalCliffs(H);
     const west = makeWestCapeCliffs(H);
     if (west) cliffs.add(west);
-    mergeVertexColors(cliffs, new Set(), "cliffs-merged");
+    mergeVertexColors(cliffs, new Set(["cape-green"]), "cliffs-merged");
     group.add(cliffs);
   }
 
