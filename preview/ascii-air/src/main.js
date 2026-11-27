@@ -601,6 +601,7 @@ function step(now) {
     }
     clock.step(dtRaw);
     island.update(dtRaw, now / 1000, clock.hour);
+    if (missions.applyRingNight) missions.applyRingNight(island.sky && island.sky.night || 0);
     if (weather) {
       weather.update(dtRaw, now / 1000);
       weather.applyToCraft(craft, dtRaw);
@@ -740,6 +741,8 @@ function heroShot(opts = {}) {
   craft.throttle = 0.78;
   input.resetThrottleLever?.(0.78);
   rebuildPlane("trainer");
+  const vis = planeMesh && planeMesh.getObjectByName("plane-visual");
+  if (vis) vis.scale.setScalar(1.32 * (HERO_VIEW.planeScale || 1));
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
@@ -763,6 +766,7 @@ function heroShot(opts = {}) {
     missions.spawnDemoChain(chain);
   }
   syncPlaneMesh();
+  if (missions.applyRingNight) missions.applyRingNight(island.sky && island.sky.night || 0);
   hudShot();
   return { x, y, z, heading: hdg };
 }
@@ -818,6 +822,7 @@ function landingShot(opts = {}) {
   paused = true;
   syncPlaneMesh();
   if (contrail) contrail.clear();
+  if (missions.applyRingNight) missions.applyRingNight(island.sky && island.sky.night || 0);
   hudShot();
   return { x, y, z, heading: hdg };
 }
@@ -865,7 +870,7 @@ function exposeAPI() {
     startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot,
     get planeMesh() { return planeMesh; },
     setWeather: (id, opts) => weather && weather.set(id, opts),
-    setTime: (h) => { clock.set(h); island.sky.setHour(h); },
+    setTime: (h) => { clock.set(h); island.sky.setHour(h); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },
     setDisplayMode: () => {},
     setCharSize: () => {},
     setQuality: (q) => { settings.quality = q; applyVisualSettings(); },

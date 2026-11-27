@@ -162,7 +162,7 @@ export function createWater() {
       uBoat0: { value: new THREE.Vector2(155, -1425) },
       uBoat1: { value: new THREE.Vector2(35, -1348) },
       uBoat2: { value: new THREE.Vector2(-90, -1295) },
-      uBoat3: { value: new THREE.Vector2(-155, -1320) },
+      uBoat3: { value: new THREE.Vector2(-150, -1338) },
     },
     vertexShader: VERT,
     fragmentShader: FRAG,

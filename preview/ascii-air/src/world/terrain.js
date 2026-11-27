@@ -446,10 +446,10 @@ export function createTerrain(quality = "medium") {
         else if (n2 < 0.66) col = [0.40, 0.44, 0.20];                       // olive
         else if (n2 > 0.82) col = [0.20, 0.34, 0.16];                       // deep pine lawn
         else col = [0.38 + n * 0.04, 0.50 + n * 0.04, 0.22];                // muted meadow, never lime
-        if (terrace) col = [col[0] * 0.78, col[1] * 0.72, col[2] * 0.70];
+        if (terrace) col = [col[0] * 0.88, col[1] * 0.86, col[2] * 0.84];
         return col;
       }
-      case MAT.FOREST: return [0.16 + n * 0.04, 0.32 + n * 0.08, 0.14];
+      case MAT.FOREST: return [0.22 + n * 0.05, 0.36 + n * 0.08, 0.18];
       case MAT.ROCK: {
         const vd = Math.hypot(x, z - 200);
         // Crater glow only at the lip — the cone itself is brown/grey rock
@@ -462,7 +462,7 @@ export function createTerrain(quality = "medium") {
         // Grey-ochre coastal rock with ink crevices (not a sandy beige slab)
         const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.32;
         const base = [0.48 + n * 0.08, 0.45 + n * 0.05, 0.38 + n * 0.04];
-        return crevice ? [base[0] * 0.55, base[1] * 0.52, base[2] * 0.50] : base;
+        return crevice ? [base[0] * 0.78, base[1] * 0.76, base[2] * 0.74] : base;
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];

@@ -72,7 +72,11 @@ export function createUI(root, hooks) {
   hud.style.cssText = "position:absolute;inset:0;pointer-events:none;";
   hud.innerHTML = `
     <div class="album-panel" id="hud-stats"></div>
-    <div class="album-panel" id="hud-compass"></div>
+    <div class="album-panel" id="hud-compass">
+      <div class="compass-caret" aria-hidden="true"></div>
+      <div class="compass-mark" aria-hidden="true"></div>
+      <div class="compass-window"><canvas id="compass-tape" width="640" height="56"></canvas></div>
+    </div>
     <div class="album-panel" id="hud-mission"></div>
     <div class="banner hud-line" id="hud-msg"></div>
     <div class="album-panel hidden" id="hud-minimap"></div>
@@ -590,7 +594,7 @@ time  ${formatTime(result.time || 0)}
         + '<div class="stat-row">' + ico("gem") + " " + String(photos).padStart(2) + " / 50 (Treasures) " + sbar(photos, 50) + "</div>"
         + '<div class="stat-row">' + ico("plane") + " " + planeName + "  Lvl.2</div>";
     }
-    comp.textContent = compassStrip(craft.heading, hdg);
+    paintCompassTape(craft.heading);
 
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";
     const windKmh = Math.round((weather.windKt || 0) * 1.852);
@@ -807,25 +811,35 @@ time  ${formatTime(result.time || 0)}
     ctx.stroke();
   }
 
-  function compassStrip(hdg, deg) {
-    // Clean tape of whole tokens: SO  O  NO  N  NE  E  SE  S
-    const labels = [[0, "N"], [45, "NE"], [90, "E"], [135, "SE"], [180, "S"], [225, "SO"], [270, "O"], [315, "NO"]];
-    const center = ((headingToNorth(hdg) * 180 / Math.PI) + 360) % 360;
-    const span = 280;
-    const width = 29;
-    const cells = Array(width).fill(" ");
-    for (const [d, lab] of labels) {
-      let delta = d - center;
-      while (delta > 180) delta -= 360;
-      while (delta < -180) delta += 360;
-      const mid = (delta / span + 0.5) * (width - 1);
-      const start = Math.round(mid - (lab.length - 1) / 2);
-      if (start >= 0 && start + lab.length <= width) {
-        for (let k = 0; k < lab.length; k++) cells[start + k] = lab[k];
+  function paintCompassTape(hdg) {
+    const canvas = hud.querySelector("#compass-tape");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width, h = canvas.height;
+    const headingDeg = ((headingToNorth(hdg) * 180 / Math.PI) + 360) % 360;
+    const span = 200; // degrees visible, ~5 labels like the master
+    const px = w / span;
+    ctx.clearRect(0, 0, w, h);
+    const labels = { 0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SO", 270: "O", 315: "NO" };
+    ctx.fillStyle = "#1a140c";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (let d = -360; d <= 720; d += 15) {
+      let delta = d - headingDeg;
+      const x = w / 2 + delta * px;
+      if (x < -30 || x > w + 30) continue;
+      const major = ((d % 360) + 360) % 360 % 45 === 0;
+      ctx.fillRect(x - (major ? 1 : 0.6), major ? 6 : 14, major ? 2 : 1.2, major ? 16 : 8);
+      if (major) {
+        const lab = labels[((d % 360) + 360) % 360];
+        if (lab) {
+          ctx.font = lab === "N" && Math.abs(delta) < 8 ? "bold 26px Nunito, Trebuchet MS, sans-serif" : "bold 22px Nunito, Trebuchet MS, sans-serif";
+          ctx.fillText(lab, x, h - 14);
+        }
       }
     }
-    return "⟨ " + cells.join("") + " ⟩  " + String(deg).padStart(3, "0") + "° " + compass(hdg);
   }
+
 
   function attitude(craft) {
     const b = craft.roll || 0;

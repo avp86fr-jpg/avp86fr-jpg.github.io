@@ -163,7 +163,9 @@ export function createSky(scene) {
   );
   tagMesh(moon, MAT.SNOW, 0);
 
-  scene.add(skyMesh, hemi, sun, amb, stars, moon);
+  const moonLit = new THREE.DirectionalLight(0xc4d0ea, 0);
+  moonLit.position.copy(moon.position);
+  scene.add(skyMesh, hemi, sun, amb, stars, moon, moonLit);
 
   const fog = new THREE.Fog(0xb4d8f4, 2000, 5600);
   scene.fog = fog;
@@ -239,14 +241,19 @@ export function createSky(scene) {
 
     hemi.color.copy(pal.hemi);
     hemi.groundColor.copy(pal.hemiG);
-    hemi.intensity = pal.hemiInt;
+    // Moonlight fill so the land stays readable at night
+    if (night > 0.25) hemi.color.lerp(new THREE.Color(0x9aacc8), night * 0.5);
+    hemi.intensity = pal.hemiInt + night * 0.42;
     sun.color.copy(pal.sun);
     sun.intensity = pal.sunInt;
-    amb.intensity = 0.50 + (1 - night) * 0.38;
+    amb.intensity = 0.50 + (1 - night) * 0.38 + night * 0.32;
+    moonLit.position.copy(moon.position);
+    moonLit.intensity = night * 0.62;
+    moonLit.color.set(0xc8d4ee);
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 700 : 2000;
-    fog.far = night > 0.6 ? 3200 : 5600;
+    fog.near = night > 0.6 ? 1200 : 2000;
+    fog.far = night > 0.6 ? 4400 : 5600;
     scene.fog = fog;
 
     stars.material.opacity = saturate((night - 0.2) * 1.8);

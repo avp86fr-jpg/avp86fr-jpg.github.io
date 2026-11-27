@@ -116,15 +116,24 @@ function makeTower() {
 
 function makeChurch() {
   const g = new THREE.Group();
-  add(g, box(12, 10, 18, 0xfaf6ee, MAT.BUILDING), 0, 5, 0);
-  const roof = mesh(new THREE.ConeGeometry(11, 6, 4), 0xe02018, MAT.ROOF);
+  g.name = "church";
+  // Nave
+  add(g, box(14, 10, 22, 0xfaf6ee, MAT.BUILDING), 0, 5, 2);
+  const roof = mesh(new THREE.ConeGeometry(13, 7, 4), 0xe02018, MAT.ROOF);
   roof.rotation.y = Math.PI / 4;
-  roof.position.y = 13;
+  roof.position.set(0, 13.5, 2);
   g.add(roof);
-  add(g, box(4, 16, 4, 0xfaf6ee, MAT.BUILDING), 0, 8, -8);
-  add(g, cone(3, 7, 4, 0xe02018, MAT.ROOF), 0, 20, -8);
-  add(g, box(0.4, 3.5, 0.4, 0xeeeeee, MAT.METAL), 0, 24.5, -8);
-  add(g, box(1.6, 0.4, 0.4, 0xeeeeee, MAT.METAL), 0, 25.5, -8); // cross
+  // Square bell tower with a belfry and a cross — readable on the hillside
+  add(g, box(6.6, 28, 6.6, 0xfaf6ee, MAT.BUILDING), 0, 14, -10);
+  add(g, box(7.4, 8.4, 7.4, 0xfaf6ee, MAT.BUILDING), 0, 30.2, -10);
+  add(g, box(2.4, 4.4, 0.45, 0x1a2230, MAT.METAL), 0, 30.6, -6.2);
+  add(g, box(2.4, 4.4, 0.45, 0x1a2230, MAT.METAL), 0, 30.6, -13.8);
+  add(g, box(0.45, 4.4, 2.4, 0x1a2230, MAT.METAL), 3.95, 30.6, -10);
+  add(g, box(0.45, 4.4, 2.4, 0x1a2230, MAT.METAL), -3.95, 30.6, -10);
+  add(g, cyl(0.75, 0.9, 1.5, 8, 0xd4a02a, MAT.METAL), 0, 29.6, -10);
+  add(g, cone(5.6, 8.5, 4, 0xe02018, MAT.ROOF), 0, 38.4, -10);
+  add(g, box(0.38, 3.4, 0.38, 0xeeeeee, MAT.METAL), 0, 43.6, -10);
+  add(g, box(1.7, 0.38, 0.38, 0xeeeeee, MAT.METAL), 0, 45.0, -10);
   return g;
 }
 
@@ -240,26 +249,27 @@ function makeSailboat(color = 0xc8b48a) {
   return g;
 }
 
-function makeSteamer(color = 0x3a4a58) {
+function makeSteamer(color = 0x2a2e36) {
   const g = new THREE.Group();
   g.name = "steamer";
-  // Pointed black/grey hull
-  add(g, box(7.2, 2.4, 20, color, MAT.METAL), 0, 1.2, -0.4);
-  add(g, box(5.0, 1.8, 4.2, color, MAT.METAL), 0, 1.0, 10.2);
-  add(g, box(4.2, 1.2, 3.2, color, MAT.METAL), 0, 0.85, 12.6);
-  add(g, box(7.4, 0.18, 24, 0x1a1816, MAT.METAL), 0, 0.18, 0);
-  // Cream superstructure
-  add(g, box(5.6, 2.2, 8.4, 0xf0e6d0, MAT.BUILDING), 0, 3.4, -1.6);
-  add(g, box(4.0, 1.5, 4.2, 0xf0e6d0, MAT.BUILDING), 0, 5.1, -1.2);
-  add(g, box(3.2, 0.7, 2.2, 0xf0e6d0, MAT.BUILDING), 0, 6.2, -1.2);
+  // Dark hull, pointed bow
+  add(g, box(7.4, 2.6, 22, color, MAT.METAL), 0, 1.3, 0);
+  add(g, box(5.2, 2.0, 5.0, color, MAT.METAL), 0, 1.1, 11.0);
+  add(g, box(3.6, 1.4, 3.4, color, MAT.METAL), 0, 0.95, 13.6);
+  // Red waterline — the hull's readable stripe
+  add(g, box(7.7, 0.5, 23.4, 0xc01418, MAT.ROOF), 0, 0.48, 0);
+  add(g, box(7.5, 0.22, 23.6, 0x1a1816, MAT.METAL), 0, 0.16, 0);
+  // White/cream superstructure, large enough to read at postcard distance
+  add(g, box(6.6, 2.8, 11.4, 0xf7f1e2, MAT.BUILDING), 0, 4.05, -1.0);
+  add(g, box(5.2, 2.1, 6.4, 0xfff8ec, MAT.BUILDING), 0, 6.4, -1.0);
+  add(g, box(4.2, 1.15, 3.6, 0xf7f1e2, MAT.BUILDING), 0, 7.9, -0.6);
   // Bridge windows
-  add(g, box(3.4, 0.55, 0.2, 0x1a2230, MAT.METAL), 0, 5.15, 0.95);
-  // Tall funnel with a red band — the steamer's signature
-  add(g, cyl(1.15, 1.25, 5.4, 10, 0x2a2a2c, MAT.METAL), 0, 7.4, 1.4);
-  add(g, cyl(1.22, 1.22, 1.15, 10, 0xc01418, MAT.ROOF), 0, 7.6, 1.4);
-  add(g, cyl(1.05, 1.15, 0.6, 10, 0x1a1a1a, MAT.METAL), 0, 10.2, 1.4);
-  add(g, cyl(0.12, 0.12, 7.2, 6, 0x333333, MAT.METAL), 0, 6.6, -7);
-  add(g, box(6.4, 0.45, 2.0, 0xc01418, MAT.ROOF), 0, 2.5, 8.8);
+  add(g, box(4.4, 0.75, 0.28, 0x1a2230, MAT.METAL), 0, 6.45, 2.25);
+  // Funnel: dark stack, wide red stripe, black cap
+  add(g, cyl(1.35, 1.5, 6.6, 10, 0x2a2a2c, MAT.METAL), 0, 9.0, 1.8);
+  add(g, cyl(1.58, 1.58, 1.9, 10, 0xc01418, MAT.ROOF), 0, 8.7, 1.8);
+  add(g, cyl(1.25, 1.38, 0.7, 10, 0x1a1a1a, MAT.METAL), 0, 12.3, 1.8);
+  add(g, cyl(0.12, 0.12, 8.2, 6, 0x333333, MAT.METAL), 0, 7.6, -7.2);
   return g;
 }
 
@@ -320,26 +330,52 @@ function makeWreck() {
 
 function makeBridge() {
   const g = new THREE.Group();
-  const stone = 0xd6cebe;
-  const shade = 0xb8ae9c;
-  // Deck runs east-west; arches open to the south camera.
-  add(g, box(72, 1.8, 12, stone, MAT.ROCK), 0, 10, 0);
-  add(g, box(72, 2.6, 1.2, shade, MAT.ROCK), 0, 12.2, -5.5);
-  add(g, box(72, 2.6, 1.2, shade, MAT.ROCK), 0, 12.2, 5.5);
-  for (let i = -6; i <= 6; i++) {
-    add(g, box(1.4, 1.3, 1.4, stone, MAT.ROCK), i * 5.5, 13.8, -5.5);
-    add(g, box(1.4, 1.3, 1.4, stone, MAT.ROCK), i * 5.5, 13.8, 5.5);
-  }
+  g.name = "viaduct";
+  // Pale stone facade with REAL arch cutouts so sky and land show through.
+  const shape = new THREE.Shape();
+  const L = 72, deckY = 16, deckT = 2.4, hw = 5.15;
+  shape.moveTo(-L / 2, 0);
+  shape.lineTo(-L / 2, deckY + deckT);
+  shape.lineTo(L / 2, deckY + deckT);
+  shape.lineTo(L / 2, 0);
+  shape.closePath();
   for (let i = -2; i <= 2; i++) {
-    const x = i * 14;
-    add(g, box(3.6, 18, 10, stone, MAT.ROCK), x, 1, 0);
-    const torus = new THREE.TorusGeometry(5.6, 1.45, 7, 16, Math.PI);
-    retagGeometry(torus, MAT.ROCK, 0);
-    const arch = new THREE.Mesh(torus, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: shade, flatShading: true })));
-    arch.userData.matId = MAT.ROCK;
-    arch.position.set(x, 4.4, 0);
-    g.add(arch);
+    const cx = i * 13.6;
+    const hole = new THREE.Path();
+    hole.moveTo(cx - hw, 0.08);
+    hole.lineTo(cx + hw, 0.08);
+    hole.lineTo(cx + hw, 6.2);
+    hole.absarc(cx, 6.2, hw, 0, Math.PI, false);
+    hole.closePath();
+    shape.holes.push(hole);
   }
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 11, bevelEnabled: false, curveSegments: 16 });
+  geo.translate(0, 0, -5.5);
+  const pos = geo.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const hatch = 0.9 + 0.08 * Math.sin(x * 0.55 + y * 0.8) + 0.05 * Math.sin(z * 0.4);
+    const shade = z > 4 ? 0.92 : 1;
+    col[i * 3] = 0.90 * hatch * shade;
+    col[i * 3 + 1] = 0.86 * hatch * shade;
+    col[i * 3 + 2] = 0.76 * hatch * shade;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  retagGeometry(geo, MAT.ROCK, 0);
+  const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    vertexColors: true, flatShading: true, emissive: 0xc8c0b0, emissiveIntensity: 0.18,
+  })));
+  mesh.userData.matId = MAT.ROCK;
+  g.add(mesh);
+  // Pale parapet posts along the deck
+  for (let i = -6; i <= 6; i++) {
+    add(g, box(1.3, 1.5, 1.3, 0xe6dece, MAT.ROCK), i * 5.5, deckY + deckT + 0.9, -5.2);
+    add(g, box(1.3, 1.5, 1.3, 0xe6dece, MAT.ROCK), i * 5.5, deckY + deckT + 0.9, 5.2);
+  }
+  add(g, box(72, 0.7, 1.1, 0xddd4c4, MAT.ROCK), 0, deckY + deckT + 1.7, -5.2);
+  add(g, box(72, 0.7, 1.1, 0xddd4c4, MAT.ROCK), 0, deckY + deckT + 1.7, 5.2);
   return g;
 }
 
@@ -402,41 +438,35 @@ function makeWindmill() {
 function makeArch() {
   const g = new THREE.Group();
   g.name = "arch";
-  const pale = 0xe4d6b4;
-  const mid = 0xd2c4a0;
-  const shade = 0xc0b08a;
-  const dark = 0x8a7a5c;
-  // Chunky pale limestone headland with a window cut through, attached to the cape.
+  // Irregular rocky headland, tall narrow window, attached to the cape.
   const shape = new THREE.Shape();
-  const W = 22, Hgt = 52;
-  shape.moveTo(-W, 0);
-  shape.lineTo(-W - 6, 8);
-  shape.lineTo(-W - 2, 24);
-  shape.lineTo(-W + 2, Hgt);
-  shape.lineTo(W - 2, Hgt - 3);
-  shape.lineTo(W + 5, 22);
-  shape.lineTo(W + 3, 7);
-  shape.lineTo(W, 0);
+  const pts = [
+    [-18, 0], [-22, 6], [-20, 14], [-24, 22], [-18, 34], [-16, 46],
+    [-10, 56], [-2, 62], [6, 60], [12, 52], [16, 40], [20, 28],
+    [18, 16], [22, 8], [16, 0],
+  ];
+  shape.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
   shape.closePath();
   const hole = new THREE.Path();
-  // Opening is clearly a window in a mass, not a thin frame
-  hole.absellipse(0, 16, 5.4, 11.5, 0, Math.PI * 2, true);
+  // Narrower, taller window like the master (not a round hole in a box)
+  hole.absellipse(0, 22, 3.15, 15.5, 0, Math.PI * 2, true);
   shape.holes.push(hole);
   const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: 24, bevelEnabled: true, bevelThickness: 2.4, bevelSize: 1.8, bevelSegments: 2, curveSegments: 20,
+    depth: 18, bevelEnabled: true, bevelThickness: 2.8, bevelSize: 2.2, bevelSegments: 3, curveSegments: 24,
   });
-  geo.translate(0, 0, -12);
+  geo.translate(0, 0, -9);
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const stripe = Math.sin(x * 0.35 + y * 0.7) + 0.5 * Math.sin((x - y) * 1.1 + z * 0.15);
-    const hatch = stripe > 0.35 ? 0.78 : stripe > 0.0 ? 0.88 : stripe > -0.3 ? 0.95 : 1;
-    const shadeAmt = (z > 8 ? 0.88 : 1) * (y < 4 ? 0.9 : 1);
-    // Pale limestone, not brown
-    col[i * 3] = 0.90 * hatch * shadeAmt;
-    col[i * 3 + 1] = 0.84 * hatch * shadeAmt;
-    col[i * 3 + 2] = 0.68 * hatch * shadeAmt;
+    const stripe = Math.sin(x * 0.28 + y * 0.55) + 0.55 * Math.sin((x - y) * 0.9 + z * 0.2);
+    const hatch = stripe > 0.45 ? 0.62 : stripe > 0.05 ? 0.78 : stripe > -0.35 ? 0.9 : 1;
+    const crevice = (Math.sin(x * 0.7 + z * 0.4) * Math.sin(y * 0.45)) > 0.55 ? 0.62 : 1;
+    const shadeAmt = (z > 6 ? 0.88 : 1) * (y < 5 ? 0.9 : 1) * crevice;
+    col[i * 3] = 0.78 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.70 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.52 * hatch * shadeAmt;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
@@ -444,11 +474,29 @@ function makeArch() {
   const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
   mesh.userData.matId = MAT.ROCK;
   g.add(mesh);
-  // Chunky limestone toes and a spine attaching the arch to the cape (north, +Z)
-  add(g, box(10, 14, 16, pale, MAT.ROCK), -14, 7, 10, 0.06, 0.2, 0.1);
-  add(g, box(10, 13, 16, mid, MAT.ROCK), 14, 6.5, 10, -0.05, -0.18, -0.08);
-  add(g, box(16, 12, 22, pale, MAT.ROCK), 0, 6, 18, 0.04, 0.1, 0);
-  add(g, box(12, 10, 18, mid, MAT.ROCK), 2, 5, 28, 0, 0.15, 0);
+  // Irregular toes / spine attaching the mass to the cape (north, +Z)
+  add(g, box(14, 16, 20, 0xc4b48c, MAT.ROCK), -12, 8, 12, 0.08, 0.25, 0.12);
+  add(g, box(12, 14, 18, 0xb8a878, MAT.ROCK), 11, 7, 14, -0.1, -0.2, -0.1);
+  add(g, box(16, 12, 24, 0xc8b890, MAT.ROCK), 1, 6, 22, 0.05, 0.12, 0);
+  add(g, box(10, 18, 14, 0xb0a070, MAT.ROCK), -6, 9, 28, 0.1, 0.2, 0.08);
+  // Vegetation on the crown
+  const bushMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2a4a28, flatShading: true }));
+  bushMat.userData.matId = MAT.FOLIAGE;
+  const pineMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x1e3a22, flatShading: true }));
+  pineMat.userData.matId = MAT.FOLIAGE;
+  const tufts = [[-8, 58, -2], [-2, 63, 1], [4, 61, -3], [8, 54, 2], [-12, 50, 4], [10, 48, -4]];
+  for (const [x, y, z] of tufts) {
+    const b = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(2.4, 6, 5), MAT.FOLIAGE, 0), bushMat);
+    b.position.set(x, y, z);
+    b.scale.set(1, 0.7, 1);
+    g.add(b);
+  }
+  const pines = [[-6, 62, 2], [3, 64, 0], [9, 56, 3]];
+  for (const [x, y, z] of pines) {
+    const pne = new THREE.Mesh(retagGeometry(new THREE.ConeGeometry(1.8, 6.5, 6), MAT.FOLIAGE, 0), pineMat);
+    pne.position.set(x, y + 3, z);
+    g.add(pne);
+  }
   return g;
 }
 
@@ -646,6 +694,9 @@ function mergeStatic(group, skipNames = new Set()) {
   const buckets = { rock: [], stone: [], plaster: [], roof: [], plain: [] };
   const toRemove = [];
   group.updateMatrixWorld(true);
+  // Bake into the root group's local space (not world), so a positioned
+  // boat/steamer can be merged without the mesh flying off to 2x its position.
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
   group.traverse((o) => {
     if (!o.isMesh || o.isInstancedMesh) return;
     let n = o;
@@ -657,6 +708,7 @@ function mergeStatic(group, skipNames = new Set()) {
     if (!mat || mat.transparent) return;
     const g = o.geometry.clone();
     g.applyMatrix4(o.matrixWorld);
+    g.applyMatrix4(inv);
     const idAttr = g.getAttribute("aId");
     const mid = (idAttr ? idAttr.getX(0) : (o.userData.matId || 8));
     const col = mat.color ? mat.color : new THREE.Color(0xffffff);
@@ -772,9 +824,9 @@ function makeCoastalCliffs(H) {
     const i = positions.length / 3;
     positions.push(x, y, z);
     const stripe = Math.sin(x * 1.15 + y * 1.6) + 0.7 * Math.sin((x - y) * 2.2 + z * 0.22);
-    const hatch = stripe > 0.45 ? 0.28 : stripe > 0.1 ? 0.48 : stripe > -0.2 ? 0.74 : 0.94;
-    // Grey-ochre rock (not sandy beige)
-    const base = shade ? [0.36, 0.32, 0.26] : [0.50, 0.44, 0.36];
+    // Soft hatching only — never near-black 'cave' holes on the cliff face
+    const hatch = stripe > 0.45 ? 0.72 : stripe > 0.1 ? 0.82 : stripe > -0.2 ? 0.92 : 1;
+    const base = shade ? [0.50, 0.44, 0.36] : [0.62, 0.55, 0.44];
     const n = 0.07 * Math.sin(x * 0.18 + z * 0.14);
     colors.push(
       Math.min(1, base[0] * hatch + n),
@@ -959,36 +1011,43 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const houseFrac = (q && q.houses != null) ? q.houses : 1;
   const terraces = [
-    { cx: LANDMARKS.town.x, cz: LANDMARKS.town.z, rx: 95, rz: 65, n: 120, s: 2.25 },
-    { cx: LANDMARKS.town.x - 30, cz: LANDMARKS.town.z - 90, rx: 110, rz: 48, n: 100, s: 2.4 },
-    { cx: LANDMARKS.town.x + 55, cz: LANDMARKS.town.z + 70, rx: 70, rz: 52, n: 60, s: 2.05 },
-    { cx: LANDMARKS.town.x + 10, cz: LANDMARKS.town.z - 140, rx: 80, rz: 34, n: 48, s: 2.3 },
+    { cx: LANDMARKS.town.x - 8,  cz: LANDMARKS.town.z - 30, rx: 88, rz: 36, n: 90,  s: 2.15 },
+    { cx: LANDMARKS.town.x + 6,  cz: LANDMARKS.town.z + 20, rx: 92, rz: 32, n: 110, s: 2.20 },
+    { cx: LANDMARKS.town.x + 16, cz: LANDMARKS.town.z + 78, rx: 78, rz: 28, n: 95,  s: 2.05 },
+    { cx: LANDMARKS.town.x + 22, cz: LANDMARKS.town.z + 130, rx: 68, rz: 24, n: 80,  s: 1.95 },
+    { cx: LANDMARKS.town.x + 18, cz: LANDMARKS.town.z + 178, rx: 54, rz: 22, n: 55,  s: 1.85 },
+    { cx: LANDMARKS.town.x - 55, cz: LANDMARKS.town.z + 50, rx: 48, rz: 36, n: 40,  s: 2.05 },
   ];
   let hi = 0;
   for (const ter of terraces) {
     const nH = Math.floor(ter.n * houseFrac);
-    for (let i = 0; i < nH; i++) {
-      const a = rnd() * Math.PI * 2;
-      const rr = Math.sqrt(rnd());
-      const x = ter.cx + Math.cos(a) * rr * ter.rx;
-      const z = ter.cz + Math.sin(a) * rr * ter.rz;
-      if (Math.abs(z + 1100) < 64) continue;
-      if (Math.hypot(x - LANDMARKS.hangar.x, z - LANDMARKS.hangar.z) < 48) continue;
-      const hgt = H(x, z);
-      if (hgt < 3.5) continue;
-      const h = house(5.2 + rnd() * 3.2, 5.0 + rnd() * 2.6, 4.0 + rnd() * 2.4, 3.2 + rnd() * 1.6, houseColors[hi % 5], roofColors[hi % 5]);
-      h.position.set(x, hgt, z);
-      h.rotation.y = rnd() * Math.PI * 2;
-      h.scale.setScalar(ter.s);
-      group.add(h);
-      spots.push(h.position.clone());
-      hi++;
+    const cols = Math.max(4, Math.ceil(Math.sqrt(nH * (ter.rx / (ter.rz || 1)))));
+    const rows = Math.max(2, Math.ceil(nH / cols));
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (hi >= 420) break;
+        const x = ter.cx - ter.rx + (c + 0.15 + rnd() * 0.7) * (2 * ter.rx / cols);
+        const z = ter.cz - ter.rz + (r + 0.15 + rnd() * 0.7) * (2 * ter.rz / rows);
+        if (Math.abs(z + 1100) < 64) continue;
+        if (Math.hypot(x - LANDMARKS.hangar.x, z - LANDMARKS.hangar.z) < 52) continue;
+        const hgt = H(x, z);
+        if (hgt < 3.5) continue;
+        const h = house(5.0 + rnd() * 3.0, 4.8 + rnd() * 2.4, 3.8 + rnd() * 2.2, 3.0 + rnd() * 1.5, houseColors[hi % 5], roofColors[hi % 5]);
+        h.position.set(x, hgt, z);
+        h.rotation.y = (rnd() - 0.5) * 0.6 + (r % 2) * 0.05;
+        h.scale.setScalar(ter.s);
+        group.add(h);
+        spots.push(h.position.clone());
+        hi++;
+      }
     }
   }
 
   const church = makeChurch();
-  church.scale.setScalar(1.45);
-  church.position.set(LANDMARKS.church.x, H(LANDMARKS.church.x, LANDMARKS.church.z), LANDMARKS.church.z);
+  church.scale.setScalar(2.05);
+  // Higher on the hill so the bell tower reads over the terraces
+  const cX = LANDMARKS.church.x - 10, cZ = LANDMARKS.church.z + 80;
+  church.position.set(cX, H(cX, cZ), cZ);
   group.add(church);
 
   for (let i = 0; i < 6; i++) {
@@ -1014,11 +1073,11 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
-  const steamer = makeSteamer(0x3a4550);
-  // Mid-bay toward the lighthouse, well clear of the hero plane silhouette
-  steamer.position.set(-155, 0.9, -1320);
-  steamer.rotation.y = -0.85;
-  steamer.scale.setScalar(2.5);
+  const steamer = makeSteamer(0x2a2e36);
+  // Mid-bay, profile to the hero camera, clear of the plane
+  steamer.position.set(-150, 0.25, -1338);
+  steamer.rotation.y = -0.7;
+  steamer.scale.setScalar(2.7);
   group.add(steamer);
   boats.push(steamer);
   const coastal = [
@@ -1138,7 +1197,10 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     sky.addLamp(bulb.position.clone(), 0xffc878, 4.0, 70);
   }
 
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock"]));
+  // Collapse each boat/steamer to a handful of meshes so they can still
+  // bob as groups without blowing the 150-draw cap.
+  for (const b of boats) mergeStatic(b, new Set());
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock", "steamer", "boat"]));
   group.add(makeCoastalCliffs(H));
   // keep boat meshes (they bob)
   scene.add(group);

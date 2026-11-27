@@ -272,8 +272,8 @@ function buildTrainer(s) {
   g.add(prop);
 
   const pilot = seatPilot(g);
-  pilot.position.set(0, 1.16, 0.70);
-  pilot.scale.setScalar(0.88);
+  pilot.position.set(0, 1.28, 0.70);
+  pilot.scale.setScalar(1.08);
   pilot.name = "pilot";
 
   g.userData.prop = prop;

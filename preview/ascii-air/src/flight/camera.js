@@ -8,11 +8,11 @@ const _right = new THREE.Vector3();
 const _pos = new THREE.Vector3();
 const _look = new THREE.Vector3();
 function applyHeroFilm(camera, hero, portrait) {
-  if (hero && !portrait && HERO_VIEW.shiftY) {
+  if (hero && !portrait && (HERO_VIEW.shiftY || HERO_VIEW.shiftX)) {
     const w = 1000, h = 1000 / Math.max(0.5, camera.aspect);
-    // Positive offsetY slides the look-at UP the frame so a high camera
-    // can still keep the plane (below the look) in the lower third.
-    camera.setViewOffset(w, h, 0, HERO_VIEW.shiftY * h, w, h);
+    // Positive offsetX slides the plane toward frame centre; positive
+    // offsetY slides the look-at UP so the plane sits in the lower third.
+    camera.setViewOffset(w, h, (HERO_VIEW.shiftX || 0) * w, (HERO_VIEW.shiftY || 0) * h, w, h);
   } else if (camera.view) {
     camera.clearViewOffset();
   }

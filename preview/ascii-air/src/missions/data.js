@@ -582,7 +582,7 @@ export const MISSIONS = [
     id: "res-b1", activity: "rescue", klass: "beginner", title: "The Wreck",
     brief: "Find the shallow wreck off the south-west and drop a raft through the gold ring.",
     hour: 10, plane: "seaplane", mode: "rescue",
-    start: { x: -400, y: 40, z: -1400, heading: -0.6, speed: 40 },
+    start: { x: -640, y: 38, z: -1480, heading: -2.30, speed: 40 },
     timeLimits: [90, 70, 50],
     stops: [
       { type: "mark", name: "Shallow Wreck", x: L.wreck.x, z: L.wreck.z, r: 24, y: 22 },

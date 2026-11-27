@@ -15,10 +15,12 @@ function ringMesh(radius = 14) {
   );
   const rim = new THREE.Mesh(
     retagGeometry(new THREE.TorusGeometry(radius, tube * 1.28, 8, 32), MAT.RING, 1),
-    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0x1a140c, toneMapped: false, transparent: true, opacity: 0.85, side: THREE.BackSide }))
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0x4a3218, toneMapped: false, transparent: true, opacity: 0.7, side: THREE.BackSide }))
   );
   g.add(rim, core);
   g.userData.hero = 1;
+  g.userData.core = core;
+  g.userData.rim = rim;
   return g;
 }
 
@@ -535,6 +537,21 @@ export function createMissionSystem(scene, world, audio) {
     return meshes;
   }
 
-  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain };
+  function applyRingNight(night) {
+    const dark = night > 0.4;
+    group.traverse((o) => {
+      const rim = o.userData && o.userData.rim;
+      const core = o.userData && o.userData.core;
+      if (rim && rim.material) {
+        rim.material.color.setHex(dark ? 0xc4a04a : 0x4a3218);
+        rim.material.opacity = dark ? 0.5 : 0.7;
+      }
+      if (core && core.material) {
+        core.material.color.setHex(dark ? 0xffe07a : 0xffe14a);
+      }
+    });
+  }
+  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight };
+
 
 }

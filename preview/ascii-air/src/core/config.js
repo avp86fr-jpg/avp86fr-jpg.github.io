@@ -219,16 +219,19 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // Postcard + a true rear-3/4 of the plane (~22° down, ~21° side).
-  // shiftY is a film-gate offset (fraction of frame) so the horizon can
-  // stay high while the camera sits above the plane.
-  plane: { x: 55, y: 54, z: -1540 },
+  // Postcard + a true rear-3/4. planeScale is visual-only (hero shot),
+  // so the island composition stays while the Courrier reads ~35% frame.
+  // shiftX/shiftY are film-gate offsets: +shiftX slides the plane left
+  // toward lower-centre; +shiftY keeps the horizon high.
+  plane: { x: 40, y: 54, z: -1540 },
   look:  { x: 8, y: 22, z: -820 },
   dist: 41,
   height: 16.2,
   side: 18.0,
   fov: 60,
-  shiftY: 0.16,
+  shiftX: 0.13,
+  shiftY: 0.17,
+  planeScale: 1.45,
 };
 
 export const SPAWN = {
