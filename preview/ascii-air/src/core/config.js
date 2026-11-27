@@ -223,13 +223,13 @@ export const HERO_VIEW = {
   // so the island composition stays while the Courrier reads ~35% frame.
   // shiftX/shiftY are film-gate offsets: +shiftX slides the plane left
   // toward lower-centre; +shiftY keeps the horizon high.
-  plane: { x: 40, y: 54, z: -1540 },
+  plane: { x: 24, y: 54, z: -1540 },
   look:  { x: 8, y: 22, z: -820 },
   dist: 41,
   height: 16.2,
-  side: 18.0,
+  side: 15.2,
   fov: 60,
-  shiftX: 0.13,
+  shiftX: 0.19,
   shiftY: 0.17,
   planeScale: 1.45,
 };

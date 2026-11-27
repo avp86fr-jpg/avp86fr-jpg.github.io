@@ -63,6 +63,8 @@ void main() {
   float isWater = min(1.0, step(0.5, matId) * step(matId, 1.5) + step(15.5, matId) * step(matId, 17.5));
   float isSky = step(20.5, matId) * step(matId, 21.5) + step(6.5, matId) * step(matId, 7.5);
   float isRing = step(19.5, matId) * step(matId, 20.5);
+  float isFoliage = step(14.5, matId) * step(matId, 15.5);
+  float isTerrain = step(2.5, matId) * step(matId, 5.5);
   // Runway / road (and leftover ground markings) — a long thin stripe at a
   // glancing angle must not draw as a black ink line across the frame.
   float isRoad = min(1.0, step(8.5, matId) * step(matId, 9.5) + step(22.5, matId) * step(matId, 23.5));
@@ -92,7 +94,7 @@ void main() {
   float farCut = uNearFar.y * 0.96;
   float notSky = step(d, farCut);
   // Cap outline thickness on the plane so a rounded tail never becomes a black ring.
-  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.62, isPlane) * mix(1.0, 2.4, isRoad);
+  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.62, isPlane) * mix(1.0, 2.4, isRoad) * mix(1.0, 0.70, isFoliage);
   float onNear = step(d - dMin, expected * 0.45 + mix(1.2, 0.45, isPlane));
   float sil = step(expected, jump) * onNear * notSky * (1.0 - isRoad);
   float onNear2 = step(d - dMin2, expected * 0.5 + 1.6);
@@ -106,7 +108,10 @@ void main() {
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
   float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
   // Colour edges are too thick on the near plane (red/cream bands, tail cap).
-  float colEdge = step(mix(0.20, 0.32, isPlane), gCol) * step(minN, mix(0.14, 0.10, isPlane)) * notSky * mix(1.0, 0.55, isPlane) * (1.0 - isRing) * (1.0 - isRoad);
+  float colCut = mix(mix(0.20, 0.32, isPlane), 0.14, isFoliage);
+  float colEdge = step(colCut, gCol) * step(minN, mix(0.14, 0.10, isPlane)) * notSky * mix(1.0, 0.55, isPlane) * (1.0 - isRing) * (1.0 - isRoad);
+  // Terrain: only ink a crest or a material break, never fill a receding slope.
+  colEdge *= mix(1.0, step(0.28, gCol) * step(jump, expected * 2.2), isTerrain);
 
   // Don't ink-hatch the water surface — grazing waves otherwise become regular stripes.
   sil *= 1.0 - isWater * 0.92;
@@ -118,6 +123,11 @@ void main() {
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;
+  // Soft-knee highlight compress so sky, clouds and sun-facing shots don't blow out.
+  float Lh = luma(col);
+  float knee = smoothstep(0.78, 1.08, Lh);
+  col = mix(col, col * (0.78 / max(Lh, 0.001)), knee * 0.72);
+  col = clamp(col, 0.0, 1.0);
 
   if (uRain > 0.04) {
     // Sparse, long, slightly translucent streaks — never a full-screen hatch.
@@ -166,10 +176,10 @@ export function createLigneClaire() {
     uRes: { value: new THREE.Vector2(1920, 1080) },
     uNearFar: { value: new THREE.Vector2(0.8, 6200) },
     uTime: { value: 0 },
-    uExposure: { value: 1.20 },
+    uExposure: { value: 1.08 },
     uSat: { value: 1.32 },
     uOutline: { value: 1.15 },
-    uBloom: { value: 0.55 },
+    uBloom: { value: 0.26 },
     uRain: { value: 0 },
     uFlash: { value: 0 },
     uContrast: { value: 1.12 },

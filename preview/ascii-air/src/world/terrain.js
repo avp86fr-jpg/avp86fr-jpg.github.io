@@ -366,11 +366,16 @@ export function computeMaterial(x, z, h, slope) {
   if (westCape && h < 40) return MAT.ROCK;
   const vd = dist2(x, z, 0, 200);
   if (vd < 80 && h > 210) return MAT.SNOW;
-  if (vd < 200 && h > 165) return MAT.ROCK;
-  if (vd < 420 && slope > 0.55 && h > 80) return MAT.ROCK;
-  // Greener lower slopes of the volcano
-  if (vd < 420 && h > 40 && h < 165 && slope < 0.5) return (h > 110 ? MAT.FOREST : MAT.GRASS);
-  if (slope > 0.62) return MAT.ROCK;
+  const wd = dist2(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
+  if (wd < 150) return MAT.GRASS;
+  // Only the steep upper cone stays bare rock; mid-flanks are grass/scrub with outcrops.
+  if (vd < 160 && h > 185) return MAT.ROCK;
+  if (vd < 420 && h > 40 && h < 200 && slope < 0.68) {
+    const outcrop = fbm(x * 0.03, z * 0.03, 3, 19);
+    if (slope > 0.58 && outcrop > 0.72) return MAT.ROCK;
+    return (h > 130 ? MAT.FOREST : MAT.GRASS);
+  }
+  if (slope > 0.78) return MAT.ROCK;
   // airport / runway
   if (Math.abs(z + 1100) < 28 && Math.abs(x) < 430 && h > 2 && h < 8) return MAT.RUNWAY;
   if (Math.abs(z + 1100) < 90 && Math.abs(x) < 500 && h > 2 && h < 10) return MAT.DIRT;
@@ -390,7 +395,13 @@ export function computeMaterial(x, z, h, slope) {
   // Coastal cliffs only — steep faces near the water, not the whole south slope.
   const nearCoast = h > 1.4 && h < 48 && (z < -1180 || dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z) < 180 || dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z) < 120);
   if (nearCoast && slope > 0.22) return MAT.ROCK;
-  if (slope > 0.55 && h < 80) return MAT.ROCK;
+  // Inland hills: grass/scrub with scattered rock outcrops, not a mud slope.
+  if (slope > 0.48 && h < 90 && !nearCoast) {
+    const outcrop = fbm(x * 0.04, z * 0.04, 2, 23);
+    if (outcrop > 0.66) return MAT.ROCK;
+    return MAT.GRASS;
+  }
+  if (slope > 0.70 && h < 80) return MAT.ROCK;
   // forest belts
   const forestN = fbm(x * 0.0022, z * 0.0022, 4, 44);
   if (h > 12 && h < 95 && slope < 0.42 && forestN > 0.40 && vd > 240) return MAT.FOREST;
@@ -475,12 +486,11 @@ export function createTerrain(quality = "medium") {
           const lava = (Math.sin(x * 0.18 + z * 0.14) * Math.sin(h * 0.1)) > 0.35;
           return lava ? [0.95, 0.28, 0.08] : [0.55, 0.32, 0.22];
         }
-        if (vd < 280 && h > 150) return [0.42 + n * 0.08, 0.38 + n * 0.04, 0.32];
-        if (vd < 420 && h > 90) return [0.48 + n * 0.08, 0.44 + n * 0.05, 0.34];
-        // Grey-ochre coastal rock with ink crevices (not a sandy beige slab)
+        if (vd < 280 && h > 170) return [0.46 + n * 0.06, 0.42 + n * 0.04, 0.38];
+        // Grey limestone with darker crevices (not khaki mud)
         const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.45;
-        const base = [0.52 + n * 0.08, 0.48 + n * 0.05, 0.40 + n * 0.04];
-        return crevice ? [base[0] * 0.88, base[1] * 0.86, base[2] * 0.84] : base;
+        const base = [0.58 + n * 0.06, 0.56 + n * 0.05, 0.50 + n * 0.04];
+        return crevice ? [base[0] * 0.72, base[1] * 0.70, base[2] * 0.68] : base;
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: {

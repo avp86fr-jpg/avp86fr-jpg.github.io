@@ -496,8 +496,9 @@ function makeBridge() {
 function makeCastle() {
   const g = new THREE.Group();
   g.name = "castle";
-  const stone = 0xd8d0c0;
-  const shade = 0xc0b6a6;
+  const stone = 0x9a9386;
+  const shade = 0x6f6a60;
+  const dark = 0x4a4640;
   const roof = 0x8a2a22;
   // Hollow courtyard: four thinner curtain walls
   add(g, box(36, 10, 2.6, stone, MAT.ROCK), 0, 5, -13.7);
@@ -534,14 +535,17 @@ function makeCastle() {
     add(g, cyl(0.12, 0.12, 2.6, 5, 0xdddddd, MAT.METAL), t.x, t.h + 9.4, t.z);
     g.userData.flagLocals.push({ x: t.x, y: t.h + 10.2, z: t.z });
   }
-  // Gatehouse on the south wall
+  // Gatehouse on the south wall with a dark arched doorway
   add(g, box(10, 12, 5, shade, MAT.ROCK), 0, 6, 14.6);
-  const gate = new THREE.TorusGeometry(3.2, 1.05, 6, 12, Math.PI);
+  add(g, box(3.6, 7.2, 1.2, 0x2a2420, MAT.ROCK), 0, 3.8, 17.2);
+  const gate = new THREE.TorusGeometry(2.4, 0.7, 6, 12, Math.PI);
   retagGeometry(gate, MAT.ROCK, 0);
-  const gm = new THREE.Mesh(gate, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: shade, flatShading: true })));
+  const gm = new THREE.Mesh(gate, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: dark, flatShading: true })));
   gm.userData.matId = MAT.ROCK;
-  gm.position.set(0, 4.2, 16.4);
+  gm.position.set(0, 6.6, 17.3);
   g.add(gm);
+  add(g, box(0.7, 8.4, 1.4, dark, MAT.ROCK), -2.4, 4.2, 17.15);
+  add(g, box(0.7, 8.4, 1.4, dark, MAT.ROCK), 2.4, 4.2, 17.15);
   // Curtain merlons (skip the gate gap on the south face)
   for (let i = -4; i <= 4; i++) {
     add(g, box(2.0, 2.3, 1.55, stone, MAT.ROCK), i * 3.8, 12.15, -15.1);
@@ -653,12 +657,10 @@ function makeCave(heightAt) {
   return g;
 }
 
-function makeFallsMat(tint, opac) {
+function makeFallsMat() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uTint: { value: new THREE.Color(tint) },
-      uOpac: { value: opac },
       uMatId: { value: MAT.WATERFALL },
     },
     transparent: true,
@@ -674,17 +676,22 @@ function makeFallsMat(tint, opac) {
     `,
     fragmentShader: `
       uniform float uTime;
-      uniform vec3 uTint;
-      uniform float uOpac;
       varying vec2 vUv;
       void main() {
-        float y = vUv.y * 5.5 - uTime * 1.15;
-        float n = sin(vUv.x * 18.0 + uTime * 0.7) * 0.12;
-        float band = fract(y + n);
-        float streak = pow(smoothstep(0.0, 0.45, band) * (1.0 - smoothstep(0.5, 1.0, band)), 0.65);
-        float lip = smoothstep(0.0, 0.12, vUv.y) * (1.0 - smoothstep(0.84, 1.0, vUv.y));
-        vec3 col = mix(uTint, vec3(0.95, 0.98, 1.0), streak * 0.7 + lip * 0.3);
-        float a = uOpac * (0.5 + streak * 0.4 + lip * 0.2);
+        float down = 1.0 - vUv.y;
+        vec3 deep = vec3(0.32, 0.58, 0.76);
+        vec3 mid  = vec3(0.62, 0.84, 0.94);
+        vec3 foam = vec3(0.93, 0.97, 1.00);
+        vec3 col = mix(deep, mid, smoothstep(0.0, 0.45, down));
+        col = mix(col, foam, smoothstep(0.62, 1.0, down));
+        // Soft scrolling streaks — no hard barcode bands, no square dots.
+        float sx = vUv.x * 7.0 + sin(vUv.y * 14.0 + uTime * 0.4) * 0.15;
+        float ribbon = smoothstep(0.22, 0.0, abs(fract(sx) - 0.5) - 0.28);
+        float flow = fract(vUv.y * 2.8 - uTime * 1.25 + sin(vUv.x * 16.0) * 0.05);
+        float streak = smoothstep(0.22, 0.0, abs(flow - 0.5) - 0.16);
+        col = mix(col, foam, (ribbon * 0.35 + streak * 0.50) * (0.45 + down * 0.4));
+        float edge = smoothstep(0.0, 0.07, vUv.x) * smoothstep(1.0, 0.93, vUv.x);
+        float a = 0.88 * edge;
         gl_FragColor = vec4(col, a);
       }
     `,
@@ -694,40 +701,46 @@ function makeFallsMat(tint, opac) {
 
 function makeWaterfall() {
   const g = new THREE.Group();
-  // Rock lip and plunge pool so the cascade is a landmark, not a pale slab
-  add(g, box(18, 3.2, 8, 0xc4b496, MAT.ROCK), 0, 20, 2);
-  add(g, box(16, 1.2, 10, 0xb8a888, MAT.ROCK), 0, 18.6, 0);
-  add(g, box(14, 0.8, 12, 0xc8c0b0, MAT.ROCK), 0, -19.2, 4);
-  const geo = new THREE.PlaneGeometry(12, 40, 1, 14);
+  const lime = 0xc2bbb0;
+  const limeDk = 0x9a9488;
+  const limeLt = 0xd4cfc4;
+  // Irregular grey limestone face — a cliff, not a dark keep / doorway.
+  add(g, box(28, 36, 10, lime, MAT.ROCK), 0, 1.0, -5.0);
+  add(g, box(16, 22, 7, limeDk, MAT.ROCK), -8, 4, -3.2);
+  add(g, box(14, 18, 6, limeLt, MAT.ROCK), 8, 2, -3.0);
+  add(g, box(32, 4.2, 14, lime, MAT.ROCK), 0, 20.2, -2.0);
+  add(g, box(20, 2.2, 9, limeLt, MAT.ROCK), 0, 18.6, 2.4);
+  add(g, box(8, 6, 8, limeDk, MAT.ROCK), -12, 17.5, 0.5);
+  add(g, box(7, 5, 7, lime, MAT.ROCK), 12, 17.0, 0.8);
+  add(g, box(18, 3.0, 10, lime, MAT.ROCK), 0, -18.6, 3.2);
+  const geo = new THREE.PlaneGeometry(11, 40, 1, 24);
   retagGeometry(geo, MAT.WATERFALL, 1);
-  const sheet = new THREE.Mesh(geo, makeFallsMat(0xb8d8ec, 0.72));
+  const sheet = new THREE.Mesh(geo, makeFallsMat());
   sheet.name = "falls";
+  sheet.position.set(0, 1.2, 2.2);
   g.add(sheet);
-  const sheet2 = new THREE.Mesh(geo.clone(), makeFallsMat(0xd0eaf6, 0.58));
+  const sheet2 = new THREE.Mesh(geo.clone(), makeFallsMat());
   sheet2.name = "falls";
-  sheet2.position.set(5.5, -2, 2.4);
-  sheet2.rotation.y = 0.14;
-  sheet2.scale.set(0.7, 0.92, 1);
+  sheet2.position.set(0.8, 0.4, 2.8);
+  sheet2.rotation.y = 0.06;
+  sheet2.scale.set(0.72, 0.96, 1);
+  if (sheet2.material.uniforms) sheet2.material.uniforms.uTime = sheet.material.uniforms.uTime;
   g.add(sheet2);
-  const sheet3 = new THREE.Mesh(geo.clone(), makeFallsMat(0xa8c8d8, 0.5));
-  sheet3.name = "falls";
-  sheet3.position.set(-4.5, -3, 1.8);
-  sheet3.rotation.y = -0.1;
-  sheet3.scale.set(0.55, 0.8, 1);
-  g.add(sheet3);
-  // White lip + animated foam pool
-  add(g, box(12, 0.8, 3.2, 0xc8dce8, MAT.FOAM), 0, 19.4, 1.2);
+  // Soft round foam puffs at the plunge (no square particles)
   const foamMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    color: 0xf4f8fc, emissive: 0xd0e4f0, emissiveIntensity: 0.25,
-    flatShading: true, transparent: true, opacity: 0.85, depthWrite: false,
+    color: 0xf2f7fc, emissive: 0xc8dce8, emissiveIntensity: 0.12,
+    flatShading: false, transparent: true, opacity: 0.78, depthWrite: false,
   }));
   foamMat.userData.matId = MAT.FOAM;
   const foamSpecs = [
-    [0, -18.0, 3.8, 7.5, 0.7, 5.5],
-    [2.4, -17.6, 5.0, 4.2, 0.55, 3.4],
-    [-2.2, -17.7, 5.2, 3.8, 0.5, 3.2],
+    [0, -18.2, 4.2, 4.6, 1.3, 4.0],
+    [2.2, -17.8, 5.4, 2.8, 1.0, 2.4],
+    [-2.0, -17.9, 5.2, 2.6, 0.95, 2.2],
+    [0.6, -17.4, 6.4, 2.0, 0.8, 1.8],
+    [-0.8, -17.5, 6.0, 1.8, 0.75, 1.6],
+    [0, -16.8, 3.2, 3.2, 0.9, 2.2],
   ];
-  const foam = new THREE.InstancedMesh(retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.FOAM, 1), foamMat, foamSpecs.length);
+  const foam = new THREE.InstancedMesh(retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.FOAM, 1), foamMat, foamSpecs.length);
   foam.name = "foam";
   foam.frustumCulled = false;
   const fd = new THREE.Object3D();
@@ -740,31 +753,69 @@ function makeWaterfall() {
   foam.instanceMatrix.needsUpdate = true;
   foam.userData.specs = foamSpecs;
   g.add(foam);
-  g.userData.sheets = [sheet, sheet2, sheet3];
-  g.userData.foam = foam;
-  // mist particles
-  const n = 80;
-  const p = new Float32Array(n * 3);
-  const id = new Float32Array(n * 2);
-  for (let i = 0; i < n; i++) {
-    p[i * 3] = (Math.random() - 0.5) * 16;
-    p[i * 3 + 1] = Math.random() * 70 - 35;
-    p[i * 3 + 2] = (Math.random() - 0.5) * 6;
-    id[i * 2] = MAT.FOAM; id[i * 2 + 1] = 0;
-  }
-  const pg = new THREE.BufferGeometry();
-  pg.setAttribute("position", new THREE.BufferAttribute(p, 3));
-  pg.setAttribute("aId", new THREE.BufferAttribute(id, 2));
-  const pts = new THREE.Points(pg, new THREE.PointsMaterial({
-    color: 0xe8ffff, size: 3, sizeAttenuation: true, transparent: true, opacity: 0.7,
+  // Plunge pool
+  const poolGeo = new THREE.CircleGeometry(7.2, 20);
+  poolGeo.rotateX(-Math.PI / 2);
+  retagGeometry(poolGeo, MAT.WATER_DEEP, 1);
+  const poolMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0x3a8aaa, emissive: 0x1a4050, emissiveIntensity: 0.08, flatShading: true,
   }));
-  pts.name = "mist";
-  g.add(pts);
-  g.userData.mist = pts;
+  poolMat.userData.matId = MAT.WATER_DEEP;
+  const pool = new THREE.Mesh(poolGeo, poolMat);
+  pool.position.set(0, -19.0, 6.5);
+  g.add(pool);
+  // Greenery on the lip and flanks
+  const bushMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a6a32, flatShading: true }));
+  bushMat.userData.matId = MAT.FOLIAGE;
+  const pineMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2a4a28, flatShading: true }));
+  pineMat.userData.matId = MAT.FOLIAGE;
+  const tufts = [[-12, 23, 2], [-9, 22.5, 3], [10, 22.8, 2], [13, 22, 3], [-14, 16, -1], [14, 14, -1], [-8, -16, 6], [8, -15, 7], [0, 22.6, -4], [-6, -17, 8]];
+  for (const [x, y, z] of tufts) {
+    const b = new THREE.Mesh(retagGeometry(new THREE.SphereGeometry(1.8, 6, 5), MAT.FOLIAGE, 0), bushMat);
+    b.position.set(x, y, z);
+    b.scale.set(1.2, 0.75, 1.1);
+    g.add(b);
+  }
+  // Pines on the flanks of the lip only — never a row of turrets over the fall.
+  for (const [x, y, z] of [[-13, 22.5, -1], [13, 22.8, 0], [-15, 18, -2], [15, 17, -2]]) {
+    const pne = new THREE.Mesh(retagGeometry(new THREE.ConeGeometry(1.6, 5.8, 6), MAT.FOLIAGE, 0), pineMat);
+    pne.position.set(x, y + 2.6, z);
+    g.add(pne);
+  }
+  g.userData.sheets = [sheet, sheet2];
+  g.userData.foam = foam;
   g.userData.sheet = sheet;
   return g;
 }
 
+function makeStream(H) {
+  const g = new THREE.Group();
+  const pts = [
+    [130, -932], [90, -942], [40, -952], [-10, -962],
+    [-20, -980], [0, -1020], [16, -1080], [28, -1160], [36, -1220],
+  ];
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0x3a90a8, emissive: 0x163848, emissiveIntensity: 0.1, flatShading: true,
+  }));
+  mat.userData.matId = MAT.WATER_DEEP;
+  const segs = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    const dx = b[0] - a[0], dz = b[1] - a[1];
+    const len = Math.hypot(dx, dz);
+    const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+    const y = Math.max(0.35, (H(mx, mz) + H(a[0], a[1]) + H(b[0], b[1])) / 3 + 0.18);
+    const geo = new THREE.PlaneGeometry(len + 1.2, i < 2 ? 7.5 : 5.4);
+    geo.rotateX(-Math.PI / 2);
+    retagGeometry(geo, MAT.WATER_DEEP, 1);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(mx, y, mz);
+    m.rotation.y = -Math.atan2(dz, dx);
+    g.add(m);
+    segs.push(m);
+  }
+  return g;
+}
 
 function makeParkedPlane() {
   const g = new THREE.Group();
@@ -1533,10 +1584,10 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
   const steamer = makeSteamer(0x2a2e36);
   // Mid-bay, farther into the scene, hull broadside so it reads as a long low ship
-  steamer.position.set(18, 0.22, -1268);
+  steamer.position.set(10, 0.22, -1340);
   steamer.rotation.y = 1.05;
   steamer.scale.setScalar(2.35);
-  steamer.userData.cruise = { cx: 18, cz: -1288, rx: 92, rz: 38, a: 0.35, spd: 0.055 };
+  steamer.userData.cruise = { cx: 10, cz: -1340, rx: 50, rz: 36, a: 2.4, spd: 0.055 };
   group.add(steamer);
   boats.push(steamer);
   const coastal = [
@@ -1632,20 +1683,11 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // sheet hangs down from ~88 to ~16, center at ~52
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
   falls.scale.set(1.15, 1.05, 1.15);
-  falls.position.set(wx, H(wx, wz) + 8, wz - 6);
-  // Dark rock flanks so the sheet reads as a fall, not a white slab
-  const lip = box(8, 4, 8, 0x8a7a60, MAT.ROCK);
-  lip.position.set(wx, H(wx, wz) + 4, wz + 1);
-  group.add(lip);
-  const wallL = box(3, 12, 5, 0x8a7a60, MAT.ROCK);
-  wallL.position.set(wx - 6, H(wx, wz) - 2, wz);
-  group.add(wallL);
-  const wallR = box(3, 11, 5, 0x8a7a60, MAT.ROCK);
-  wallR.position.set(wx + 6, H(wx, wz) - 2, wz);
-  group.add(wallR);
-
-  falls.rotation.y = 0.05;
+  // Sheet sits on the south face of the limestone lip; pool at the foot.
+  falls.position.set(wx, H(wx, wz) + 2, wz - 2);
+  falls.rotation.y = Math.PI + 0.04;
   group.add(falls);
+  group.add(makeStream(H));
 
   // Roads
   group.add(makeRoad(

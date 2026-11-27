@@ -45,16 +45,55 @@ function markerPole(color = 0xffee88) { // color passed to MeshBasic
   return g;
 }
 
+function makeNameTag(text) {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 64;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, 256, 64);
+  ctx.fillStyle = "#f6edd4";
+  ctx.strokeStyle = "#1a140c";
+  ctx.lineWidth = 6;
+  const r = 14;
+  ctx.beginPath();
+  ctx.moveTo(r + 8, 6);
+  ctx.lineTo(256 - r - 8, 6);
+  ctx.quadraticCurveTo(248, 6, 248, 6 + r);
+  ctx.lineTo(248, 58 - r);
+  ctx.quadraticCurveTo(248, 58, 248 - r, 58);
+  ctx.lineTo(r + 8, 58);
+  ctx.quadraticCurveTo(8, 58, 8, 58 - r);
+  ctx.lineTo(8, 6 + r);
+  ctx.quadraticCurveTo(8, 6, 8 + r, 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#1a140c";
+  ctx.font = "bold 34px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, 128, 33);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthTest: true, sizeAttenuation: true, toneMapped: false,
+  }));
+  spr.name = "rival-tag";
+  return spr;
+}
+
 function makeRivalCraft() {
   const g = new THREE.Group();
   g.name = "rival";
+  // Chrome-yellow Courrier — clearly not the player's red/cream machine.
   const fuse = new THREE.Mesh(
     retagGeometry(new THREE.BoxGeometry(1.15, 1.05, 6.4), MAT.PLANE, 0),
-    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x1e3a6a, flatShading: true }))
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xe8c014, flatShading: true }))
   );
   const wing = new THREE.Mesh(
     retagGeometry(new THREE.BoxGeometry(9.6, 0.16, 1.5), MAT.PLANE, 0),
-    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xf4efe4, flatShading: true }))
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x1e3a6a, flatShading: true }))
   );
   wing.position.y = 0.45;
   const stripe = new THREE.Mesh(
@@ -64,16 +103,25 @@ function makeRivalCraft() {
   stripe.position.set(0, 0.55, 0.15);
   const fin = new THREE.Mesh(
     retagGeometry(new THREE.BoxGeometry(0.12, 1.5, 1.05), MAT.PLANE, 0),
-    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xf4efe4, flatShading: true }))
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x1e3a6a, flatShading: true }))
   );
   fin.position.set(0, 1.15, -2.7);
+  const rudder = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(0.13, 1.5, 0.32), MAT.PLANE, 0),
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xe8c014, flatShading: true }))
+  );
+  rudder.position.set(0, 1.15, -2.35);
   const stab = new THREE.Mesh(
     retagGeometry(new THREE.BoxGeometry(2.6, 0.1, 0.7), MAT.PLANE, 0),
-    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xf4efe4, flatShading: true }))
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x1e3a6a, flatShading: true }))
   );
   stab.position.set(0, 0.7, -2.7);
-  g.add(fuse, wing, stripe, fin, stab);
+  g.add(fuse, wing, stripe, fin, rudder, stab);
   g.scale.setScalar(1.45);
+  const tag = makeNameTag("LÉO");
+  tag.position.set(0, 3.6, 0.2);
+  tag.scale.set(5.2, 1.3, 1);
+  g.add(tag);
   return g;
 }
 
@@ -148,6 +196,7 @@ export function createMissionSystem(scene, world, audio) {
   };
 
   function clear() {
+    clearDemoRings();
     for (const o of state.objects) {
       group.remove(o);
       o.traverse((c) => {
@@ -217,15 +266,20 @@ export function createMissionSystem(scene, world, audio) {
 
   function setupRival(m) {
     const start = m.start || { x: 0, y: 40, z: 0 };
-    const pts = [new THREE.Vector3(start.x, start.y, start.z)];
+    const hdg = start.heading || 0;
+    const side = 16;
+    const sx = start.x - Math.sin(hdg) * side;
+    const sz = start.z + Math.cos(hdg) * side;
+    const pts = [new THREE.Vector3(sx, start.y, sz)];
     (m.rings || []).forEach((r) => pts.push(new THREE.Vector3(r.x, r.y, r.z)));
     let plen = 0;
     for (let i = 1; i < pts.length; i++) plen += pts[i].distanceTo(pts[i - 1]);
     const dur = (m.timeLimits && m.timeLimits[1]) || 80;
     const mesh = makeRivalCraft();
     mesh.position.copy(pts[0]);
+    mesh.lookAt(pts[1].x, pts[1].y, pts[1].z);
     add(mesh);
-    state.rival = { mesh, pts, plen, dur, t: 1.2, finished: false, finishTime: dur };
+    state.rival = { mesh, pts, plen, dur, t: 0, finished: false, finishTime: dur };
     state.rivalDelta = 0;
   }
 

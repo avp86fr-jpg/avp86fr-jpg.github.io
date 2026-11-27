@@ -693,9 +693,9 @@ export const MISSIONS = [
   },
   {
     id: "rings-p6", activity: "rings", klass: "pro", title: "Rival Run",
-    brief: "Race the red Courrier around Harbor Airport. Beat her to the last ring — three stars if you finish first and under the ★3 time.",
+    brief: "Race Léo's yellow Courrier around Harbor Airport. Beat him to the last ring — three stars if you finish first and under the ★3 time.",
     hour: 11, plane: "trainer", rival: true,
-    start: { x: -240, y: 48, z: -1100, heading: 0, speed: 48 },
+    start: { x: -80, y: 48, z: -1100, heading: 0, speed: 48 },
     timeLimits: [88, 70, 56],
     rings: pathRings([
       [40, 42, -1100, 14], [200, 50, -1000, 13], [80, 55, -860, 13],

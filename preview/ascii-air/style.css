@@ -602,6 +602,20 @@ body.touch-ui .hud-ico { width: 14px; height: 14px; flex-basis: 14px; }
   border: 8px solid transparent;
   border-top-color: #1a140c;
 }
+/* Tutorial plate sits lower-left so it never covers a landmark close-up. */
+#hud-hint.speech-balloon {
+  left: 16px;
+  right: auto;
+  bottom: 132px;
+  transform: none;
+  max-width: min(340px, 36vw);
+  text-align: left;
+  z-index: 8;
+}
+#hud-hint.speech-balloon:after {
+  left: 28px;
+  transform: none;
+}
 #mobile-layer .ctrl-label {
   position: absolute;
   left: 50%;
@@ -758,6 +772,7 @@ body.touch-ui .g-val { font-size: 15px; }
 body.touch-ui .g-lab { font-size: 9px; }
 body.touch-ui #hud-msg { font-size: 14px; top: 18%; max-width: 50vw; }
 body.touch-ui .speech-balloon { font-size: 15px; bottom: auto; top: 18%; max-width: 50vw; left: 50%; transform: translateX(-50%); }
+body.touch-ui #hud-hint.speech-balloon { left: 12px; top: auto; bottom: 120px; transform: none; max-width: 46vw; text-align: left; }
 
 #mobile-layer .boost-btn {
   background: #c01418;

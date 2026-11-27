@@ -146,7 +146,7 @@ function rebuildPlane(id) {
 function applyVisualSettings() {
   look.uniforms.uContrast.value = settings.highContrast ? 1.12 : 1.04;
   look.uniforms.uOutline.value = settings.highContrast ? 1.15 : 1.0;
-  look.uniforms.uBloom.value = (QUALITY[settings.quality] || QUALITY.medium).bloom ? 0.48 : 0.18;
+  look.uniforms.uBloom.value = (QUALITY[settings.quality] || QUALITY.medium).bloom ? 0.26 : 0.0;
   flyCam.state.comfort = !!settings.motionComfort;
   audio.setVolumes(settings);
   allocTargets();
@@ -506,10 +506,21 @@ function renderFrame(time, camDt = 1 / 60) {
     renderer.setRenderTarget(bloomA);
     renderer.render(bloom.scene, bloom.camera);
     look.uniforms.tBloom.value = bloomA.texture;
-    look.uniforms.uBloom.value = 0.48;
+    look.uniforms.uBloom.value = 0.26;
   } else {
     look.uniforms.tBloom.value = colorRT.texture;
     look.uniforms.uBloom.value = 0.0;
+  }
+
+  // Dim exposure and bloom when the lens looks into the sun or a bright cloud.
+  if (look.uniforms.uExposure) {
+    const _sun = (island && island.sky && island.sky.sunDir) ? island.sky.sunDir : null;
+    const _fwd = look._fwd || (look._fwd = new THREE.Vector3());
+    camera.getWorldDirection(_fwd);
+    let into = 0;
+    if (_sun) into = Math.max(0, _fwd.dot(_sun));
+    look.uniforms.uExposure.value = 1.08 - into * 0.24;
+    if (useBloom) look.uniforms.uBloom.value = Math.max(0.08, 0.26 - into * 0.18);
   }
 
   look.uniforms.tColor.value = colorRT.texture;

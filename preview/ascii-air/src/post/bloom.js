@@ -89,7 +89,7 @@ function makePass(frag) {
 export function createBloom() {
   const extract = makePass(EXTRACT);
   extract.uniforms.tMap = { value: null };
-  extract.uniforms.uThresh = { value: 0.62 };
+  extract.uniforms.uThresh = { value: 0.80 };
 
   const blur = makePass(BLUR);
   blur.uniforms.tMap = { value: null };
@@ -98,7 +98,7 @@ export function createBloom() {
   const compose = makePass(COMPOSE);
   compose.uniforms.tSrc = { value: null };
   compose.uniforms.tBloom = { value: null };
-  compose.uniforms.uStrength = { value: 0.72 };
+  compose.uniforms.uStrength = { value: 0.36 };
   compose.uniforms.uCrt = { value: 0 };
   compose.uniforms.uTime = { value: 0 };
   compose.uniforms.uRes = { value: new THREE.Vector2(1280, 720) };

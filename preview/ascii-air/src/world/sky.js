@@ -167,7 +167,7 @@ export function createSky(scene) {
   moonLit.position.copy(moon.position);
   scene.add(skyMesh, hemi, sun, amb, stars, moon, moonLit);
 
-  const fog = new THREE.Fog(0xb4d8f4, 2000, 5600);
+  const fog = new THREE.Fog(0xa8c8e4, 2800, 6400);
   scene.fog = fog;
 
   const state = {
@@ -252,7 +252,7 @@ export function createSky(scene) {
     moonLit.color.set(0xd4e0f4);
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 1600 : 2000;
+    fog.near = night > 0.6 ? 2000 : 2800;
     fog.far = night > 0.6 ? 5000 : 5600;
     scene.fog = fog;
 
