@@ -379,3 +379,4 @@ body.touch.short:not(.portrait) .bark::after, body.touch.short:not(.portrait) .b
 
 /* pass 13az: landscape phones - set-piece banner rides higher, clear of the jeep roof */
 body.touch.short:not(.portrait) .banner { top: 19%; font-size: 2.0em; }
+.stRec { text-decoration: none; display: block; color: #f0c030; -webkit-text-stroke: 1px #1d1612; font-size: 1.05em; letter-spacing: 1px; } .stRec small { -webkit-text-stroke: 0; color: inherit; opacity: .85; font-size: .75em; }
