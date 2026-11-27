@@ -39,7 +39,7 @@ canvas#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: b
 @keyframes pulse { to { transform: scale(1.12); } }
 #mini { position: absolute; left: calc(var(--s,1) * 14px); bottom: calc(var(--s,1) * 14px); width: calc(var(--s,1) * 170px); height: calc(var(--s,1) * 170px); }
 #speedo { position: absolute; right: calc(var(--s,1) * 12px); bottom: calc(var(--s,1) * 10px); width: calc(var(--s,1) * 230px); height: calc(var(--s,1) * 200px); }
-.bark { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: min(640px, 70vw); padding: 8px 18px 8px 8px; background: linear-gradient(180deg, rgba(40,24,12,.92), rgba(24,14,8,.92)); border: 2px solid var(--brass); border-radius: 50px; box-shadow: 0 6px 20px rgba(0,0,0,.5); transition: opacity .3s, transform .3s; }
+.bark { position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: min(640px, 70vw); padding: 8px 18px 8px 8px; background: linear-gradient(180deg, rgba(40,24,12,.92), rgba(24,14,8,.92)); border: 2px solid var(--brass); border-radius: 50px; box-shadow: 0 6px 20px rgba(0,0,0,.5); transition: opacity .3s, transform .3s; }
 .bark.off { opacity: 0; transform: translateX(-50%) translateY(14px); }
 .bark canvas { width: 3.6em; height: 3.6em; border-radius: 50%; border: 2px solid var(--gold); flex: none; background: #3a2a1a; }
 .bark .who { font-family: 'Cinzel'; font-weight: 700; color: var(--gold); font-size: .8em; letter-spacing: 2px; }
