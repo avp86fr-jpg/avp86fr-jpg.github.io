@@ -139,7 +139,7 @@
 },
 "mus_title": {
 "loop": true,
-"len": 21.818185941043083,
+"len": 35.55555555555556,
 "pad": 0.25
 },
 "sfx_coin": {
@@ -322,39 +322,39 @@
 },
 "mus_t_volcano_a": {
 "loop": true,
-"len": 12.631587301587302,
+"len": 12.8,
 "pad": 0.25,
-"bpm": 152
+"bpm": 150
 },
 "mus_t_volcano_b": {
 "loop": true,
-"len": 12.631587301587302,
+"len": 12.8,
 "pad": 0.25,
-"bpm": 152
+"bpm": 150
 },
 "mus_t_volcano_c": {
 "loop": true,
-"len": 12.631587301587302,
+"len": 12.8,
 "pad": 0.25,
-"bpm": 152
+"bpm": 150
 },
 "mus_t_mines_a": {
 "loop": true,
-"len": 14.328367346938775,
+"len": 13.913038548752834,
 "pad": 0.25,
-"bpm": 134
+"bpm": 138
 },
 "mus_t_mines_b": {
 "loop": true,
-"len": 14.328367346938775,
+"len": 13.913038548752834,
 "pad": 0.25,
-"bpm": 134
+"bpm": 138
 },
 "mus_t_mines_c": {
 "loop": true,
-"len": 14.328367346938775,
+"len": 13.913038548752834,
 "pad": 0.25,
-"bpm": 134
+"bpm": 138
 },
 "sfx_horn": {
 "loop": false,
@@ -374,6 +374,57 @@
 "sfx_ui_tick": {
 "loop": false,
 "len": 0.4449886621315193,
+"pad": 0
+},
+"mus_t_jungle_a": {
+"loop": true,
+"len": 14.54546485260771,
+"pad": 0.25,
+"bpm": 132
+},
+"mus_t_jungle_b": {
+"loop": true,
+"len": 14.54546485260771,
+"pad": 0.25,
+"bpm": 132
+},
+"mus_t_jungle_c": {
+"loop": true,
+"len": 14.54546485260771,
+"pad": 0.25,
+"bpm": 132
+},
+"mus_t_himalaya_a": {
+"loop": true,
+"len": 17.142857142857142,
+"pad": 0.25,
+"bpm": 112
+},
+"mus_t_himalaya_b": {
+"loop": true,
+"len": 17.142857142857142,
+"pad": 0.25,
+"bpm": 112
+},
+"mus_t_himalaya_c": {
+"loop": true,
+"len": 17.142857142857142,
+"pad": 0.25,
+"bpm": 112
+},
+"sfx_st_medal": {
+"loop": false,
+"len": 4.0,
+"pad": 0
+},
+"sfx_st_relic": {
+"loop": false,
+"len": 3.6,
+"pad": 0
+},
+"sfx_st_crash": {
+"loop": false,
+"len": 2.6,
 "pad": 0
 }
 }
