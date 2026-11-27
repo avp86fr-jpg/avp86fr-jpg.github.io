@@ -36150,7 +36150,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }
     const pal = tagPalette();
     const mag = view === "scope" ? P.optics.mag : view === "bino" ? 8 : 1;
-    const fov2 = view === "eye" ? EYE_FOV : opticFov(mag, view === "bino");
+    const fov2 = view === "eye" ? G.world?.eyeFov || EYE_FOV : opticFov(mag, view === "bino");
     const pxPerMil = H / (2 * Math.tan(fov2 * Math.PI / 360)) * 1e-3;
     const R = scopeRadius(W, H), cX = W / 2, cY = H / 2;
     G.hudRects.length = 0;
@@ -37844,8 +37844,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const W = 128, H = Math.round(W * h / (hw * 2) / 4) * 4 || 256;
     const rt = new WebGLRenderTarget(W, H, { depthBuffer: true, generateMipmaps: true, minFilter: LinearMipmapLinearFilter, magFilter: LinearFilter });
     const sc = new Scene();
-    sc.add(new AmbientLight("#ffffff", 1.25));
-    const dl = new DirectionalLight("#ffffff", 1);
+    sc.add(new AmbientLight("#ffffff", 1.5));
+    const dl = new DirectionalLight("#ffffff", 1.1);
     dl.position.set(0.5, 1, 1);
     sc.add(dl);
     sc.add(new Mesh(geo, new MeshLambertMaterial({ vertexColors: true })));
@@ -37889,7 +37889,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (near2.length) grp.add(makeForest(geo, near2.length, (i) => near2[i], { ...o, isNear: null, tries: 1 }));
       const I = impostorTexture(geo);
       if (I && far.length) {
-        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.42, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff" });
+        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.3, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff" });
         hazeify(m2, {});
         const im2 = makeForestMesh(impostorGeometry(I), m2, far.length, (i) => far[i], 1);
         im2.castShadow = false;
@@ -37919,10 +37919,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const s = p.s || 1;
       d.scale.set(s, s * (p.sy || 1), s);
       d.updateMatrix();
-      im.setMatrixAt(n++, d.matrix);
+      im.setMatrixAt(n, d.matrix);
+      const hsh = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) % 1, hs2 = Math.abs(Math.sin(p.x * 39.35 + p.z * 11.13) * 24634.63) % 1;
+      _vc.setRGB(1, 1, 1).multiplyScalar(0.8 + hsh * 0.45);
+      _vc.g *= 0.97 + hs2 * 0.08;
+      _vc.b *= 0.96 + (1 - hs2) * 0.1;
+      im.setColorAt(n, _vc);
+      n++;
     }
     im.count = n;
     im.instanceMatrix.needsUpdate = true;
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
     im.computeBoundingSphere();
     return im;
   }
@@ -38244,7 +38251,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     };
     return p;
   }
-  var glowTex, _impCache, _fw, Smoke, _gm, GLOVE_MAT;
+  var glowTex, _impCache, _vc, _fw, Smoke, _gm, GLOVE_MAT;
   var init_common = __esm({
     "src/scene/common.js"() {
       init_rifle();
@@ -38256,6 +38263,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_state();
       glowTex = null;
       _impCache = /* @__PURE__ */ new Map();
+      _vc = new Color();
       _fw = new Vector3();
       Smoke = class {
         constructor(scene, o) {
@@ -38974,7 +38982,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.groundAt = (x, z) => x > 12 && x < 48 && z > -778.2 && z < -763.8 ? DECK : height(x, z);
     const S2 = w.scene;
     const nestY = height(0, 0);
-    w.nest = { pos: new Vector3(0, nestY + 0.42, 0), yaw: -0.02, pitch: -0.07, yawRange: 70 * Math.PI / 180, pitchMin: -0.6, pitchMax: 0.42 };
+    w.eyeFov = 46;
+    w.nest = { pos: new Vector3(0, nestY + 0.42, 0), yaw: -0.15, pitch: 0, yawRange: 70 * Math.PI / 180, pitchMin: -0.6, pitchMax: 0.42 };
     w.windCfg = { dir: 98, speed: 3.6, gust: 0.45, shift: 14, alt: 9e-4, local: 0.22, seed: 11, groundY: 150 };
     w.tint = { lift: [0, 4e-3, 0.016], gain: [1.06, 1, 0.96], sat: 1.08, contrast: 1.24, expo: 1 };
     w.bloom = 0.32;
@@ -39046,6 +39055,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (h < 26 || h > 900) return null;
       const dens = fbm(x / 300, z / 300, 3, 21);
       if (dens < 0.47) return null;
+      if (fbm(x / 70, z / 70, 2, 9) < 0.47) return null;
       const sl = Math.abs(height(x + 3, z) - h) + Math.abs(height(x, z + 3) - h);
       if (sl > 4.2) return null;
       const s = 0.8 + rnd() * 0.9, sy = 0.9 + rnd() * 0.4;
@@ -39054,16 +39064,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     }, { cast: false, sway: 0.25, isNear: tier.mobile ? (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 170 || -p.z < 260 : (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 || -p.z < 420 }));
     const rb = mulberry32(77);
     S2.add(makeForest(pine, Math.floor(520 * tier.trees), () => {
-      const side = rb() < 0.5 ? -1 : 1, x = 15 + side * (45 + Math.pow(rb(), 1.6) * 260), z = -120 - rb() * 380;
+      const side = rb() < 0.5 ? -1 : 1, x = 15 + side * (70 + Math.pow(rb(), 1.4) * 330), z = -430 - rb() * 520;
       const h = height(x, z);
       if (h < 26) return null;
       if (fbm(x / 90, z / 90, 2, 5) < 0.4) return null;
+      if (Math.abs(x - 30) < 95 && Math.abs(z + 768) < 70) return null;
       const sl = Math.abs(height(x + 3, z) - h) + Math.abs(height(x, z + 3) - h);
       if (sl > 4.6) return null;
       const s = 1.1 + rb() * 0.8, sy = 0.95 + rb() * 0.35;
       if (!lofOK(x, z, h, s, sy)) return null;
       return { x, y: h - 0.3, z, r: rb() * 6.28, s, sy };
-    }, { cast: false, sway: 0.25, isNear: tier.mobile ? (p) => -p.z < 260 : () => true }));
+    }, { cast: false, sway: 0.25, isNear: tier.mobile ? (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 170 : (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 }));
     S2.add(makeForest(pine, 60, (i) => {
       const a = rnd() * 6.28, r = 62 + rnd() * 70;
       const x = 30 + Math.cos(a) * r, z = -790 + Math.sin(a) * r * 0.7;
@@ -39271,11 +39282,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     addWin(30, DECK + 9.2, -770.3, 1.4, 1.6);
     for (const [x, z, ry] of [[-70, -804, 0.2], [118, -816.8, -0.3], [-180, -1016.5, 0.5], [260, -1156.5, -0.2], [380, -636.6, 0.1]]) addWin(x, height(x, z) + 2.2, z, 1.6, 1.3, ry);
     const wins = mergedMesh(winGeo, { cast: false });
-    wins.material = mat("#ffb35c", { emissive: "#ff9a40", ei: 1.9 });
+    wins.material = mat("#ffb35c", { emissive: "#ff9a40", ei: 2.6 });
     S2.add(wins);
     for (const x of [17, 41]) S2.add(glow("#ff7a30", 2.2, x, DECK + 2.2, -772, 1.6));
     for (let i = 0; i < 4; i++) S2.add(glow("#ffc070", 1.6, 62 + i * 7, PAD_Y + 2.5, -748, 1.4));
-    for (let i = 0; i < 9; i++) S2.add(glow("#ffcc88", 0.9, 14 + i * 4, DECK + 3.1, -764.6, 1));
+    for (let i = 0; i < 9; i++) S2.add(glow("#ffcc88", 1.3, 14 + i * 4, DECK + 3.1, -764.6, 1.15));
     const pl = new PointLight("#ffa060", 30, 34, 1.5);
     pl.position.set(28, DECK + 3.2, -767);
     S2.add(pl);
@@ -39284,9 +39295,16 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       pl2.position.set(40, DECK + 3, -766.5);
       S2.add(pl2);
     }
-    for (const x of [17.5, 42.5]) {
-      const b = makeBanner(1.4, 4.2, "#9b1c1f");
-      b.position.set(x, DECK + 6.4, -777.3);
+    for (const x of [15.6, 22.8, 37.2, 44.4]) {
+      const b = makeBanner(1.9, 5.6, "#a81e22");
+      b.position.set(x, DECK + 6.9, -777.2);
+      b.traverse((o) => {
+        if (o.material && o.material.emissive) {
+          o.material = o.material.clone();
+          o.material.emissive.set("#5a0c0c");
+          o.material.emissiveIntensity = 0.6;
+        }
+      });
       S2.add(b);
     }
     const flag = makeFlag(2.6, 1.6, "#7d1418", { emblem: "#e8c46a", amp: 1.2 });
@@ -45577,7 +45595,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
             }
             ui("click");
           }
-          const fov2 = this.view === "eye" ? EYE_FOV : opticFov(this.mag, this.view === "bino");
+          const fov2 = this.view === "eye" ? G.world?.eyeFov || EYE_FOV : opticFov(this.mag, this.view === "bino");
           if (consume("fine")) {
             IN.fine = !IN.fine;
             ui("click");
@@ -46712,6 +46730,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (consume("debug")) toggleDebug();
         if (G.mode === "play") playFrame(dt);
         else titleFrame(dt);
+        adaptQuality(dt, (k) => {
+          if (k === "tierUp" || k === "tierDown") save();
+          else resize();
+        });
         const _t1 = performance.now();
         const keyArt = G.mode !== "play" && !$2("title").classList.contains("hidden") && !document.getElementById("story");
         if (!keyArt || frameN % 30 === 0) render(dt);
@@ -46726,10 +46748,6 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           fpsAcc = 0;
           fpsN = 0;
         }
-        adaptQuality(dt, (k) => {
-          if (k === "tierUp" || k === "tierDown") save();
-          else resize();
-        });
         updateDebug();
       }
       var _ip = new Vector3();
