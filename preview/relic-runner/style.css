@@ -480,3 +480,22 @@ body.comic #cine .cap { animation-name: capIn2; } @keyframes capIn2 { 0% { opaci
 canvas#game { background: #e6eeea; }
 body.glLost::after { content: 'One moment… redrawing the panel!'; position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(-1.5deg); z-index: 99; background: #fff2a6; color: #1a140c; border: 3px solid #1a140c; box-shadow: 4px 4px 0 #1a140c; padding: .6em 1.1em; font: 1.4em 'Bangers', 'Comic Neue', sans-serif; letter-spacing: .04em; }
 body.glLost canvas#game { visibility: hidden; } body.glLost { background: #e6eeea; }
+/* pass 20: THE JADE IDOL — intro comic strip (3 panels pop in one after another) + results chapter panel */
+#cine .strip { position: absolute; left: 3%; right: 3%; top: calc(7vh + 6px); display: flex; gap: 10px; justify-content: center; align-items: stretch; font-size: min(1.75vw, 15px); }
+#cine .sp { flex: 1 1 0; max-width: 340px; background: #fbf5e6; color: #1d1612; border: 3px solid #1d1612; box-shadow: 5px 5px 0 #1d1612; padding: 8px 11px; font-family: 'ComicNeue', sans-serif; font-weight: 700; line-height: 1.25; opacity: 0; animation: spIn .45s cubic-bezier(.2,1.6,.4,1) forwards; }
+#cine .sp.nar { background: #fff2a6; text-transform: uppercase; font-size: .92em; animation-delay: .25s; transform-origin: left top; }
+#cine .sp.nar i { display: block; font-style: normal; font-family: 'Bangers', sans-serif; letter-spacing: .06em; color: #d8432a; font-size: 1.15em; margin-bottom: 3px; }
+#cine .sp.who { display: flex; gap: 8px; align-items: flex-start; border-radius: 16px; }
+#cine .sp.penny { animation-delay: 1.7s; } #cine .sp.dusty { animation-delay: 3.3s; }
+#cine .sp.who canvas { width: 3.6em; height: 3.6em; flex: none; border: 2px solid #1d1612; border-radius: 50%; background: #e6eeea; }
+#cine .sp.who p { margin: 0; } #cine .sp.who b { display: block; font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: .06em; color: #2f7fc4; }
+#cine .sp.dusty b { color: #8a4a1c; }
+@keyframes spIn { 0% { opacity: 0; transform: scale(.6) rotate(-3deg); } 100% { opacity: 1; transform: scale(1) rotate(var(--rr, -.6deg)); } }
+#cine .sp.penny { --rr: .5deg; } #cine .sp.dusty { --rr: -.4deg; }
+body.portrait #cine .strip { flex-direction: column; align-items: center; font-size: 3.2vw; } body.portrait #cine .sp { width: 86vw; max-width: none; }
+body.short #cine .strip { top: 8px; font-size: min(1.6vw, 12px); } body.short #cine .sp.who canvas { width: 2.8em; height: 2.8em; }
+.storyP { margin: 4px auto 12px; max-width: 640px; background: #fff2a6; color: #1d1612; border: 3px solid #1d1612; box-shadow: 5px 5px 0 #1d1612; padding: 8px 14px; text-align: left; font-family: 'ComicNeue', sans-serif; font-weight: 700; transform: rotate(-.4deg); animation: spIn .5s cubic-bezier(.2,1.6,.4,1) both; }
+.storyP .sc { font-family: 'Bangers', sans-serif; letter-spacing: .06em; color: #d8432a; font-size: 1.15em; }
+.storyP p { margin: 4px 0; text-transform: none; }
+.storyP .reward { margin-top: 6px; padding: 5px 10px; background: #fbf5e6; border: 2px solid #1d1612; display: inline-block; font-family: 'Bangers', sans-serif; letter-spacing: .05em; color: #2f6a2a; }
+.storyP .tbc { text-align: right; font-family: 'Bangers', sans-serif; letter-spacing: .08em; color: #8a4a1c; }
