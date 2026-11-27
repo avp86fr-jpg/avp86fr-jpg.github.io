@@ -52,18 +52,34 @@ export function createMissionSystem(scene, world, audio) {
   let feelFX = null;
   function setFeelFX(f) { feelFX = f; }
 
-  function fadeNearCam(mesh, cam) {
+  function fadeNearCam(mesh, cam, highlight) {
     if (!mesh || !cam) return;
-    const rad = (mesh.userData.base && mesh.userData.base.r) || 16;
+    const rad = (mesh.userData.base && mesh.userData.base.r) || (mesh.userData.stop && mesh.userData.stop.r) || 16;
     const d = cam.position.distanceTo(mesh.position);
-    // Stay bright until the torus is about to clip; never drop below a readable floor until very close.
-    const fade = Math.max(0, Math.min(1, (d - rad * 0.8) / (rad * 0.9 + 8)));
-    const vis = fade < 0.25 ? fade * 2.2 : Math.max(0.7, fade);
+    // Hide inside the torus, or when a nearly edge-on gate would fill the frame.
+    const gap = d - rad;
+    const axis = fadeNearCam._axis || (fadeNearCam._axis = new THREE.Vector3());
+    const toCam = fadeNearCam._toCam || (fadeNearCam._toCam = new THREE.Vector3());
+    mesh.updateMatrixWorld(true);
+    axis.set(0, 0, 1).transformDirection(mesh.matrixWorld);
+    toCam.copy(cam.position).sub(mesh.position).normalize();
+    const edgeOn = 1 - Math.abs(toCam.dot(axis));
+    if (d < rad * 1.12 || gap < 48 || (edgeOn > 0.55 && gap < 92) || (rad >= 20 && gap < 86)) {
+      mesh.visible = false;
+      return;
+    }
+    if (mesh.userData._forceHidden) { mesh.visible = false; return; }
+    mesh.visible = true;
+    // Fade by how close the torus is to the camera (gap = d - radius).
+    // Full when the nearest point is ~150 m out; nearly gone under ~50 m;
+    // hidden inside the radius. Stops a mid-field gate reading as a gold banana.
+    const fade = Math.max(0, Math.min(1, (gap - 48) / 90));
+    let vis = highlight ? (edgeOn > 0.55 ? Math.pow(fade, 0.8) : Math.max(0.8, fade)) : fade * 0.30;
     const core = mesh.userData.core, rim = mesh.userData.rim, glow = mesh.userData.glow;
     if (core && core.material) {
       core.material.transparent = vis < 0.98;
       core.material.opacity = vis;
-      core.material.depthWrite = vis > 0.6;
+      core.material.depthWrite = vis > 0.55;
     }
     if (rim && rim.material) {
       if (rim.userData.baseOp == null) rim.userData.baseOp = rim.material.opacity || 0.75;
@@ -71,7 +87,8 @@ export function createMissionSystem(scene, world, audio) {
     }
     if (glow && glow.material) {
       if (glow.userData.baseOp == null) glow.userData.baseOp = 0.38;
-      glow.material.opacity = glow.userData.baseOp * vis;
+      // Glow dies sooner so a near ring doesn't smear a huge gold banana.
+      glow.material.opacity = vis < 0.45 ? 0 : glow.userData.baseOp * vis * (highlight ? 0.7 : 0.25);
     }
   }
 
@@ -235,6 +252,7 @@ export function createMissionSystem(scene, world, audio) {
       });
       mesh.position.set(s.x, y, s.z);
       mesh.userData.stop = { ...s, y, r: s.r || 20 };
+      mesh.userData.base = { x: s.x, y, z: s.z, r: s.r || 20 };
       mesh.userData.index = i;
       add(mesh);
       state.mailStops.push(mesh);
@@ -258,6 +276,7 @@ export function createMissionSystem(scene, world, audio) {
       });
       mesh.position.set(s.x, y, s.z);
       mesh.userData.stop = { ...s, y, r: s.r || 18 };
+      mesh.userData.base = { x: s.x, y, z: s.z, r: s.r || 18 };
       mesh.userData.index = i;
       add(mesh);
       state.mailStops.push(mesh);
@@ -304,6 +323,7 @@ export function createMissionSystem(scene, world, audio) {
       });
       mesh.position.set(s.x, y, s.z);
       mesh.userData.stop = { ...s, y, r: s.r || 20 };
+      mesh.userData.base = { x: s.x, y, z: s.z, r: s.r || 20 };
       mesh.userData.index = i;
       add(mesh);
       state.mailStops.push(mesh);
@@ -424,8 +444,10 @@ export function createMissionSystem(scene, world, audio) {
     }
     state.t += dt;
     if (cam) {
-      for (const o of state.objects) fadeNearCam(o, cam);
-      for (const o of state.mailStops) fadeNearCam(o, cam);
+      const curRing = (m.activity === "rings") ? state.objects[state.next]
+        : (state.mailStops[state.next] || state.objects[state.next]);
+      for (const o of state.objects) fadeNearCam(o, cam, o === curRing);
+      for (const o of state.mailStops) fadeNearCam(o, cam, o === curRing);
     }
 
     if (m.activity === "rings") {
@@ -448,6 +470,7 @@ export function createMissionSystem(scene, world, audio) {
           feelFX?.burstRing(p);
           tint(0x5a2208);
           cur.visible = false;
+          cur.userData._forceHidden = true;
           if (state.next >= meshes.length) {
             const stars = starsFromTime(m, state.t);
             finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });
@@ -517,6 +540,7 @@ export function createMissionSystem(scene, world, audio) {
             feelFX?.burstRing(cur.position);
           }
           cur.visible = false;
+          cur.userData._forceHidden = true;
           if (state.next >= state.mailStops.length && !m.target) {
             const stars = starsFromTime(m, state.t);
             finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });

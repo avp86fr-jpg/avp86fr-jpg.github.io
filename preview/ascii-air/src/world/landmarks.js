@@ -24,6 +24,14 @@ function box(w, h, d, color, matId, hero = 0) {
   return mesh(new THREE.BoxGeometry(w, h, d), color, matId, hero);
 }
 
+// Horizontal paint only — no vertical faces, so a chase camera looking along
+// the strip cannot rasterise a glancing black edge across the frame.
+function slab(w, d, color, matId, hero = 0) {
+  const m = mesh(new THREE.PlaneGeometry(w, d), color, matId, hero);
+  m.rotation.x = -Math.PI / 2;
+  return m;
+}
+
 function cyl(rTop, rBot, h, segs, color, matId, hero = 0) {
   return mesh(new THREE.CylinderGeometry(rTop, rBot, h, segs), color, matId, hero);
 }
@@ -98,7 +106,7 @@ function makeHangar() {
   add(g, box(0.2, 4.2, 0.45, 0x1a140c, MAT.METAL), 0, 16.2, 15.2);
   add(g, box(4.4, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 17.6, 15.2, 0, 0, 0.55);
   add(g, box(4.4, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 17.6, 15.2, 0, 0, -0.55);
-  add(g, box(38, 0.4, 26, 0x3a3a3a, MAT.ROAD), 0, 0.2, 0);
+  add(g, slab(38, 26, 0x3a3a3a, MAT.ROAD), 0, 0.2, 0, -Math.PI / 2);
   return g;
 }
 
@@ -637,8 +645,7 @@ function makeRunwayLights(parent, x0, x1, z, y) {
       g.add(l);
     }
   }
-  add(g, box(len, 0.22, 1.1, 0xf8f6e8, MAT.LIGHT, 1), (x0 + x1) / 2, y, z - edge);
-  add(g, box(len, 0.22, 1.1, 0xf8f6e8, MAT.LIGHT, 1), (x0 + x1) / 2, y, z + edge);
+  // No continuous edge ribbon — a long thin box seen end-on inks as a black line across the chase view. Lamps already mark the edges.
   for (const side of [x0, x1]) {
     const dir = side === x0 ? 1 : -1;
     for (let i = 0; i < (wide ? 8 : 3); i++) {
@@ -646,7 +653,7 @@ function makeRunwayLights(parent, x0, x1, z, y) {
     }
   }
   for (let x = x0 + 28; x < x1 - 28; x += wide ? 16 : 22) {
-    add(g, box(wide ? 12 : 8, 0.24, 1.4, 0xffffff, MAT.LIGHT, 1), x, y, z);
+    add(g, slab(wide ? 12 : 8, 1.6, 0xffffff, MAT.RUNWAY, 1), x, y, z, -Math.PI / 2);
   }
   if (wide) {
     // 09 at the west threshold, 27 at the east — large centreline numerals
@@ -667,15 +674,56 @@ function makeRunwayLights(parent, x0, x1, z, y) {
 function makeRoad(from, to, width = 8) {
   const dx = to.x - from.x, dz = to.z - from.z;
   const len = Math.hypot(dx, dz);
-  const y = (from.y + to.y) * 0.5 + 0.08;
-  const m = box(len, 0.2, width, 0x3a3a3a, MAT.ROAD);
-  m.position.set((from.x + to.x) / 2, y, (from.z + to.z) / 2);
-  m.rotation.y = Math.atan2(dx, dz) + Math.PI / 2; // wait
-  // box length is along X, so rotate so X aligns with path
-  m.rotation.y = -Math.atan2(dz, dx);
-  return m;
+  const yaw = -Math.atan2(dz, dx);
+  // Short segments: one 400 m x 0.4 m slab seen end-on interpolates depth
+  // into mid-air and inks a black line across the chase camera.
+  const g = new THREE.Group();
+  g.name = "road";
+  const seg = 16;
+  const nx = dx / (len || 1), nz = dz / (len || 1);
+  for (let t = 0; t < len; t += seg) {
+    const w = Math.min(seg, len - t) * 0.94;
+    const mid = t + Math.min(seg, len - t) * 0.5;
+    const x = from.x + nx * mid;
+    const z = from.z + nz * mid;
+    const y = from.y + (to.y - from.y) * (mid / (len || 1)) + 0.08;
+    const m = slab(w, width, 0x3a3a3a, MAT.ROAD);
+    m.position.set(x, y, z);
+    m.rotation.set(-Math.PI / 2, yaw, 0);
+    g.add(m);
+  }
+  return g;
 }
 
+
+function patchGlanceDiscard(material) {
+  // Drop fragments seen almost edge-on. A long thin slab otherwise rasterises
+  // as a 1 px ink line when the chase camera looks along it.
+  const prev = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    if (typeof prev === "function") prev(shader, renderer);
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vViewPos;\nvarying vec3 vViewN;"
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <project_vertex>",
+      "#include <project_vertex>\nvViewPos = mvPosition.xyz;\nvViewN = normalize(normalMatrix * vec3(0.0, 1.0, 0.0));"
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vViewPos;\nvarying vec3 vViewN;"
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <dithering_fragment>",
+      "if (abs(dot(normalize(vViewN), normalize(-vViewPos))) < 0.16) discard;\n#include <dithering_fragment>"
+    );
+  };
+  const prevKey = material.customProgramCacheKey ? material.customProgramCacheKey.bind(material) : () => "";
+  material.customProgramCacheKey = () => prevKey() + "|glance-discard-v1";
+  material.needsUpdate = true;
+  return material;
+}
 
 function bucketOf(o, mid) {
   let n = o;
@@ -686,6 +734,14 @@ function bucketOf(o, mid) {
   if (mid === MAT.ROOF) return "roof";
   if (mid === MAT.BUILDING) return "plaster";
   if (mid === MAT.ROCK) return "stone";
+  if (mid === MAT.RUNWAY || mid === MAT.ROAD) {
+    // Keep the airport ribbon (y~4) off the ridge strip (y~90) so a merge
+    // can never form a long sliver through mid-air.
+    let y = 0;
+    o.updateWorldMatrix(true, false);
+    y = o.matrixWorld.elements[13];
+    return y > 40 ? "runwayHi" : "runway";
+  }
   return "plain";
 }
 
@@ -712,15 +768,18 @@ function mergeBucket(items, name, kind) {
   else if (kind === "stone") mat = triplanarLambert({ map: loadTex("stone.png"), scale: 0.06, vertexColors: true, flatShading: true, matId: MAT.ROCK });
   else if (kind === "plaster") mat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, vertexColors: true, flatShading: true, matId: MAT.BUILDING });
   else if (kind === "roof") mat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, vertexColors: true, flatShading: true, matId: MAT.ROOF });
+  else if (kind === "runway" || kind === "runwayHi") mat = patchMaterialIdAlpha(patchGlanceDiscard(new THREE.MeshBasicMaterial({ vertexColors: true, matId: MAT.RUNWAY, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })));
   else mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  if (kind === "runway" || kind === "runwayHi") retagGeometry(geo, MAT.RUNWAY, 0);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = name;
+  mesh.userData.matId = (kind === "runway" || kind === "runwayHi") ? MAT.RUNWAY : mesh.userData.matId;
   mesh.matrixAutoUpdate = false;
   return mesh;
 }
 
 function mergeStatic(group, skipNames = new Set()) {
-  const buckets = { rock: [], stone: [], plaster: [], roof: [], plain: [] };
+  const buckets = { rock: [], stone: [], plaster: [], roof: [], runway: [], runwayHi: [], plain: [] };
   const toRemove = [];
   group.updateMatrixWorld(true);
   // Bake into the root group's local space (not world), so a positioned
@@ -764,7 +823,7 @@ function mergeStatic(group, skipNames = new Set()) {
     if (o.parent) o.parent.remove(o);
   }
   let main = null;
-  for (const kind of ["plain", "plaster", "stone", "rock", "roof"]) {
+  for (const kind of ["plain", "plaster", "stone", "rock", "roof", "runway", "runwayHi"]) {
     const mesh = mergeBucket(buckets[kind], main ? "landmarks-merged-" + kind : "landmarks-merged", kind);
     if (!mesh) continue;
     if (!main) main = mesh;
@@ -868,7 +927,7 @@ function makeCoastalCliffs(H) {
     const a = pts[i], b = pts[i + 1];
     if (Math.hypot(b.x - a.x, b.z - a.z) > 36) continue;
     const west = a.band === -480;
-    const y0 = -0.6;
+    const y0 = 0.25;
     const jA = west ? 3.5 * Math.sin(a.x * 0.21) : 0;
     const jB = west ? 3.5 * Math.sin(b.x * 0.21) : 0;
     const midF = west ? 0.40 + 0.18 * (0.5 + 0.5 * Math.sin(a.x * 0.13)) : 0.48;

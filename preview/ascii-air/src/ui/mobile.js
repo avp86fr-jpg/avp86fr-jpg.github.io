@@ -204,7 +204,7 @@ export function createMobileLayer(root, input, hooks) {
       const thrH = Math.min(160, Math.max(110, Math.floor(h * 0.42)));
       stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:${stickN}px;height:${stickN}px;`;
       thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:36px;height:${thrH}px;`;
-      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + thrH + 8}px;width:52px;height:52px;border-radius:50%;font-size:11px;`;
+      btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + thrH + 26}px;width:52px;height:52px;border-radius:50%;font-size:11px;z-index:6;`;
       btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:44px;min-height:44px;z-index:7;`;
     }
   }

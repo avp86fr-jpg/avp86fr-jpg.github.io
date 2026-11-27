@@ -175,9 +175,11 @@ export function computeHeight(x, z) {
     const ring = smoothstep(0.12, 0.42, mask) * smoothstep(0.92, 0.62, mask);
     const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 50, Math.abs(x - 80) / 280)), 1.2);
     const inlet = fbm(x * 0.0042, z * 0.0042, 3, 29);
-    const cut = smoothstep(0.70, 0.88, inlet);
+    const cut = smoothstep(0.74, 0.92, inlet) * 0.16;
     const cliffH = 18 + 36 * fbm(x * 0.003, z * 0.003, 3, 17) + 12 * ridge(x * 0.011, z * 0.01, 2, 5);
-    h = Math.max(h, cliffH * ring * notAirport * (1 - cut * 0.7));
+    h = Math.max(h, cliffH * ring * notAirport * (1 - cut));
+    // Never leave a below-water notch on the ringing coast (reads as a dark oval hole).
+    if (ring * notAirport > 0.35 && h < 1.2) h = 1.2;
   }
 
   // Airport flatten — tight runway ribbon only, so the mid-island can roll.

@@ -94,16 +94,17 @@ void main() {
   float fg = sat(1.0 - distCam / 520.0);
   water = mix(water, water * vec3(0.42, 0.52, 0.78), fg * 0.62);
 
-  // Sky reflection + a warm sun lane
+  // Sky reflection + a warm sun lane. In storm (uChop > 1.6) kill the bright
+  // radial disc under the plane — keep only a faint slate sheen.
   vec3 R = reflect(-V, N);
-  float skyAmt = fres * 0.42 * day;
+  float storm = sat((uChop - 1.0) / 1.8);
+  float skyAmt = fres * 0.42 * day * (1.0 - storm * 0.70);
   water = mix(water, uSky, skyAmt);
   float sunLane = pow(sat(dot(R, normalize(uSunDir))), 10.0);
-  // Broad sun wash, not a sharp grazing lane that stripes with the waves
   float farW = sat((length(vWorld.xz - cameraPosition.xz) - 200.0) / 900.0);
-  water += uSunCol * sunLane * mix(0.28, 0.10, farW) * day;
+  water += uSunCol * sunLane * mix(0.28, 0.10, farW) * day * (1.0 - storm * 0.88);
   float sp = pow(sat(dot(R, normalize(uSunDir))), 48.0);
-  water += uSunCol * sp * 0.22 * (1.0 - farW) * day;
+  water += uSunCol * sp * 0.22 * (1.0 - farW) * day * (1.0 - storm * 0.94);
   // Night sea: uniforms already carry a moonlit navy. Keep a readable floor, add
   // a soft horizon sheen and a moon path — never a black sheet.
   if (uNight > 0.25) {
@@ -226,6 +227,7 @@ export function createWater() {
         mat.uniforms.uDeep.value.setHex(0x1e4458);
         mat.uniforms.uShallow.value.setHex(0x3a6274);
         mat.uniforms.uSky.value.setHex(0x5e7588);
+        mat.uniforms.uSunCol.value.setHex(0x7a8ea0);
       }
       // When leaving a storm, do not snap back to day cyan — update() applies the
       // time-of-day (incl. moonlit navy) palette on the next tick.

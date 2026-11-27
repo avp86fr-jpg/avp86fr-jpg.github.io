@@ -572,6 +572,8 @@ body.touch-ui .hud-ico { width: 14px; height: 14px; flex-basis: 14px; }
   max-width: 50vw;
   text-align: center;
 }
+/* Empty banner still had padding + cream fill + ink border — a floating white pill under the compass. */
+#hud-msg:empty { display: none !important; padding: 0; border: 0; box-shadow: none; background: none; }
 .speech-balloon {
   position: absolute;
   left: 50%;
@@ -1010,6 +1012,13 @@ body.touch-portrait #hud-mission { top: 36px; }
   text-shadow: 0 1px 0 #fffaf0;
   pointer-events: none;
   white-space: nowrap;
+}
+/* Keep THROTTLE off the BOOST button: label sits left of the lever, mid-track. */
+#thr .ctrl-label {
+  left: -6px;
+  top: 10px;
+  transform: translateX(-100%);
+  letter-spacing: 0.04em;
 }
 #mobile-layer .boost-btn {
   font-size: 11px;

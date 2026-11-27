@@ -6,8 +6,20 @@ import { TAU } from "../core/utils.js";
 function cloudPuff(mat) {
   const g = new THREE.Group();
   const geo = retagGeometry(new THREE.SphereGeometry(1, 12, 10), MAT.CLOUD);
+  // Stacked cumulus cluster — enough vertical overlap that a chase view
+  // never collapses the puff into a flat ellipse / UFO disc.
   const spots = [
-    [0, 0, 0, 1.6], [1.4, 0.2, 0.2, 1.2], [-1.3, 0.1, -0.2, 1.1], [0.3, 0.5, 0.6, 0.9],
+    [0, 0, 0, 1.7],
+    [1.65, 0.15, 0.35, 1.35],
+    [-1.55, 0.12, -0.3, 1.3],
+    [0.45, 0.18, 1.25, 1.15],
+    [-0.55, 0.12, -1.15, 1.1],
+    [0.2, 1.1, 0.15, 1.28],
+    [1.15, 0.9, -0.45, 0.95],
+    [-1.05, 0.95, 0.4, 0.95],
+    [0.15, 1.95, 0.08, 1.0],
+    [0.75, 1.6, 0.45, 0.72],
+    [-0.65, 1.55, -0.3, 0.68],
   ];
   for (const [x, y, z, s] of spots) {
     const m = new THREE.Mesh(geo, mat);
@@ -94,7 +106,7 @@ export function createSkyProps(scene, quality = "medium") {
     const y = 220 + (i * 11) % 80;
     const s = 36 + (i * 13) % 24;
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 0.48, s * 1.15);
+    dummy.scale.set(s, s * 0.88, s * 1.05);
     dummy.rotation.y = a;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(i, dummy.matrix);
@@ -103,7 +115,7 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < heroSpots.length; i++) {
     const [x, y, z, s] = heroSpots[i];
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 0.45, s * 1.2);
+    dummy.scale.set(s, s * 0.86, s * 1.08);
     dummy.rotation.y = i * 0.7;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
@@ -228,7 +240,7 @@ export function createSkyProps(scene, quality = "medium") {
         const s = stormOn ? (c.baseS || c.s) * 1.28 : (c.baseS || c.s);
         c.y = y;
         dummy.position.set(c.x, y, c.z);
-        dummy.scale.set(s, s * (stormOn ? 0.58 : 0.6), s * (stormOn ? 1.2 : 1));
+        dummy.scale.set(s * (stormOn ? 1.15 : 1), s * (stormOn ? 0.92 : 0.88), s * (stormOn ? 1.35 : 1.05));
         dummy.rotation.y = c.a;
         dummy.updateMatrix();
         cloudInst.setMatrixAt(i, dummy.matrix);
@@ -238,7 +250,7 @@ export function createSkyProps(scene, quality = "medium") {
         const yy = stormOn ? 70 + y * 0.22 : y;
         const ss = stormOn ? s * 1.45 : s;
         dummy.position.set(x, yy, z);
-        dummy.scale.set(ss, ss * (stormOn ? 0.55 : 0.45), ss * (stormOn ? 1.2 : 1.2));
+        dummy.scale.set(ss * (stormOn ? 1.2 : 1), ss * (stormOn ? 0.9 : 0.86), ss * (stormOn ? 1.4 : 1.08));
         dummy.rotation.y = i * 0.7;
         dummy.updateMatrix();
         cloudInst.setMatrixAt(nCloud + i, dummy.matrix);

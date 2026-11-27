@@ -713,7 +713,9 @@ time  ${formatTime(result.time || 0)}
     if (geEl) geEl.innerHTML = '<div class="g-lab">GEAR</div><div class="g-val gear">' + (craft.gearDown ? "▼" : "▲") + "</div>";
     drawHorizon(flight.querySelector("#g-horizon"), craft);
 
-    msg.textContent = craft.crashed ? "RECOVERING…" : ((mission && mission.result) ? mission.message : "");
+    const msgText = craft.crashed ? "RECOVERING…" : ((mission && mission.result) ? (mission.message || "") : "");
+    msg.textContent = msgText;
+    msg.classList.toggle("hidden", !msgText);
     if (state._hideHint && !craft.onGround && (craft.altitude || 0) > 8) state._hideHint();
 
 

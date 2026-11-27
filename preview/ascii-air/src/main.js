@@ -890,7 +890,7 @@ function exposeAPI() {
         quality: settings.quality,
       };
     },
-    startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot,
+    startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot, look,
     get planeMesh() { return planeMesh; },
     setWeather: (id, opts) => weather && weather.set(id, opts),
     setTime: (h) => { clock.set(h); island.sky.setHour(h); if (typeof island.update === "function") island.update(0, performance.now() / 1000, h); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },

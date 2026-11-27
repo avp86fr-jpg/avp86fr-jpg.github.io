@@ -63,6 +63,9 @@ void main() {
   float isWater = min(1.0, step(0.5, matId) * step(matId, 1.5) + step(15.5, matId) * step(matId, 17.5));
   float isSky = step(20.5, matId) * step(matId, 21.5) + step(6.5, matId) * step(matId, 7.5);
   float isRing = step(19.5, matId) * step(matId, 20.5);
+  // Runway / road (and leftover ground markings) — a long thin stripe at a
+  // glancing angle must not draw as a black ink line across the frame.
+  float isRoad = min(1.0, step(8.5, matId) * step(matId, 9.5) + step(22.5, matId) * step(matId, 23.5));
   float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
   col = mix(col, floor(col * 5.0 + dither * 0.25 + 0.5) / 5.0, 0.28 * (1.0 - isWater) * (1.0 - isSky) * (1.0 - isRing));
 
@@ -89,11 +92,11 @@ void main() {
   float farCut = uNearFar.y * 0.96;
   float notSky = step(d, farCut);
   // Cap outline thickness on the plane so a rounded tail never becomes a black ring.
-  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.62, isPlane);
+  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.62, isPlane) * mix(1.0, 2.4, isRoad);
   float onNear = step(d - dMin, expected * 0.45 + mix(1.2, 0.45, isPlane));
-  float sil = step(expected, jump) * onNear * notSky;
+  float sil = step(expected, jump) * onNear * notSky * (1.0 - isRoad);
   float onNear2 = step(d - dMin2, expected * 0.5 + 1.6);
-  float silFar = step(expected * 1.2, jump2) * onNear2 * notSky * step(180.0, d) * (1.0 - isPlane);
+  float silFar = step(expected * 1.2, jump2) * onNear2 * notSky * step(180.0, d) * (1.0 - isPlane) * (1.0 - isRoad);
   sil = max(sil, silFar);
 
   vec3 cL = texture2D(tColor, vUv + vec2(-o1.x, 0.0)).rgb;
@@ -103,7 +106,7 @@ void main() {
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
   float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
   // Colour edges are too thick on the near plane (red/cream bands, tail cap).
-  float colEdge = step(mix(0.20, 0.32, isPlane), gCol) * step(minN, mix(0.14, 0.10, isPlane)) * notSky * mix(1.0, 0.55, isPlane) * (1.0 - isRing);
+  float colEdge = step(mix(0.20, 0.32, isPlane), gCol) * step(minN, mix(0.14, 0.10, isPlane)) * notSky * mix(1.0, 0.55, isPlane) * (1.0 - isRing) * (1.0 - isRoad);
 
   // Don't ink-hatch the water surface — grazing waves otherwise become regular stripes.
   sil *= 1.0 - isWater * 0.92;
