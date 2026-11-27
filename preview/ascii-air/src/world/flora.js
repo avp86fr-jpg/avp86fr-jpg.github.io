@@ -316,8 +316,8 @@ function flowerCardGeo() {
 
 function makeMeadow(terrain, quality) {
   const nGrass = quality === "low" ? 700 : quality === "high" ? 2400 : 1500;
-  const nFlower = Math.floor(nGrass * 0.18);
-  const radius = quality === "low" ? 48 : quality === "high" ? 96 : 72;
+  const nFlower = Math.floor(nGrass * 0.28);
+  const radius = quality === "low" ? 56 : quality === "high" ? 110 : 88;
   const grassMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     vertexColors: true, side: THREE.DoubleSide, flatShading: false,
   }));
@@ -561,6 +561,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       if (inCove && h >= 3.2 && h < 9 && n > 0.35 && jz > -1240) {
         palms.push({ x: jx, y: h, z: jz, s: 0.9 + n * 0.45, r: n * 6 });
       } else if (m === MAT.FOREST || (m === MAT.GRASS && n > (z < -200 && z > -1000 ? 0.18 : 0.26) && h > 5)) {
+        if (jx > 100 && jx < 260 && jz > -1260 && jz < -1190) continue;
         if (Math.hypot(jx - LANDMARKS.harbor.x, jz - LANDMARKS.harbor.z) < 70) continue;
         if (Math.hypot(jx - LANDMARKS.pier.x, jz - LANDMARKS.pier.z) < 48) continue;
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
@@ -592,6 +593,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       const z = gz + Math.sin(a) * r * 0.8;
       const h = plantOk(terrain, x, z, 5, 150, 0.9);
       if (h == null) continue;
+      if (x > 100 && x < 260 && z > -1260 && z < -1190) continue;
       if (Math.hypot(x - LANDMARKS.harbor.x, z - LANDMARKS.harbor.z) < 70) continue;
       if (Math.hypot(x - LANDMARKS.pier.x, z - LANDMARKS.pier.z) < 48) continue;
       if (z < -1180 && h < 10 && x < 40) continue;

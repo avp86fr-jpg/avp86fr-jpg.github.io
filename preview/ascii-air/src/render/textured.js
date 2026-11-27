@@ -178,16 +178,25 @@ uniform sampler2D uTexSand;`
           float plot = smoothstep(0.88, 0.98, abs(sin(v * 0.26)));
           crop = mix(crop, crop * vec3(0.55, 0.64, 0.38), plot * 0.55);
           tex = crop;
-        } else if (mid < 4.5) {
-          // Close-range grass mottling so flat meadows are not a single green slab
+        } else if (mid < 240.0) {
+          // Grass mottling and plot breaks visible from flight height, not only at 4 m
+          float fade = smoothstep(240.0, 28.0, mid);
           float g1 = 0.5 + 0.5 * sin(vWorldPos.x * 0.13) * sin(vWorldPos.z * 0.11);
           float g2 = 0.5 + 0.5 * sin(vWorldPos.x * 0.037 + vWorldPos.z * 0.029);
           float g3 = fract(sin(dot(floor(vWorldPos.xz * 0.08), vec2(127.1, 311.7))) * 43758.5);
           vec3 mott = mix(vec3(0.30, 0.40, 0.18), vec3(0.42, 0.52, 0.26), g1);
           mott = mix(mott, vec3(0.58, 0.52, 0.28), g2 * 0.4);
-          tex = mix(tex, mott * (0.85 + 0.25 * grassT), 0.34 + 0.10 * g3);
+          tex = mix(tex, mott * (0.85 + 0.25 * grassT), (0.30 + 0.10 * g3) * fade);
           float terr = smoothstep(0.82, 0.98, abs(sin(vWorldPos.y * 0.70 + vWorldPos.x * 0.02)));
-          tex *= 1.0 - terr * 0.10 * clamp(n.y, 0.0, 1.0);
+          tex *= 1.0 - terr * 0.10 * clamp(n.y, 0.0, 1.0) * fade;
+          // Soft hedge / plot lines every ~28 m
+          float hx = abs(sin(vWorldPos.x * 0.22));
+          float hz = abs(sin(vWorldPos.z * 0.18));
+          float hedge = max(smoothstep(0.92, 0.995, hx), smoothstep(0.92, 0.995, hz));
+          tex = mix(tex, tex * vec3(0.45, 0.58, 0.28), hedge * 0.55 * fade);
+          // Worn path streaks
+          float path = smoothstep(0.96, 1.0, abs(sin(vWorldPos.x * 0.021 + vWorldPos.z * 0.017)));
+          tex = mix(tex, vec3(0.58, 0.46, 0.26), path * 0.45 * fade);
         }
         // Steeper faces lean toward rock even on grass ids
         float slope = 1.0 - clamp(n.y, 0.0, 1.0);
@@ -198,7 +207,7 @@ uniform sampler2D uTexSand;`
     );
   };
   const prevKey = mat.customProgramCacheKey.bind(mat);
-  mat.customProgramCacheKey = () => prevKey() + "|terrain-tri-v4-paint";
+  mat.customProgramCacheKey = () => prevKey() + "|terrain-tri-v5-paint";
   mat.needsUpdate = true;
   return mat;
 }

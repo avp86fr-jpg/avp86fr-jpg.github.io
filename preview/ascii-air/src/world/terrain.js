@@ -557,6 +557,13 @@ export function createTerrain(quality = "medium") {
         if (terrace) col = [col[0] * 0.88, col[1] * 0.86, col[2] * 0.84];
         const n3 = fbm(x * 0.05, z * 0.05, 2, 13);
         col = [col[0] * (0.90 + n3 * 0.18), col[1] * (0.90 + n3 * 0.16), col[2] * (0.90 + n3 * 0.12)];
+        // Worn dirt tracks and faint flower tints so meadows are not a single green slab
+        const path = Math.abs(Math.sin(x * 0.021 + z * 0.017)) < 0.045 && n2 > 0.28 && n2 < 0.82;
+        if (path) col = [col[0] * 0.55 + 0.30, col[1] * 0.50 + 0.24, col[2] * 0.55 + 0.12];
+        const bloom = fbm(x * 0.09, z * 0.09, 2, 17);
+        if (bloom > 0.74 && n2 > 0.38) {
+          col = [col[0] * 0.88 + 0.16, col[1] * 0.92 + 0.05, col[2] * 0.88 + 0.06];
+        }
         return col;
       }
       case MAT.FOREST: return [0.22 + n * 0.04, 0.34 + n * 0.05, 0.16];

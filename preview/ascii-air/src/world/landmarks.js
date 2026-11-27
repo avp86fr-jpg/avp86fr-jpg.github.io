@@ -69,38 +69,67 @@ function gableRoofGeo(w, d, roofH) {
 
 function house(w, d, h, roofH, wall, roofCol, detailed = true, style = 0) {
   const g = new THREE.Group();
+  // Weathered limestone plinth so the body does not read as a bare box
+  add(g, box(w + 0.38, Math.min(0.9, h * 0.24), d + 0.38, 0xcfc6b6, MAT.ROCK), 0, Math.min(0.45, h * 0.12), 0);
   add(g, box(w, h, d, wall, MAT.BUILDING), 0, h / 2, 0);
   // Two-storey string course
   if (style === 2 || h > 5.7) {
     add(g, box(w + 0.1, 0.22, d + 0.1, 0xc4a070, MAT.BUILDING), 0, h * 0.52, 0);
   }
-  const r = mesh(gableRoofGeo(w, d, roofH), roofCol, MAT.ROOF);
+  const r = mesh(gableRoofGeo(w + 0.35, d + 0.35, roofH), roofCol, MAT.ROOF);
   r.position.y = h;
   g.add(r);
   if (detailed) {
     if (style === 1) {
-      // Arched doorway
       add(g, box(Math.min(1.45, w * 0.34), h * 0.70, 0.20, 0x3a2a1a, MAT.WOOD), 0, h * 0.35, d / 2 + 0.06);
       add(g, box(Math.min(1.9, w * 0.44), 0.22, 0.22, 0xd4c6a8, MAT.ROCK), 0, h * 0.72, d / 2 + 0.09);
     } else {
       add(g, box(Math.min(1.25, w * 0.30), h * 0.62, 0.18, 0x3a2a1a, MAT.WOOD), 0, h * 0.31, d / 2 + 0.06);
     }
-    const ww = Math.min(1.15, w * 0.26), wh = h * 0.34;
-    add(g, box(ww, wh, 0.14, 0x2a3540, MAT.METAL), -w * 0.28, h * 0.64, d / 2 + 0.07);
-    add(g, box(ww, wh, 0.14, 0x2a3540, MAT.METAL),  w * 0.28, h * 0.64, d / 2 + 0.07);
-    add(g, box(0.14, wh, ww, 0x2a3540, MAT.METAL), w / 2 + 0.08, h * 0.60, 0);
-    add(g, box(0.14, wh, ww, 0x2a3540, MAT.METAL), -w / 2 - 0.08, h * 0.60, 0);
+    const ww = Math.min(1.05, w * 0.24), wh = Math.min(1.35, h * 0.28);
+    const shCol = [0x3a5a7a, 0x3a6a42, 0x8a3a32, 0xc4a46a, 0x2a4a5a][style % 5];
+    const winYs = h > 5.4 ? [h * 0.36, h * 0.72] : [h * 0.58];
+    const winXs = w > 6.2 ? [-w * 0.32, w * 0.32] : [-w * 0.28, w * 0.28];
+    for (const wy of winYs) {
+      for (const wx of winXs) {
+        add(g, box(ww + 0.16, wh + 0.16, 0.10, 0xf2ead8, MAT.BUILDING), wx, wy, d / 2 + 0.05);
+        add(g, box(ww, wh, 0.14, 0x2a3540, MAT.METAL), wx, wy, d / 2 + 0.08);
+        add(g, box(0.16, wh, 0.10, shCol, MAT.WOOD), wx - ww * 0.64, wy, d / 2 + 0.10);
+        add(g, box(0.16, wh, 0.10, shCol, MAT.WOOD), wx + ww * 0.64, wy, d / 2 + 0.10);
+        if (wy < h * 0.5) {
+          add(g, box(ww + 0.22, 0.16, 0.30, 0x6a4a28, MAT.WOOD), wx, wy - wh * 0.58, d / 2 + 0.22);
+          add(g, box(ww * 0.72, 0.30, 0.22, 0x4a8a32, MAT.FOLIAGE), wx, wy - wh * 0.40, d / 2 + 0.24);
+        }
+      }
+      add(g, box(0.10, wh + 0.12, ww + 0.12, 0xf2ead8, MAT.BUILDING), w / 2 + 0.06, wy, 0);
+      add(g, box(0.14, wh, ww, 0x2a3540, MAT.METAL), w / 2 + 0.09, wy, 0);
+      add(g, box(0.10, wh + 0.12, ww + 0.12, 0xf2ead8, MAT.BUILDING), -w / 2 - 0.06, wy, 0);
+      add(g, box(0.14, wh, ww, 0x2a3540, MAT.METAL), -w / 2 - 0.09, wy, 0);
+    }
     if (style === 3) {
-      // Shallow loggia: two posts and a lintel
       add(g, box(0.22, h * 0.78, 0.22, 0xefe6d2, MAT.BUILDING), -w * 0.28, h * 0.39, d / 2 + 0.55);
       add(g, box(0.22, h * 0.78, 0.22, 0xefe6d2, MAT.BUILDING),  w * 0.28, h * 0.39, d / 2 + 0.55);
       add(g, box(w * 0.72, 0.22, 0.28, 0xe8d8b0, MAT.BUILDING), 0, h * 0.80, d / 2 + 0.55);
+    }
+    if (h > 5.5 || style === 2) {
+      const by = h * 0.58;
+      add(g, box(w * 0.62, 0.12, 0.85, 0xcfc6b6, MAT.ROCK), 0, by, d / 2 + 0.50);
+      add(g, box(w * 0.62, 0.45, 0.08, 0xf2ead8, MAT.BUILDING), 0, by + 0.28, d / 2 + 0.90);
+      add(g, box(0.08, 0.45, 0.85, 0xf2ead8, MAT.BUILDING), -w * 0.30, by + 0.28, d / 2 + 0.50);
+      add(g, box(0.08, 0.45, 0.85, 0xf2ead8, MAT.BUILDING),  w * 0.30, by + 0.28, d / 2 + 0.50);
     }
     const cy = h + roofH * 0.38;
     add(g, box(0.7, roofH * 0.65, 0.7, 0x8a4a38, MAT.ROCK), w * 0.22, cy, -d * 0.18);
     add(g, box(0.88, 0.16, 0.88, 0x5a3028, MAT.ROCK), w * 0.22, cy + roofH * 0.36, -d * 0.18);
     if (style === 2) {
       add(g, box(0.55, roofH * 0.5, 0.55, 0x8a4a38, MAT.ROCK), -w * 0.28, cy - 0.1, d * 0.12);
+    }
+    if (roofH > 2.5 && w > 5.5) {
+      add(g, box(1.4, 1.1, 1.1, wall, MAT.BUILDING), -w * 0.12, h + 0.55, d * 0.15);
+      const dr = mesh(gableRoofGeo(1.7, 1.3, 0.85), roofCol, MAT.ROOF);
+      dr.position.set(-w * 0.12, h + 1.1, d * 0.15);
+      g.add(dr);
+      add(g, box(0.55, 0.55, 0.12, 0x2a3540, MAT.METAL), -w * 0.12, h + 0.7, d * 0.15 + 0.58);
     }
   }
   return g;
@@ -1090,50 +1119,61 @@ function makeHangingKeep() {
       const ty = y0 + 0.5;
       const ang = Math.atan2(z, x);
       const rad0 = Math.hypot(x, z);
-      // Irregular multi-lobe plan — not a circle, not a bowl.
+      // Faceted cliff planes with a little plan irregularity — crisp light/shadow, not a soft blob.
+      const facets = 9;
+      const fa = Math.round(ang / (Math.PI * 2) * facets) * (Math.PI * 2) / facets;
+      const angF = fa * 0.84 + ang * 0.16;
       let plan = 0.70
-        + 0.22 * Math.sin(ang * 3 + seed)
-        + 0.14 * Math.sin(ang * 5 + seed * 2.1)
-        + 0.10 * Math.sin(ang * 8 + seed * 0.7)
-        + 0.07 * Math.sin(ang * 13 + seed * 1.4);
-      if (hsh(ang, 1.3) > 0.84) plan *= 0.62; // broken bites
-      if (hsh(ang, 4.2) > 0.90) plan *= 1.18; // jutting buttress
-      // Continuous wavy profile — no stepped cake shelves
+        + 0.22 * Math.sin(angF * 3 + seed)
+        + 0.14 * Math.sin(angF * 5 + seed * 2.1)
+        + 0.10 * Math.sin(angF * 8 + seed * 0.7)
+        + 0.07 * Math.sin(angF * 13 + seed * 1.4);
+      if (hsh(angF, 1.3) > 0.84) plan *= 0.62; // broken bites
+      if (hsh(angF, 4.2) > 0.90) plan *= 1.18; // jutting buttress
+      // Low-frequency wave only, so each facet stays a readable plane
       const wave = 1.0
-        + 0.07 * Math.sin(ty * 17 + seed * 2 + ang * 0.6)
-        + 0.045 * Math.sin(ty * 29 + seed * 0.7 + ang * 1.3);
+        + 0.025 * Math.sin(ty * 11 + seed * 2 + angF * 0.6)
+        + 0.016 * Math.sin(ty * 19 + seed * 0.7 + angF * 1.3);
       let prof;
       if (ty > 0.90) {
-        prof = plan * (0.82 + 0.20 * Math.sin(ang * 4 + seed) + 0.08 * hsh(ang, 9));
+        prof = plan * (0.82 + 0.20 * Math.sin(angF * 4 + seed) + 0.08 * hsh(angF, 9));
       } else if (ty > 0.58) {
-        prof = plan * (0.96 + 0.16 * Math.sin(ang * 3.2 + seed) * (ty < 0.78 ? 1 : 0.25)) * wave;
+        prof = plan * (0.96 + 0.16 * Math.sin(angF * 3.2 + seed) * (ty < 0.78 ? 1 : 0.25)) * wave;
       } else if (ty > 0.22) {
-        const over = 1.05 + 0.28 * Math.max(0, Math.sin(ang * 2.6 + seed * 1.3));
-        const under = 1.0 - 0.18 * Math.max(0, Math.sin(ang * 4.1 + seed * 2.0 + 1));
+        const over = 1.05 + 0.28 * Math.max(0, Math.sin(angF * 2.6 + seed * 1.3));
+        const under = 1.0 - 0.18 * Math.max(0, Math.sin(angF * 4.1 + seed * 2.0 + 1));
         prof = plan * over * under * wave;
       } else {
-        const teeth = 0.28 + 0.48 * Math.abs(Math.sin(ang * 5 + seed)) + 0.22 * Math.abs(Math.sin(ang * 11 + seed * 1.1));
+        const teeth = 0.28 + 0.48 * Math.abs(Math.sin(angF * 5 + seed)) + 0.22 * Math.abs(Math.sin(angF * 11 + seed * 1.1));
         prof = plan * teeth;
       }
       // Occasional sharp notches, not full ledges
-      if (hsh(ang * 0.3, Math.floor(ty * 22)) > 0.84 && ty < 0.9 && ty > 0.22) prof *= 0.90;
+      if (hsh(angF * 0.3, Math.floor(ty * 22)) > 0.84 && ty < 0.9 && ty > 0.22) prof *= 0.90;
       const rMul = (rad0 < 0.001 ? 0 : 1) * prof;
       let y = -depth + (top + depth) * ty;
       // Irregular top and strata notches
-      if (ty > 0.84) y += 2.4 * Math.sin(ang * 3 + seed) * ((ty - 0.84) / 0.16);
-      y += 0.7 * Math.sin(ty * 22 + seed) * (ty < 0.92 ? 1 : 0.3);
+      if (ty > 0.84) y += 2.4 * Math.sin(angF * 3 + seed) * ((ty - 0.84) / 0.16);
+      y += 0.35 * Math.sin(ty * 14 + seed) * (ty < 0.92 ? 1 : 0.3);
       pos.setXYZ(i, x * rx * rMul, y, z * rz * rMul);
-      // Horizontal strata tints + moss in folds
-      const band = Math.floor((1 - ty) * 9) % 3;
+      // Warm lit planes vs cool shade planes; moss only in deep folds
+      const sun = Math.cos(angF - 0.55);
+      const band = Math.floor((1 - ty) * 7) % 3;
       let r, gC, b;
-      // Gentle tint only — the painted atlas carries the strata.
-      if (band === 0) { r = 0.92; gC = 0.88; b = 0.82; }
-      else if (band === 1) { r = 1.0; gC = 0.96; b = 0.88; }
-      else { r = 0.86; gC = 0.84; b = 0.80; }
-      const shade = 0.90 + 0.10 * Math.sin(ang * 2.4 + seed);
-      const crease = plan < 0.62 || hsh(ang, ty) < 0.16;
-      if (crease && ty < 0.88) { r = 0.62; gC = 0.72; b = 0.48; } // mossy fold
-      if (ty > 0.90) { r = r * 0.7 + 0.18; gC = gC * 0.65 + 0.28; b = b * 0.7 + 0.10; }
+      if (sun > 0.22) {
+        if (band === 0) { r = 1.00; gC = 0.96; b = 0.88; }
+        else if (band === 1) { r = 0.96; gC = 0.91; b = 0.80; }
+        else { r = 0.90; gC = 0.86; b = 0.76; }
+      } else if (sun < -0.12) {
+        if (band === 0) { r = 0.62; gC = 0.66; b = 0.68; }
+        else if (band === 1) { r = 0.70; gC = 0.72; b = 0.70; }
+        else { r = 0.55; gC = 0.58; b = 0.60; }
+      } else {
+        r = 0.84; gC = 0.82; b = 0.76;
+      }
+      const crease = plan < 0.50 && hsh(angF, ty * 3) < 0.10;
+      if (crease && ty < 0.82 && ty > 0.15) { r = 0.72; gC = 0.76; b = 0.60; }
+      if (ty > 0.90) { r = 0.90; gC = 0.87; b = 0.78; }
+      const shade = 0.90 + 0.10 * sun;
       col[i * 3] = r * shade; col[i * 3 + 1] = gC * shade; col[i * 3 + 2] = b * shade;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
@@ -1155,6 +1195,9 @@ function makeHangingKeep() {
   lower.position.set(-8, -30, -22);
   g.add(lower);
 
+  const green = new THREE.Group();
+  green.name = "keep-green";
+
   function turf(y, pts, grassCol) {
     for (const [x, z, s] of pts) {
       const parts = [];
@@ -1166,22 +1209,24 @@ function makeHangingKeep() {
       }
       const mound = mesh(mergeGeos(parts, MAT.FOLIAGE), grassCol, MAT.FOLIAGE);
       mound.position.set(x, y, z);
-      g.add(mound);
+      green.add(mound);
     }
   }
-  const sage = 0x3e5c30, olive = 0x2f4a24;
+  const sage = 0x7ab844, olive = 0x5a8e30, sunLeaf = 0x96d050, midLeaf = 0x6eb83a;
   // No flat lawn boxes — lumpy foliage spilling over the rims.
-  turf(6.6, [
-    [-10, 8, 6.2], [8, -5, 5.4], [16, 7, 4.6], [-14, -8, 5.0],
-    [2, 2, 7.0], [18, -2, 4.2], [-18, 2, 4.8], [6, 14, 4.0],
-    [12, 12, 3.6], [-6, -14, 4.4], [20, 6, 3.2], [-20, -6, 3.4],
-    [4, -18, 3.8], [-8, -16, 3.4], [14, -12, 3.0],
-    [-24, 4, 4.0], [24, 2, 3.8], [0, 18, 5.2], [10, -20, 4.2],
-    [-12, 16, 4.4], [22, -10, 3.6], [-22, -12, 3.8], [28, 0, 3.0],
+  turf(7.2, [
+    [-10, 8, 8.4], [8, -5, 7.6], [16, 7, 6.8], [-14, -8, 7.2],
+    [2, 2, 9.2], [18, -2, 6.4], [-18, 2, 7.0], [6, 14, 6.2],
+    [12, 12, 5.8], [-6, -14, 6.6], [20, 6, 5.4], [-20, -6, 5.6],
+    [4, -18, 6.0], [-8, -16, 5.6], [14, -12, 5.2],
+    [-24, 4, 6.2], [24, 2, 6.0], [0, 18, 7.4], [10, -20, 6.4],
+    [-12, 16, 6.6], [22, -10, 5.8], [-22, -12, 6.0], [28, 0, 5.2],
+    [0, 0, 10.0], [-8, 4, 7.0], [10, 4, 7.2], [0, -8, 6.8],
   ], sage);
-  turf(6.9, [
-    [-4, 6, 2.4], [10, 2, 2.2], [-16, 10, 2.0], [16, -8, 1.8], [0, -10, 2.1],
-  ], olive);
+  turf(7.6, [
+    [-4, 6, 3.6], [10, 2, 3.4], [-16, 10, 3.2], [16, -8, 3.0], [0, -10, 3.3],
+    [6, -2, 4.0], [-10, -4, 3.8],
+  ], sunLeaf);
   // Lower island — smaller clumps only
   turf(-30 + 3.8, [
     [-14, -28, 3.2], [-4, -34, 2.8], [-12, -18, 2.6], [2, -26, 2.2],
@@ -1445,61 +1490,70 @@ function makeHangingKeep() {
     return mesh(mergeGeos(parts, MAT.FOLIAGE), col, MAT.FOLIAGE);
   }
 
-  // Trees and leafy masses draping the rims and ruins
-  const tr = cyl(0.7, 1.15, 11, 7, 0x5a3a22, MAT.WOOD);
-  tr.position.set(-14, 12.4, -4);
-  g.add(tr);
-  for (const [ox, oy, oz, r] of [
-    [0, 8.0, 0, 6.4], [4.2, 6.0, 2.0, 4.8], [-4.0, 6.2, -2.2, 4.6],
-    [2.0, 9.6, -2.4, 4.0], [-2.2, 9.4, 2.6, 3.8], [4.8, 7.6, -1.0, 3.2],
-    [-3.0, 5.0, 3.0, 3.4], [5.2, 4.4, 1.6, 2.8],
-    [1.5, 3.2, 4.0, 2.6], [-5.0, 3.6, 1.0, 2.4],
+  // Trees and leafy masses draping the rims and ruins — big bright canopies, not dark dots
+  const bigTrees = [
+    [-14, 6.8, -4], [12, 6.8, 6], [-6, 6.8, 12], [8, 6.8, -10], [22, 6.8, -2],
+  ];
+  for (const [tx, ty0, tz] of bigTrees) {
+    const tr = cyl(0.85, 1.25, 13, 7, 0x5a3a22, MAT.WOOD);
+    tr.position.set(tx, ty0 + 6.4, tz);
+    g.add(tr);
+  }
+  for (const [ox, oy, oz, r, col] of [
+    [-14, 20.4, -4, 8.2, sunLeaf], [-10, 18.0, -2, 6.4, midLeaf], [-18, 17.8, -6, 6.2, midLeaf],
+    [-12, 22.0, -6, 5.4, sunLeaf], [-16, 21.6, -1, 5.2, midLeaf],
+    [12, 20.4, 6, 7.6, sunLeaf], [16, 18.2, 8, 5.8, midLeaf], [8, 18.0, 4, 5.6, midLeaf],
+    [-6, 20.4, 12, 7.2, sunLeaf], [-2, 18.0, 14, 5.4, midLeaf], [-10, 17.8, 10, 5.2, midLeaf],
+    [8, 20.4, -10, 7.0, sunLeaf], [12, 18.0, -12, 5.4, midLeaf], [4, 17.8, -8, 5.2, midLeaf],
+    [22, 20.4, -2, 6.8, sunLeaf], [26, 18.0, 0, 5.0, midLeaf], [18, 17.8, -4, 5.0, midLeaf],
   ]) {
-    const leaf = leafMass(r, moss);
-    leaf.position.set(-14 + ox, 12.4 + oy, -4 + oz);
-    g.add(leaf);
+    const leaf = leafMass(r, col);
+    leaf.position.set(ox, oy, oz);
+    green.add(leaf);
   }
   for (const [x, z, s, y] of [
-    [16, 8, 1.35, 6.8], [20, -4, 1.2, 6.8], [4, -16, 1.15, 6.8],
-    [-22, 6, 1.2, 6.8], [-8, 16, 1.15, 6.8], [10, 14, 1.1, 6.8],
-    [-18, -8, 1.1, 6.8], [8, -18, 1.0, 6.8],
-    [26, 4, 1.05, 6.8], [-26, 0, 1.05, 6.8], [0, 20, 1.2, 6.8],
-    [14, 18, 1.0, 6.8], [-14, 18, 1.0, 6.8], [22, -14, 0.95, 6.8],
-    [0, -28, 0.95, -30 + 4.0], [-16, -34, 1.1, -30 + 4.0], [-8, -20, 0.9, -30 + 4.0],
+    [16, 8, 2.4, 6.8], [20, -4, 2.2, 6.8], [4, -16, 2.15, 6.8],
+    [-22, 6, 2.2, 6.8], [-8, 16, 2.15, 6.8], [10, 14, 2.1, 6.8],
+    [-18, -8, 2.1, 6.8], [8, -18, 2.0, 6.8],
+    [26, 4, 2.05, 6.8], [-26, 0, 2.05, 6.8], [0, 20, 2.3, 6.8],
+    [14, 18, 2.0, 6.8], [-14, 18, 2.0, 6.8], [22, -14, 1.9, 6.8],
+    [0, -28, 1.8, -30 + 4.0], [-16, -34, 2.0, -30 + 4.0], [-8, -20, 1.7, -30 + 4.0],
   ]) {
-    const t2 = cyl(0.22 * s, 0.36 * s, 4.6 * s, 5, 0x5a3a22, MAT.WOOD);
-    t2.position.set(x, y + 2.2 * s, z);
+    const t2 = cyl(0.28 * s, 0.44 * s, 5.4 * s, 5, 0x5a3a22, MAT.WOOD);
+    t2.position.set(x, y + 2.6 * s, z);
     g.add(t2);
-    const leaf = leafMass(2.4 * s, moss);
-    leaf.position.set(x, y + 5.6 * s, z);
-    g.add(leaf);
+    const leaf = leafMass(3.6 * s, (s > 2.1 ? sunLeaf : midLeaf));
+    leaf.position.set(x, y + 7.2 * s, z);
+    green.add(leaf);
   }
   // Ivy draping the left turret and facade piers
   for (const [x, y, z, s] of [
-    [-20, 14, -6, 1.3], [-19, 11, -6.5, 1.1], [-21, 9, -7, 1.0],
-    [-8, 12, -12, 1.2], [6, 11, -12, 1.1], [-2, 20, -11, 1.05],
-    [4, 24, -10, 1.0], [-14, 10, -10, 1.1],
-    [16, 12, -7, 1.15], [12, 16, -9, 1.0], [-6, 18, -10, 1.05],
-    [8, 22, -10, 0.95], [-16, 16, -8, 1.0], [2, 28, -9, 0.9],
-    [-18, 8, -8, 1.2], [18, 9, -6, 1.1], [0, 8, -16, 1.3],
-    [10, 8, 8, 1.15], [-12, 8, 10, 1.1], [22, 10, 0, 1.0],
+    [-20, 14, -6, 1.6], [-19, 11, -6.5, 1.4], [-21, 9, -7, 1.3],
+    [-8, 12, -12, 1.5], [6, 11, -12, 1.4], [-2, 20, -11, 1.35],
+    [4, 24, -10, 1.3], [-14, 10, -10, 1.4],
+    [16, 12, -7, 1.45], [12, 16, -9, 1.3], [-6, 18, -10, 1.35],
+    [8, 22, -10, 1.2], [-16, 16, -8, 1.3], [2, 28, -9, 1.2],
+    [-18, 8, -8, 1.5], [18, 9, -6, 1.4], [0, 8, -16, 1.7],
+    [10, 8, 8, 1.45], [-12, 8, 10, 1.4], [22, 10, 0, 1.3],
   ]) {
-    const iv = leafMass(s, 0x2a5428);
+    const iv = leafMass(s, midLeaf);
     iv.position.set(x, y, z);
-    g.add(iv);
+    green.add(iv);
   }
   // Hanging masses on the south and side faces — a leafier silhouette
   for (const [x, y, z, s] of [
-    [0, 2, -28, 2.6], [8, 0, -26, 2.2], [-8, 1, -27, 2.3],
-    [16, 3, -22, 2.0], [-16, 2, -22, 2.0], [4, -8, -24, 1.9],
-    [-20, 4, -18, 1.8], [22, 4, -16, 1.8], [10, -4, -20, 2.1],
-    [-6, -10, -22, 2.0], [0, 5, 22, 2.2], [12, 1, 18, 1.8],
-    [-12, 1, 18, 1.8], [18, -6, -14, 1.6], [-18, -6, -14, 1.6],
+    [0, 2, -28, 3.6], [8, 0, -26, 3.2], [-8, 1, -27, 3.3],
+    [16, 3, -22, 2.8], [-16, 2, -22, 2.8], [4, -8, -24, 2.7],
+    [-20, 4, -18, 2.6], [22, 4, -16, 2.6], [10, -4, -20, 2.9],
+    [-6, -10, -22, 2.8], [0, 5, 22, 3.2], [12, 1, 18, 2.6],
+    [-12, 1, 18, 2.6], [18, -6, -14, 2.4], [-18, -6, -14, 2.4],
+    [0, 6, -22, 3.0], [14, 5, -18, 2.4], [-14, 5, -18, 2.4],
   ]) {
-    const hv = leafMass(s, 0x3a6e32);
+    const hv = leafMass(s, sage);
     hv.position.set(x, y, z);
-    g.add(hv);
+    green.add(hv);
   }
+  g.add(green);
 
   const poolU = box(7, 0.3, 5, 0x2e8aaa, MAT.WATER_DEEP);
   poolU.position.set(6, 7.5, -10);
@@ -1678,13 +1732,28 @@ function mergeBucket(items, name, kind) {
 function keepRockMat() {
   const mat = triplanarLambert({
     map: loadTex("keep_rock.png"),
-    scale: 0.065,
+    scale: 0.09,
     color: 0xf7f2ea,
     vertexColors: true,
-    flatShading: false,
+    flatShading: true,
     matId: MAT.ROCK,
   });
   mat.userData.matId = MAT.ROCK;
+  return mat;
+}
+
+function keepLeafMat() {
+  const mat = triplanarLambert({
+    map: loadTex("leaf.png"),
+    scale: 0.16,
+    color: 0xf2ffd8,
+    vertexColors: true,
+    flatShading: false,
+    matId: MAT.FOLIAGE,
+  });
+  mat.emissive = new THREE.Color(0x2a5818);
+  mat.emissiveIntensity = 0.28;
+  mat.userData.matId = MAT.FOLIAGE;
   return mat;
 }
 
@@ -2326,7 +2395,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
         const yaw = Math.PI + (rnd() - 0.5) * 0.08; // face south, almost aligned
         if (b.near) {
           if (rnd() < 0.16) { farList.push({ kind: "gap", x: jx, y: hgt, z: jz }); hi++; continue; }
-          const w = 5.6 + rnd() * 3.4, d = 5.2 + rnd() * 2.2, hh = 3.6 + rnd() * 3.4, rh = 2.0 + rnd() * 1.6;
+          const w = 5.6 + rnd() * 3.4, d = 5.2 + rnd() * 2.2, hh = 3.6 + rnd() * 3.4, rh = 1.6 + rnd() * 2.4;
           const h = house(w, d, hh, rh, houseColors[hi % 7], roofColors[hi % 7], true, hi % 4);
           h.position.set(jx, hgt, jz);
           h.rotation.y = yaw;
@@ -2637,27 +2706,119 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
   // A few long field hedges between the airport and the mid slopes
   const hedges = [
-    [200, -820, 48, 0.8, 0],
-    [320, -640, 36, 0.8, 0.4],
-    [-40, -700, 40, 0.8, -0.2],
-    [60, -480, 28, 0.8, 0.3],
+    [200, -820, 48, 0.9, 0],
+    [320, -640, 36, 0.9, 0.4],
+    [-40, -700, 40, 0.9, -0.2],
+    [60, -480, 28, 0.9, 0.3],
+    [140, -740, 32, 0.9, 0.18],
+    [260, -700, 40, 0.9, -0.12],
+    [80, -620, 36, 0.9, 0.55],
+    [180, -560, 44, 0.9, 0.08],
+    [300, -560, 30, 0.9, -0.4],
+    [40, -800, 34, 0.9, 0.22],
+    [240, -480, 28, 0.9, 0.3],
+    [-20, -560, 26, 0.9, -0.5],
+    [100, -360, 32, 0.9, 0.15],
+    [220, -380, 28, 0.9, -0.25],
+    [360, -720, 24, 0.9, 0.6],
+    [160, -660, 22, 0.9, 1.2],
+    [280, -800, 26, 0.9, 0.9],
   ];
   for (const [hx, hz, len, th, yaw] of hedges) {
-    const hedge = box(len, 1.7, th, 0x355428, MAT.FOLIAGE);
-    hedge.position.set(hx, H(hx, hz) + 0.85, hz);
-    hedge.rotation.y = yaw;
-    group.add(hedge);
+    const nSeg = Math.max(2, Math.round(len / 7));
+    for (let i = 0; i < nSeg; i++) {
+      const t = (i + 0.5) / nSeg - 0.5;
+      const px = hx + Math.cos(yaw) * t * len;
+      const pz = hz + Math.sin(yaw) * t * len;
+      const h0 = H(px, pz);
+      const h1 = H(px + Math.cos(yaw) * 3, pz + Math.sin(yaw) * 3);
+      if (h0 < 4 || h0 > 90) continue;
+      if (Math.abs(h1 - h0) > 4.5) continue;
+      const hedge = box(len / nSeg + 0.35, 1.7, th, 0x355428, MAT.FOLIAGE);
+      hedge.position.set(px, h0 + 0.85, pz);
+      hedge.rotation.y = yaw;
+      group.add(hedge);
+    }
   }
 
-  // Harbor docks
-  const dock = box(80, 1, 12, 0x6a4a28, MAT.WOOD);
-  dock.position.set(LANDMARKS.harbor.x, 1.2, LANDMARKS.harbor.z);
-  group.add(dock);
+  // Harbor: stone quay on the south bank of the canal, colourful facades facing the water
+  const hx = LANDMARKS.harbor.x, hz = LANDMARKS.harbor.z;
+  const shoreZ = -1198;
+  const quayStone = 0xd8d0c2, quayDk = 0xb8b0a2, quayPav = 0xc8c0b0;
+  // Sea wall along the south waterline, facing the canal
+  add(group, box(150, 8.2, 3.2, quayStone, MAT.ROCK), hx, 1.6, shoreZ);
+  add(group, box(148, 0.45, 16, quayPav, MAT.ROAD), hx, 5.55, shoreZ - 6.0);
+  // Mid terrace stepping up the bank toward the houses
+  add(group, box(140, 0.4, 8, quayPav, MAT.ROAD), hx, 8.6, shoreZ - 16);
+  for (let x = hx - 72; x <= hx + 72; x += 8) {
+    add(group, box(7.5, 0.32, 3.2, quayDk, MAT.ROCK), x, 5.82, shoreZ);
+  }
+  // Steps up the bank toward the houses, and down to the water
+  for (const sx of [hx - 40, hx + 40]) {
+    for (let s = 0; s < 6; s++) {
+      add(group, box(4.4, 0.26, 1.3, quayStone, MAT.ROCK), sx, 4.0 + s * 1.15, shoreZ - 8.5 - s * 1.15);
+    }
+    for (let s = 0; s < 5; s++) {
+      add(group, box(4.4, 0.26, 1.25, quayStone, MAT.ROCK), sx + 8, 3.8 - s * 0.7, shoreZ + 1.2 + s * 1.1);
+    }
+  }
+  // Wooden finger piers into the canal (north)
+  for (const px of [hx - 52, hx - 26, hx + 26, hx + 52]) {
+    add(group, box(6.2, 1.15, 28, 0x7a5a32, MAT.WOOD), px, 1.55, shoreZ + 16);
+    for (let k = 0; k < 3; k++) {
+      add(group, box(0.4, 2.5, 0.4, 0x5a4020, MAT.WOOD), px - 2.5, 0.5, shoreZ + 6 + k * 8);
+      add(group, box(0.4, 2.5, 0.4, 0x5a4020, MAT.WOOD), px + 2.5, 0.5, shoreZ + 6 + k * 8);
+    }
+  }
+  // Colourful facades on the hill, facing the canal (north)
+  const facades = [
+    [0xfbf6ea, 0xc45a3a], [0xf2c14e, 0xa8422c], [0xe8d0a0, 0xd26540],
+    [0xd4e4f0, 0x8a3a22], [0xf4c4b0, 0xb4482e], [0xf8f1dc, 0xcc6a44],
+    [0xe6c98a, 0x9a4a28], [0xcfe0d4, 0xa8422c], [0xf0d8c0, 0xc45a3a],
+  ];
+  for (let i = 0; i < 9; i++) {
+    const x = hx - 72 + i * 18;
+    const z = shoreZ - 16;
+    const w = 8.2 + (i % 3) * 0.7, d = 7.0, hh = 5.2 + (i % 4) * 0.65, rh = 2.1 + (i % 3) * 0.55;
+    const hs = house(w, d, hh, rh, facades[i][0], facades[i][1], true, i % 4);
+    hs.position.set(x, Math.max(H(x, z), 8.8), z);
+    hs.rotation.y = 0;
+    group.add(hs);
+  }
+  // Fish hall near the harbor beacon on the hill
+  {
+    const fx = hx + 8, fz = hz - 4;
+    add(group, box(14, 5.6, 9.2, 0xe8d8b8, MAT.BUILDING), fx, H(fx, fz) + 2.8, fz);
+    add(group, box(15.2, 0.4, 10.2, 0xa8422c, MAT.ROOF), fx, H(fx, fz) + 5.7, fz);
+    add(group, box(2.2, 2.4, 0.3, 0x2a3540, MAT.METAL), fx - 4, H(fx, fz) + 3.4, fz + 4.8);
+    add(group, box(2.2, 2.4, 0.3, 0x2a3540, MAT.METAL), fx + 4, H(fx, fz) + 3.4, fz + 4.8);
+  }
+  // Lamp posts along the walk
+  for (let i = 0; i < 8; i++) {
+    const lx = hx - 70 + i * 20;
+    add(group, cyl(0.13, 0.15, 5.4, 6, 0x2c2c2a, MAT.METAL), lx, 8.25, shoreZ - 3.5);
+    add(group, box(0.72, 0.55, 0.72, 0xf0d878, MAT.METAL), lx, 11.05, shoreZ - 3.5);
+  }
+  // Net racks
+  for (const nx of [hx - 60, hx - 12, hx + 18, hx + 58]) {
+    add(group, box(0.14, 2.6, 0.14, 0x5a4020, MAT.WOOD), nx - 1.6, 5.5, shoreZ - 3.2);
+    add(group, box(0.14, 2.6, 0.14, 0x5a4020, MAT.WOOD), nx + 1.6, 5.5, shoreZ - 3.2);
+    add(group, box(3.4, 0.1, 0.1, 0x5a4020, MAT.WOOD), nx, 6.6, shoreZ - 3.2);
+    add(group, box(3.2, 1.8, 0.06, 0x3a4a40, MAT.METAL), nx, 5.6, shoreZ - 3.2);
+  }
+  // Light dressing on the north bank of the canal (town/runway side) — wall, lamps, no houses on the runway
+  add(group, box(160, 4.2, 2.2, quayStone, MAT.ROCK), hx + 20, 2.2, -1114);
+  for (let i = 0; i < 6; i++) {
+    const lx = hx - 50 + i * 28;
+    add(group, cyl(0.13, 0.15, 5.0, 6, 0x2c2c2a, MAT.METAL), lx, 7.4, -1108);
+    add(group, box(0.65, 0.5, 0.65, 0xf0d878, MAT.METAL), lx, 10.0, -1108);
+  }
   const boats = [];
+  const moorX = [hx - 52, hx - 26, hx + 4, hx + 26, hx + 52];
   for (let i = 0; i < 5; i++) {
     const b = makeBoat([0xc05030, 0x2a6cb6, 0xe8e0c8, 0x3a8a5a, 0xc08020][i]);
-    b.position.set(LANDMARKS.harbor.x - 30 + i * 16, 0.4, LANDMARKS.harbor.z + 14 + (i % 2) * 8);
-    b.rotation.y = 0.2 + i * 0.1;
+    b.position.set(moorX[i], 0.45, shoreZ + 18 + (i % 2) * 6);
+    b.rotation.y = (i % 2 === 0 ? 0.08 : -0.08);
     group.add(b);
     boats.push(b);
   }
@@ -2778,7 +2939,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   ));
   group.add(makeRoad(
     { x: LANDMARKS.town.x, y: 8.6, z: LANDMARKS.town.z },
-    { x: LANDMARKS.harbor.x, y: 1.4, z: LANDMARKS.harbor.z },
+    { x: LANDMARKS.harbor.x + 80, y: 8, z: -1230 },
     6,
     H
   ));
@@ -2800,6 +2961,16 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     5.0,
     H
   ));
+  // Narrow farm tracks breaking up the mid-island meadows
+  const farmTracks = [
+    [{ x: 200, y: 8, z: -820 }, { x: 320, y: 10, z: -640 }, 2.6],
+    [{ x: 80, y: 8, z: -700 }, { x: 180, y: 10, z: -560 }, 2.4],
+    [{ x: 40, y: 8, z: -800 }, { x: -20, y: 10, z: -560 }, 2.4],
+    [{ x: 240, y: 8, z: -480 }, { x: 360, y: 10, z: -720 }, 2.5],
+    [{ x: 100, y: 8, z: -360 }, { x: 220, y: 10, z: -380 }, 2.3],
+    [{ x: 160, y: 8, z: -660 }, { x: 160, y: 8, z: -820 }, 2.4],
+  ];
+  for (const [a, b, w] of farmTracks) group.add(makeRoad(a, b, w, H));
 
   // Extra décor between missions — chapels, footbridges, dock life, orchards.
   function makeWaysideChapel() {
@@ -2850,15 +3021,14 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     br.position.set(x, H(x, z), z);
     group.add(br);
   }
-  // Harbor dock dressing — crates, barrels, bollards
-  const hx = LANDMARKS.harbor.x, hz = LANDMARKS.harbor.z;
-  for (let i = 0; i < 10; i++) {
-    const cx = hx - 34 + i * 7.2, cz = hz - 3 + (i % 3) * 2.2;
-    add(group, box(1.6 + (i % 3) * 0.4, 1.1, 1.3, (i % 2) ? 0x6a4a28 : 0x8a6230, MAT.WOOD), cx, 2.0, cz, 0, (i % 5) * 0.2, 0);
+  // Harbor dock dressing — crates, barrels, bollards on the south-bank walk
+  for (let i = 0; i < 14; i++) {
+    const cx = hx - 70 + i * 10, cz = shoreZ - 3.2 - (i % 3) * 1.6;
+    add(group, box(1.6 + (i % 3) * 0.4, 1.15, 1.3, (i % 2) ? 0x6a4a28 : 0x8a6230, MAT.WOOD), cx, 6.2, cz, 0, (i % 5) * 0.2, 0);
   }
-  for (let i = 0; i < 6; i++) {
-    add(group, cyl(0.55, 0.6, 1.15, 8, 0x5a3a1a, MAT.WOOD), hx - 28 + i * 10, 1.9, hz + 5.4);
-    add(group, cyl(0.28, 0.32, 0.9, 6, 0x8a8a82, MAT.METAL), hx - 36 + i * 14, 1.75, hz + 6.2);
+  for (let i = 0; i < 8; i++) {
+    add(group, cyl(0.55, 0.6, 1.15, 8, 0x5a3a1a, MAT.WOOD), hx - 64 + i * 18, 6.2, shoreZ - 5.0);
+    add(group, cyl(0.28, 0.32, 0.95, 6, 0x8a8a82, MAT.METAL), hx - 70 + i * 20, 5.9, shoreZ + 1.2);
   }
   // Extra market stalls filling the square
   for (let i = 0; i < 5; i++) {
@@ -2938,8 +3108,9 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   hangingKeep.position.set(LANDMARKS.hangingKeep.x, 280, LANDMARKS.hangingKeep.z);
   hangingKeep.rotation.y = 0.22;
   hangingKeep.scale.setScalar(2.15);
-  mergeVertexColors(hangingKeep, new Set(["falls", "mist", "keep-rock"]));
+  mergeVertexColors(hangingKeep, new Set(["falls", "mist", "keep-rock", "keep-green"]));
   mergeNamed(hangingKeep, "keep-rock", keepRockMat(), "keep-rock");
+  mergeNamed(hangingKeep, "keep-green", keepLeafMat(), "keep-green");
   group.add(hangingKeep);
 
   // Town lamps

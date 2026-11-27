@@ -136,6 +136,13 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       [440, -520, 26, -0.25, 0x9a8a72],
       [LM.town.x - 30, LM.town.z - 10, 22, 0.15, 0x9a8a72],
       [120, -300, 24, 0.35, 0x9a8a72],
+      [180, -760, 36, 0.05, 0x9a8a72],
+      [260, -620, 30, -0.3, 0x9a8a72],
+      [40, -640, 28, 0.45, 0x9a8a72],
+      [140, -500, 26, 0.2, 0x9a8a72],
+      [320, -500, 24, -0.15, 0x9a8a72],
+      [80, -860, 22, 0.1, 0x9a8a72],
+      [220, -900, 20, 0.35, 0x9a8a72],
     ];
     for (const [x, z, len, yaw, c] of walls) {
       const nSeg = Math.max(2, Math.round(len / 6));
@@ -203,7 +210,8 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     const place = [];
     const zones = [
       [LM.beach.x, LM.beach.z, 28],
-      [LM.harbor.x, LM.harbor.z, 26],
+      [180, -1228, 28, 10],
+      [180, -1204, 36, 3.3],
       [LM.pier.x, LM.pier.z, 16],
       [LM.town.x, LM.town.z + 12, 22],
       [LM.market.x, LM.market.z, 14],
@@ -218,7 +226,7 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       const a = i * 2.4, r = 4 + (i % 7) * 2.4;
       const x = zn[0] + Math.cos(a) * Math.min(r, zn[2]);
       const z = zn[1] + Math.sin(a) * Math.min(r, zn[2]) * 0.8;
-      const h = H(x, z);
+      const h = Math.max(H(x, z), zn[3] || -99);
       if (h < 0.8) continue;
       place.push({ x, y: h + 0.85, z, sx: 0.9, sy: 0.95, sz: 0.9, c: cols[i % cols.length] });
     }
@@ -234,7 +242,8 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
   if (k > 0.35) {
     const carts = [
       [LM.market.x + 6, LM.market.z + 4, 0.4],
-      [LM.harbor.x - 12, LM.harbor.z + 2, 1.2],
+      [168, -1224, 1.2],
+      [196, -1208, -0.4],
       [LM.town.x + 10, LM.town.z + 8, 0.1],
       [LM.church.x - 8, LM.church.z + 6, -0.3],
       [430, -716, 0.2],
@@ -242,7 +251,7 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     ];
     const place = [];
     for (const [x, z, yaw] of carts) {
-      const h = H(x, z);
+      const h = Math.max(H(x, z), (z < -1190 && z > -1240 && x > 100 && x < 260) ? 4.2 : -99);
       if (h < 0.6) continue;
       place.push({ x, y: h + 0.7, z, sx: 2.4, sy: 1.1, sz: 1.25, ry: yaw, c: 0x5a3a22 });
     }
