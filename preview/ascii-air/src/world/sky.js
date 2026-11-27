@@ -68,31 +68,93 @@ export function createSky(scene) {
   skyMesh.name = "sky";
   tagMesh(skyMesh, MAT.SKY, 0);
 
-  // Stars
-  const starN = 500;
+  // Stars: small soft round points with a gentle twinkle (never chunky squares)
+  const starN = 900;
   const sPos = new Float32Array(starN * 3);
   const sCol = new Float32Array(starN * 3);
+  const sPhase = new Float32Array(starN);
+  const sSize = new Float32Array(starN);
   const sId = new Float32Array(starN * 2);
   for (let i = 0; i < starN; i++) {
     const a = Math.random() * TAU;
-    const h = Math.random() * 0.85 + 0.1;
+    const h = Math.random() * 0.85 + 0.12;
     const r = 4200;
     sPos[i * 3] = Math.cos(a) * Math.cos(h) * r;
     sPos[i * 3 + 1] = Math.sin(h) * r;
     sPos[i * 3 + 2] = Math.sin(a) * Math.cos(h) * r;
-    const b = 0.7 + Math.random() * 0.3;
-    sCol[i * 3] = b; sCol[i * 3 + 1] = b; sCol[i * 3 + 2] = 0.85 + Math.random() * 0.15;
+    const bright = Math.random();
+    const b = 0.72 + bright * 0.28;
+    // a few warmer / cooler tints
+    const tint = Math.random();
+    sCol[i * 3] = b * (tint < 0.15 ? 1.0 : tint > 0.85 ? 0.82 : 0.95);
+    sCol[i * 3 + 1] = b * 0.95;
+    sCol[i * 3 + 2] = b * (tint > 0.85 ? 1.0 : 0.92);
+    sPhase[i] = Math.random();
+    sSize[i] = 5.5 + bright * bright * 7.5; // px, small but readable, a few brighter
     sId[i * 2] = MAT.LIGHT; sId[i * 2 + 1] = 0;
   }
   const sGeo = new THREE.BufferGeometry();
   sGeo.setAttribute("position", new THREE.BufferAttribute(sPos, 3));
   sGeo.setAttribute("color", new THREE.BufferAttribute(sCol, 3));
+  sGeo.setAttribute("aPhase", new THREE.BufferAttribute(sPhase, 1));
+  sGeo.setAttribute("aSize", new THREE.BufferAttribute(sSize, 1));
   sGeo.setAttribute("aId", new THREE.BufferAttribute(sId, 2));
-  const stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
-    size: 18, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0,
-    depthWrite: false, fog: false, toneMapped: false,
-  }));
+  const starMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uOpacity: { value: 0 },
+    },
+    vertexShader: /* glsl */ `
+      attribute float aPhase;
+      attribute float aSize;
+      attribute vec3 color;
+      uniform float uTime;
+      uniform float uOpacity;
+      varying vec3 vCol;
+      varying float vA;
+      void main() {
+        float tw = 0.62 + 0.38 * sin(uTime * (1.1 + aPhase * 2.8) + aPhase * 6.28318);
+        // a minority twinkle more strongly
+        float tw2 = 0.75 + 0.25 * sin(uTime * (3.2 + aPhase * 1.7) + aPhase * 4.1);
+        tw = mix(tw, tw2, step(0.7, aPhase));
+        vCol = color * (0.85 + 0.55 * tw);
+        vA = uOpacity * (0.75 + 0.25 * tw);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = max(2.0, aSize * (0.9 + 0.4 * tw));
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      varying vec3 vCol;
+      varying float vA;
+      void main() {
+        vec2 p = gl_PointCoord - vec2(0.5);
+        float d = length(p);
+        // Soft round disc, not a square. Tight core + faint halo.
+        float core = smoothstep(0.38, 0.0, d);
+        float halo = smoothstep(0.5, 0.16, d) * 0.35;
+        float a = (core + halo) * vA;
+        if (a < 0.02) discard;
+        gl_FragColor = vec4(vCol, a);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    blending: THREE.AdditiveBlending,
+    vertexColors: false,
+    fog: false,
+    toneMapped: false,
+  });
+  // Keep .opacity so setHour can fade them the same way as before.
+  Object.defineProperty(starMat, "opacity", {
+    get() { return this.uniforms.uOpacity.value; },
+    set(v) { this.uniforms.uOpacity.value = v; },
+  });
+  const stars = new THREE.Points(sGeo, starMat);
   stars.frustumCulled = false;
+  stars.renderOrder = 8;
+  stars.userData.twinkle = true;
 
   // Moon
   const moon = new THREE.Mesh(
@@ -233,6 +295,64 @@ export function createSky(scene) {
     setHour(state.hour);
   }
 
+  const _flashWhite = new THREE.Color(0xf4f6fb);
+  const _flashFog = new THREE.Color(0xd8e4f0);
+  const _lit = {
+    amb: 0, hemi: 0, sun: 0,
+    zenith: new THREE.Color(),
+    horizon: new THREE.Color(),
+    fog: new THREE.Color(),
+    stored: false,
+    flashing: false,
+  };
+  function captureLit() {
+    _lit.amb = amb.intensity;
+    _lit.hemi = hemi.intensity;
+    _lit.sun = sun.intensity;
+    _lit.zenith.copy(state.zenithColor);
+    _lit.horizon.copy(state.horizonColor);
+    _lit.fog.copy(state.fogColor);
+    _lit.stored = true;
+  }
+  function restoreLit() {
+    if (!_lit.stored) return;
+    amb.intensity = _lit.amb;
+    hemi.intensity = _lit.hemi;
+    sun.intensity = _lit.sun;
+    skyMat.uniforms.uZenith.value.copy(_lit.zenith);
+    skyMat.uniforms.uHorizon.value.copy(_lit.horizon);
+    fog.color.copy(_lit.fog);
+  }
+  // Pulse sky + terrain lights so a lightning flash actually reads on the island.
+  function applyFlash(f) {
+    f = Math.max(0, Number(f) || 0);
+    if (f < 0.02) {
+      if (_lit.flashing) {
+        restoreLit();
+        _lit.flashing = false;
+      } else {
+        captureLit();
+      }
+      return;
+    }
+    if (!_lit.flashing) {
+      captureLit();
+      _lit.flashing = true;
+    }
+    amb.intensity = _lit.amb + f * 0.55;
+    hemi.intensity = _lit.hemi + f * 0.70;
+    sun.intensity = _lit.sun + f * 0.85;
+    skyMat.uniforms.uZenith.value.copy(_lit.zenith).lerp(_flashWhite, f * 0.28);
+    skyMat.uniforms.uHorizon.value.copy(_lit.horizon).lerp(_flashWhite, f * 0.36);
+    fog.color.copy(_lit.fog).lerp(_flashFog, f * 0.22);
+  }
+
+  function tickStars(time) {
+    if (stars.material.uniforms && stars.material.uniforms.uTime) {
+      stars.material.uniforms.uTime.value = time;
+    }
+  }
+
   function addLamp(pos, color, intensity, distance, always = false) {
     const l = new THREE.PointLight(color, 0, distance);
     l.position.copy(pos);
@@ -245,7 +365,7 @@ export function createSky(scene) {
 
   setHour(10);
 
-  return { hemi, sun, amb, skyMesh, stars, moon, fog, state, setHour, setStorm, addLamp, samplePalette,
+  return { hemi, sun, amb, skyMesh, stars, moon, fog, state, setHour, setStorm, applyFlash, tickStars, addLamp, samplePalette,
     get sunDir() { return state.sunDir; },
     get sunColor() { return state.sunColor; },
     get horizonColor() { return state.horizonColor; },

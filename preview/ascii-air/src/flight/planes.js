@@ -3,6 +3,49 @@ import { MAT, PLANES } from "../core/config.js";
 import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { seatPilot } from "../world/pilot.js";
 
+let _propDiscTex = null;
+function makePropDiscTex() {
+  if (_propDiscTex) return _propDiscTex;
+  const c = typeof document !== "undefined" ? document.createElement("canvas") : null;
+  if (!c) {
+    _propDiscTex = null;
+    return null;
+  }
+  c.width = c.height = 256;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, 256, 256);
+  const g = ctx.createRadialGradient(128, 128, 8, 128, 128, 126);
+  g.addColorStop(0.0, "rgba(245, 236, 210, 0.18)");
+  g.addColorStop(0.28, "rgba(214, 200, 168, 0.32)");
+  g.addColorStop(0.62, "rgba(196, 184, 150, 0.38)");
+  g.addColorStop(0.82, "rgba(170, 158, 128, 0.28)");
+  g.addColorStop(0.90, "rgba(28, 22, 16, 0.88)");
+  g.addColorStop(0.96, "rgba(18, 14, 10, 0.95)");
+  g.addColorStop(1.0, "rgba(18, 14, 10, 0.0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(128, 128, 126, 0, Math.PI * 2);
+  ctx.fill();
+  // faint spinning-blade streaks
+  ctx.save();
+  ctx.translate(128, 128);
+  ctx.strokeStyle = "rgba(40, 32, 22, 0.18)";
+  ctx.lineWidth = 6;
+  for (let i = 0; i < 8; i++) {
+    ctx.rotate(Math.PI / 8);
+    ctx.beginPath();
+    ctx.moveTo(16, 0);
+    ctx.lineTo(118, 0);
+    ctx.stroke();
+  }
+  ctx.restore();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  _propDiscTex = tex;
+  return tex;
+}
+
 function mat(color, matId = MAT.PLANE, hero = 1) {
   const m = new THREE.MeshLambertMaterial({ color, flatShading: false, emissive: color, emissiveIntensity: 0.28 });
   m.userData.matId = matId;
@@ -134,11 +177,26 @@ function buildTrainer(s) {
   add(prop, new THREE.CylinderGeometry(0.12, 0.12, 0.42, 8), dark, MAT.METAL, 0, 0, 0.08, Math.PI / 2);
   add(prop, new THREE.SphereGeometry(0.20, 8, 6), cream, MAT.PLANE, 0, 0, 0.30);
   const discMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0xf0e6c8, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false, toneMapped: false,
+    map: makePropDiscTex(),
+    transparent: true,
+    opacity: 0.92,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    toneMapped: false,
   }));
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.05, 24), discMat);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.42, 32), discMat);
   disc.name = "prop-blur";
+  disc.renderOrder = 2;
   prop.add(disc);
+  // Thin ink rim so the spinning disc reads from behind-above
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(1.40, 0.03, 6, 32),
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+      color: 0x1a1410, transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false,
+    }))
+  );
+  rim.name = "prop-rim";
+  prop.add(rim);
   const bladeMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0x4a3424, transparent: true, opacity: 0.55, depthWrite: false,
   }));

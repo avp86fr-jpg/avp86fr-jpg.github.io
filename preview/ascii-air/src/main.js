@@ -606,6 +606,7 @@ function step(now) {
       weather.applyToCraft(craft, dtRaw);
       look.uniforms.uRain.value = weather.state.rain;
       look.uniforms.uFlash.value = weather.state.flash;
+      if (island.sky && typeof island.sky.applyFlash === "function") island.sky.applyFlash(weather.state.flash);
       if (typeof island.setStorm === "function") island.setStorm(weather.state.id === "storm", weather.state.windKt);
     }
 
@@ -742,8 +743,8 @@ function heroShot(opts = {}) {
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
-  craft.roll = 0.18;
-  craft.pitch = -0.04;
+  craft.roll = 0.10;
+  craft.pitch = -0.02;
   flyCam.snap(craft, false);
   paused = true;
   if (opts.showcase !== false) showcaseRings("pro", 3, 12, 27.346, null);
@@ -826,7 +827,7 @@ function stormShot(opts = {}) {
   if (weather) weather.set("storm", { windDeg: 270, windKt: 22.7, visibility: 4.2, turbulence: 0.7 });
   if (typeof island.setStorm === "function") island.setStorm(true, 22.7);
   island.sky.setHour(opts.hour ?? 11);
-  weather.state.flash = 0.42;
+  weather.state.flash = 0.62;
   weather.state.rain = 1;
   if (weather.bolt) {
     weather.bolt.visible = true;
@@ -840,8 +841,10 @@ function stormShot(opts = {}) {
   syncPlaneMesh();
   if (look && weather) {
     look.uniforms.uRain.value = 1;
-    look.uniforms.uFlash.value = 0.35;
+    look.uniforms.uFlash.value = 0.62;
   }
+  if (island.sky && typeof island.sky.applyFlash === "function") island.sky.applyFlash(0.62);
+  weather.state.flash = 0.62;
   hudShot();
   return pose;
 }

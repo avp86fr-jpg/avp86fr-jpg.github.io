@@ -140,12 +140,18 @@ export function computeHeight(x, z) {
     capeH *= smoothstep(LANDMARKS.arch.z - 48, LANDMARKS.arch.z - 6, z);
   }
   h = Math.max(h, capeH * Math.max(mask, capeCore));
-  // Shear the west cape's south face into a cliff, except the arch window
-  if (x < -20 && z < LANDMARKS.arch.z - 8) {
-    const slot = (Math.abs(x - LANDMARKS.arch.x) < 10) && (z > LANDMARKS.arch.z - 22);
+  // Shear the west cape's south face into a JAGGED cliff, except the arch window
+  if (x < -20 && z < LANDMARKS.arch.z + 6) {
+    const slot = (Math.abs(x - LANDMARKS.arch.x) < 11) && (z > LANDMARKS.arch.z - 22);
     if (!slot) {
-      const drop = saturate((LANDMARKS.arch.z - 8 - z) / 18);
-      h = lerp(h, -1.5, drop);
+      const edgeJitter = 11 * (fbm(x * 0.028, 3.1, 3, 17) - 0.5) + 7 * Math.sin(x * 0.065);
+      const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter;
+      if (z < edgeZ) {
+        const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
+        const drop = saturate((edgeZ - z) / faceDepth);
+        const toe = -0.3 + 4.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop);
+        h = lerp(h, toe, drop * drop);
+      }
     }
   }
 
@@ -312,12 +318,18 @@ export function computeHeight(x, z) {
   h = lerp(h, Math.min(h, -6), bayCut * 0.95);
   if (h < 0.45 && !nearLag && !nearCove && mask < 0.55) h = Math.min(h, bed);
 
-  // Final cape cliff after pads / domes, so the hero sees a cut limestone face
-  if (x < -20 && z < LANDMARKS.arch.z - 8) {
-    const slot = (Math.abs(x - LANDMARKS.arch.x) < 10) && (z > LANDMARKS.arch.z - 22);
+  // Final cape cliff after pads / domes: a jagged limestone face, never a long rectangle
+  if (x < -20 && z < LANDMARKS.arch.z + 6) {
+    const slot = (Math.abs(x - LANDMARKS.arch.x) < 11) && (z > LANDMARKS.arch.z - 22);
     if (!slot) {
-      const drop = saturate((LANDMARKS.arch.z - 8 - z) / 16);
-      h = lerp(h, -1.5, drop);
+      const edgeJitter = 11 * (fbm(x * 0.028, 3.1, 3, 17) - 0.5) + 7 * Math.sin(x * 0.065);
+      const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter;
+      if (z < edgeZ) {
+        const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
+        const drop = saturate((edgeZ - z) / faceDepth);
+        const toe = -0.3 + 4.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop);
+        h = lerp(h, toe, drop * drop);
+      }
     }
   }
 
@@ -438,8 +450,10 @@ export function createTerrain(quality = "medium") {
         }
         if (vd < 280 && h > 150) return [0.42 + n * 0.08, 0.38 + n * 0.04, 0.32];
         if (vd < 420 && h > 90) return [0.48 + n * 0.08, 0.44 + n * 0.05, 0.34];
-        // Grey-ochre coastal rock
-        return [0.50 + n * 0.10, 0.44 + n * 0.06, 0.30];
+        // Grey-ochre coastal rock with ink crevices (not a sandy beige slab)
+        const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.32;
+        const base = [0.48 + n * 0.08, 0.45 + n * 0.05, 0.38 + n * 0.04];
+        return crevice ? [base[0] * 0.55, base[1] * 0.52, base[2] * 0.50] : base;
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];

@@ -76,6 +76,7 @@ export function createIsland(scene, quality = "medium") {
 
   function update(dt, time, hour) {
     sky.setHour(hour);
+    if (typeof sky.tickStars === "function") sky.tickStars(time);
     water.update(time, sky);
     landmarks.update(dt, time, hour, sky.night);
     skyprops.update(dt, time);

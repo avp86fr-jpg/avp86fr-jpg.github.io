@@ -58,8 +58,12 @@ void main() {
   col = mix(vec3(L), col, uSat);
   col = mix(vec3(0.5), col, uContrast);
 
-  // Two-tone album shading, then thin ink only — never fill a slope or the horizon.
-  col = mix(col, floor(col * 5.0 + 0.5) / 5.0, 0.28);
+  // Two-tone album shading on land and craft only. Water and sky stay a smooth
+  // gradient — posterizing them makes regular open-water stripes.
+  float isWater = min(1.0, step(0.5, matId) * step(matId, 1.5) + step(15.5, matId) * step(matId, 17.5));
+  float isSky = step(20.5, matId) * step(matId, 21.5) + step(6.5, matId) * step(matId, 7.5);
+  float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+  col = mix(col, floor(col * 5.0 + dither * 0.25 + 0.5) / 5.0, 0.28 * (1.0 - isWater) * (1.0 - isSky));
 
   float d  = linDepth(texture2D(tDepth, vUv).r);
   vec2 o1 = px * 1.6;
@@ -100,6 +104,10 @@ void main() {
   // Colour edges are too thick on the near plane (red/cream bands, tail cap).
   float colEdge = step(mix(0.20, 0.38, isPlane), gCol) * step(minN, mix(0.14, 0.08, isPlane)) * notSky * mix(1.0, 0.35, isPlane);
 
+  // Don't ink-hatch the water surface — grazing waves otherwise become regular stripes.
+  sil *= 1.0 - isWater * 0.92;
+  silFar *= 1.0 - isWater;
+  colEdge *= 1.0 - isWater;
   float ink = max(sil, colEdge);
   vec3 inkCol = vec3(0.09, 0.07, 0.05);
   col = mix(col, inkCol, ink * mix(0.94, 0.70, isPlane));
@@ -130,8 +138,9 @@ void main() {
     float rim = smoothstep(0.18, 0.55, distance(vUv, vec2(0.5, 0.52)));
     col = mix(col, vec3(0.95, 0.96, 0.92), line * rim * 0.45 * uSpeed);
   }
-  // Brief cool-white screen flash; the bolt mesh itself carries the purple-white colour
-  col += vec3(0.85, 0.88, 1.0) * uFlash * 0.22;
+  // Lightning: a readable pulse on sky + terrain, not a white-out
+  col *= 1.0 + uFlash * 0.32;
+  col += vec3(0.90, 0.93, 1.0) * uFlash * 0.16;
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }

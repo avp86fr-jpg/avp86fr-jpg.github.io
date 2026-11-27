@@ -12,14 +12,24 @@ uniform float uChop;
 void main() {
   vec3 p = position;
   float chop = max(uChop, 1.0);
-  float w1 = sin(p.x * 0.03 + uTime * 0.8) * 0.18 * chop;
-  float w2 = cos(p.z * 0.025 + uTime * 0.6) * 0.16 * chop;
-  float w3 = sin((p.x + p.z) * 0.045 + uTime * 1.1) * 0.08 * chop;
-  p.y += w1 + w2 + w3;
-  vWave = w1 + w2 + w3;
-  vec3 t = vec3(1.0, 0.03 * cos(p.x * 0.03 + uTime * 0.8), 0.0);
-  vec3 b = vec3(0.0, 0.025 * -sin(p.z * 0.025 + uTime * 0.6), 1.0);
-  vN = normalize(cross(b, t));
+  // Several directions + a slow envelope so open water is not a regular corrugation.
+  float w1 = sin(p.x * 0.031 + p.z * 0.012 + uTime * 0.8) * 0.14 * chop;
+  float w2 = cos(p.z * 0.027 - p.x * 0.01 + uTime * 0.6) * 0.12 * chop;
+  float w3 = sin((p.x * 0.7 + p.z) * 0.045 + uTime * 1.1) * 0.07 * chop;
+  float w4 = sin(p.x * 0.019 - p.z * 0.023 + uTime * 0.45) * 0.06 * chop;
+  float env = 0.65 + 0.35 * sin(p.x * 0.004 + p.z * 0.0035);
+  float waves = (w1 + w2 + w3 + w4) * env;
+  // Fade regular displacement in the far field (title/hero grazing shots).
+  float distCam = length(p.xz - cameraPosition.xz);
+  waves *= mix(1.0, 0.35, smoothstep(280.0, 1400.0, distCam));
+  p.y += waves;
+  vWave = waves;
+  float flatN = smoothstep(160.0, 750.0, distCam);
+  vec3 t = vec3(1.0, (0.022 * cos(p.x * 0.031 + p.z * 0.012 + uTime * 0.8)
+                    + 0.014 * sin(p.x * 0.019 - p.z * 0.023 + uTime * 0.45)) * env * (1.0 - 0.9 * flatN), 0.0);
+  vec3 b = vec3(0.0, (0.018 * -sin(p.z * 0.027 - p.x * 0.01 + uTime * 0.6)
+                    + 0.010 * cos((p.x * 0.7 + p.z) * 0.045 + uTime * 1.1)) * env * (1.0 - 0.9 * flatN), 1.0);
+  vN = normalize(mix(normalize(cross(b, t)), vec3(0.0, 1.0, 0.0), flatN));
   vec4 wp = modelMatrix * vec4(p, 1.0);
   vWorld = wp.xyz;
   gl_Position = projectionMatrix * viewMatrix * wp;
@@ -46,6 +56,15 @@ uniform vec2 uBoat1;
 uniform vec2 uBoat2;
 uniform vec2 uBoat3;
 float sat(float x){ return clamp(x, 0.0, 1.0); }
+float hash21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float n2(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  float a = hash21(i), b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0)), d = hash21(i + vec2(1.0, 1.0));
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+vec2 rot2(vec2 p, float a){ float s = sin(a), c = cos(a); return vec2(c * p.x - s * p.y, s * p.x + c * p.y); }
 void main() {
   vec3 N = normalize(vN);
   vec3 V = normalize(cameraPosition - vWorld);
@@ -80,25 +99,35 @@ void main() {
   float skyAmt = fres * 0.42 * day;
   water = mix(water, uSky, skyAmt);
   float sunLane = pow(sat(dot(R, normalize(uSunDir))), 10.0);
-  water += uSunCol * sunLane * 0.28 * day;
+  // Broad sun wash, not a sharp grazing lane that stripes with the waves
+  float farW = sat((length(vWorld.xz - cameraPosition.xz) - 200.0) / 900.0);
+  water += uSunCol * sunLane * mix(0.28, 0.10, farW) * day;
   float sp = pow(sat(dot(R, normalize(uSunDir))), 48.0);
-  water += uSunCol * sp * 0.22 * day;
+  water += uSunCol * sp * 0.22 * (1.0 - farW) * day;
 
-  // Wave-stroke atlas + ink hatching
-  vec2 uvw = vWorld.xz * 0.0075 + vec2(uTime * 0.008, uTime * 0.005);
-  vec3 waveTex = texture2D(uWaveTex, uvw).rgb;
-  water *= mix(vec3(1.0), waveTex * 1.05, 0.32 * day);
-  float wstroke = abs(fract(vWorld.x * 0.014 + vWorld.z * 0.019 + uTime * 0.03) - 0.5);
-  float inkLine = (1.0 - smoothstep(0.0, 0.028, wstroke)) * (0.28 + 0.35 * nearIsle);
-  float wstroke2 = abs(fract(vWorld.x * 0.009 - vWorld.z * 0.016 + 0.3) - 0.5);
-  inkLine = max(inkLine, (1.0 - smoothstep(0.0, 0.022, wstroke2)) * 0.18);
-  water = mix(water, vec3(0.06, 0.14, 0.32), inkLine * 0.80 * (1.0 - shore * 0.55));
+  // Wave-stroke atlas: two rotated, differently scaled layers, strongly warped so open water does not stripe.
+  float nA = n2(vWorld.xz * 0.0036);
+  float nB = n2(vWorld.xz * 0.0084 + vec2(4.2, 1.7));
+  float nC = n2(vWorld.xz * 0.0018 + vec2(9.1, 2.4));
+  vec2 uv1 = rot2(vWorld.xz * 0.0038, 0.72) + vec2(uTime * 0.006, uTime * 0.0028) + vec2(nA - 0.5) * 0.55 + vec2(nC - 0.5) * 0.35;
+  vec2 uv2 = rot2(vWorld.xz * 0.0095, -1.15) + vec2(-uTime * 0.0042, uTime * 0.005) + vec2(nB - 0.5) * 0.40;
+  vec3 waveTex = mix(texture2D(uWaveTex, uv1).rgb, texture2D(uWaveTex, uv2).rgb, 0.5 + 0.15 * (nC - 0.5));
+  // Keep the atlas quiet in open water (where tiling would read); stronger only near the shore.
+  float texAmt = (0.10 + 0.28 * shore + 0.10 * fg) * day;
+  water *= mix(vec3(1.0), waveTex * 1.04, texAmt);
+  // Sparse irregular ink ticks near the coast only — never a regular open-water hatch
+  float tick = abs(fract(vWorld.x * 0.021 + vWorld.z * 0.017 + nA * 1.4 + uTime * 0.02) - 0.5);
+  float inkLine = (1.0 - smoothstep(0.0, 0.03, tick)) * shore * 0.35 * (0.4 + 0.6 * nB);
+  water = mix(water, vec3(0.06, 0.14, 0.32), inkLine);
 
-  // White crest dashes
-  float crest = sat(vWave * uChop + 0.15);
-  float dash = step(0.62, fract(vWorld.x * 0.07 + vWorld.z * 0.055 + uTime * 0.15));
-  float crestDash = crest * dash * (1.0 - shore * 0.35) * day;
-  water = mix(water, vec3(0.93, 0.97, 1.0), crestDash * 0.45);
+  // White crest dashes only on real nearby peaks — a world-space fract over all
+  // the water was painting regular open-water stripes, especially in the title shot.
+  float distC = length(vWorld.xz - cameraPosition.xz);
+  float crest = sat(vWave * uChop * 5.0 - 0.15);
+  float dash = step(0.7, fract(vWorld.x * 0.08 + vWorld.z * 0.06 + nA * 2.2 + uTime * 0.15));
+  float nearCrest = (1.0 - sat((distC - 60.0) / 220.0)) * (1.0 - shore * 0.35) * day;
+  float crestDash = crest * dash * nearCrest;
+  water = mix(water, vec3(0.93, 0.97, 1.0), crestDash * 0.40);
 
   // Foam around the shore, rocks, and boats
   float foamLine = sat(1.0 - abs(foamZone - 0.28) * 12.0);

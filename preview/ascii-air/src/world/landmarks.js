@@ -405,12 +405,10 @@ function makeArch() {
   const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
   mesh.userData.matId = MAT.ROCK;
   g.add(mesh);
-  // Side buttresses and a rocky spine toward the cape (north, +Z)
-  add(g, box(8, 16, 12, mid, MAT.ROCK), -12, 8, 8, 0, 0.15, 0.08);
-  add(g, box(8, 15, 12, shade, MAT.ROCK), 12, 7, 8, 0, -0.12, -0.06);
-  add(g, box(10, 10, 16, mid, MAT.ROCK), 0, 6, 14);
-  add(g, box(7, 12, 10, pale, MAT.ROCK), -6, 12, 16);
-  add(g, box(8, 5, 12, dark, MAT.ROCK), 0, 2, 8);
+  // Irregular rocky toes under the arch — never rectangular buttress boxes
+  add(g, box(5.5, 7, 8, dark, MAT.ROCK), -10, 3.2, 6, 0.1, 0.4, 0.15);
+  add(g, box(6.0, 6, 7, shade, MAT.ROCK), 10, 2.8, 5, -0.08, -0.35, -0.12);
+  add(g, box(4.5, 5, 9, mid, MAT.ROCK), 0, 2.0, 11, 0.2, 0.2, 0);
   return g;
 }
 
@@ -716,30 +714,32 @@ function makeCoastalCliffs(H) {
       if (zLand != null) {
         const hMin = R.x0 === 60 ? 6 : 10;
         const hMax = R.x0 === 60 ? 22 : 56;
-        pts.push({ x, z: zLand - 1.2, h: Math.min(Math.max(h, hMin), hMax), band: R.x0 });
+        // Jitter the west cape so it is never a long straight beige wall
+        let zx = zLand - 1.2, hx = Math.min(Math.max(h, hMin), hMax);
+        if (R.x0 === -480) {
+          const n = Math.sin(x * 0.07) * 0.5 + Math.sin(x * 0.19) * 0.3;
+          zx += n * 14;
+          hx = Math.min(hMax, Math.max(8, hx * (0.65 + 0.55 * (0.5 + 0.5 * Math.sin(x * 0.11)))));
+          // Leave the arch window and a couple of coves open
+          if (Math.abs(x - LANDMARKS.arch.x) < 12) continue;
+          if (Math.abs((x + 320) % 47) < 7) continue;
+        }
+        pts.push({ x, z: zx, h: hx, band: R.x0 });
       }
     }
-  }
-  // Extra wall along the west cape, leaving the arch window open
-  const ax = LANDMARKS.arch.x, az = LANDMARKS.arch.z;
-  for (let x = ax - 80; x <= ax + 55; x += 6) {
-    if (Math.abs(x - ax) < 9) continue;
-    const zWall = az - 8;
-    const hh = Math.max(H(x, zWall + 8), 16);
-    pts.push({ x, z: zWall, h: Math.min(hh + 6, 42), band: -480 });
   }
   function vert(x, y, z, shade) {
     const i = positions.length / 3;
     positions.push(x, y, z);
-    const stripe = Math.sin(x * 1.7 + y * 2.4) + 0.7 * Math.sin((x - y) * 3.1 + z * 0.25);
-    const hatch = stripe > 0.45 ? 0.32 : stripe > 0.1 ? 0.52 : stripe > -0.2 ? 0.78 : 0.96;
-    // Grey-ochre rock, never pale sand
-    const base = shade ? [0.42, 0.34, 0.24] : [0.58, 0.48, 0.32];
-    const n = 0.08 * Math.sin(x * 0.2 + z * 0.15);
+    const stripe = Math.sin(x * 1.15 + y * 1.6) + 0.7 * Math.sin((x - y) * 2.2 + z * 0.22);
+    const hatch = stripe > 0.45 ? 0.28 : stripe > 0.1 ? 0.48 : stripe > -0.2 ? 0.74 : 0.94;
+    // Grey-ochre rock (not sandy beige)
+    const base = shade ? [0.36, 0.32, 0.26] : [0.50, 0.44, 0.36];
+    const n = 0.07 * Math.sin(x * 0.18 + z * 0.14);
     colors.push(
       Math.min(1, base[0] * hatch + n),
-      Math.min(1, base[1] * hatch + n * 0.6),
-      Math.min(1, base[2] * hatch)
+      Math.min(1, base[1] * hatch + n * 0.7),
+      Math.min(1, base[2] * hatch + n * 0.4)
     );
     return i;
   }
@@ -747,24 +747,29 @@ function makeCoastalCliffs(H) {
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i], b = pts[i + 1];
     if (Math.hypot(b.x - a.x, b.z - a.z) > 36) continue;
+    const west = a.band === -480;
     const y0 = -0.6;
+    const jA = west ? 3.5 * Math.sin(a.x * 0.21) : 0;
+    const jB = west ? 3.5 * Math.sin(b.x * 0.21) : 0;
+    const midF = west ? 0.40 + 0.18 * (0.5 + 0.5 * Math.sin(a.x * 0.13)) : 0.48;
+    const topF = west ? 0.74 + 0.16 * (0.5 + 0.5 * Math.sin(a.x * 0.09)) : 0.82;
     // Lower dark shelf
-    const i0 = vert(a.x, y0, a.z - 1, true);
-    const i1 = vert(a.x, a.h * 0.48, a.z + 1.5, true);
-    const i2 = vert(b.x, y0, b.z - 1, true);
-    const i3 = vert(b.x, b.h * 0.48, b.z + 1.5, true);
+    const i0 = vert(a.x, y0, a.z - 1 + jA, true);
+    const i1 = vert(a.x, a.h * midF, a.z + 1.5 + jA * 0.4, true);
+    const i2 = vert(b.x, y0, b.z - 1 + jB, true);
+    const i3 = vert(b.x, b.h * midF, b.z + 1.5 + jB * 0.4, true);
     indices.push(i0, i2, i1, i1, i2, i3);
-    // Mid shelf, set back
-    const i4 = vert(a.x, a.h * 0.44, a.z + 2, false);
-    const i5 = vert(a.x, a.h * 0.82, a.z + 5, false);
-    const i6 = vert(b.x, b.h * 0.44, b.z + 2, false);
-    const i7 = vert(b.x, b.h * 0.82, b.z + 5, false);
+    // Mid shelf, set back, irregular lip
+    const i4 = vert(a.x, a.h * (midF - 0.04), a.z + 2 + jA, false);
+    const i5 = vert(a.x, a.h * topF, a.z + 5 + jA * 1.4, false);
+    const i6 = vert(b.x, b.h * (midF - 0.04), b.z + 2 + jB, false);
+    const i7 = vert(b.x, b.h * topF, b.z + 5 + jB * 1.4, false);
     indices.push(i4, i6, i5, i5, i6, i7);
     // Top cap / lip
-    const i8 = vert(a.x, a.h * 0.82, a.z + 5, false);
-    const i9 = vert(a.x, a.h * 0.98, a.z + 9, false);
-    const i10 = vert(b.x, b.h * 0.82, b.z + 5, false);
-    const i11 = vert(b.x, b.h * 0.98, b.z + 9, false);
+    const i8 = vert(a.x, a.h * topF, a.z + 5 + jA * 1.4, false);
+    const i9 = vert(a.x, a.h * (0.92 + 0.08 * Math.sin(a.x * 0.3)), a.z + 9 + jA, false);
+    const i10 = vert(b.x, b.h * topF, b.z + 5 + jB * 1.4, false);
+    const i11 = vert(b.x, b.h * (0.92 + 0.08 * Math.sin(b.x * 0.3)), b.z + 9 + jB, false);
     indices.push(i8, i10, i9, i9, i10, i11);
     if ((i % 2) === 0) bushPts.push({ x: (a.x + b.x) * 0.5, y: (a.h + b.h) * 0.5, z: (a.z + b.z) * 0.5 + 8 });
   }
@@ -774,7 +779,7 @@ function makeCoastalCliffs(H) {
   geo.setIndex(indices);
   geo.computeVertexNormals();
   retagGeometry(geo, MAT.ROCK, 0);
-  const mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.04, vertexColors: true, flatShading: true, matId: MAT.ROCK });
+  const mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.09, vertexColors: true, flatShading: true, matId: MAT.ROCK });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.userData.matId = MAT.ROCK;
   mesh.name = "cliffs";

@@ -219,14 +219,14 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // South-east vantage, looking north-north-west so the coast runs
-  // left-foreground (airport) to right-background (cape).
-  plane: { x: 70, y: 48, z: -1488 },
-  look:  { x: -30, y: 42, z: -800 },
-  dist: 31,
-  height: 9.8,
-  side: 11.5,
-  fov: 48,
+  // Wide postcard: camera behind-above the plane, looking at the far
+  // horizon (not down at the nose) so ~35% of the frame is sky.
+  plane: { x: 55, y: 54, z: -1540 },
+  look:  { x: 8, y: 18, z: -800 },
+  dist: 38,
+  height: 9.0,
+  side: 11.0,
+  fov: 56,
 };
 
 export const SPAWN = {
