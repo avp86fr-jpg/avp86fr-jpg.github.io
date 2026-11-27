@@ -354,3 +354,11 @@ body.touch.short .sfxw { font-size: min(9vw, 13vh, 80px); margin-top: -10vh; }
 /* pass 13y: portrait phones — speedometer sits above the steering buttons (it was hidden under them); sound words ride higher */
 body.portrait.touch #speedo { bottom: calc(var(--s,1) * 150px); width: calc(var(--s,1) * 138px); height: calc(var(--s,1) * 120px); }
 body.portrait .sfxw { font-size: min(12vw, 64px); margin-top: -13vh; }
+
+/* pass 13av: landscape phones - dialogue bubble bottom-centre between the steering arrows and the speedometer (never over the jeep);
+   the speedometer moves beside the DRIFT button */
+body.touch.short:not(.portrait) #speedo, body.comic.touch.short:not(.portrait) #speedo { left: auto; transform: none; right: calc(var(--t) * 244px); bottom: 2px; width: calc(var(--s,1) * 150px); height: calc(var(--s,1) * 130px); }
+body.touch.short:not(.portrait) .bark, body.comic.touch.short:not(.portrait) .bark { top: auto; bottom: 6px; left: calc(var(--t) * 222px); right: calc(var(--t) * 252px + var(--s,1) * 150px); transform: none; max-width: none; font-size: .78em; padding: 5px 12px 5px 5px; gap: 8px; }
+body.touch.short:not(.portrait) .bark.off { transform: translateY(14px); }
+body.touch.short:not(.portrait) .bark canvas { width: 2.8em; height: 2.8em; }
+body.touch.short:not(.portrait) .bark::after, body.touch.short:not(.portrait) .bark::before { display: none; }
