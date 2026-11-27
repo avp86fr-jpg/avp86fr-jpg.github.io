@@ -81,8 +81,8 @@ export function createInput(root) {
     if (any(KEYS.throttleUp)) throttle += 1;
     if (any(KEYS.throttleDown)) throttle -= 1;
     if (state.throttleLever == null) state.throttleLever = 0;
-    if (throttle > 0.4) state.throttleLever = Math.min(1, state.throttleLever + 1.8 * dt);
-    if (throttle < -0.4) state.throttleLever = Math.max(0, state.throttleLever - 1.8 * dt);
+    if (throttle > 0.4) state.throttleLever = Math.min(1, state.throttleLever + 2.4 * dt);
+    if (throttle < -0.4) state.throttleLever = Math.max(0, state.throttleLever - 2.4 * dt);
     const boostHeld = !!state.touchBoost;
     const brakeHeld = any(KEYS.brake || []) || !!state.touchBrake;
 

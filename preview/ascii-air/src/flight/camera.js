@@ -362,7 +362,7 @@ export function createFlightCamera(camera) {
     if (state.shake > 0) {
       camera.position.x += (Math.random() - 0.5) * state.shake;
       camera.position.y += (Math.random() - 0.5) * state.shake;
-      state.shake = Math.max(0, state.shake - dt * 4);
+      state.shake = Math.max(0, state.shake - dt * 2.6);
     }
     camera.updateProjectionMatrix();
   }

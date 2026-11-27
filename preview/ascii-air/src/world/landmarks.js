@@ -329,10 +329,18 @@ function makeSteamer(color = 0x2a2e36) {
   const g = new THREE.Group();
   g.name = "steamer";
   // Long low liner: hull ~32 long, funnel top ~8 → length about 4× height.
-  add(g, box(5.2, 1.7, 28, color, MAT.METAL), 0, 1.05, -0.4);
-  add(g, box(4.2, 1.4, 4.4, color, MAT.METAL), 0, 0.95, 14.2);
-  add(g, box(2.8, 1.05, 3.2, color, MAT.METAL), 0, 0.85, 16.8);
-  add(g, box(4.6, 1.4, 3.2, color, MAT.METAL), 0, 0.95, -15.2);
+  add(g, box(5.2, 1.7, 24, color, MAT.METAL), 0, 1.05, -1.2);
+  // Tapered bow (south, +Z in local after cruise yaw) and rounded stern
+  add(g, box(4.0, 1.55, 4.8, color, MAT.METAL), 0, 0.98, 12.8);
+  add(g, box(2.6, 1.25, 3.4, color, MAT.METAL), 0, 0.88, 16.0);
+  add(g, box(1.5, 0.95, 2.4, color, MAT.METAL), 0, 0.78, 18.2);
+  add(g, box(4.4, 1.45, 3.4, color, MAT.METAL), 0, 0.95, -14.8);
+  add(g, box(3.2, 1.15, 2.2, color, MAT.METAL), 0, 0.85, -17.0);
+  // Portholes along the hull so it doesn't read as a black slab
+  for (const z of [-10, -7, -4, -1, 2, 5, 8, 11]) {
+    add(g, cyl(0.16, 0.16, 0.12, 6, 0xc8d4dc, MAT.METAL), 2.62, 1.25, z, 0, 0, Math.PI / 2);
+    add(g, cyl(0.16, 0.16, 0.12, 6, 0xc8d4dc, MAT.METAL), -2.62, 1.25, z, 0, 0, Math.PI / 2);
+  }
   // Red waterline + dark boot topping
   add(g, box(5.45, 0.38, 32.2, 0xc01418, MAT.ROOF), 0, 0.38, -0.2);
   add(g, box(5.3, 0.18, 32.4, 0x1a1816, MAT.METAL), 0, 0.14, -0.2);
@@ -479,10 +487,20 @@ function makeBridge() {
   geo.computeVertexNormals();
   retagGeometry(geo, MAT.ROCK, 0);
   const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    vertexColors: true, flatShading: true, emissive: 0xc8c0b0, emissiveIntensity: 0.18,
+    vertexColors: true, flatShading: true,
   })));
   mesh.userData.matId = MAT.ROCK;
   g.add(mesh);
+  // End pylons and pilasters so a side-on view is not a flat beige slab
+  const pier = 0xc4bba8, pierDk = 0x8a8274;
+  add(g, box(4.4, deckY + 4, 14, pier, MAT.ROCK), -L / 2 - 0.4, (deckY + 4) / 2, 0);
+  add(g, box(4.4, deckY + 4, 14, pier, MAT.ROCK),  L / 2 + 0.4, (deckY + 4) / 2, 0);
+  add(g, box(5.2, 2.2, 15, pierDk, MAT.ROCK), -L / 2 - 0.4, deckY + 3.2, 0);
+  add(g, box(5.2, 2.2, 15, pierDk, MAT.ROCK),  L / 2 + 0.4, deckY + 3.2, 0);
+  for (let i = -2; i <= 2; i++) {
+    const cx = i * 13.6;
+    add(g, box(1.6, deckY, 12.2, pierDk, MAT.ROCK), cx, deckY / 2, 0);
+  }
   // Pale parapet posts along the deck
   for (let i = -6; i <= 6; i++) {
     add(g, box(1.3, 1.5, 1.3, 0xe6dece, MAT.ROCK), i * 5.5, deckY + deckT + 0.9, -5.2);
@@ -704,15 +722,54 @@ function makeWaterfall() {
   const lime = 0xc2bbb0;
   const limeDk = 0x9a9488;
   const limeLt = 0xd4cfc4;
-  // Irregular grey limestone face — a cliff, not a dark keep / doorway.
-  add(g, box(28, 36, 10, lime, MAT.ROCK), 0, 1.0, -5.0);
-  add(g, box(16, 22, 7, limeDk, MAT.ROCK), -8, 4, -3.2);
-  add(g, box(14, 18, 6, limeLt, MAT.ROCK), 8, 2, -3.0);
-  add(g, box(32, 4.2, 14, lime, MAT.ROCK), 0, 20.2, -2.0);
-  add(g, box(20, 2.2, 9, limeLt, MAT.ROCK), 0, 18.6, 2.4);
-  add(g, box(8, 6, 8, limeDk, MAT.ROCK), -12, 17.5, 0.5);
-  add(g, box(7, 5, 7, lime, MAT.ROCK), 12, 17.0, 0.8);
-  add(g, box(18, 3.0, 10, lime, MAT.ROCK), 0, -18.6, 3.2);
+  // Jagged limestone cliff: irregular silhouette, a recessed chute for the ribbon.
+  const cliffShape = new THREE.Shape();
+  const outline = [
+    [-18, -20], [-20, -11], [-16.5, -3], [-19, 5], [-15, 11],
+    [-17, 16.5], [-13, 20.8], [-8, 19.4], [-3.2, 21.6], [0, 20.2],
+    [3.6, 21.8], [8, 19.6], [13, 21.0], [17, 16], [15.2, 9],
+    [18.5, 2], [15, -6], [19, -13], [15.5, -20],
+  ];
+  cliffShape.moveTo(outline[0][0], outline[0][1]);
+  for (let i = 1; i < outline.length; i++) cliffShape.lineTo(outline[i][0], outline[i][1]);
+  cliffShape.closePath();
+  const chute = new THREE.Path();
+  chute.moveTo(-5.4, 18.6);
+  chute.lineTo(5.4, 18.6);
+  chute.lineTo(6.2, 8);
+  chute.lineTo(5.6, -4);
+  chute.lineTo(4.8, -18.5);
+  chute.lineTo(-4.8, -18.5);
+  chute.lineTo(-5.8, -4);
+  chute.lineTo(-6.2, 8);
+  chute.closePath();
+  cliffShape.holes.push(chute);
+  const cliffGeo = new THREE.ExtrudeGeometry(cliffShape, { depth: 10, bevelEnabled: true, bevelThickness: 1.4, bevelSize: 1.1, bevelSegments: 2, curveSegments: 4 });
+  cliffGeo.translate(0, 0, -9);
+  const cpos = cliffGeo.attributes.position;
+  const ccol = new Float32Array(cpos.count * 3);
+  for (let i = 0; i < cpos.count; i++) {
+    const x = cpos.getX(i), y = cpos.getY(i), z = cpos.getZ(i);
+    const hatch = 0.86 + 0.10 * Math.sin(x * 0.7 + y * 0.45) + 0.06 * Math.sin(z * 0.5);
+    const shade = z > -2 ? 0.9 : 1;
+    ccol[i * 3] = 0.76 * hatch * shade;
+    ccol[i * 3 + 1] = 0.72 * hatch * shade;
+    ccol[i * 3 + 2] = 0.64 * hatch * shade;
+  }
+  cliffGeo.setAttribute("color", new THREE.BufferAttribute(ccol, 3));
+  cliffGeo.computeVertexNormals();
+  retagGeometry(cliffGeo, MAT.ROCK, 0);
+  const cliffM = new THREE.Mesh(cliffGeo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
+  cliffM.userData.matId = MAT.ROCK;
+  g.add(cliffM);
+  // Broken lip stones and side buttresses
+  add(g, box(7, 2.4, 8, limeLt, MAT.ROCK), -10, 21.4, -1.2);
+  add(g, box(6.4, 2.1, 7, lime, MAT.ROCK), 10, 21.0, -0.6);
+  add(g, box(4.2, 2.8, 6, limeDk, MAT.ROCK), -6, 20.6, 1.4);
+  add(g, box(3.6, 2.2, 5.5, lime, MAT.ROCK), 5.5, 20.4, 1.8);
+  add(g, box(3.8, 6, 5, limeDk, MAT.ROCK), -14, 8, -1.5);
+  add(g, box(3.4, 5, 4.6, lime, MAT.ROCK), 14, 6, -1.2);
+  add(g, box(16, 2.4, 8, lime, MAT.ROCK), 0, -19.2, 3.0);
   const geo = new THREE.PlaneGeometry(11, 40, 1, 24);
   retagGeometry(geo, MAT.WATERFALL, 1);
   const sheet = new THREE.Mesh(geo, makeFallsMat());
@@ -1287,7 +1344,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Hangar
   const hangar = makeHangar();
-  hangar.scale.setScalar(1.55);
+  hangar.scale.setScalar(0.95);
   hangar.position.set(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z), LANDMARKS.hangar.z);
   hangar.rotation.y = 0;
   group.add(hangar);
@@ -1322,10 +1379,10 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   group.add(windsock);
 
   const tower = makeTower();
-  tower.scale.setScalar(1.65);
+  tower.scale.setScalar(0.85);
   tower.position.set(LANDMARKS.hangar.x - 8, H(LANDMARKS.hangar.x - 8, LANDMARKS.hangar.z - 42), LANDMARKS.hangar.z - 42);
   group.add(tower);
-  sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 32, LANDMARKS.tower.z), 0xffe2a0, 6, 140);
+  sky.addLamp(new THREE.Vector3(LANDMARKS.tower.x, tower.position.y + 30.2 * tower.scale.y + 2, LANDMARKS.tower.z), 0xffe2a0, 6, 140);
   // Hangar apron + runway threshold lamps so Night Mail has a lit path
   sky.addLamp(new THREE.Vector3(LANDMARKS.hangar.x, H(LANDMARKS.hangar.x, LANDMARKS.hangar.z) + 14, LANDMARKS.hangar.z), 0xffe2a0, 5, 120);
   for (const x of [-200, -80, 40, 160, 280]) {
@@ -1503,7 +1560,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   const church = makeChurch();
-  church.scale.setScalar(2.05);
+  church.scale.setScalar(0.78);
   // Higher on the hill so the bell tower reads over the terraces
   church.position.set(cX, H(cX, cZ), cZ);
   group.add(church);
@@ -1616,30 +1673,32 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   group.add(wreck);
 
   const light = makeLighthouse();
-  light.scale.setScalar(2.2);
+  light.scale.setScalar(1.10);
   light.position.set(LANDMARKS.lighthouse.x, H(LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z), LANDMARKS.lighthouse.z);
   group.add(light);
-  sky.addLamp(new THREE.Vector3(LANDMARKS.lighthouse.x, light.position.y + 40, LANDMARKS.lighthouse.z), 0xfff2c0, 8, 260);
+  sky.addLamp(new THREE.Vector3(LANDMARKS.lighthouse.x, light.position.y + 43.4 * light.scale.y + 2, LANDMARKS.lighthouse.z), 0xfff2c0, 8, 260);
 
   const bridge = makeBridge();
   const bx = LANDMARKS.bridge.x, bz = LANDMARKS.bridge.z;
-  bridge.scale.set(3.4, 2.8, 2.6);
+  bridge.scale.set(2.15, 1.90, 2.05);
   bridge.position.set(bx, Math.max(22, H(bx, bz) + 8), bz);
   bridge.rotation.y = 0.08;
   group.add(bridge);
 
   const castle = makeCastle();
-  castle.scale.setScalar(2.05);
+  castle.scale.setScalar(3.35);
   castle.position.set(LANDMARKS.castle.x, H(LANDMARKS.castle.x, LANDMARKS.castle.z), LANDMARKS.castle.z);
+  castle.rotation.y = Math.PI; // gate faces the airport / south
   group.add(castle);
   const flagPoles = [];
-  const cs = castle.scale.x || 2.05;
+  const cs = castle.scale.x || 3.35;
+  const ca = Math.cos(castle.rotation.y), sa = Math.sin(castle.rotation.y);
   const flagCols = [0xc01418, 0xf4f0e6];
   (castle.userData.flagLocals || []).slice(0, 2).forEach((lp, i) => {
     flagPoles.push({
-      x: castle.position.x + lp.x * cs,
+      x: castle.position.x + (lp.x * ca + lp.z * sa) * cs,
       y: castle.position.y + lp.y * cs,
-      z: castle.position.z + lp.z * cs,
+      z: castle.position.z + (-lp.x * sa + lp.z * ca) * cs,
       c: flagCols[i % 2],
     });
   });
@@ -1647,7 +1706,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Cape fort on the west ridge, readable in the hero (master's right side)
   const capeFort = makeCastle();
-  capeFort.scale.setScalar(1.45);
+  capeFort.scale.setScalar(1.15);
   const fX = LANDMARKS.lighthouse.x - 36, fZ = LANDMARKS.lighthouse.z + 85;
   capeFort.position.set(fX, H(fX, fZ), fZ);
   capeFort.rotation.y = 0.3;
@@ -1660,7 +1719,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   ];
   for (const [x, z] of millSpots) {
     const m = makeWindmill();
-    m.scale.setScalar(1.95);
+    m.scale.setScalar(1.22);
     m.position.set(x, H(x, z), z);
     m.rotation.y = 0.4;
     group.add(m);
@@ -1738,8 +1797,9 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       const beam = light.userData.beam;
       if (beam) {
         beam.rotation.y += dt * 0.6;
-        beam.visible = true;
-        beam.material.opacity = 0.42 + night * 0.38;
+        // Day: no 500 m pale shaft across the sky. Night: a real sweeping beam.
+        beam.visible = night > 0.28;
+        beam.material.opacity = 0.22 + night * 0.50;
       }
       if (light.userData.glow) {
         const gl = light.userData.glow;

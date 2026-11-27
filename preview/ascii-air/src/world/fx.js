@@ -90,10 +90,10 @@ export function createFeelFX(scene) {
   function touchdown(pos, heading = 0, surface = "runway") {
     const wet = surface === "water" || surface === "lagoon";
     if (wet) {
-      burst("dust", { x: pos.x, y: 1.2, z: pos.z }, 12, 6, 0.7);
+      burst("dust", { x: pos.x, y: 1.2, z: pos.z }, 16, 8, 0.9);
       return;
     }
-    burst("dust", { x: pos.x, y: pos.y + 0.4, z: pos.z }, 14, 7, 0.85);
+    burst("dust", { x: pos.x, y: pos.y + 0.4, z: pos.z }, 20, 9, 1.05);
     const s = skids[skidI % skids.length];
     skidI++;
     s.life = 8;

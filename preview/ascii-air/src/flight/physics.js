@@ -159,7 +159,7 @@ export function stepCraft(c, input, world, dt, settings) {
   const inPitch = clamp((input.pitch || 0) * inv * sens, -1, 1);
 
   const maxPitch = 38 * Math.PI / 180;
-  const maxBank = 48 * Math.PI / 180;
+  const maxBank = 52 * Math.PI / 180;
   const yawRate = 2.05;
 
   const takeoffSpd = Math.max(16, (def.stallSpeed || 22) * 0.68);
@@ -169,7 +169,7 @@ export function stepCraft(c, input, world, dt, settings) {
 
   // Coordinated bank-to-turn with slight inertia and light auto-level.
   if (c._turn == null) c._turn = 0;
-  c._turn = damp(c._turn, turn, 3.4, dt);
+  c._turn = damp(c._turn, turn, 2.8, dt);
 
   if (c.onGround || c.waterborne) {
     const targetPitch = c.throttle > 0.95 && c.airspeed > takeoffSpd * 0.75 ? 0.16 : 0;
@@ -190,7 +190,7 @@ export function stepCraft(c, input, world, dt, settings) {
     pitch = damp(pitch, clamp(targetPitch, -maxPitch, maxPitch), 6.2, dt);
     pitch = clamp(pitch, -maxPitch, maxPitch);
     const targetBank = clamp(-c._turn * maxBank, -maxBank, maxBank);
-    roll = damp(roll, targetBank, 4.2, dt);
+    roll = damp(roll, targetBank, 3.5, dt);
     roll = clamp(roll, -maxBank, maxBank);
     // Yaw follows bank, with a little extra stick for agility.
     yaw += (roll / maxBank) * yawRate * dt;
@@ -393,7 +393,7 @@ function finishKinematics(c, world) {
       c.events = (c.events || []).concat(vDown > LANDING.roughVSpeed ? "rough" : "touchdown");
       // bounce if a bit hard
       if (vDown > LANDING.goodVSpeed && vDown <= LANDING.crashVSpeed) {
-        c.vel.y = vDown * 0.18;
+        c.vel.y = vDown * 0.32;
         c.onGround = false;
         return;
       }

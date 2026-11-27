@@ -313,6 +313,7 @@ function handleCraftEvents() {
     if (e === "touchdown") {
       audio.play("touchdown");
       feel?.touchdown(craft.pos, craft.heading, craft.lastSurface || "runway");
+      flyCam.bump(0.48);
     }
     if (e === "rough") {
       audio.play("touchdown");
@@ -480,7 +481,7 @@ function renderFrame(time, camDt = 1 / 60) {
 
   look.uniforms.uTime.value = time;
   if (look.uniforms.uSpeed) {
-    const k = Math.max(0, Math.min(1, ((craft.airspeed || 0) - 28) / 48));
+    const k = Math.max(0, Math.min(1, ((craft.airspeed || 0) - 34) / 36));
     look.uniforms.uSpeed.value = (mode === "fly" && !paused && !flyCam.state.hero && !camOverride) ? k : 0;
   }
 
@@ -669,7 +670,7 @@ function step(now) {
       if (inp.actionPressed && craft.id === "glider" && craft.onGround && !currentMissionId) {
         startTow(craft);
       }
-      if (inp.boost) flyCam.bump(0.15);
+      if (inp.boost) flyCam.bump(0.28);
       else if (weather && weather.state && weather.state.turbulence > 0.35) {
         const g = 0.5 + 0.5 * Math.sin(now * 0.007);
         if (g > 0.82) flyCam.bump(0.10 * weather.state.turbulence);
@@ -917,7 +918,7 @@ function exposeAPI() {
         quality: settings.quality,
       };
     },
-    startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot, look,
+    startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot, look, flyCam, feel,
     get planeMesh() { return planeMesh; },
     setWeather: (id, opts) => weather && weather.set(id, opts),
     setTime: (h) => { clock.set(h); island.sky.setHour(h); if (typeof island.update === "function") island.update(0, performance.now() / 1000, h); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },

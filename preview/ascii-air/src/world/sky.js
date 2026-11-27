@@ -32,7 +32,7 @@ void main() {
   float sk = dot(d, normalize(uSunDir));
   float disc = smoothstep(uSunSize, uSunSize - 0.004, 1.0 - sk);
   float glow = pow(max(sk, 0.0), 24.0) * (1.0 - uNight * 0.7);
-  col += uSunCol * (disc * 1.5 + glow * 0.12);
+  col += uSunCol * (disc * 1.15 + glow * 0.08);
   // night stars are a separate point cloud
   gl_FragColor = vec4(col, 21.0 / 255.0); // MAT.SKY packed in alpha
 }
@@ -54,7 +54,7 @@ export function createSky(scene) {
       uGround: { value: new THREE.Color(0x6a9aaa) },
       uSunDir: { value: new THREE.Vector3(0.2, 0.9, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff2c4) },
-      uSunSize: { value: 0.0018 },
+      uSunSize: { value: 0.0036 },
       uNight: { value: 0 },
     },
     vertexShader: SKY_VERT,

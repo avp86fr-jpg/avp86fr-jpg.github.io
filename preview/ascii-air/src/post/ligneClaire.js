@@ -158,7 +158,7 @@ void main() {
     float line = step(phase, 0.045 + 0.04 * uSpeed) * step(0.35, dash) * step(dash, 0.92);
     // Keep streaks out of the very center so the plane stays clean.
     float rim = smoothstep(0.18, 0.55, distance(vUv, vec2(0.5, 0.52)));
-    col = mix(col, vec3(0.95, 0.96, 0.92), line * rim * 0.45 * uSpeed);
+    col = mix(col, vec3(0.95, 0.96, 0.92), line * rim * 0.62 * uSpeed);
   }
   // Lightning: a readable pulse on sky + terrain, not a white-out
   col *= 1.0 + uFlash * 0.32;

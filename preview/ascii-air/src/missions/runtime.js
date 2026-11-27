@@ -120,7 +120,7 @@ function makeRivalCraft() {
   g.scale.setScalar(1.45);
   const tag = makeNameTag("LÉO");
   tag.position.set(0, 3.6, 0.2);
-  tag.scale.set(5.2, 1.3, 1);
+  tag.scale.set(2.6, 0.65, 1);
   g.add(tag);
   return g;
 }
@@ -283,9 +283,16 @@ export function createMissionSystem(scene, world, audio) {
     state.rivalDelta = 0;
   }
 
-  function tickRival(dt, time) {
+  function tickRival(dt, time, cam) {
     const r = state.rival;
     if (!r) return;
+    const tag = r.mesh.getObjectByName("rival-tag");
+    if (tag && cam) {
+      const d = cam.position.distanceTo(r.mesh.position);
+      const s = Math.max(0.85, Math.min(2.8, 2.2 * (28 / Math.max(16, d))));
+      tag.scale.set(s, s * 0.25, 1);
+      tag.visible = d > 14;
+    }
     if (!r.finished) {
       r.t += dt;
       const u = Math.min(0.999, r.t / r.dur);
@@ -669,7 +676,7 @@ export function createMissionSystem(scene, world, audio) {
         }
       }
       if (m.rival) {
-        tickRival(dt, time);
+        tickRival(dt, time, cam);
         const r = state.rival;
         if (r) {
           let L = 0;
