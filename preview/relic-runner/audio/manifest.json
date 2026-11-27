@@ -301,5 +301,79 @@
 "loop": false,
 "len": 6.862585034013605,
 "pad": 0
+},
+"mus_t_desert_a": {
+"loop": true,
+"len": 15.238095238095237,
+"pad": 0.25,
+"bpm": 126
+},
+"mus_t_desert_b": {
+"loop": true,
+"len": 15.238095238095237,
+"pad": 0.25,
+"bpm": 126
+},
+"mus_t_desert_c": {
+"loop": true,
+"len": 15.238095238095237,
+"pad": 0.25,
+"bpm": 126
+},
+"mus_t_volcano_a": {
+"loop": true,
+"len": 12.631587301587302,
+"pad": 0.25,
+"bpm": 152
+},
+"mus_t_volcano_b": {
+"loop": true,
+"len": 12.631587301587302,
+"pad": 0.25,
+"bpm": 152
+},
+"mus_t_volcano_c": {
+"loop": true,
+"len": 12.631587301587302,
+"pad": 0.25,
+"bpm": 152
+},
+"mus_t_mines_a": {
+"loop": true,
+"len": 14.328367346938775,
+"pad": 0.25,
+"bpm": 134
+},
+"mus_t_mines_b": {
+"loop": true,
+"len": 14.328367346938775,
+"pad": 0.25,
+"bpm": 134
+},
+"mus_t_mines_c": {
+"loop": true,
+"len": 14.328367346938775,
+"pad": 0.25,
+"bpm": 134
+},
+"sfx_horn": {
+"loop": false,
+"len": 1.35,
+"pad": 0
+},
+"sfx_backfire": {
+"loop": false,
+"len": 0.72,
+"pad": 0
+},
+"sfx_ui_ok": {
+"loop": false,
+"len": 0.58,
+"pad": 0
+},
+"sfx_ui_tick": {
+"loop": false,
+"len": 0.4449886621315193,
+"pad": 0
 }
 }
