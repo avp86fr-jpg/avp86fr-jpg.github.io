@@ -118,6 +118,10 @@ void main() {
   sil *= 1.0 - isWater * 0.92;
   silFar *= 1.0 - isWater;
   colEdge *= 1.0 - isWater;
+  // Clouds and sky: no ligne-claire outline (they must read as soft volumes).
+  sil *= 1.0 - isSky;
+  silFar *= 1.0 - isSky;
+  colEdge *= 1.0 - isSky;
   float ink = max(sil, colEdge);
   vec3 inkCol = vec3(0.09, 0.07, 0.05);
   col = mix(col, inkCol, ink * mix(0.94, 0.86, isPlane));

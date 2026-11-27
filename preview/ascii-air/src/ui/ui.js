@@ -45,6 +45,7 @@ export function createUI(root, hooks) {
 
   const loading = document.createElement("div");
   loading.id = "loading";
+  loading.className = "cover-art";
   loading.innerHTML = `<div class="logo-slot"></div>
     <div class="hint">AEROPOSTALE AIR</div>
     <div class="bar"><span id="load-bar"></span></div>
@@ -53,8 +54,8 @@ export function createUI(root, hooks) {
 
   const title = document.createElement("div");
   title.id = "title-screen";
-  title.className = "hidden";
-  title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;pointer-events:none;";
+  title.className = "hidden cover-art";
+  title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;pointer-events:none;";
   title.innerHTML = `
     <div class="title-cover">
       <div class="logo-slot" id="logo"></div>

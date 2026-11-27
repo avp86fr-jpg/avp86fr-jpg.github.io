@@ -414,6 +414,14 @@ export function computeMaterial(x, z, h, slope) {
     if (slope > 0.32 || h < 8) return MAT.ROCK;
     return MAT.GRASS;
   }
+  {
+    const capeD = dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z);
+    const archD2 = dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z);
+    if (capeD < 210 || archD2 < 150) {
+      if (h > 14 && slope < 0.24) return MAT.GRASS;
+      if (h > 2.5) return MAT.ROCK;
+    }
+  }
   if (h < 4.5 && dist2(x, z, LANDMARKS.lighthouse.x + 40, LANDMARKS.lighthouse.z + 40) < 80) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
   // Coastal cliffs only — steep faces near the water, not the whole south slope.
@@ -479,6 +487,11 @@ export function createTerrain(quality = "medium") {
       case MAT.WATER_DEEP: return [0.06, 0.22, 0.30];
       case MAT.SAND: return [0.90 + n * 0.04, 0.78 + n * 0.04, 0.52 + n * 0.04];
       case MAT.GRASS: {
+        const onCape = Math.hypot(x + 170, z + 1190) < 220 || Math.hypot(x + 210, z + 1250) < 160;
+        if (onCape) {
+          const g = 0.08 * fbm(x * 0.04, z * 0.04, 2, 9);
+          return [0.36 + g, 0.58 + g * 0.8, 0.26];
+        }
         const n2 = fbm(x * 0.007, z * 0.007, 3, 7);
         const terrace = Math.abs(Math.sin(h * 0.62 + x * 0.028 + z * 0.018)) < 0.07;
         const ochre = [0.62 + n * 0.05, 0.54 + n * 0.04, 0.22];
@@ -526,7 +539,7 @@ export function createTerrain(quality = "medium") {
         const coastal = z < -1080 || (x > 40 && z < -1100) || Math.hypot(x + 170, z + 1190) < 220 || Math.hypot(x + 210, z + 1250) < 140;
         const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.45;
         const base = coastal
-          ? [0.82 + n * 0.05, 0.75 + n * 0.04, 0.58 + n * 0.03]
+          ? [0.90 + n * 0.04, 0.84 + n * 0.03, 0.68 + n * 0.03]
           : [0.62 + n * 0.06, 0.59 + n * 0.05, 0.52 + n * 0.04];
         return crevice ? [base[0] * 0.78, base[1] * 0.76, base[2] * 0.72] : base;
       }

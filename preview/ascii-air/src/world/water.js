@@ -259,8 +259,8 @@ export function createWater() {
         lakeMat.uniforms.uSunCol.value.copy(sky.sunColor);
         const night = sky.night || 0;
         if (!this._deepDay) {
-          this._deepDay = new THREE.Color(0x0a3a7a);
-          this._shalDay = new THREE.Color(0x4eb8b4);
+          this._deepDay = new THREE.Color(0x1578a0);
+          this._shalDay = new THREE.Color(0x3ec8c4);
           this._deepNight = new THREE.Color(0x1c4a78);
           this._shalNight = new THREE.Color(0x2a6a8e);
         }

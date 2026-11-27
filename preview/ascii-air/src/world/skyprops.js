@@ -36,20 +36,83 @@ function cloudPuff(mat) {
   return g;
 }
 
+
+function makeCloudMaterial() {
+  // Custom shader so we can pack matId in alpha AND soften rims with dither
+  // (patchMaterialIdAlpha would overwrite a true soft-alpha edge).
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uSun: { value: new THREE.Vector3(0.42, 0.82, 0.28) },
+      uTint: { value: new THREE.Color(0xffffff) },
+      uEmissive: { value: new THREE.Color(0xfff4e4) },
+      uEmit: { value: 0.28 },
+      fogColor: { value: new THREE.Color(0xb8d6ea) },
+      fogNear: { value: 800 },
+      fogFar: { value: 5200 },
+    },
+    vertexColors: true,
+    transparent: false,
+    depthWrite: true,
+    side: THREE.FrontSide,
+    vertexShader: /* glsl */ `
+      attribute vec3 color;
+      varying vec3 vCol;
+      varying vec3 vN;
+      varying vec3 vW;
+      varying float vFog;
+      void main() {
+        vCol = color;
+        vN = normalize(normalMatrix * normal);
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vW = wp.xyz;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        vFog = -mv.z;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uSun;
+      uniform vec3 uTint;
+      uniform vec3 uEmissive;
+      uniform float uEmit;
+      uniform vec3 fogColor;
+      uniform float fogNear;
+      uniform float fogFar;
+      varying vec3 vCol;
+      varying vec3 vN;
+      varying vec3 vW;
+      varying float vFog;
+      void main() {
+        vec3 n = normalize(vN);
+        vec3 v = normalize(cameraPosition - vW);
+        float ndv = abs(dot(n, v));
+        float fres = pow(1.0 - ndv, 2.4);
+        float lit = 0.62 + 0.50 * max(0.0, dot(n, normalize(uSun)));
+        vec3 col = vCol * uTint * lit + uEmissive * uEmit;
+        // Warm bright rim, so the volume never reads as a grey rock
+        col = mix(col, vec3(1.0, 0.98, 0.94), fres * 0.62);
+        // Soft silhouette: screen-door the glancing edge instead of a hard outline
+        float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        float keep = smoothstep(0.04, 0.32, ndv);
+        if (keep < 0.12 && dither > keep + 0.15) discard;
+        float fg = smoothstep(fogNear, fogFar, vFog);
+        col = mix(col, fogColor, fg * 0.55);
+        gl_FragColor = vec4(col, 7.0 / 255.0);
+      }
+    `,
+  });
+  mat.userData.matId = 7; // MAT.CLOUD
+  return mat;
+}
+
 export function createSkyProps(scene, quality = "medium") {
   const q = QUALITY[quality] || QUALITY.medium;
   const group = new THREE.Group();
   group.name = "skyprops";
 
-  const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    color: 0xffffff,
-    vertexColors: true,
-    emissive: 0xfff4e4,
-    emissiveIntensity: 0.22,
-    flatShading: false,
-  }));
+  const cloudMat = makeCloudMaterial();
   const clouds = new THREE.Group();
-  const nCloud = Math.floor(7 * q.clouds);
+  const nCloud = Math.floor(4 * q.clouds);
   const puff = cloudPuff(cloudMat);
   puff.updateMatrixWorld(true);
   // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
@@ -71,15 +134,12 @@ export function createSkyProps(scene, quality = "medium") {
   }
   // Horizon banks behind the island + a few large high clouds. Not a cluttered field.
   const heroSpots = [
-    // Higher, fewer mid-distance cumulus — leave blue sky at the zenith
-    // and keep banks off the top edge of the postcard.
-    [-320, 260, -820, 48],
-    [ 360, 250, -860, 46],
-    [-640, 280, -200, 52],
-    [ 680, 270, -160, 50],
-    [-200, 310, 560, 42],
-    [ 240, 300, 540, 40],
-    [ 40, 340, -280, 36],
+    // Large sunlit banks in the postcard sky (south bay looks north)
+    [  40, 200, -620, 88],
+    [-280, 190, -780, 76],
+    [ 300, 185, -800, 74],
+    [-720, 240, 80, 64],
+    [ 760, 230, 40, 62],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -94,11 +154,11 @@ export function createSkyProps(scene, quality = "medium") {
     const span = Math.max(0.001, ymax - ymin);
     for (let i = 0; i < pos.count; i++) {
       const k = (pos.getY(i) - ymin) / span;
-      // Warm-lit crowns, lavender-blue recesses
-      const b = Math.pow(k, 0.75);
-      col[i * 3]     = 0.78 + 0.22 * b;
-      col[i * 3 + 1] = 0.82 + 0.16 * b;
-      col[i * 3 + 2] = 0.90 + 0.06 * b;
+      // Warm-lit white crowns, soft lavender-blue undersides — not grey
+      const b = Math.pow(k, 0.65);
+      col[i * 3]     = 0.70 + 0.30 * b;
+      col[i * 3 + 1] = 0.74 + 0.24 * b;
+      col[i * 3 + 2] = 0.88 + 0.10 * b;
     }
     cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   }
@@ -174,10 +234,10 @@ export function createSkyProps(scene, quality = "medium") {
     }
     const span = Math.max(0.001, ymax - ymin);
     for (let i = 0; i < pos.count; i++) {
-      const b = Math.pow((pos.getY(i) - ymin) / span, 0.7);
-      col[i * 3]     = 0.76 + 0.24 * b;
-      col[i * 3 + 1] = 0.80 + 0.18 * b;
-      col[i * 3 + 2] = 0.90 + 0.06 * b;
+      const b = Math.pow((pos.getY(i) - ymin) / span, 0.65);
+      col[i * 3]     = 0.68 + 0.32 * b;
+      col[i * 3 + 1] = 0.73 + 0.25 * b;
+      col[i * 3 + 2] = 0.88 + 0.10 * b;
     }
     towerGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   }
@@ -186,12 +246,12 @@ export function createSkyProps(scene, quality = "medium") {
   const tdummy = new THREE.Object3D();
   // East (left of postcard) and west (right) horizon walls
   const towerSpots = [
-    [ 780, 120,  80, 24],
-    [-740, 130, 160, 22],
+    [ 820, 80,  40, 36],
+    [-800, 90, 120, 34],
   ];
   towerSpots.forEach((s, i) => {
     tdummy.position.set(s[0], s[1], s[2]);
-    tdummy.scale.set(s[3], s[3] * 1.15, s[3] * 0.95);
+    tdummy.scale.set(s[3], s[3] * 1.35, s[3] * 1.05);
     tdummy.rotation.y = i * 0.8;
     tdummy.updateMatrix();
     towers.setMatrixAt(i, tdummy.matrix);
@@ -267,15 +327,19 @@ export function createSkyProps(scene, quality = "medium") {
       if (on === stormOn) return;
       stormOn = on;
       if (on) {
-        cloudMat.color.setHex(0x6a7a8a);
-        cloudMat.emissive.setHex(0x3a4a58);
-        cloudMat.emissiveIntensity = 0.12;
+        if (cloudMat.uniforms && cloudMat.uniforms.uTint) {
+          cloudMat.uniforms.uTint.value.setHex(0x9aa8b8);
+          cloudMat.uniforms.uEmissive.value.setHex(0x3a4a58);
+          cloudMat.uniforms.uEmit.value = 0.10;
+        }
         if (balloonInst) balloonInst.visible = false;
         if (blimp) blimp.visible = false;
       } else {
-        cloudMat.color.setHex(0xfffdf8);
-        cloudMat.emissive.setHex(0xfff4e4);
-        cloudMat.emissiveIntensity = 0.16;
+        if (cloudMat.uniforms && cloudMat.uniforms.uTint) {
+          cloudMat.uniforms.uTint.value.setHex(0xffffff);
+          cloudMat.uniforms.uEmissive.value.setHex(0xfff4e4);
+          cloudMat.uniforms.uEmit.value = 0.28;
+        }
         if (balloonInst) balloonInst.visible = true;
         if (blimp) blimp.visible = true;
       }

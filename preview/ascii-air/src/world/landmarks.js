@@ -657,23 +657,23 @@ function makeArch() {
     const hatch = stripe > 0.45 ? 0.62 : stripe > 0.05 ? 0.76 : stripe > -0.35 ? 0.88 : 1;
     const crevice = (Math.sin(x * 0.8 + z * 0.45) * Math.sin(y * 0.5)) > 0.55 ? 0.58 : 1;
     const shadeAmt = (z > 5 ? 0.86 : 1) * (y < 5 ? 0.88 : 1) * crevice;
-    // Grey limestone, not beige
-    col[i * 3] = 0.58 * hatch * shadeAmt;
-    col[i * 3 + 1] = 0.56 * hatch * shadeAmt;
-    col[i * 3 + 2] = 0.50 * hatch * shadeAmt;
+    // Cream limestone, like the cape
+    col[i * 3] = 0.86 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.80 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.64 * hatch * shadeAmt;
   }
   pos.needsUpdate = true;
   geo.computeVertexNormals();
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   retagGeometry(geo, MAT.ROCK, 0);
-  const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
+  const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false })));
   mesh.userData.matId = MAT.ROCK;
   g.add(mesh);
   // Rocky toes in the same grey limestone (not beige slabs)
-  add(g, box(11, 12, 16, 0x8a867a, MAT.ROCK), -11, 6, 11, 0.10, 0.28, 0.14);
-  add(g, box(9, 10, 14, 0x7a766c, MAT.ROCK), 10, 5, 13, -0.12, -0.22, -0.10);
-  add(g, box(13, 9, 18, 0x918c80, MAT.ROCK), 1, 4.5, 20, 0.06, 0.16, 0.04);
-  add(g, box(8, 14, 11, 0x6e6a62, MAT.ROCK), -5, 7, 26, 0.12, 0.22, 0.08);
+  add(g, box(11, 12, 16, 0xc8b896, MAT.ROCK), -11, 6, 11, 0.10, 0.28, 0.14);
+  add(g, box(9, 10, 14, 0xb8a882, MAT.ROCK), 10, 5, 13, -0.12, -0.22, -0.10);
+  add(g, box(13, 9, 18, 0xd0c4a4, MAT.ROCK), 1, 4.5, 20, 0.06, 0.16, 0.04);
+  add(g, box(8, 14, 11, 0xae9e7c, MAT.ROCK), -5, 7, 26, 0.12, 0.22, 0.08);
   // Vegetation on the crown
   const bushMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2a4a28, flatShading: true }));
   bushMat.userData.matId = MAT.FOLIAGE;
@@ -1032,35 +1032,39 @@ function makeRunwayLights(parent, x0, x1, z, y, H = null) {
 
 
 function makeHangingKeep() {
-  // Original floating island: rocky underside, hanging roots and vines,
-  // ruined keep and a great tree, water falling into mist, small companion rocks.
+  // Floating island: dark rocky earth tapering to a point, hanging roots,
+  // a green crown with a great tree, arched ruins half-lost in foliage, falls into mist.
   const g = new THREE.Group();
   g.name = "hanging-keep";
-  const lime = 0xc4b48c, limeLt = 0xd4c6a0, limeDk = 0x7a6a4c, moss = 0x3a6a32, vine = 0x2a5428;
+  const stone = 0xb39a78, stoneLt = 0xc8b496, stoneDk = 0x6a5440, moss = 0x3a6e32, grass = 0x4a8a3a, vine = 0x2a5428, earth = 0x5a3e28;
 
-  // UV sphere (even rings) so the bowl has enough verts after the Y stretch.
-  // An icosahedron stretched 30 m deep turns into a handful of huge facets.
-  const bodyGeo = new THREE.SphereGeometry(1, 28, 20);
+  const bodyGeo = new THREE.SphereGeometry(1, 32, 24);
   const pos = bodyGeo.attributes.position;
   const col = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const top = Math.max(0, y);
     const bot = Math.max(0, -y);
-    const jag = 1 + 0.06 * Math.sin(x * 4.4 + z * 3.6) + 0.04 * Math.sin(y * 5.0 + x * 2.4);
-    const rx = 44 * jag * (1 + bot * 0.10);
-    const rz = 38 * jag * (1 + bot * 0.09);
-    let yOut = top * 6.2 - bot * 24 * (1 + 0.08 * Math.abs(Math.sin(x * 3.2 + z * 2.6)));
+    const jag = 1 + 0.14 * Math.sin(x * 4.2 + z * 3.4) + 0.08 * Math.sin(y * 5.1 + x * 2.6) + 0.05 * Math.sin(z * 6.0);
+    // Mesa crown stays wide; only the lower third draws into a craggy keel.
+    const keel = Math.pow(Math.max(0, bot - 0.32) / 0.68, 1.15);
+    const taper = 1 - keel * 0.62;
+    const rx = 40 * jag * taper * (1 + top * 0.05);
+    const rz = 34 * jag * taper * (1 + top * 0.05);
+    let yOut = top * 5.8 - bot * 30 * (1 + 0.16 * Math.abs(Math.sin(x * 3.0 + z * 2.4)));
     x *= rx; z *= rz; y = yOut;
-    if (y > 5.2) y = 5.2 + (y - 5.2) * 0.08;
+    if (y > 5.1) y = 5.1 + (y - 5.1) * 0.08;
     pos.setXYZ(i, x, y, z);
-    const mossK = Math.max(0, Math.min(1, (y + 4) / 12));
-    const shade = 0.62 + 0.20 * Math.sin(x * 0.08 + z * 0.1);
-    // Warm rock, darker than daylight wash; moss toward the rim.
-    col[i * 3]     = (0.48 * (1 - mossK) + 0.28 * mossK) * shade;
-    col[i * 3 + 1] = (0.42 * (1 - mossK) + 0.46 * mossK) * shade;
-    col[i * 3 + 2] = (0.32 * (1 - mossK) + 0.22 * mossK) * shade;
+    const grassK = Math.max(0, Math.min(1, (y - 0.4) / 5.0));
+    const deep = Math.max(0, Math.min(1, (-y - 6) / 20));
+    const shade = 0.82 + 0.12 * Math.sin(x * 0.10 + z * 0.12);
+    // Cream-brown limestone and moss — not chocolate, not pale grey.
+    const r = (0.58 * (1 - grassK) + 0.30 * grassK) * (1 - deep * 0.22) * shade;
+    const gC = (0.50 * (1 - grassK) + 0.48 * grassK) * (1 - deep * 0.16) * shade;
+    const b = (0.36 * (1 - grassK) + 0.20 * grassK) * (1 - deep * 0.12) * shade;
+    col[i * 3] = r; col[i * 3 + 1] = gC; col[i * 3 + 2] = b;
   }
+  bodyGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   bodyGeo.computeVertexNormals();
   retagGeometry(bodyGeo, MAT.ROCK, 0);
   const body = new THREE.Mesh(bodyGeo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
@@ -1069,166 +1073,162 @@ function makeHangingKeep() {
   body.userData.matId = MAT.ROCK;
   g.add(body);
 
-  // Hanging stone roots — irregular, not a single pillar
+  // Hanging roots — irregular, clustering toward the tip
   for (const [x, z, r, h, lean] of [
-    [-12, 8, 5.5, 28, 0.18], [10, -10, 4.8, 24, -0.15],
-    [4, 14, 3.6, 20, 0.22], [-18, -6, 4.0, 22, -0.2],
-    [16, 4, 3.2, 18, 0.12], [-4, -14, 3.8, 21, 0.1],
+    [-8, 6, 3.4, 22, 0.22], [9, -7, 3.0, 20, -0.18],
+    [3, 11, 2.4, 16, 0.28], [-14, -4, 2.8, 18, -0.24],
+    [12, 3, 2.2, 14, 0.16], [-3, -12, 2.6, 17, 0.12],
+    [0, 2, 2.0, 24, 0.08],
   ]) {
-    const root = cone(r * 0.18, h, 7, limeDk, MAT.ROCK);
+    const root = cone(r * 0.22, h, 7, earth, MAT.ROCK);
     root.rotation.x = Math.PI + lean;
-    root.rotation.z = lean * 0.6;
-    root.position.set(x, -h * 0.32, z);
+    root.rotation.z = lean * 0.5;
+    root.position.set(x, -h * 0.38, z);
     g.add(root);
   }
-  // Vines
-  for (const [x, z, h] of [[-20, 2, 16], [18, -8, 14], [8, 16, 12], [-8, -16, 15], [22, 6, 11], [-16, 12, 13]]) {
-    const v = cyl(0.12, 0.18, h, 4, vine, MAT.FOLIAGE);
-    v.position.set(x, -h * 0.25, z);
-    v.rotation.z = (x > 0 ? 0.15 : -0.15);
+  for (const [x, z, h] of [[-16, 3, 14], [14, -6, 12], [6, 14, 11], [-7, -14, 13], [18, 5, 10], [-12, 10, 12]]) {
+    const v = cyl(0.10, 0.16, h, 4, vine, MAT.FOLIAGE);
+    v.position.set(x, -h * 0.28, z);
+    v.rotation.z = (x > 0 ? 0.18 : -0.18);
     g.add(v);
-    const leaf = mesh(new THREE.SphereGeometry(0.7, 5, 4), moss, MAT.FOLIAGE);
-    leaf.position.set(x * 0.96, -h * 0.55, z);
+    const leaf = mesh(new THREE.SphereGeometry(0.85, 6, 5), moss, MAT.FOLIAGE);
+    leaf.position.set(x * 0.96, -h * 0.58, z);
     g.add(leaf);
   }
 
-  // Living terrace
-  add(g, box(40, 1.5, 28, lime, MAT.ROCK), 0, 6.6, 0);
-  // Ruined keep + broken arch, overgrown
-  add(g, box(14, 9, 12, limeLt, MAT.BUILDING), -7, 11.6, -1);
-  add(g, box(7.5, 16, 7.5, lime, MAT.BUILDING), 8, 15.0, 3);
-  add(g, box(3.2, 2.2, 7.5, limeDk, MAT.ROCK), 8, 23.4, 3);
-  add(g, box(10, 5.2, 2.2, lime, MAT.BUILDING), 0, 10.0, 9);
-  add(g, box(2.2, 6.4, 10, limeDk, MAT.BUILDING), -16, 10.5, 1);
-  // broken arch
-  add(g, box(1.7, 7.5, 1.7, limeDk, MAT.ROCK), -2, 10.8, 12);
-  add(g, box(1.7, 5.6, 1.7, lime, MAT.ROCK), 3.4, 9.9, 12);
-  add(g, box(6.8, 1.4, 1.9, limeLt, MAT.ROCK), 0.7, 15.0, 12);
-  // ivy patches on the walls
-  for (const [x, y, z, s] of [[-7, 10, 5.2, 2.4], [8, 14, 7.1, 1.8], [0, 11, 10.2, 1.6], [-16, 11, 4, 1.7]]) {
-    const ivy = mesh(new THREE.SphereGeometry(s, 5, 4), moss, MAT.FOLIAGE);
-    ivy.scale.set(1.2, 0.55, 0.4);
-    ivy.position.set(x, y, z);
-    g.add(ivy);
+  // Green terrace
+  add(g, box(34, 1.2, 24, grass, MAT.GRASS), 0, 5.7, 0);
+  // A few turf mounds so the crown isn't a flat lid
+  for (const [x, z, s] of [[-10, 6, 4.2], [8, -5, 3.6], [12, 7, 3.2], [-6, -8, 3.0], [0, 2, 5.0]]) {
+    const mound = mesh(new THREE.SphereGeometry(s, 8, 6), moss, MAT.FOLIAGE);
+    mound.scale.set(1, 0.28, 1);
+    mound.position.set(x, 6.1, z);
+    g.add(mound);
   }
 
-  // Great tree on the west terrace
-  const tr = cyl(0.55, 0.9, 10, 6, 0x5a3a22, MAT.WOOD);
-  tr.position.set(-14, 12.0, -4);
+  // Arched ruins, half hidden in the canopy
+  function ruinArch(w, h, depth, c) {
+    const shape = new THREE.Shape();
+    shape.moveTo(-w / 2, 0);
+    shape.lineTo(-w / 2, h);
+    shape.lineTo(w / 2, h);
+    shape.lineTo(w / 2, 0);
+    shape.closePath();
+    const hole = new THREE.Path();
+    const aw = w * 0.30, ah = h * 0.55;
+    hole.moveTo(-aw, 0.6);
+    hole.lineTo(-aw, ah * 0.45);
+    hole.absarc(0, ah * 0.45, aw, Math.PI, 0, true);
+    hole.lineTo(aw, 0.6);
+    hole.closePath();
+    shape.holes.push(hole);
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth, bevelEnabled: true, bevelThickness: 0.35, bevelSize: 0.25, bevelSegments: 2, curveSegments: 8,
+    });
+    geo.translate(0, 0, -depth / 2);
+    geo.computeVertexNormals();
+    retagGeometry(geo, MAT.ROCK, 0);
+    return new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+      color: c, flatShading: false,
+    })));
+  }
+  const a1 = ruinArch(12, 20, 3.0, stoneLt);
+  a1.position.set(-1, 6.2, 7);
+  a1.rotation.y = 0.12;
+  g.add(a1);
+  const a2 = ruinArch(10, 16, 2.6, stone);
+  a2.position.set(8, 6.2, 3);
+  a2.rotation.y = -0.55;
+  g.add(a2);
+  const a3 = ruinArch(8, 13, 2.4, stoneDk);
+  a3.position.set(-9, 6.2, 2);
+  a3.rotation.y = 0.7;
+  g.add(a3);
+  // Broken wall stumps
+  add(g, box(8, 4.2, 1.8, stone, MAT.ROCK), 4, 8.2, -8, 0, 0.2, 0);
+  add(g, box(2.2, 9, 2.2, stoneDk, MAT.ROCK), 11, 10.6, -3);
+  add(g, box(2.0, 6.5, 2.0, stone, MAT.ROCK), -12, 9.4, 3);
+
+  // Great tree — canopy dominates the crown
+  const tr = cyl(0.7, 1.15, 11, 7, 0x5a3a22, MAT.WOOD);
+  tr.position.set(-8, 11.4, -4);
   g.add(tr);
-  for (const [ox, oy, oz, r] of [[0, 7, 0, 5.2], [3.2, 5.6, 1.4, 3.6], [-3.0, 5.8, -1.6, 3.4], [1.2, 8.4, -2, 2.8], [-1.5, 8.2, 2.2, 2.6]]) {
-    const leaf = mesh(new THREE.SphereGeometry(r, 8, 6), moss, MAT.FOLIAGE);
-    leaf.position.set(-14 + ox, 12.0 + oy, -4 + oz);
+  const canopy = [
+    [0, 8.2, 0, 7.4], [4.6, 6.2, 2.2, 5.2], [-4.4, 6.4, -2.4, 5.0],
+    [2.0, 10.0, -2.6, 4.4], [-2.4, 9.8, 2.8, 4.2], [5.2, 8.0, -1.2, 3.6],
+    [-5.0, 7.6, 1.6, 3.4], [1.0, 11.6, 0.6, 3.8], [-1.2, 5.2, 4.0, 3.2],
+  ];
+  for (const [ox, oy, oz, r] of canopy) {
+    const leaf = mesh(new THREE.SphereGeometry(r, 9, 7), moss, MAT.FOLIAGE);
+    leaf.position.set(-8 + ox, 11.4 + oy, -4 + oz);
     g.add(leaf);
   }
-  // Smaller rim trees
-  for (const [x, z, s] of [[16, 12, 0.95], [20, -8, 1.1], [10, -16, 0.85], [-6, -16, 0.9], [4, 16, 0.7]]) {
-    const t2 = cyl(0.22 * s, 0.36 * s, 4.4 * s, 5, 0x5a3a22, MAT.WOOD);
-    t2.position.set(x, 7.4 + 2.2 * s, z);
+  // Smaller rim trees, tucked against the ruins
+  for (const [x, z, s] of [[12, 8, 1.15], [14, -6, 0.95], [4, -12, 0.85], [-14, 8, 0.9]]) {
+    const t2 = cyl(0.22 * s, 0.36 * s, 4.6 * s, 5, 0x5a3a22, MAT.WOOD);
+    t2.position.set(x, 6.4 + 2.2 * s, z);
     g.add(t2);
-    const leaf = mesh(new THREE.SphereGeometry(2.2 * s, 6, 5), moss, MAT.FOLIAGE);
-    leaf.position.set(x, 7.4 + 5.4 * s, z);
+    const leaf = mesh(new THREE.SphereGeometry(2.4 * s, 7, 6), moss, MAT.FOLIAGE);
+    leaf.position.set(x, 6.4 + 5.6 * s, z);
     g.add(leaf);
   }
 
-  const pool = box(12, 0.4, 9, 0x3a90b8, MAT.WATER_DEEP);
-  pool.position.set(6, 7.4, -10);
+  const pool = box(8, 0.35, 6, 0x2e8aaa, MAT.WATER_DEEP);
+  pool.position.set(8, 6.4, -8);
   g.add(pool);
 
-  // Waterfalls — crossed cards so they never collapse to an edge-on stick
-  const fallA = new THREE.PlaneGeometry(14, 38, 1, 14);
+  // Waterfalls — crossed cards hung off the rim (shared uTime)
+  const fallA = new THREE.PlaneGeometry(14, 32, 1, 12);
   const fallB = fallA.clone();
   fallB.rotateY(Math.PI / 2);
   const fallGeo = mergeGeos([fallA, fallB], MAT.WATERFALL);
   retagGeometry(fallGeo, MAT.WATERFALL, 1);
+  const fallMat = makeFallsMat();
   const sheets = [];
-  const s1 = new THREE.Mesh(fallGeo, makeFallsMat());
-  s1.name = "falls";
-  s1.position.set(8, -14, -40);
-  s1.rotation.y = Math.PI + 0.18;
-  g.add(s1); sheets.push(s1);
-  const s2 = new THREE.Mesh(fallGeo.clone(), makeFallsMat());
-  s2.name = "falls";
-  s2.position.set(36, -14, 6);
-  s2.rotation.y = Math.PI * 0.5 - 0.2;
-  s2.scale.set(0.72, 0.82, 0.72);
-  if (s2.material.uniforms && s1.material.uniforms) s2.material.uniforms.uTime = s1.material.uniforms.uTime;
-  g.add(s2); sheets.push(s2);
-  const s3 = new THREE.Mesh(fallGeo.clone(), makeFallsMat());
-  s3.name = "falls";
-  s3.position.set(-14, -13, -36);
-  s3.rotation.y = Math.PI - 0.4;
-  s3.scale.set(0.55, 0.7, 0.55);
-  if (s3.material.uniforms && s1.material.uniforms) s3.material.uniforms.uTime = s1.material.uniforms.uTime;
-  g.add(s3); sheets.push(s3);
+  const f1 = new THREE.Mesh(fallGeo, fallMat);
+  f1.name = "falls";
+  f1.position.set(6, -10, -42);
+  f1.rotation.y = Math.PI + 0.2;
+  g.add(f1); sheets.push(f1);
+  const f2 = new THREE.Mesh(fallGeo.clone(), fallMat);
+  f2.name = "falls";
+  f2.position.set(36, -10, 6);
+  f2.rotation.y = Math.PI * 0.5 - 0.15;
+  f2.scale.setScalar(0.8);
+  g.add(f2); sheets.push(f2);
+  const f3 = new THREE.Mesh(fallGeo.clone(), fallMat);
+  f3.name = "falls";
+  f3.position.set(-16, -9, -38);
+  f3.rotation.y = Math.PI - 0.45;
+  f3.scale.setScalar(0.65);
+  g.add(f3); sheets.push(f3);
   g.userData.sheets = sheets;
 
-  // Plunge mist (opaque soft puffs — no id-alpha transparency bug)
   const mistMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0xe8f2f8, emissive: 0xd8e8f0, emissiveIntensity: 0.35, flatShading: false,
   }));
   mistMat.userData.matId = MAT.CLOUD;
   const mistGeo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
-  const mist = new THREE.InstancedMesh(mistGeo, mistMat, 10);
+  const mist = new THREE.InstancedMesh(mistGeo, mistMat, 6);
   mist.name = "mist";
   const md = new THREE.Object3D();
-  const mistSpots = [
-    [8, -36, -42, 5.5], [14, -40, -38, 4.2], [2, -38, -44, 4.8],
-    [38, -32, 6, 4.0], [34, -36, 10, 3.4], [-14, -32, -38, 3.6],
-    [10, -44, -36, 3.2], [22, -30, -20, 2.8],
-    [4, -28, -46, 3.0], [40, -28, -2, 2.6],
-  ];
-  mistSpots.forEach((s, i) => {
+  [
+    [6, -26, -44, 4.2], [10, -30, -42, 3.2],
+    [36, -24, 6, 3.0], [34, -28, 8, 2.4],
+    [-16, -24, -40, 2.8], [8, -32, -40, 2.6],
+  ].forEach((s, i) => {
     md.position.set(s[0], s[1], s[2]);
     md.scale.setScalar(s[3]);
     md.updateMatrix();
     mist.setMatrixAt(i, md.matrix);
   });
   mist.instanceMatrix.needsUpdate = true;
-  mist.count = mistSpots.length;
+  mist.count = 6;
   g.add(mist);
-
-  // Companion rocks
-  const rockGeo = new THREE.IcosahedronGeometry(1, 1);
-  retagGeometry(rockGeo, MAT.ROCK, 0);
-  const rockMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: limeDk, flatShading: false }));
-  const crumbs = new THREE.InstancedMesh(rockGeo, rockMat, 7);
-  crumbs.name = "keep-rocks";
-  [
-    [38, 2, -8, 4.2], [-36, -4, 10, 3.4], [28, -12, 22, 2.8],
-    [-24, 8, 28, 3.0], [42, -6, 14, 2.2], [-40, -10, -16, 2.6], [20, 14, -30, 2.4],
-  ].forEach((s, i) => {
-    md.position.set(s[0], s[1], s[2]);
-    md.scale.set(s[3], s[3] * 0.7, s[3] * 0.85);
-    md.rotation.set(s[1] * 0.1, i, 0.2);
-    md.updateMatrix();
-    crumbs.setMatrixAt(i, md.matrix);
-  });
-  crumbs.instanceMatrix.needsUpdate = true;
-  g.add(crumbs);
-
-  // Soft wreath of local cloud (one draw)
-  const wPuff = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
-  const wMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    color: 0xfffaf4, emissive: 0xfff3e0, emissiveIntensity: 0.22, flatShading: false,
-  }));
-  wMat.userData.matId = MAT.CLOUD;
-  const wreath = new THREE.InstancedMesh(wPuff, wMat, 8);
-  wreath.name = "keep-wreath";
-  [
-    [-36, 2, -10, 6], [38, 3, 10, 6.5], [10, 1, 34, 5.5], [-20, 0, 32, 5],
-    [30, -10, -26, 5.5], [-34, -8, -24, 5], [4, 6, -36, 6], [22, 8, 24, 4.5],
-  ].forEach((s, i) => {
-    md.position.set(s[0], s[1], s[2]);
-    md.scale.set(s[3], s[3] * 0.55, s[3] * 0.9);
-    md.updateMatrix();
-    wreath.setMatrixAt(i, md.matrix);
-  });
-  wreath.instanceMatrix.needsUpdate = true;
-  g.add(wreath);
 
   return g;
 }
+
 
 function makeRoad(from, to, width = 8, H = null) {
   const dx = to.x - from.x, dz = to.z - from.z;
@@ -1557,7 +1557,7 @@ function makeCoastalCliffs(H) {
     const stripe = Math.sin(x * 1.15 + y * 1.6) + 0.7 * Math.sin((x - y) * 2.2 + z * 0.22);
     // Soft hatching only — never near-black 'cave' holes on the cliff face
     const hatch = stripe > 0.45 ? 0.72 : stripe > 0.1 ? 0.82 : stripe > -0.2 ? 0.92 : 1;
-    const base = shade ? [0.50, 0.44, 0.36] : [0.62, 0.55, 0.44];
+    const base = shade ? [0.78, 0.72, 0.56] : [0.90, 0.85, 0.70];
     const n = 0.07 * Math.sin(x * 0.18 + z * 0.14);
     colors.push(
       Math.min(1, base[0] * hatch + n),
@@ -1606,7 +1606,7 @@ function makeCoastalCliffs(H) {
   geo.setIndex(indices);
   geo.computeVertexNormals();
   retagGeometry(geo, MAT.ROCK, 0);
-  const mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.09, vertexColors: true, flatShading: false, matId: MAT.ROCK });
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false }));
   const mesh = new THREE.Mesh(geo, mat);
   mesh.userData.matId = MAT.ROCK;
   mesh.name = "cliffs";
@@ -1619,7 +1619,7 @@ function makeCoastalCliffs(H) {
   if (lipBushes.length) {
     const inst = new THREE.InstancedMesh(
       retagGeometry(new THREE.SphereGeometry(1.6, 6, 5), MAT.FOLIAGE, 0),
-      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3d6a34, flatShading: true })),
+      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3d6a34, flatShading: false })),
       lipBushes.length
     );
     inst.userData.matId = MAT.FOLIAGE;
@@ -1769,7 +1769,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Near the flight path (runway / hangar) = real houses with doors, windows, chimneys.
   // Further up the hill = denser instanced impostors so the postcard still reads as a town.
   const houseColors = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
-  const roofColors = [0xc45a3a, 0xb04a32, 0xd46a48, 0xa84830, 0xbe6240];
+  const roofColors = [0xc45a3a, 0xb4482e, 0xd26540, 0xa8422c, 0xc05638];
   const spots = [];
   const chimneys = [];
   const winData = [];
@@ -1962,7 +1962,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     lines.instanceMatrix.needsUpdate = true;
     beds.instanceMatrix.needsUpdate = true;
     flowers.instanceMatrix.needsUpdate = true;
-    group.add(lines, cloth, beds, flowers);
+    group.add(cloth, flowers);
   }
 
   const church = makeChurch();
@@ -2139,6 +2139,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const aH = Math.max(0, H(LANDMARKS.arch.x, LANDMARKS.arch.z + 16));
   arch.position.set(LANDMARKS.arch.x, aH, LANDMARKS.arch.z);
   arch.rotation.y = 0.08;
+  mergeVertexColors(arch, new Set());
   group.add(arch);
 
   const cave = makeCave();
@@ -2193,7 +2194,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   hangingKeep.position.set(LANDMARKS.hangingKeep.x, 368, LANDMARKS.hangingKeep.z);
   hangingKeep.rotation.y = 0.35;
   hangingKeep.scale.setScalar(1.0);
-  mergeVertexColors(hangingKeep, new Set(["falls", "mist", "keep-wreath", "keep-rocks"]));
+  mergeVertexColors(hangingKeep, new Set(["falls", "mist"]));
   group.add(hangingKeep);
 
   // Town lamps
@@ -2210,7 +2211,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Collapse each boat/steamer to a handful of meshes so they can still
   // bob as groups without blowing the 150-draw cap.
   for (const b of boats) mergeStatic(b, new Set(["smoke"]));
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "arch"]));
   group.add(makeCoastalCliffs(H));
   // keep boat meshes (they bob)
   scene.add(group);
