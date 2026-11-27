@@ -169,7 +169,7 @@ export function stepCraft(c, input, world, dt, settings) {
 
   // Coordinated bank-to-turn with slight inertia and light auto-level.
   if (c._turn == null) c._turn = 0;
-  c._turn = damp(c._turn, turn, 2.8, dt);
+  c._turn = damp(c._turn, turn, 3.4, dt);
 
   if (c.onGround || c.waterborne) {
     const targetPitch = c.throttle > 0.95 && c.airspeed > takeoffSpd * 0.75 ? 0.16 : 0;
@@ -187,10 +187,10 @@ export function stepCraft(c, input, world, dt, settings) {
     // Gentle mush near min speed: nose wants to drop, no stall.
     const mush = c.airspeed < minSpd * 1.05 ? saturate((minSpd * 1.05 - c.airspeed) / (minSpd * 0.35)) : 0;
     if (mush > 0) targetPitch = lerp(targetPitch, Math.min(targetPitch, -0.06), mush);
-    pitch = damp(pitch, clamp(targetPitch, -maxPitch, maxPitch), 6.2, dt);
+    pitch = damp(pitch, clamp(targetPitch, -maxPitch, maxPitch), 7.4, dt);
     pitch = clamp(pitch, -maxPitch, maxPitch);
     const targetBank = clamp(-c._turn * maxBank, -maxBank, maxBank);
-    roll = damp(roll, targetBank, 3.5, dt);
+    roll = damp(roll, targetBank, 4.2, dt);
     roll = clamp(roll, -maxBank, maxBank);
     // Yaw follows bank, with a little extra stick for agility.
     yaw += (roll / maxBank) * yawRate * dt;

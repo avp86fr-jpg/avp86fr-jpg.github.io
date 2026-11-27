@@ -31,13 +31,15 @@ function treePrototype(kind) {
   const parts = [tg];
   if (kind === "broad") {
     const blobs = [
-      [0, 5.7, 0, 1.85],
-      [2.05, 5.15, 0.7, 1.55],
-      [-1.95, 5.25, -0.65, 1.5],
+      [0, 5.7, 0, 1.95],
+      [2.05, 5.25, 0.7, 1.6],
+      [-1.95, 5.35, -0.65, 1.55],
+      [0.4, 6.6, -1.1, 1.25],
+      [-0.6, 6.4, 1.0, 1.2],
     ];
     for (const [x, y, z, r] of blobs) {
-      const s = new THREE.SphereGeometry(r, 5, 4);
-      s.scale(1, 0.82, 1);
+      const s = new THREE.SphereGeometry(r, 7, 6);
+      s.scale(1.08, 0.92, 1.08);
       s.translate(x, y, z);
       parts.push(retagGeometry(s, MAT.FOLIAGE));
     }
@@ -49,7 +51,7 @@ function treePrototype(kind) {
       [-0.06, 8.6, 0, 0.78, 2.5],
     ];
     for (const [x, y, z, r, h] of cones) {
-      const c = new THREE.ConeGeometry(r, h, 5);
+      const c = new THREE.ConeGeometry(r, h, 8);
       c.translate(x, y, z);
       parts.push(retagGeometry(c, MAT.FOLIAGE));
     }
@@ -59,12 +61,13 @@ function treePrototype(kind) {
     const r = Math.hypot(x, z);
     if (r < 0.62 && y < 4.4) return 0x5a3a22;
     if (kind === "broad") {
-      if (x > 0.9) return 0x3cb03a;
-      if (x < -0.8) return 0x1e7a30;
-      if (y > 6.4) return 0x4cbc48;
-      return 0x2d9a32;
+      // Light sunlit top, cool shaded bottom
+      if (y > 6.6) return 0x6cc85a;
+      if (y < 4.8) return 0x1e6a32;
+      if (x > 1.0) return 0x48b048;
+      return 0x2e9440;
     }
-    return y > 7.6 ? 0x2a6a2c : 0x1a5224;
+    return y > 7.6 ? 0x3a8a3a : 0x1a5224;
   });
   return geo;
 }
@@ -84,9 +87,9 @@ function foliageMat() {
   const m = new THREE.MeshLambertMaterial({
     color: 0xffffff,
     vertexColors: true,
-    flatShading: true,
-    emissive: 0x142814,
-    emissiveIntensity: 0.10,
+    flatShading: false,
+    emissive: 0x163018,
+    emissiveIntensity: 0.12,
   });
   m.userData.matId = MAT.FOLIAGE;
   patchMaterialIdAlpha(m);
@@ -98,21 +101,21 @@ function farPrototype(kind) {
   tg.translate(0, 1.9, 0);
   const parts = [retagGeometry(tg, MAT.WOOD)];
   if (kind === "broad") {
-    const a = new THREE.SphereGeometry(1.85, 4, 3);
-    a.scale(1.15, 0.78, 1.15);
+    const a = new THREE.SphereGeometry(1.85, 6, 5);
+    a.scale(1.18, 0.92, 1.18);
     a.translate(0, 4.7, 0);
-    const b = new THREE.SphereGeometry(1.15, 4, 3);
-    b.scale(1.05, 0.75, 1.05);
-    b.translate(1.15, 4.4, 0.25);
+    const b = new THREE.SphereGeometry(1.15, 5, 4);
+    b.scale(1.1, 0.9, 1.1);
+    b.translate(1.15, 4.6, 0.25);
     parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
   } else if (kind === "bush") {
-    const a = new THREE.SphereGeometry(1.2, 4, 3);
-    a.scale(1.4, 0.7, 1.3);
+    const a = new THREE.SphereGeometry(1.2, 6, 5);
+    a.scale(1.4, 0.85, 1.3);
     a.translate(0, 0.4, 0);
     parts.length = 0;
     parts.push(retagGeometry(a, MAT.FOLIAGE));
   } else {
-    const c = new THREE.ConeGeometry(1.55, 6.8, 4);
+    const c = new THREE.ConeGeometry(1.55, 6.8, 7);
     c.translate(0, 5.4, 0);
     parts.push(retagGeometry(c, MAT.FOLIAGE));
   }
@@ -120,9 +123,9 @@ function farPrototype(kind) {
   paintColors(geo, (x, y, z) => {
     const r = Math.hypot(x, z);
     if (kind !== "bush" && r < 0.55 && y < 3.6) return 0x5a3a22;
-    if (kind === "broad") return x > 0.6 ? 0x3cb03a : 0x2d9a32;
-    if (kind === "bush") return 0x2c8a32;
-    return y > 6.5 ? 0x2a6a2c : 0x1a5224;
+    if (kind === "broad") return y > 5.4 ? 0x58c05a : 0x2a7a38;
+    if (kind === "bush") return y > 0.6 ? 0x4aaa40 : 0x2c7a32;
+    return y > 6.5 ? 0x3a8a3a : 0x1a5224;
   });
   return geo;
 }
@@ -161,33 +164,37 @@ function instanceLod(nearGeo, farGeo, material, placements, cap, nearR) {
   fInst.instanceMatrix.needsUpdate = true;
   nInst.count = 0;
   nInst.instanceMatrix.needsUpdate = true;
-  return { near: nInst, far: fInst, placements, cap, nearR, dummy, _acc: 1 };
+  return { near: nInst, far: fInst, placements, cap, nearR, farR: nearR * 1.5, dummy, _acc: 1 };
 }
 
 function tickLod(lod, cam, force) {
   if (!lod || !cam) return;
   lod._acc = (lod._acc || 0) + 1;
-  if (!force && lod._acc < 8) return; // ~8 frames at 60fps ≈ 0.13s
+  if (!force && lod._acc < 5) return;
   lod._acc = 0;
   const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
   const nearR = lod.nearR;
+  const farR = lod.farR || nearR * 1.5;
   const nearR2 = nearR * nearR;
+  const farR2 = farR * farR;
   const dummy = lod.dummy;
+  const t = (typeof performance !== "undefined" ? performance.now() : 0) * 0.001;
   let nN = 0, nF = 0;
   for (let i = 0; i < lod.cap; i++) {
     const p = lod.placements[i];
     const dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
     const d2 = dx * dx + dy * dy + dz * dz;
+    // Hysteresis: enter near at nearR, leave only past farR. Stops flicker/pop at the band.
+    const useNear = p._near ? (d2 < farR2) : (d2 < nearR2);
+    p._near = useNear;
     dummy.position.set(p.x, p.y, p.z);
-    dummy.rotation.set(0, p.r, 0);
+    const wind = useNear ? 0.05 * Math.sin(t * 1.15 + p.x * 0.07 + p.z * 0.05) : 0;
+    dummy.rotation.set(0, p.r, wind);
     if (p.sx != null) dummy.scale.set(p.sx, p.sy, p.sz);
     else dummy.scale.setScalar(p.s);
     dummy.updateMatrix();
-    if (d2 < nearR2) {
-      lod.near.setMatrixAt(nN++, dummy.matrix);
-    } else {
-      lod.far.setMatrixAt(nF++, dummy.matrix);
-    }
+    if (useNear) lod.near.setMatrixAt(nN++, dummy.matrix);
+    else lod.far.setMatrixAt(nF++, dummy.matrix);
   }
   lod.near.count = nN;
   lod.far.count = nF;
@@ -231,12 +238,11 @@ function flowerCardGeo() {
 }
 
 function makeMeadow(terrain, quality) {
-  const q = QUALITY[quality] || QUALITY.medium;
   const nGrass = quality === "low" ? 700 : quality === "high" ? 2400 : 1500;
   const nFlower = Math.floor(nGrass * 0.18);
-  const radius = quality === "low" ? 42 : quality === "high" ? 88 : 64;
+  const radius = quality === "low" ? 48 : quality === "high" ? 96 : 72;
   const grassMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    vertexColors: true, side: THREE.DoubleSide, flatShading: true,
+    vertexColors: true, side: THREE.DoubleSide, flatShading: false,
   }));
   grassMat.userData.matId = MAT.FOLIAGE;
   const grass = new THREE.InstancedMesh(grassCardGeo(), grassMat, nGrass);
@@ -248,30 +254,27 @@ function makeMeadow(terrain, quality) {
   flower.frustumCulled = false;
   flower.count = 0;
   const dummy = new THREE.Object3D();
-  const state = { x: 1e9, z: 1e9, acc: 0, dummy, radius, nGrass, nFlower, grass, flower, terrain };
-  function refill(cx, cz) {
-    const R = radius;
-    const H = terrain && terrain.heightAt;
-    const M = terrain && terrain.materialAt;
+  const CELL = 3.4;
+  const slots = [];
+  const occupied = new Set();
+  const state = { x: 1e9, z: 1e9, dummy, radius, nGrass, nFlower, grass, flower, terrain };
+  function keyOf(ix, iz) { return ix + "," + iz; }
+  function writeMeshes() {
+    const t = (typeof performance !== "undefined" ? performance.now() : 0) * 0.001;
     let ng = 0, nf = 0;
-    for (let i = 0; i < nGrass; i++) {
-      const a = i * 2.399963;
-      const r = Math.sqrt((i + 0.5) / nGrass) * R;
-      const x = cx + Math.cos(a) * r;
-      const z = cz + Math.sin(a) * r;
-      const h = H ? H(x, z) : 0;
-      if (!Number.isFinite(h) || h < 1.15 || h > 78) continue;
-      const mat = M ? M(x, z) : MAT.GRASS;
-      if (mat === MAT.SAND || mat === MAT.SEA || mat === MAT.WATER_DEEP || mat === MAT.RUNWAY || mat === MAT.ROCK) continue;
-      const s = 0.75 + ((i * 17) % 10) * 0.06;
-      dummy.position.set(x, h, z);
-      dummy.rotation.set(0, a, (i % 5 - 2) * 0.04);
-      dummy.scale.set(s, s * (0.85 + (i % 7) * 0.05), s);
+    for (const s of slots) {
+      const fade = Math.max(0, Math.min(1, s.age));
+      if (fade < 0.03) continue;
+      const lean = 0.14 * Math.sin(t * 1.55 + s.x * 0.2 + s.z * 0.14);
+      dummy.position.set(s.x, s.y, s.z);
+      dummy.rotation.set(0, s.a, lean);
+      dummy.scale.set(s.s * fade, s.s * fade * s.hMul, s.s * fade);
       dummy.updateMatrix();
       grass.setMatrixAt(ng++, dummy.matrix);
-      if (i % 6 === 0 && nf < nFlower) {
-        dummy.position.set(x + 0.35, h, z + 0.2);
-        dummy.scale.setScalar(0.85 + (i % 4) * 0.08);
+      if (s.flower && nf < nFlower) {
+        dummy.position.set(s.x + 0.35, s.y, s.z + 0.2);
+        dummy.rotation.set(0, s.a, 0);
+        dummy.scale.setScalar((0.85 + (s.i % 4) * 0.08) * fade);
         dummy.updateMatrix();
         flower.setMatrixAt(nf++, dummy.matrix);
       }
@@ -280,18 +283,72 @@ function makeMeadow(terrain, quality) {
     flower.count = nf;
     grass.instanceMatrix.needsUpdate = true;
     flower.instanceMatrix.needsUpdate = true;
+  }
+  function refill(cx, cz, dt) {
+    const R = radius;
+    const Rkeep = radius + 18;
+    const H = terrain && terrain.heightAt;
+    const M = terrain && terrain.materialAt;
+    const next = [];
+    occupied.clear();
+    for (const s of slots) {
+      const dx = s.x - cx, dz = s.z - cz;
+      const inside = dx * dx + dz * dz <= Rkeep * Rkeep;
+      if (inside) {
+        s.age = Math.min(1, s.age + dt / 0.4);
+        next.push(s);
+        occupied.add(s.key);
+      } else {
+        s.age -= dt / 0.28;
+        if (s.age > 0.03) next.push(s);
+      }
+    }
+    slots.length = 0;
+    for (const s of next) slots.push(s);
+
+    const ix0 = Math.floor((cx - R) / CELL);
+    const ix1 = Math.ceil((cx + R) / CELL);
+    const iz0 = Math.floor((cz - R) / CELL);
+    const iz1 = Math.ceil((cz + R) / CELL);
+    for (let ix = ix0; ix <= ix1 && slots.length < nGrass; ix++) {
+      for (let iz = iz0; iz <= iz1 && slots.length < nGrass; iz++) {
+        const key = keyOf(ix, iz);
+        if (occupied.has(key)) continue;
+        const jx = ((ix * 17 + iz * 31) % 11) * 0.07;
+        const jz = ((ix * 13 + iz * 7) % 11) * 0.07;
+        const x = (ix + 0.5 + jx) * CELL;
+        const z = (iz + 0.5 + jz) * CELL;
+        const dx = x - cx, dz = z - cz;
+        if (dx * dx + dz * dz > R * R) continue;
+        const h = H ? H(x, z) : 0;
+        if (!Number.isFinite(h) || h < 1.15 || h > 78) continue;
+        const mat = M ? M(x, z) : MAT.GRASS;
+        if (mat === MAT.SAND || mat === MAT.SEA || mat === MAT.WATER_DEEP || mat === MAT.RUNWAY || mat === MAT.ROCK) continue;
+        const i = slots.length;
+        const s = 0.75 + ((i * 17) % 10) * 0.06;
+        occupied.add(key);
+        slots.push({
+          key, x, y: h, z, s, a: (ix * 3 + iz) * 0.7,
+          hMul: 0.85 + (i % 7) * 0.05,
+          flower: i % 6 === 0, age: dt >= 0.9 ? 1 : 0, i,
+        });
+      }
+    }
+    writeMeshes();
     state.x = cx;
     state.z = cz;
   }
   function update(cam, force) {
     if (!cam) return;
-    state.acc++;
     const dx = cam.position.x - state.x, dz = cam.position.z - state.z;
-    if (!force && state.acc < 10 && dx * dx + dz * dz < 64) return;
-    state.acc = 0;
-    refill(cam.position.x, cam.position.z);
+    const moved = dx * dx + dz * dz >= 16; // ~4 m — add cells ahead, fade the wake
+    if (force || moved) refill(cam.position.x, cam.position.z, force ? 1 : 0.16);
+    else {
+      for (const s of slots) s.age = Math.min(1, s.age + 0.08);
+      writeMeshes();
+    }
   }
-  return { grass, flower, update, refill, group: [grass, flower] };
+  return { grass, flower, update, refill: (x, z) => refill(x, z, 1), group: [grass, flower] };
 }
 
 function palmTrunkGeo() {
@@ -485,7 +542,7 @@ export function createFlora(scene, terrain, quality = "medium") {
     }
     return p;
   });
-  const nearR = quality === "low" ? 70 : quality === "high" ? 130 : 100;
+  const nearR = quality === "low" ? 88 : quality === "high" ? 155 : 118;
   const lods = [];
   const matNear = foliageMat();
   const matFar = foliageMat();

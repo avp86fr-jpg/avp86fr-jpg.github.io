@@ -34,7 +34,7 @@ function instanced(geo, mat, placements) {
 }
 
 function lam(color, matId, extra = {}) {
-  const m = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra }));
+  const m = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color, flatShading: false, ...extra }));
   m.userData.matId = matId;
   return m;
 }
@@ -69,49 +69,56 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
   const road = roadPoints();
   const updaters = [];
 
-  // --- rocks ---
+  // --- livestock (sheep + cows in farm clearings) ---
   {
-    const n = Math.floor(90 * k);
-    const place = [];
-    let i = 0, guard = 0;
-    while (place.length < n && guard++ < 4000) {
-      const x = (Math.sin(i * 17.13) * 0.5 + Math.cos(i * 3.7) * 0.5) * 1100;
-      const z = (Math.cos(i * 13.91) * 0.5 + Math.sin(i * 5.1) * 0.5) * 1300;
-      i++;
-      const h = H(x, z);
-      if (h < 1.6 || h > 130) continue;
-      if (Math.abs(z + 1100) < 90 && Math.abs(x) < 500) continue;
-      const s = 0.7 + (i % 5) * 0.45;
-      place.push({ x, y: h + s * 0.35, z, s, rx: (i % 5) * 0.2, ry: i * 0.7, c: [0x8a7a64, 0x9a8a70, 0x7a6a54, 0xa09078][i % 4] });
+    const herds = [
+      { x: 220, z: -880, n: 8, cow: false },
+      { x: 80, z: -820, n: 6, cow: false },
+      { x: 160, z: -740, n: 5, cow: true },
+      { x: -20, z: -900, n: 6, cow: false },
+      { x: 300, z: -860, n: 5, cow: true },
+      { x: 40, z: -700, n: 5, cow: false },
+    ];
+    const animals = [];
+    for (const h of herds) {
+      const baseY = H(h.x, h.z);
+      if (baseY < 4) continue;
+      for (let i = 0; i < Math.max(2, Math.round(h.n * k)); i++) {
+        const a = i * 2.2 + h.x * 0.01;
+        const r = 4 + (i % 5) * 2.4;
+        animals.push({
+          cx: h.x, cz: h.z, a, r, spd: 0.18 + (i % 3) * 0.05,
+          cow: h.cow && (i % 3 === 0),
+          c: (h.cow && i % 3 === 0) ? (i % 2 ? 0x5a3a28 : 0xc8b8a0) : 0xf2eee6,
+        });
+      }
     }
-    if (place.length) {
-      const geo = new THREE.DodecahedronGeometry(1.1, 0);
-      const mat = lam(0x8a7a64, MAT.ROCK);
-      const inst = instanced(geo, mat, place);
-      inst.name = "life-rocks";
+    if (animals.length) {
+      // Simple four-leg body: one merged-looking box proto, instanceColor for hide.
+      const inst = instanced(new THREE.BoxGeometry(1.2, 0.7, 0.55), lam(0xf2eee6, MAT.PLANE), animals.map((a) => ({
+        x: a.cx, y: 0, z: a.cz, sx: 1, sy: 1, sz: 1, c: a.c,
+      })));
+      inst.name = "life-herd";
       group.add(inst);
-    }
-  }
-
-  // --- flower patches ---
-  if (k > 0.4) {
-    const n = Math.floor(110 * k);
-    const place = [];
-    let i = 0, guard = 0;
-    while (place.length < n && guard++ < 5000) {
-      const x = 80 + Math.sin(i * 9.2) * 520 + (i % 7) * 8;
-      const z = -700 + Math.cos(i * 11.1) * 420;
-      i++;
-      const h = H(x, z);
-      if (h < 5 || h > 90) continue;
-      if (Math.abs(z + 1100) < 80 && Math.abs(x) < 480) continue;
-      const cols = [0xe06080, 0xf2c14e, 0xffffff, 0xd45aaa, 0x7ab03a];
-      place.push({ x, y: h + 0.35, z, sx: 0.5, sy: 0.45, sz: 0.5, c: cols[i % cols.length] });
-    }
-    if (place.length) {
-      const inst = instanced(new THREE.SphereGeometry(0.7, 5, 4), lam(0xe06080, MAT.FOLIAGE), place);
-      inst.name = "life-flowers";
-      group.add(inst);
+      updaters.push((dt, time) => {
+        animals.forEach((a, i) => {
+          a.a += dt * a.spd * 0.35;
+          const x = a.cx + Math.cos(a.a) * a.r;
+          const z = a.cz + Math.sin(a.a) * a.r * 0.7;
+          const y = H(x, z) + (a.cow ? 0.7 : 0.45);
+          const bob = Math.abs(Math.sin(time * 4 + i)) * 0.04;
+          _dummy.position.set(x, y + bob, z);
+          _dummy.rotation.set(0, -a.a + Math.PI / 2, 0);
+          if (a.cow) _dummy.scale.set(1.55, 1.15, 1.15);
+          else _dummy.scale.set(0.95, 0.75, 0.8);
+          _dummy.updateMatrix();
+          inst.setMatrixAt(i, _dummy.matrix);
+          _col.setHex(a.c);
+          if (inst.instanceColor) inst.instanceColor.setXYZ(i, _col.r, _col.g, _col.b);
+        });
+        inst.instanceMatrix.needsUpdate = true;
+        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+      });
     }
   }
 
@@ -126,18 +133,25 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       [360, -760, 24, -0.5, 0x9a8a72],
     ];
     for (const [x, z, len, yaw, c] of walls) {
-      const h = H(x, z);
-      if (h < 4) continue;
-      place.push({ x, y: h + 0.7, z, sx: len, sy: 1.4, sz: 0.45, ry: yaw, c });
+      const nSeg = Math.max(2, Math.round(len / 6));
+      for (let i = 0; i < nSeg; i++) {
+        const t = (i + 0.5) / nSeg - 0.5;
+        const px = x + Math.cos(yaw) * t * len;
+        const pz = z + Math.sin(yaw) * t * len;
+        const h = H(px, pz);
+        if (h < 4 || h > 80) continue;
+        place.push({ x: px, y: h + 0.7, z: pz, sx: len / nSeg + 0.2, sy: 1.35, sz: 0.4, ry: yaw, c });
+      }
     }
     if (k > 0.45) {
-      // Vineyard rows on a mid-island shelf
-      for (let r = 0; r < 8; r++) {
-        const z = -640 + r * 7;
-        const x = 480, len = 36;
-        const h = H(x, z);
-        if (h < 8) continue;
-        place.push({ x, y: h + 0.55, z, sx: len, sy: 1.15, sz: 0.55, ry: 0.08, c: 0x3a5a28 });
+      // Vineyard posts (short, so they follow the shelf instead of floating as 36 m slabs)
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 10; c++) {
+          const x = 464 + c * 3.6, z = -640 + r * 7;
+          const h = H(x, z);
+          if (h < 8 || h > 70) continue;
+          place.push({ x, y: h + 0.7, z, sx: 0.18, sy: 1.4, sz: 0.18, c: 0x3a5a28 });
+        }
       }
     }
     if (place.length) {
@@ -173,7 +187,7 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
 
   // --- people dots (beach, quay, pier) ---
   {
-    const n = Math.floor(28 * k);
+    const n = Math.floor(40 * k);
     const place = [];
     const zones = [
       [LM.beach.x, LM.beach.z, 28],
@@ -189,10 +203,10 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       const z = zn[1] + Math.sin(a) * Math.min(r, zn[2]) * 0.8;
       const h = H(x, z);
       if (h < 0.8) continue;
-      place.push({ x, y: h + 0.7, z, sx: 0.35, sy: 1.15, sz: 0.35, c: cols[i % cols.length] });
+      place.push({ x, y: h + 0.85, z, sx: 0.9, sy: 0.95, sz: 0.9, c: cols[i % cols.length] });
     }
     if (place.length) {
-      const inst = instanced(new THREE.CylinderGeometry(0.5, 0.55, 1, 5), lam(0xc45a2a, MAT.PLANE), place);
+      const inst = instanced(new THREE.CapsuleGeometry(0.28, 0.7, 3, 6), lam(0xc45a2a, MAT.PLANE), place);
       inst.name = "life-people";
       group.add(inst);
     }
@@ -277,8 +291,8 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     const inst = instanced(
       new THREE.SphereGeometry(1, 6, 5),
       patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-        color: 0xddd6cc, emissive: 0xc8c0b6, emissiveIntensity: 0.1,
-        flatShading: true, transparent: true, opacity: 0.45, depthWrite: false,
+        color: 0xe8e2d8, emissive: 0xc8c0b6, emissiveIntensity: 0.12,
+        flatShading: false,
       })),
       puffs.map(() => ({ x: 0, y: 0, z: 0, s: 1 }))
     );
@@ -301,7 +315,6 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
         inst.setMatrixAt(i, _dummy.matrix);
       });
       inst.instanceMatrix.needsUpdate = true;
-      inst.material.opacity = 0.45;
     });
   }
 
@@ -338,8 +351,38 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     });
   }
 
-  function update(dt, time) {
-    for (const fn of updaters) fn(dt, time);
+  // --- night lanterns (town square, quay, pier) ---
+  {
+    const spots = [
+      [LM.town.x + 8, LM.town.z + 6], [LM.town.x - 10, LM.town.z + 14],
+      [LM.town.x + 22, LM.town.z - 8], [LM.harbor.x + 6, LM.harbor.z + 4],
+      [LM.harbor.x - 8, LM.harbor.z], [LM.pier.x, LM.pier.z],
+      [LM.beach.x + 12, LM.beach.z - 8], [200, -1020], [160, -1060],
+      [240, -1000],
+    ];
+    const place = [];
+    for (const [x, z] of spots) {
+      const h = H(x, z);
+      if (h < 0.5) continue;
+      place.push({ x, y: h + 3.6, z, s: 0.45, c: 0xffd090 });
+    }
+    if (place.length) {
+      const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+        color: 0xffd090, toneMapped: false,
+      }));
+      mat.userData.matId = MAT.LIGHT;
+      const inst = instanced(new THREE.SphereGeometry(1, 7, 5), mat, place);
+      inst.name = "life-lanterns";
+      inst.visible = false;
+      group.add(inst);
+      updaters.push((_dt, _time, night) => {
+        inst.visible = (night || 0) > 0.3;
+      });
+    }
+  }
+
+  function update(dt, time, night) {
+    for (const fn of updaters) fn(dt, time, night);
   }
 
   function setVisible(on) {

@@ -241,9 +241,10 @@ export function createFlightCamera(camera) {
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
     const height = CAM.chaseHeight + (portrait ? 2 : 0);
-    _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -2.4);
-    // Look farther ahead so the horizon and the next target stay in frame, especially on a short mobile landscape.
-    _look.copy(craft.pos).addScaledVector(_fwd, 28).add(new THREE.Vector3(0, 1.4, 0));
+    const side = (CAM.chaseSide ?? 6.2) + (portrait ? 1.2 : 0);
+    _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
+    // Look past the nose so the plane stays in frame against the bay and horizon.
+    _look.copy(craft.pos).addScaledVector(_fwd, 36).add(new THREE.Vector3(0, 1.0, 0));
     const up = new THREE.Vector3(Math.sin((craft.roll || 0) * 0.18), 1, 0).normalize();
     return { pos: _pos, look: _look, up };
   }

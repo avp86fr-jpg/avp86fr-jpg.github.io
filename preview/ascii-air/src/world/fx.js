@@ -81,7 +81,7 @@ export function createFeelFX(scene) {
   }
 
   function burstRing(pos) {
-    burst("spark", pos, 18, 14, 0.55, 0xffe86a);
+    burst("spark", pos, 26, 16, 0.7, 0xffe86a);
   }
   function burstMail(pos, drop = true) {
     burst("spark", { x: pos.x, y: pos.y - 2, z: pos.z }, drop ? 16 : 10, drop ? 10 : 8, 0.6, drop ? 0xf4e0a0 : 0xfff4c8);

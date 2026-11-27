@@ -82,7 +82,7 @@ void main() {
   float beach = sat(1.0 - length(vWorld.xz - vec2(40.0, -1220.0)) / 180.0);
   float foamZone = max(max(southShore * 0.85, capeShore), max(eastShore, beach));
   // Shallow turquoise only in a tight band off the shore. Mid-bay is saturated cobalt.
-  float shallow = sat(1.0 - off / 80.0);
+  float shallow = sat(1.0 - off / 140.0);
   float midAmt = sat(1.0 - (off - 40.0) / 520.0);
 
   vec3 turq = uShallow;
@@ -102,8 +102,8 @@ void main() {
   vec3 R = reflect(-V, N);
   float storm = sat((uChop - 1.0) / 1.8);
   // Keep grazing shots cobalt — a heavy sky fresnel washed the bay to pale grey.
-  float skyAmt = fres * 0.14 * day * (1.0 - storm * 0.70);
-  vec3 reflex = mix(uDeep * 1.18, uSky, 0.28);
+  float skyAmt = fres * 0.22 * day * (1.0 - storm * 0.70);
+  vec3 reflex = mix(uDeep * 1.08, uSky, 0.45);
   water = mix(water, reflex, skyAmt);
   float sunLane = pow(sat(dot(R, normalize(uSunDir))), 10.0);
   float farW = sat((length(vWorld.xz - cameraPosition.xz) - 200.0) / 900.0);
@@ -179,8 +179,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x0b4e9c) },
-      uShallow: { value: new THREE.Color(0x2ec8c4) },
+      uDeep: { value: new THREE.Color(0x0a3a7a) },
+      uShallow: { value: new THREE.Color(0x4eb8b4) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },
@@ -259,8 +259,8 @@ export function createWater() {
         lakeMat.uniforms.uSunCol.value.copy(sky.sunColor);
         const night = sky.night || 0;
         if (!this._deepDay) {
-          this._deepDay = new THREE.Color(0x0b4e9c);
-          this._shalDay = new THREE.Color(0x2ec8c4);
+          this._deepDay = new THREE.Color(0x0a3a7a);
+          this._shalDay = new THREE.Color(0x4eb8b4);
           this._deepNight = new THREE.Color(0x1c4a78);
           this._shalNight = new THREE.Color(0x2a6a8e);
         }

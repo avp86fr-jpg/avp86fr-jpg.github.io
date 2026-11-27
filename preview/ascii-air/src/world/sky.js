@@ -26,12 +26,14 @@ uniform float uNight;
 void main() {
   vec3 d = normalize(vDir);
   float h = d.y;
-  // Thin warm horizon, rich blue taking over just above the sea line.
-  float hz = smoothstep(-0.03, 0.07, h);
-  float up = smoothstep(0.02, 0.52, h);
-  vec3 haze = mix(uHorizon, uZenith, 0.62);
-  vec3 col = mix(uHorizon, haze, hz);
-  col = mix(col, uZenith, up);
+  // Soft cerulean — pale aqua mid, warm cream only in a thin horizon band.
+  float hz = smoothstep(-0.04, 0.10, h);
+  float mid = smoothstep(0.04, 0.42, h);
+  float up = smoothstep(0.28, 1.05, h);
+  vec3 aqua = mix(uHorizon, uZenith, 0.48);
+  vec3 col = mix(uHorizon, aqua, hz);
+  col = mix(col, uZenith, mid * 0.72);
+  col = mix(col, uZenith, up * 0.55);
   col = mix(uGround, col, smoothstep(-0.25, 0.05, h));
   // sun disk
   float sk = dot(d, normalize(uSunDir));
@@ -54,8 +56,8 @@ export function createSky(scene) {
   retagGeometry(skyGeo, MAT.SKY, 0);
   const skyMat = new THREE.ShaderMaterial({
     uniforms: {
-      uZenith: { value: new THREE.Color(0x1d74dc) },
-      uHorizon: { value: new THREE.Color(0xf3e0b8) },
+      uZenith: { value: new THREE.Color(0x74b0d8) },
+      uHorizon: { value: new THREE.Color(0xf6ebd0) },
       uGround: { value: new THREE.Color(0x6a9aaa) },
       uSunDir: { value: new THREE.Vector3(0.2, 0.9, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff2c4) },
@@ -194,8 +196,8 @@ export function createSky(scene) {
       { t: 0,  z: 0x1a305c, ho: 0x3a5a88, g: 0x1a2838, s: 0xd0dcff, i: 0.32, si: 0.10, hc: 0x7a98c0, ac: 0x1a2838, fog: 0x1e3a58 },
       { t: 5,  z: 0x1c2860, ho: 0x4a3a78, g: 0x1a1828, s: 0xffc8a0, i: 0.34, si: 0.12, hc: 0x6a5a90, ac: 0x1a1830, fog: 0x2a2848 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
-      { t: 9,  z: 0x1868d0, ho: 0xf0d9a8, g: 0x5a9844, s: 0xffe6b0, i: 1.26, si: 0.92, hc: 0xfff0d8, ac: 0x4a8a40, fog: 0x8ec0e4 },
-      { t: 12, z: 0x1d74dc, ho: 0xf3e0b8, g: 0x62a04c, s: 0xffe8b8, i: 1.32, si: 0.98, hc: 0xfff4e0, ac: 0x4e9044, fog: 0x92c6e8 },
+      { t: 9,  z: 0x6aa8d4, ho: 0xf3e6c4, g: 0x6aaa58, s: 0xffe8b8, i: 1.22, si: 0.90, hc: 0xfff2dc, ac: 0x4a8a40, fog: 0xc5dceb },
+      { t: 12, z: 0x74b0d8, ho: 0xf6ebd0, g: 0x70b060, s: 0xffecd0, i: 1.26, si: 0.94, hc: 0xfff6e6, ac: 0x4e9044, fog: 0xc8e0ee },
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
       { t: 20.5,z:0x162a54, ho: 0x2e4e7a, g: 0x152030, s: 0xc8d6ff, i: 0.30, si: 0.08, hc: 0x6a88b8, ac: 0x162030, fog: 0x1a3450 },

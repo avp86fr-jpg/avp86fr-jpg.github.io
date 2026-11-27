@@ -274,8 +274,8 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
   border-radius: 20px;
   padding: 12px 22px 16px;
   box-shadow: 0 10px 32px rgba(30, 50, 80, 0.18);
-  max-width: min(92vw, 760px);
-  margin: 0 auto 12px;
+  max-width: 100%;
+  margin: 0 0 8px;
   pointer-events: none;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -283,8 +283,8 @@ button.ascii-btn.lit { background: rgba(80, 255, 170, 0.22); color: #fff; }
 .title-wordmark {
   font-family: "Itim", "Patrick Hand", sans-serif;
   font-weight: 400;
-  font-size: clamp(28px, 5.4vw, 58px);
-  line-height: 0.95;
+  font-size: clamp(36px, 5.8vw, 74px);
+  line-height: 0.92;
   margin: 0;
   color: #2a1e14;
   letter-spacing: 0.03em;
@@ -837,20 +837,22 @@ body.touch-portrait #hud-mission { top: 36px; }
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: min(92vw, 720px);
-  padding: 0 8px max(12px, env(safe-area-inset-bottom));
+  align-items: flex-start;
+  gap: 12px;
+  width: min(38vw, 560px);
+  margin: 0 0 max(28px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
+  padding: 0;
   padding-top: max(8px, env(safe-area-inset-top));
 }
 .title-nav, .album-nav {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   width: 100%;
   pointer-events: auto;
 }
+.album-nav:not(.title-nav) { justify-content: center; }
 #title-menu.album-panel, #title-menu.title-nav {
   position: relative;
   background: transparent;
@@ -1002,7 +1004,7 @@ body.touch-portrait #hud-mission { top: 36px; }
 @media (max-width: 900px), (max-height: 500px) {
   .title-cover { width: min(96vw, 860px); gap: 6px; padding-bottom: 8px; }
   .title-plaque { padding: 6px 12px 8px; margin-bottom: 4px; gap: 8px; }
-  .title-wordmark { font-size: clamp(22px, 5vw, 36px); }
+  .title-wordmark { font-size: clamp(28px, 4.6vw, 48px); }
   .title-tag, .speech-balloon.title-balloon { font-size: 13px; }
   .pilot-mark { width: 56px; height: 68px; }
   .album-cta { min-width: 120px; min-height: 40px; padding: 6px 12px; font-size: 15px; }
@@ -1037,9 +1039,9 @@ body.touch-portrait #hud-mission { top: 36px; }
   .pause-nav .album-cta { min-height: 40px; padding: 6px 12px; }
   .pause-sheet { width: min(100%, 520px); }
   .pause-sub { margin-bottom: 8px; }
-  .title-cover { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 8px 16px; }
+  .title-cover { flex-direction: column; flex-wrap: nowrap; justify-content: flex-end; align-items: flex-start; gap: 8px; width: min(42vw, 520px); margin-bottom: 12px; margin-left: max(16px, env(safe-area-inset-left)); }
   .title-cover .logo-slot { flex: 0 1 auto; }
-  .title-nav { flex: 1 1 280px; justify-content: flex-end; }
+  .title-nav { flex: 0 1 auto; justify-content: flex-start; }
   .album-cta { min-width: 110px; padding: 5px 12px; min-height: 36px; }
   .title-plaque { margin-bottom: 0; }
   .mission-map { grid-template-columns: 1fr 1fr 1fr 1fr; }

@@ -27,9 +27,10 @@ export const CAM = {
   fovPortrait: 62,
   near: 0.8,
   far: 6200,
-  chaseDist: 28,
-  chaseHeight: 10.8,
-  chaseLag: 4.2,
+  chaseDist: 30,
+  chaseHeight: 12.4,
+  chaseSide: 6.2,
+  chaseLag: 3.35,
 };
 
 /** Material IDs written to the ID target (0–255). */
@@ -219,24 +220,25 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // Behind/above the Courrier: 10–12 m up, ~26 m back, pitched 9° down so
-  // the upper-wing top and fuselage spine read, tail toward camera, centred.
+  // 3/4 rear-above: camera east of the Courrier so the plane sits to the
+  // right of frame on the title, slight right bank, pitched down at the bay.
   plane: { x: 16, y: 24, z: -1440 },
   look:  { x: 16, y: 18, z: -860 },
-  dist: 26,
-  height: 11.5,
-  side: 0.2,
+  dist: 28,
+  height: 12.2,
+  side: -9.2,
   fov: 52,
   shiftX: 0.0,
   shiftY: 0.04,
   planeScale: 1.28,
-  pitchDown: 9,
+  pitchDown: 8,
 };
 
 export const SPAWN = {
-  // Mid-runway, facing south over the open bay (heading -PI/2 = -Z).
-  // y is a fallback; startFreeFlight snaps to heightAt + gear.
-  airport: { x: 8, y: 6, z: -1100, heading: -Math.PI / 2 },
+  // Mid-runway, heading east along the strip (missions).
+  airport: { x: 8, y: 6, z: -1100, heading: 0 },
+  // Free ride: over the south bay, heading north at the island, open water below.
+  free: { x: 16, y: 32, z: -1440, heading: Math.PI / 2 },
   lagoon: { x: -720, y: 4, z: -1080, heading: 0.4 },
   cliff: { x: -800, y: 96, z: 1100, heading: 2.4 },
 };

@@ -177,7 +177,7 @@ function makeChurch() {
   g.name = "church";
   // Nave
   add(g, box(14, 10, 22, 0xfaf6ee, MAT.BUILDING), 0, 5, 2);
-  const roof = mesh(new THREE.ConeGeometry(13, 7, 4), 0xe02018, MAT.ROOF);
+  const roof = mesh(new THREE.ConeGeometry(13, 7, 4), 0xc45a3a, MAT.ROOF);
   roof.rotation.y = Math.PI / 4;
   roof.position.set(0, 13.5, 2);
   g.add(roof);
@@ -189,7 +189,7 @@ function makeChurch() {
   add(g, box(0.45, 4.4, 2.4, 0x1a2230, MAT.METAL), 3.95, 30.6, -10);
   add(g, box(0.45, 4.4, 2.4, 0x1a2230, MAT.METAL), -3.95, 30.6, -10);
   add(g, cyl(0.75, 0.9, 1.5, 8, 0xd4a02a, MAT.METAL), 0, 29.6, -10);
-  add(g, cone(5.6, 8.5, 4, 0xe02018, MAT.ROOF), 0, 38.4, -10);
+  add(g, cone(5.6, 8.5, 4, 0xc45a3a, MAT.ROOF), 0, 38.4, -10);
   add(g, box(0.38, 3.4, 0.38, 0xeeeeee, MAT.METAL), 0, 43.6, -10);
   add(g, box(1.7, 0.38, 0.38, 0xeeeeee, MAT.METAL), 0, 45.0, -10);
   add(g, box(2.4, 4.4, 0.35, 0x5a3a20, MAT.WOOD), 0, 2.4, 13.15);
@@ -723,9 +723,9 @@ function makeFallsMat() {
       varying vec2 vUv;
       void main() {
         float down = 1.0 - vUv.y;
-        vec3 deep = vec3(0.32, 0.58, 0.76);
-        vec3 mid  = vec3(0.62, 0.84, 0.94);
-        vec3 foam = vec3(0.93, 0.97, 1.00);
+        vec3 deep = vec3(0.22, 0.48, 0.68);
+        vec3 mid  = vec3(0.48, 0.72, 0.86);
+        vec3 foam = vec3(0.72, 0.86, 0.94);
         vec3 col = mix(deep, mid, smoothstep(0.0, 0.45, down));
         col = mix(col, foam, smoothstep(0.62, 1.0, down));
         // Soft scrolling streaks — no hard barcode bands, no square dots.
@@ -735,7 +735,7 @@ function makeFallsMat() {
         float streak = smoothstep(0.22, 0.0, abs(flow - 0.5) - 0.16);
         col = mix(col, foam, (ribbon * 0.35 + streak * 0.50) * (0.45 + down * 0.4));
         float edge = smoothstep(0.0, 0.07, vUv.x) * smoothstep(1.0, 0.93, vUv.x);
-        float a = 0.88 * edge;
+        float a = 0.78 * edge;
         gl_FragColor = vec4(col, a);
       }
     `,
@@ -1030,95 +1030,203 @@ function makeRunwayLights(parent, x0, x1, z, y, H = null) {
 
 
 
+
 function makeHangingKeep() {
-  // Original airborne ruin: a wide terraced mesa, a collapsed keep,
-  // rim trees, and water falling off the rim. Not a copy of any filmed city.
+  // Original floating island: rocky underside, hanging roots and vines,
+  // ruined keep and a great tree, water falling into mist, small companion rocks.
   const g = new THREE.Group();
   g.name = "hanging-keep";
-  const lime = 0xc8b894, limeLt = 0xd8c8a4, limeDk = 0x8a7a5c, moss = 0x3a6a32;
+  const lime = 0xc4b48c, limeLt = 0xd4c6a0, limeDk = 0x7a6a4c, moss = 0x3a6a32, vine = 0x2a5428;
 
-  const bodyGeo = new THREE.IcosahedronGeometry(1, 2);
+  // UV sphere (even rings) so the bowl has enough verts after the Y stretch.
+  // An icosahedron stretched 30 m deep turns into a handful of huge facets.
+  const bodyGeo = new THREE.SphereGeometry(1, 28, 20);
   const pos = bodyGeo.attributes.position;
   const col = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
     const top = Math.max(0, y);
     const bot = Math.max(0, -y);
-    // Wide platter (~95 x 80 m), thin living top, tapering roots beneath
-    const rx = 48 * (1 + bot * 0.12);
-    const rz = 40 * (1 + bot * 0.12);
-    const yOut = top * 8 - bot * 46;
-    x *= rx;
-    z *= rz;
-    y = yOut;
-    if (y > 6) y = 6 + (y - 6) * 0.12;
+    const jag = 1 + 0.06 * Math.sin(x * 4.4 + z * 3.6) + 0.04 * Math.sin(y * 5.0 + x * 2.4);
+    const rx = 44 * jag * (1 + bot * 0.10);
+    const rz = 38 * jag * (1 + bot * 0.09);
+    let yOut = top * 6.2 - bot * 24 * (1 + 0.08 * Math.abs(Math.sin(x * 3.2 + z * 2.6)));
+    x *= rx; z *= rz; y = yOut;
+    if (y > 5.2) y = 5.2 + (y - 5.2) * 0.08;
     pos.setXYZ(i, x, y, z);
-    const mossK = Math.max(0, (y + 4) / 12);
-    const shade = 0.80 + 0.20 * Math.sin(x * 0.08 + z * 0.07);
-    col[i * 3]     = (0.74 * (1 - mossK) + 0.28 * mossK) * shade;
-    col[i * 3 + 1] = (0.68 * (1 - mossK) + 0.46 * mossK) * shade;
-    col[i * 3 + 2] = (0.52 * (1 - mossK) + 0.22 * mossK) * shade;
+    const mossK = Math.max(0, Math.min(1, (y + 4) / 12));
+    const shade = 0.62 + 0.20 * Math.sin(x * 0.08 + z * 0.1);
+    // Warm rock, darker than daylight wash; moss toward the rim.
+    col[i * 3]     = (0.48 * (1 - mossK) + 0.28 * mossK) * shade;
+    col[i * 3 + 1] = (0.42 * (1 - mossK) + 0.46 * mossK) * shade;
+    col[i * 3 + 2] = (0.32 * (1 - mossK) + 0.22 * mossK) * shade;
   }
   bodyGeo.computeVertexNormals();
   retagGeometry(bodyGeo, MAT.ROCK, 0);
   const body = new THREE.Mesh(bodyGeo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    vertexColors: true, flatShading: true,
+    vertexColors: true, flatShading: false,
   })));
   body.userData.matId = MAT.ROCK;
   g.add(body);
 
-  for (const [x, z, s, h] of [[-10, 6, 9, 38], [12, -8, 8, 32], [4, 12, 7, 28], [-16, -10, 6, 24]]) {
-    const root = cone(s * 0.22, h, 6, limeDk, MAT.ROCK);
-    root.rotation.x = Math.PI;
-    root.position.set(x, -h * 0.35, z);
+  // Hanging stone roots — irregular, not a single pillar
+  for (const [x, z, r, h, lean] of [
+    [-12, 8, 5.5, 28, 0.18], [10, -10, 4.8, 24, -0.15],
+    [4, 14, 3.6, 20, 0.22], [-18, -6, 4.0, 22, -0.2],
+    [16, 4, 3.2, 18, 0.12], [-4, -14, 3.8, 21, 0.1],
+  ]) {
+    const root = cone(r * 0.18, h, 7, limeDk, MAT.ROCK);
+    root.rotation.x = Math.PI + lean;
+    root.rotation.z = lean * 0.6;
+    root.position.set(x, -h * 0.32, z);
     g.add(root);
   }
-
-  add(g, box(42, 1.6, 30, lime, MAT.ROCK), 0, 7.4, 0);
-  add(g, box(16, 8.5, 13, limeLt, MAT.BUILDING), -6, 12.2, -2);
-  add(g, box(8.5, 14, 8.5, lime, MAT.BUILDING), 9, 15.0, 3);
-  add(g, box(3.4, 2.4, 8.5, limeDk, MAT.ROCK), 9, 22.6, 3);
-  add(g, box(11, 5.8, 2.4, lime, MAT.BUILDING), 0, 11.0, 9);
-  add(g, box(2.4, 7, 11, limeDk, MAT.BUILDING), -16, 11.6, 0);
-  add(g, box(1.8, 8, 1.8, limeDk, MAT.ROCK), -2, 12.0, 13);
-  add(g, box(1.8, 6, 1.8, lime, MAT.ROCK), 3.6, 11.0, 13);
-  add(g, box(7, 1.5, 2, limeLt, MAT.ROCK), 0.8, 16.4, 13);
-  const pool = box(11, 0.45, 9, 0x3aa0c8, MAT.WATER_DEEP);
-  pool.position.set(5, 8.25, -11);
-  g.add(pool);
-
-  for (const [x, z, s] of [
-    [-24, -8, 1.25], [-20, 12, 1.1], [-10, 18, 1.0], [8, 18, 1.15],
-    [22, 9, 1.3], [24, -6, 1.05], [16, -18, 1.2], [-8, -18, 0.95],
-    [2, 16, 0.8], [-18, 2, 0.9],
-  ]) {
-    const tr = cyl(0.32 * s, 0.46 * s, 5.0 * s, 5, 0x5a3a22, MAT.WOOD);
-    tr.position.set(x, 8.2 + 2.5 * s, z);
-    g.add(tr);
-    const leaf = mesh(new THREE.SphereGeometry(2.6 * s, 6, 5), moss, MAT.FOLIAGE);
-    leaf.position.set(x, 8.2 + 6.2 * s, z);
+  // Vines
+  for (const [x, z, h] of [[-20, 2, 16], [18, -8, 14], [8, 16, 12], [-8, -16, 15], [22, 6, 11], [-16, 12, 13]]) {
+    const v = cyl(0.12, 0.18, h, 4, vine, MAT.FOLIAGE);
+    v.position.set(x, -h * 0.25, z);
+    v.rotation.z = (x > 0 ? 0.15 : -0.15);
+    g.add(v);
+    const leaf = mesh(new THREE.SphereGeometry(0.7, 5, 4), moss, MAT.FOLIAGE);
+    leaf.position.set(x * 0.96, -h * 0.55, z);
     g.add(leaf);
   }
 
-  const fallGeo = new THREE.PlaneGeometry(8.5, 90, 1, 20);
+  // Living terrace
+  add(g, box(40, 1.5, 28, lime, MAT.ROCK), 0, 6.6, 0);
+  // Ruined keep + broken arch, overgrown
+  add(g, box(14, 9, 12, limeLt, MAT.BUILDING), -7, 11.6, -1);
+  add(g, box(7.5, 16, 7.5, lime, MAT.BUILDING), 8, 15.0, 3);
+  add(g, box(3.2, 2.2, 7.5, limeDk, MAT.ROCK), 8, 23.4, 3);
+  add(g, box(10, 5.2, 2.2, lime, MAT.BUILDING), 0, 10.0, 9);
+  add(g, box(2.2, 6.4, 10, limeDk, MAT.BUILDING), -16, 10.5, 1);
+  // broken arch
+  add(g, box(1.7, 7.5, 1.7, limeDk, MAT.ROCK), -2, 10.8, 12);
+  add(g, box(1.7, 5.6, 1.7, lime, MAT.ROCK), 3.4, 9.9, 12);
+  add(g, box(6.8, 1.4, 1.9, limeLt, MAT.ROCK), 0.7, 15.0, 12);
+  // ivy patches on the walls
+  for (const [x, y, z, s] of [[-7, 10, 5.2, 2.4], [8, 14, 7.1, 1.8], [0, 11, 10.2, 1.6], [-16, 11, 4, 1.7]]) {
+    const ivy = mesh(new THREE.SphereGeometry(s, 5, 4), moss, MAT.FOLIAGE);
+    ivy.scale.set(1.2, 0.55, 0.4);
+    ivy.position.set(x, y, z);
+    g.add(ivy);
+  }
+
+  // Great tree on the west terrace
+  const tr = cyl(0.55, 0.9, 10, 6, 0x5a3a22, MAT.WOOD);
+  tr.position.set(-14, 12.0, -4);
+  g.add(tr);
+  for (const [ox, oy, oz, r] of [[0, 7, 0, 5.2], [3.2, 5.6, 1.4, 3.6], [-3.0, 5.8, -1.6, 3.4], [1.2, 8.4, -2, 2.8], [-1.5, 8.2, 2.2, 2.6]]) {
+    const leaf = mesh(new THREE.SphereGeometry(r, 8, 6), moss, MAT.FOLIAGE);
+    leaf.position.set(-14 + ox, 12.0 + oy, -4 + oz);
+    g.add(leaf);
+  }
+  // Smaller rim trees
+  for (const [x, z, s] of [[16, 12, 0.95], [20, -8, 1.1], [10, -16, 0.85], [-6, -16, 0.9], [4, 16, 0.7]]) {
+    const t2 = cyl(0.22 * s, 0.36 * s, 4.4 * s, 5, 0x5a3a22, MAT.WOOD);
+    t2.position.set(x, 7.4 + 2.2 * s, z);
+    g.add(t2);
+    const leaf = mesh(new THREE.SphereGeometry(2.2 * s, 6, 5), moss, MAT.FOLIAGE);
+    leaf.position.set(x, 7.4 + 5.4 * s, z);
+    g.add(leaf);
+  }
+
+  const pool = box(12, 0.4, 9, 0x3a90b8, MAT.WATER_DEEP);
+  pool.position.set(6, 7.4, -10);
+  g.add(pool);
+
+  // Waterfalls — crossed cards so they never collapse to an edge-on stick
+  const fallA = new THREE.PlaneGeometry(14, 38, 1, 14);
+  const fallB = fallA.clone();
+  fallB.rotateY(Math.PI / 2);
+  const fallGeo = mergeGeos([fallA, fallB], MAT.WATERFALL);
   retagGeometry(fallGeo, MAT.WATERFALL, 1);
   const sheets = [];
   const s1 = new THREE.Mesh(fallGeo, makeFallsMat());
   s1.name = "falls";
-  s1.position.set(5, 8.2 - 45, -16);
-  s1.rotation.y = Math.PI;
-  g.add(s1);
-  sheets.push(s1);
+  s1.position.set(8, -14, -40);
+  s1.rotation.y = Math.PI + 0.18;
+  g.add(s1); sheets.push(s1);
   const s2 = new THREE.Mesh(fallGeo.clone(), makeFallsMat());
   s2.name = "falls";
-  s2.position.set(26, 7.8 - 42, -2);
-  s2.rotation.y = Math.PI * 0.5;
-  s2.scale.set(0.75, 0.9, 1);
+  s2.position.set(36, -14, 6);
+  s2.rotation.y = Math.PI * 0.5 - 0.2;
+  s2.scale.set(0.72, 0.82, 0.72);
   if (s2.material.uniforms && s1.material.uniforms) s2.material.uniforms.uTime = s1.material.uniforms.uTime;
-  g.add(s2);
-  sheets.push(s2);
+  g.add(s2); sheets.push(s2);
+  const s3 = new THREE.Mesh(fallGeo.clone(), makeFallsMat());
+  s3.name = "falls";
+  s3.position.set(-14, -13, -36);
+  s3.rotation.y = Math.PI - 0.4;
+  s3.scale.set(0.55, 0.7, 0.55);
+  if (s3.material.uniforms && s1.material.uniforms) s3.material.uniforms.uTime = s1.material.uniforms.uTime;
+  g.add(s3); sheets.push(s3);
   g.userData.sheets = sheets;
-  g.userData.uTime = s1.material.uniforms && s1.material.uniforms.uTime;
+
+  // Plunge mist (opaque soft puffs — no id-alpha transparency bug)
+  const mistMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0xe8f2f8, emissive: 0xd8e8f0, emissiveIntensity: 0.35, flatShading: false,
+  }));
+  mistMat.userData.matId = MAT.CLOUD;
+  const mistGeo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
+  const mist = new THREE.InstancedMesh(mistGeo, mistMat, 10);
+  mist.name = "mist";
+  const md = new THREE.Object3D();
+  const mistSpots = [
+    [8, -36, -42, 5.5], [14, -40, -38, 4.2], [2, -38, -44, 4.8],
+    [38, -32, 6, 4.0], [34, -36, 10, 3.4], [-14, -32, -38, 3.6],
+    [10, -44, -36, 3.2], [22, -30, -20, 2.8],
+    [4, -28, -46, 3.0], [40, -28, -2, 2.6],
+  ];
+  mistSpots.forEach((s, i) => {
+    md.position.set(s[0], s[1], s[2]);
+    md.scale.setScalar(s[3]);
+    md.updateMatrix();
+    mist.setMatrixAt(i, md.matrix);
+  });
+  mist.instanceMatrix.needsUpdate = true;
+  mist.count = mistSpots.length;
+  g.add(mist);
+
+  // Companion rocks
+  const rockGeo = new THREE.IcosahedronGeometry(1, 1);
+  retagGeometry(rockGeo, MAT.ROCK, 0);
+  const rockMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: limeDk, flatShading: false }));
+  const crumbs = new THREE.InstancedMesh(rockGeo, rockMat, 7);
+  crumbs.name = "keep-rocks";
+  [
+    [38, 2, -8, 4.2], [-36, -4, 10, 3.4], [28, -12, 22, 2.8],
+    [-24, 8, 28, 3.0], [42, -6, 14, 2.2], [-40, -10, -16, 2.6], [20, 14, -30, 2.4],
+  ].forEach((s, i) => {
+    md.position.set(s[0], s[1], s[2]);
+    md.scale.set(s[3], s[3] * 0.7, s[3] * 0.85);
+    md.rotation.set(s[1] * 0.1, i, 0.2);
+    md.updateMatrix();
+    crumbs.setMatrixAt(i, md.matrix);
+  });
+  crumbs.instanceMatrix.needsUpdate = true;
+  g.add(crumbs);
+
+  // Soft wreath of local cloud (one draw)
+  const wPuff = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
+  const wMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0xfffaf4, emissive: 0xfff3e0, emissiveIntensity: 0.22, flatShading: false,
+  }));
+  wMat.userData.matId = MAT.CLOUD;
+  const wreath = new THREE.InstancedMesh(wPuff, wMat, 8);
+  wreath.name = "keep-wreath";
+  [
+    [-36, 2, -10, 6], [38, 3, 10, 6.5], [10, 1, 34, 5.5], [-20, 0, 32, 5],
+    [30, -10, -26, 5.5], [-34, -8, -24, 5], [4, 6, -36, 6], [22, 8, 24, 4.5],
+  ].forEach((s, i) => {
+    md.position.set(s[0], s[1], s[2]);
+    md.scale.set(s[3], s[3] * 0.55, s[3] * 0.9);
+    md.updateMatrix();
+    wreath.setMatrixAt(i, md.matrix);
+  });
+  wreath.instanceMatrix.needsUpdate = true;
+  g.add(wreath);
+
   return g;
 }
 
@@ -1139,7 +1247,7 @@ function makeRoad(from, to, width = 8, H = null) {
     const z = from.z + nz * mid;
     const h = H ? H(x, z) : (from.y + (to.y - from.y) * (mid / (len || 1)));
     if (h < 2.4) continue;
-    const y = h + 0.08;
+    const y = h + 0.16;
     const m = slab(w, width, 0xcfc8bc, MAT.ROAD);
     m.position.set(x, y, z);
     orientHorizontal(m, yaw);
@@ -1217,19 +1325,91 @@ function mergeBucket(items, name, kind) {
   }
   geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
   let mat;
-  if (kind === "rock") mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.045, vertexColors: true, flatShading: true, matId: MAT.ROCK });
-  else if (kind === "stone") mat = triplanarLambert({ map: loadTex("stone.png"), scale: 0.06, vertexColors: true, flatShading: true, matId: MAT.ROCK });
-  else if (kind === "plaster") mat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, vertexColors: true, flatShading: true, matId: MAT.BUILDING });
-  else if (kind === "roof") mat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, vertexColors: true, flatShading: true, matId: MAT.ROOF });
+  if (kind === "rock") mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.028, vertexColors: true, flatShading: false, matId: MAT.ROCK });
+  else if (kind === "stone") mat = triplanarLambert({ map: loadTex("stone.png"), scale: 0.038, vertexColors: true, flatShading: false, matId: MAT.ROCK });
+  else if (kind === "plaster") mat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.055, vertexColors: true, flatShading: false, matId: MAT.BUILDING });
+  else if (kind === "roof") mat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.09, vertexColors: true, flatShading: false, matId: MAT.ROOF });
   else if (kind === "runway" || kind === "runwayHi") mat = patchMaterialIdAlpha(patchGlanceDiscard(new THREE.MeshBasicMaterial({ vertexColors: true, matId: MAT.RUNWAY, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })));
-  else if (kind === "road") mat = patchMaterialIdAlpha(patchGlanceDiscard(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, matId: MAT.ROAD, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
-  else mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  else if (kind === "road") mat = patchMaterialIdAlpha(patchGlanceDiscard(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false, matId: MAT.ROAD, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })));
+  else mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false }));
   if (kind === "runway" || kind === "runwayHi") retagGeometry(geo, MAT.RUNWAY, 0);
   if (kind === "road") retagGeometry(geo, MAT.ROAD, 0);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = name;
   mesh.userData.matId = (kind === "runway" || kind === "runwayHi") ? MAT.RUNWAY : mesh.userData.matId;
   mesh.matrixAutoUpdate = false;
+  return mesh;
+}
+
+
+function mergeVertexColors(group, skipNames = new Set()) {
+  // Merge into a single untextured Lambert mesh. Avoids triplanar atlas tiling
+  // and tint bleed on large painted volumes such as the hanging keep.
+  const items = [];
+  const toRemove = [];
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  group.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh) return;
+    let n = o;
+    while (n) {
+      if (skipNames.has(n.name)) return;
+      n = n.parent;
+    }
+    const mat = o.material;
+    if (!mat || mat.transparent || mat.isShaderMaterial) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    g.applyMatrix4(inv);
+    const idAttr = g.getAttribute("aId");
+    const mid = (idAttr ? idAttr.getX(0) : (o.userData.matId || 8));
+    const col = mat.color ? mat.color : new THREE.Color(0xffffff);
+    const vc = g.getAttribute("color");
+    const p = g.getAttribute("position");
+    const colors = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      if (vc) {
+        colors[i * 3] = vc.getX(i);
+        colors[i * 3 + 1] = vc.getY(i);
+        colors[i * 3 + 2] = vc.getZ(i);
+      } else {
+        colors[i * 3] = col.r;
+        colors[i * 3 + 1] = col.g;
+        colors[i * 3 + 2] = col.b;
+      }
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    items.push({ g, mid });
+    toRemove.push(o);
+  });
+  for (const o of toRemove) {
+    if (o.parent) o.parent.remove(o);
+  }
+  if (!items.length) return null;
+  const geo = mergeGeos(items.map((it) => it.g), items[0].mid);
+  const n = geo.getAttribute("position").count;
+  const cols = new Float32Array(n * 3);
+  let base = 0;
+  for (const it of items) {
+    const c = it.g.getAttribute("color");
+    const p = it.g.getAttribute("position");
+    for (let i = 0; i < p.count; i++) {
+      cols[(base + i) * 3] = c.getX(i);
+      cols[(base + i) * 3 + 1] = c.getY(i);
+      cols[(base + i) * 3 + 2] = c.getZ(i);
+    }
+    base += p.count;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+  geo.computeVertexNormals();
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    vertexColors: true, flatShading: false,
+  }));
+  mat.userData.matId = items[0].mid;
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = "keep-merged";
+  mesh.matrixAutoUpdate = false;
+  group.add(mesh);
   return mesh;
 }
 
@@ -1292,12 +1472,15 @@ function mergeGeos(geos, fallbackId = 8) {
   const pos = new Float32Array(n * 3);
   const nrm = new Float32Array(n * 3);
   const aid = new Float32Array(n * 2);
+  const hasUV = geos.some((g) => g.getAttribute("uv"));
+  const uv = hasUV ? new Float32Array(n * 2) : null;
   const idx = [];
   let base = 0;
   for (const g of geos) {
     const p = g.getAttribute("position");
     const nn = g.getAttribute("normal");
     const id = g.getAttribute("aId");
+    const uvs = g.getAttribute("uv");
     for (let i = 0; i < p.count; i++) {
       pos[(base + i) * 3] = p.getX(i);
       pos[(base + i) * 3 + 1] = p.getY(i);
@@ -1309,6 +1492,10 @@ function mergeGeos(geos, fallbackId = 8) {
       }
       if (id) { aid[(base + i) * 2] = id.getX(i); aid[(base + i) * 2 + 1] = id.getY(i); }
       else { aid[(base + i) * 2] = fallbackId; }
+      if (uv && uvs) {
+        uv[(base + i) * 2] = uvs.getX(i);
+        uv[(base + i) * 2 + 1] = uvs.getY(i);
+      }
     }
     if (g.index) {
       const ia = g.index.array;
@@ -1322,6 +1509,7 @@ function mergeGeos(geos, fallbackId = 8) {
   out.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   out.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
   out.setAttribute("aId", new THREE.BufferAttribute(aid, 2));
+  if (uv) out.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
   out.setIndex(idx);
   out.computeBoundingSphere();
   return out;
@@ -1333,14 +1521,15 @@ function makeCoastalCliffs(H) {
   const colors = [];
   const indices = [];
   // Only the west limestone cape and the far-east headland — never a wall in front of the airport.
+  // East and far-east headlands only. The west cape is sculpted in the
+  // heightfield — a coarse addon mesh there read as giant khaki prisms.
   const ranges = [
-    { x0: -480, x1: -40, z0: -1470, z1: -1080 },
-    { x0: 60, x1: 300, z0: -1420, z1: -1200 },
-    { x0: 520, x1: 900, z0: -1400, z1: -1080 },
+    { x0: 80, x1: 280, z0: -1420, z1: -1220 },
+    { x0: 540, x1: 880, z0: -1400, z1: -1120 },
   ];
   const pts = [];
   for (const R of ranges) {
-    for (let x = R.x0; x <= R.x1; x += 7) {
+    for (let x = R.x0; x <= R.x1; x += 4) {
       let zLand = null, h = 0;
       for (let z = R.z0; z <= R.z1; z += 5) {
         const hh = H(x, z);
@@ -1417,7 +1606,7 @@ function makeCoastalCliffs(H) {
   geo.setIndex(indices);
   geo.computeVertexNormals();
   retagGeometry(geo, MAT.ROCK, 0);
-  const mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.09, vertexColors: true, flatShading: true, matId: MAT.ROCK });
+  const mat = triplanarLambert({ map: loadTex("rock.png"), scale: 0.09, vertexColors: true, flatShading: false, matId: MAT.ROCK });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.userData.matId = MAT.ROCK;
   mesh.name = "cliffs";
@@ -1580,7 +1769,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Near the flight path (runway / hangar) = real houses with doors, windows, chimneys.
   // Further up the hill = denser instanced impostors so the postcard still reads as a town.
   const houseColors = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
-  const roofColors = [0xe02018, 0xc41010, 0xff3020, 0xd01814, 0xff3a22];
+  const roofColors = [0xc45a3a, 0xb04a32, 0xd46a48, 0xa84830, 0xbe6240];
   const spots = [];
   const chimneys = [];
   const winData = [];
@@ -1660,8 +1849,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   if (farList.length) {
     const farWallGeo = retagGeometry(new THREE.BoxGeometry(6.2, 4.6, 6.0), MAT.BUILDING, 0);
     const farRoofGeo = retagGeometry(gableRoofGeo(6.2, 6.0, 2.7), MAT.ROOF, 0);
-    const farWallMat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, color: 0xf6efe0, flatShading: true, matId: MAT.BUILDING });
-    const farRoofMat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, color: 0xd01814, vertexColors: false, flatShading: true, matId: MAT.ROOF });
+    const farWallMat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, color: 0xf6efe0, flatShading: false, matId: MAT.BUILDING });
+    const farRoofMat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, color: 0xb85a3c, vertexColors: false, flatShading: false, matId: MAT.ROOF });
     const farWalls = new THREE.InstancedMesh(farWallGeo, farWallMat, farList.length);
     const farRoofs = new THREE.InstancedMesh(farRoofGeo, farRoofMat, farList.length);
     farWalls.name = "far-house";
@@ -1802,7 +1991,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   for (const f of farms) {
     const y = H(f.x, f.z);
     if (y < 6) continue;
-    const fh = house(8.2, 7.2, 5.0, 3.1, 0xf6efe0, 0xc41010, true);
+    const fh = house(8.2, 7.2, 5.0, 3.1, 0xf6efe0, 0xb04a32, true);
     fh.position.set(f.x, y, f.z);
     fh.rotation.y = f.yaw;
     group.add(fh);
@@ -2000,9 +2189,11 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   ));
 
   const hangingKeep = makeHangingKeep();
+  hangingKeep.name = "hanging-keep";
   hangingKeep.position.set(LANDMARKS.hangingKeep.x, 368, LANDMARKS.hangingKeep.z);
   hangingKeep.rotation.y = 0.35;
   hangingKeep.scale.setScalar(1.0);
+  mergeVertexColors(hangingKeep, new Set(["falls", "mist", "keep-wreath", "keep-rocks"]));
   group.add(hangingKeep);
 
   // Town lamps
@@ -2019,7 +2210,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Collapse each boat/steamer to a handful of meshes so they can still
   // bob as groups without blowing the 150-draw cap.
   for (const b of boats) mergeStatic(b, new Set(["smoke"]));
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged"]));
   group.add(makeCoastalCliffs(H));
   // keep boat meshes (they bob)
   scene.add(group);
@@ -2089,6 +2280,13 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       }
       if (falls.userData.sheets) {
         for (const sh of falls.userData.sheets) {
+          if (sh.material && sh.material.uniforms && sh.material.uniforms.uTime) {
+            sh.material.uniforms.uTime.value = time;
+          }
+        }
+      }
+      if (hangingKeep && hangingKeep.userData && hangingKeep.userData.sheets) {
+        for (const sh of hangingKeep.userData.sheets) {
           if (sh.material && sh.material.uniforms && sh.material.uniforms.uTime) {
             sh.material.uniforms.uTime.value = time;
           }

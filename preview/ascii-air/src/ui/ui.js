@@ -54,7 +54,7 @@ export function createUI(root, hooks) {
   const title = document.createElement("div");
   title.id = "title-screen";
   title.className = "hidden";
-  title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none;";
+  title.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;pointer-events:none;";
   title.innerHTML = `
     <div class="title-cover">
       <div class="logo-slot" id="logo"></div>

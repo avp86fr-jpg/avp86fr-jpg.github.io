@@ -5,25 +5,27 @@ import { TAU } from "../core/utils.js";
 
 function cloudPuff(mat) {
   const g = new THREE.Group();
-  const geo = retagGeometry(new THREE.SphereGeometry(1, 9, 7), MAT.CLOUD);
+  const geo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
   // Stacked cumulus cluster — enough vertical overlap that a chase view
   // never collapses the puff into a flat ellipse / UFO disc.
   const spots = [
-    [0, 0, 0, 1.7],
-    [1.65, 0.15, 0.35, 1.35],
-    [-1.55, 0.12, -0.3, 1.3],
-    [0.45, 0.18, 1.25, 1.15],
-    [-0.55, 0.12, -1.15, 1.1],
-    [0.2, 1.1, 0.15, 1.28],
-    [1.15, 0.9, -0.45, 0.95],
-    [-1.05, 0.95, 0.4, 0.95],
-    [0.15, 1.95, 0.08, 1.0],
-    [0.75, 1.6, 0.45, 0.72],
-    [-0.65, 1.55, -0.3, 0.68],
-    [0.1, 2.75, 0.06, 0.88],
-    [0.4, 3.4, 0.12, 0.58],
-    [-0.28, 3.15, -0.16, 0.52],
-    [0.05, 3.9, 0.04, 0.38],
+    [0, 0, 0, 1.9],
+    [1.85, 0.2, 0.4, 1.5],
+    [-1.75, 0.16, -0.35, 1.45],
+    [0.55, 0.22, 1.45, 1.25],
+    [-0.65, 0.16, -1.3, 1.2],
+    [1.2, 1.15, 1.0, 1.15],
+    [-1.15, 1.05, -0.9, 1.1],
+    [0.25, 1.35, 0.18, 1.45],
+    [1.25, 1.15, -0.5, 1.05],
+    [-1.15, 1.2, 0.45, 1.05],
+    [0.2, 2.25, 0.1, 1.15],
+    [0.9, 1.9, 0.5, 0.85],
+    [-0.8, 1.85, -0.35, 0.82],
+    [0.15, 3.15, 0.08, 0.95],
+    [0.45, 3.7, 0.14, 0.62],
+    [-0.32, 3.45, -0.16, 0.56],
+    [0.06, 4.2, 0.05, 0.42],
   ];
   for (const [x, y, z, s] of spots) {
     const m = new THREE.Mesh(geo, mat);
@@ -42,8 +44,8 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0xffffff,
     vertexColors: true,
-    emissive: 0xfff3dc,
-    emissiveIntensity: 0.28,
+    emissive: 0xfff4e4,
+    emissiveIntensity: 0.22,
     flatShading: false,
   }));
   const clouds = new THREE.Group();
@@ -71,16 +73,13 @@ export function createSkyProps(scene, quality = "medium") {
   const heroSpots = [
     // Higher, fewer mid-distance cumulus — leave blue sky at the zenith
     // and keep banks off the top edge of the postcard.
-    [-380, 380, -780, 36],
-    [ 420, 360, -820, 34],
-    [-560, 410, -420, 38],
-    [ 580, 390, -360, 36],
-    [-700, 430, 80, 40],
-    [ 720, 400, 40, 38],
-    [-200, 460, 520, 34],
-    [ 260, 450, 480, 32],
-    [ 40, 500, -200, 30],
-    [ 180, 520, -640, 28],
+    [-320, 260, -820, 48],
+    [ 360, 250, -860, 46],
+    [-640, 280, -200, 52],
+    [ 680, 270, -160, 50],
+    [-200, 310, 560, 42],
+    [ 240, 300, 540, 40],
+    [ 40, 340, -280, 36],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -95,11 +94,11 @@ export function createSkyProps(scene, quality = "medium") {
     const span = Math.max(0.001, ymax - ymin);
     for (let i = 0; i < pos.count; i++) {
       const k = (pos.getY(i) - ymin) / span;
-      // Sunlit cream-white crown, soft blue-violet undersides
-      const b = Math.pow(k, 0.85);
-      col[i * 3]     = 0.68 + 0.32 * b;
-      col[i * 3 + 1] = 0.78 + 0.20 * b;
-      col[i * 3 + 2] = 0.92 - 0.02 * b;
+      // Warm-lit crowns, lavender-blue recesses
+      const b = Math.pow(k, 0.75);
+      col[i * 3]     = 0.78 + 0.22 * b;
+      col[i * 3 + 1] = 0.82 + 0.16 * b;
+      col[i * 3 + 2] = 0.90 + 0.06 * b;
     }
     cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   }
@@ -129,28 +128,77 @@ export function createSkyProps(scene, quality = "medium") {
     cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
   }
   cloudInst.count = nCloud + heroSpots.length;
+
   group.add(cloudInst);
-  // Ink outline hulls (back-face, slightly larger) so cumulus read as ligne-claire volumes
-  const inkMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x7a92a8,
-    side: THREE.BackSide,
-    fog: true,
-    transparent: true,
-    opacity: 0.16,
-  }));
-  inkMat.userData.matId = MAT.CLOUD;
-  const cloudInk = new THREE.InstancedMesh(cloudGeo, inkMat, nCloud + heroSpots.length);
-  const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _m = new THREE.Matrix4();
-  for (let i = 0; i < cloudInst.count; i++) {
-    cloudInst.getMatrixAt(i, _m);
-    _m.decompose(_p, _q, _s);
-    _s.multiplyScalar(1.006);
-    _m.compose(_p, _q, _s);
-    cloudInk.setMatrixAt(i, _m);
+
+  // Two colossal horizon thunderheads — many soft volumes, one draw
+  function towerPuff(mat) {
+    const tg = new THREE.Group();
+    const geo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
+    const spots = [];
+    // Wide base, stacked body, anvil top
+    for (let k = 0; k < 14; k++) {
+      const yy = k * 0.42;
+      const rad = k < 14 ? 1.5 + k * 0.08 : 2.4 - (k - 14) * 0.12;
+      const anvil = k > 16 ? 1.0 + (k - 16) * 0.35 : 1.0;
+      const a = k * 2.2;
+      spots.push([Math.cos(a) * rad * 0.55 * anvil, yy, Math.sin(a) * rad * 0.45 * anvil, rad * 0.7]);
+    }
+    spots.push([0, 9.4, 0, 2.1], [1.8, 9.0, 0.6, 1.6], [-1.6, 8.9, -0.5, 1.5], [0.4, 10.0, 0.2, 1.2]);
+    for (const [x, y, z, s] of spots) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      m.scale.set(s * 1.15, s * 0.85, s * 1.05);
+      tg.add(m);
+    }
+    return tg;
   }
-  cloudInk.count = cloudInst.count;
-  cloudInk.instanceMatrix.needsUpdate = true;
-  group.add(cloudInk);
+  const towerSrc = towerPuff(cloudMat);
+  towerSrc.updateMatrixWorld(true);
+  const tgeos = [];
+  towerSrc.traverse((o) => {
+    if (!o.isMesh) return;
+    const g2 = o.geometry.clone();
+    g2.applyMatrix4(o.matrixWorld);
+    tgeos.push(g2);
+  });
+  const towerGeo = mergeSimple(tgeos, MAT.CLOUD);
+  {
+    const pos = towerGeo.getAttribute("position");
+    const col = new Float32Array(pos.count * 3);
+    let ymin = Infinity, ymax = -Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i);
+      if (y < ymin) ymin = y;
+      if (y > ymax) ymax = y;
+    }
+    const span = Math.max(0.001, ymax - ymin);
+    for (let i = 0; i < pos.count; i++) {
+      const b = Math.pow((pos.getY(i) - ymin) / span, 0.7);
+      col[i * 3]     = 0.76 + 0.24 * b;
+      col[i * 3 + 1] = 0.80 + 0.18 * b;
+      col[i * 3 + 2] = 0.90 + 0.06 * b;
+    }
+    towerGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  }
+  const towers = new THREE.InstancedMesh(towerGeo, cloudMat, 2);
+  towers.name = "cloud-towers";
+  const tdummy = new THREE.Object3D();
+  // East (left of postcard) and west (right) horizon walls
+  const towerSpots = [
+    [ 780, 120,  80, 24],
+    [-740, 130, 160, 22],
+  ];
+  towerSpots.forEach((s, i) => {
+    tdummy.position.set(s[0], s[1], s[2]);
+    tdummy.scale.set(s[3], s[3] * 1.15, s[3] * 0.95);
+    tdummy.rotation.y = i * 0.8;
+    tdummy.updateMatrix();
+    towers.setMatrixAt(i, tdummy.matrix);
+  });
+  towers.instanceMatrix.needsUpdate = true;
+  towers.count = 2;
+  group.add(towers);
 
   // Balloons — one instanced mesh (ambient; mission balloons stay separate)
   const balloonProto = makeBalloon(0xe06a4f);
@@ -205,7 +253,7 @@ export function createSkyProps(scene, quality = "medium") {
   group.add(blimp);
 
   // Birds
-  const birds = makeBirdFlock(18);
+  const birds = makeBirdFlock(36);
   group.add(birds.group);
 
   scene.add(group);
@@ -222,16 +270,12 @@ export function createSkyProps(scene, quality = "medium") {
         cloudMat.color.setHex(0x6a7a8a);
         cloudMat.emissive.setHex(0x3a4a58);
         cloudMat.emissiveIntensity = 0.12;
-        inkMat.color.setHex(0x2a3440);
-        inkMat.opacity = 0.85;
         if (balloonInst) balloonInst.visible = false;
         if (blimp) blimp.visible = false;
       } else {
         cloudMat.color.setHex(0xfffdf8);
-        cloudMat.emissive.setHex(0xfff3dc);
-        cloudMat.emissiveIntensity = 0.28;
-        inkMat.color.setHex(0x7a92a8);
-        inkMat.opacity = 0.16;
+        cloudMat.emissive.setHex(0xfff4e4);
+        cloudMat.emissiveIntensity = 0.16;
         if (balloonInst) balloonInst.visible = true;
         if (blimp) blimp.visible = true;
       }
@@ -248,7 +292,7 @@ export function createSkyProps(scene, quality = "medium") {
         const s = stormOn ? (c.baseS || c.s) * 1.28 : (c.baseS || c.s);
         c.y = y;
         dummy.position.set(c.x, y, c.z);
-        dummy.scale.set(s * (stormOn ? 1.15 : 1), s * (stormOn ? 0.92 : 0.88), s * (stormOn ? 1.35 : 1.05));
+        dummy.scale.set(s * (stormOn ? 1.15 : 1), s * (stormOn ? 0.92 : 1.18), s * (stormOn ? 1.35 : 1.05));
         dummy.rotation.y = c.a;
         dummy.updateMatrix();
         cloudInst.setMatrixAt(i, dummy.matrix);
@@ -258,22 +302,12 @@ export function createSkyProps(scene, quality = "medium") {
         const yy = stormOn ? 70 + y * 0.22 : y;
         const ss = stormOn ? s * 1.45 : s;
         dummy.position.set(x, yy, z);
-        dummy.scale.set(ss * (stormOn ? 1.2 : 1), ss * (stormOn ? 0.9 : 0.86), ss * (stormOn ? 1.4 : 1.08));
+        dummy.scale.set(ss * (stormOn ? 1.2 : 1), ss * (stormOn ? 0.9 : 1.22), ss * (stormOn ? 1.4 : 1.08));
         dummy.rotation.y = i * 0.7;
         dummy.updateMatrix();
         cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
       }
       cloudInst.instanceMatrix.needsUpdate = true;
-      if (cloudInk) {
-        for (let i = 0; i < cloudInst.count; i++) {
-          cloudInst.getMatrixAt(i, _m);
-          _m.decompose(_p, _q, _s);
-          _s.multiplyScalar(1.006);
-          _m.compose(_p, _q, _s);
-          cloudInk.setMatrixAt(i, _m);
-        }
-        cloudInk.instanceMatrix.needsUpdate = true;
-      }
 
       for (let i = 0; i < balloons.length; i++) {
         const b = balloons[i];
@@ -389,14 +423,22 @@ function makeBirdFlock(n) {
   inst.name = "seagulls";
   const dummy = new THREE.Object3D();
   const data = [];
+  const roosts = [
+    [LANDMARKS.beach.x, LANDMARKS.beach.z - 20],
+    [LANDMARKS.town.x + 40, LANDMARKS.town.z - 80],
+    [LANDMARKS.harbor.x, LANDMARKS.harbor.z - 30],
+    [430, -720],
+    [LANDMARKS.lighthouse.x - 40, LANDMARKS.lighthouse.z + 20],
+  ];
   for (let i = 0; i < n; i++) {
+    const ro = roosts[i % roosts.length];
     data.push({
-      a: (i / n) * TAU,
-      r: 70 + (i % 8) * 16,
-      y: 14 + (i % 6) * 3.5,
+      a: (i / n) * TAU + (i % 5) * 0.4,
+      r: 40 + (i % 8) * 14,
+      y: 16 + (i % 7) * 4.2 + (i % roosts.length) * 3,
       s: 1.0 + (i % 3) * 0.15,
-      cx: LANDMARKS.beach.x + (i % 5 - 2) * 18,
-      cz: LANDMARKS.beach.z - 20 - (i % 4) * 10,
+      cx: ro[0] + (i % 5 - 2) * 10,
+      cz: ro[1] - (i % 4) * 8,
     });
   }
   return {

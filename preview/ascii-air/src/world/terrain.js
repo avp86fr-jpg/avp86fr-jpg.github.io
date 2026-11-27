@@ -481,11 +481,11 @@ export function createTerrain(quality = "medium") {
       case MAT.GRASS: {
         const n2 = fbm(x * 0.007, z * 0.007, 3, 7);
         const terrace = Math.abs(Math.sin(h * 0.62 + x * 0.028 + z * 0.018)) < 0.07;
-        const ochre = [0.62 + n * 0.05, 0.50 + n * 0.03, 0.22];
-        const sage  = [0.36, 0.56, 0.26];
-        const olive = [0.28, 0.48, 0.16];
-        const pine  = [0.14, 0.38, 0.14];
-        const meadow= [0.32 + n * 0.05, 0.58 + n * 0.06, 0.18];
+        const ochre = [0.62 + n * 0.05, 0.54 + n * 0.04, 0.22];
+        const sage  = [0.40, 0.62, 0.30];
+        const olive = [0.32, 0.54, 0.20];
+        const pine  = [0.18, 0.42, 0.16];
+        const meadow= [0.38 + n * 0.06, 0.64 + n * 0.07, 0.22];
         let col;
         if (n2 < 0.38) {
           const k = Math.min(1, (0.38 - n2) / 0.14);
@@ -600,13 +600,12 @@ export function createTerrain(quality = "medium") {
     } else {
       let sh = 0.78 + 0.34 * ndl;
       const slope = 1 - nrm[o*3+1];
-      if (slope > 0.24 && hgt > 1.2) {
-        const hatch = Math.sin(x * 0.62 + hgt * 0.8) * Math.sin(z * 0.2 + x * 0.1);
-        if (hatch > 0.55) sh *= 0.82;
-        if (hatch > 0.82) sh *= 0.8;
+      if (slope > 0.28 && hgt > 1.2) {
+        const hatch = Math.sin(x * 0.32 + hgt * 0.4) * Math.sin(z * 0.12 + x * 0.08);
+        if (hatch > 0.62) sh *= 0.93;
       }
-      if (sh < 0.72) sh = 0.72;
-      if (sh > 1.12) sh = 1.12;
+      if (sh < 0.80) sh = 0.80;
+      if (sh > 1.10) sh = 1.10;
       col[o*3] *= sh; col[o*3+1] *= sh; col[o*3+2] *= sh;
     }
   }

@@ -183,22 +183,21 @@ function startFreeFlight() {
   currentMissionId = null;
   missions.clear();
   const id = save.unlocked[save.plane] ? save.plane : "trainer";
-  const base = SPAWN.airport;
+  const base = SPAWN.free || SPAWN.airport;
   const x = base.x, z = base.z;
-  const heading = Number.isFinite(base.heading) ? base.heading : -Math.PI / 2;
+  const heading = Number.isFinite(base.heading) ? base.heading : Math.PI / 2;
   const gear = (PLANES[id] && PLANES[id].gearHeight) || 1.15;
-  const ground = (island && typeof island.heightAt === "function") ? island.heightAt(x, z) : base.y;
-  const groundY = (Number.isFinite(ground) ? ground : 4.2) + gear + 0.12;
-  // Gentle airborne start over the mid-runway, looking out over the open bay.
-  const agl = 20;
-  const y = groundY + agl;
+  const ground = (island && typeof island.heightAt === "function") ? island.heightAt(x, z) : 0;
+  const overWater = !Number.isFinite(ground) || ground < 2.0;
+  const y = overWater ? (base.y || 32) : (ground + gear + 22);
   const spawn = { x, y, z, heading };
   resetCraft(craft, spawn, heading, id);
   craft.onGround = false;
-  craft.airspeed = 34;
-  craft.throttle = 0.62;
+  craft.airspeed = 36;
+  craft.throttle = 0.64;
   if (craft.verticalSpeed != null) craft.verticalSpeed = 0;
   if (craft.pitch != null) craft.pitch = 0.02;
+  craft.roll = 0.32;
   rebuildPlane(craft.id);
   clock.frozen = false;
   if (clock.hour < 6 || clock.hour > 20) clock.set(10);
@@ -212,6 +211,7 @@ function startFreeFlight() {
   autoPilotOn = false;
   input.resetThrottleLever?.(0);
   flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
+  syncPlaneMesh();
   markLast("free");
   autoPilotTarget = null;
   ui.showHUD();
@@ -244,6 +244,7 @@ function startMission(id) {
   markLast("mission", id);
   input.resetThrottleLever?.(0.75);
   flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
+  syncPlaneMesh();
   if (flyCam.playIntro) flyCam.playIntro(2.5);
   ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
@@ -821,7 +822,7 @@ function heroShot(opts = {}) {
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
-  craft.roll = 0.22;
+  craft.roll = 0.35;
   craft.pitch = -0.04;
   flyCam.snap(craft, false);
   if (island.flora && island.flora.refresh) island.flora.refresh(camera);
@@ -988,6 +989,7 @@ function exposeAPI() {
     getPaused: () => paused,
     render: () => {
       try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }) }); } catch {}
+      syncPlaneMesh();
       renderFrame(performance.now() / 1000, 1 / 60);
     },
     getCamInfo() {
