@@ -141,11 +141,13 @@ export function computeHeight(x, z) {
   }
   h = Math.max(h, capeH * Math.max(mask, capeCore));
   // Shear the west cape's south face into a JAGGED cliff, except the arch window
-  if (x < -20 && z < LANDMARKS.arch.z + 6) {
+  if (x < 90 && z < LANDMARKS.arch.z + 6) {
     const slot = (Math.abs(x - LANDMARKS.arch.x) < 11) && (z > LANDMARKS.arch.z - 22);
     if (!slot) {
       const edgeJitter = 11 * (fbm(x * 0.028, 3.1, 3, 17) - 0.5) + 7 * Math.sin(x * 0.065);
-      const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter;
+      // East of the arch, pull the lip north so the village sits on a cliff, not a tan ramp.
+      const pull = Math.max(0, Math.min(1, (x + 200) / 160)) * 18;
+      const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter + pull;
       if (z < edgeZ) {
         const faceDepth = 10 + 6 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
@@ -308,12 +310,17 @@ export function computeHeight(x, z) {
   // Inland cape shelf: a gently rolling terrace, not a ridged khaki dome.
   const capeInland = smoothstep(LANDMARKS.arch.z - 2, LANDMARKS.lighthouse.z + 10, z);
   h = Math.max(h, (28 + 5 * fbm(x * 0.03, z * 0.03, 2, 5)) * beachCape2 * capeInland);
-  // SE apron of the west cape (toward the runway): a grassy shelf, not a tan facet.
-  if (x > -90 && x < 90 && z < -1160 && z > -1280) {
-    const apron = smoothstep(-90, -20, x) * smoothstep(90, 20, x)
-      * smoothstep(-1160, -1190, z) * smoothstep(-1280, -1230, z);
-    const notCove = 1 - smoothstep(40, 16, dist2(x, z, 40, -1220));
-    h = flatten(h, 16 + 5 * fbm(x * 0.03, z * 0.03, 2, 6), apron * notCove * 0.78);
+  // SE shoulder of the west cape: vertical limestone lip, not a tan faceted ramp.
+  // Village bands sit at z >= -1236, x <= -90 — drop only seaward / east of them.
+  if (x > -100 && x < 100 && z < -1236) {
+    const lipZ = -1238 + 7 * Math.sin(x * 0.05) + 4 * (fbm(x * 0.03, 2.2, 2, 8) - 0.5);
+    if (z < lipZ) {
+      const faceDepth = 11 + 5 * fbm(x * 0.05, 1.4, 2, 11);
+      const drop = saturate((lipZ - z) / faceDepth);
+      const toe = Math.max(1.2, 1.2 + 2.4 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
+      h = lerp(h, toe, Math.pow(drop, 1.15));
+      if (drop > 0.98) h = Math.min(h, -2);
+    }
   }
 
   // South-east ochre sea-cliffs
@@ -345,11 +352,13 @@ export function computeHeight(x, z) {
   if (h < 0.45 && !nearLag && !nearCove && mask < 0.55) h = Math.min(h, bed);
 
   // Final cape cliff after pads / domes: a jagged limestone face, never a long rectangle
-  if (x < -20 && z < LANDMARKS.arch.z + 6) {
+  if (x < 90 && z < LANDMARKS.arch.z + 6) {
     const slot = (Math.abs(x - LANDMARKS.arch.x) < 11) && (z > LANDMARKS.arch.z - 22);
     if (!slot) {
       const edgeJitter = 11 * (fbm(x * 0.028, 3.1, 3, 17) - 0.5) + 7 * Math.sin(x * 0.065);
-      const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter;
+      // East of the arch, pull the lip north so the village sits on a cliff, not a tan ramp.
+      const pull = Math.max(0, Math.min(1, (x + 200) / 160)) * 18;
+      const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter + pull;
       if (z < edgeZ) {
         const faceDepth = 10 + 6 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);

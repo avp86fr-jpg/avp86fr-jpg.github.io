@@ -404,19 +404,19 @@ function makeSteamer(color = 0x1e4a78) {
     }
   }
   const puffMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    color: 0xcec8c0, emissive: 0xb8b0a8, emissiveIntensity: 0.12,
-    flatShading: true, transparent: true, opacity: 0.5, depthWrite: false,
+    color: 0xd8d2c8, emissive: 0xc4bcb2, emissiveIntensity: 0.22,
+    flatShading: true, transparent: true, opacity: 0.72, depthWrite: false,
   }));
   puffMat.userData.matId = MAT.CLOUD;
   const dummy = new THREE.Object3D();
-  const smoke = new THREE.InstancedMesh(new THREE.SphereGeometry(0.5, 6, 5), puffMat, 6);
+  const smoke = new THREE.InstancedMesh(new THREE.SphereGeometry(0.7, 6, 5), puffMat, 10);
   smoke.name = "smoke";
-  smoke.position.set(0, 8.3, 0.4);
+  smoke.position.set(0, 8.4, 0.4);
   smoke.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   smoke.frustumCulled = false;
-  for (let i = 0; i < 6; i++) {
-    dummy.position.set(0, i * 0.65, 0);
-    dummy.scale.setScalar(0.8 + i * 0.12);
+  for (let i = 0; i < 10; i++) {
+    dummy.position.set((i % 2) * 0.3, i * 0.85, (i % 3) * 0.15);
+    dummy.scale.setScalar(1.0 + i * 0.22);
     dummy.updateMatrix();
     smoke.setMatrixAt(i, dummy.matrix);
   }
@@ -1074,97 +1074,131 @@ function makeHangingKeep() {
   const stoneLt = 0xd4c6a8, stone = 0xc4b496, stoneDk = 0x8a7a62;
   const moss = 0x3a6e32, grass = 0x4a8a3a, vine = 0x2a5428, earth = 0x5a4632;
 
-  function cragGeo({ rx, rz, top, depth, segs = 32, rings = 16, seed = 1 }) {
+  function cragGeo({ rx, rz, top, depth, segs = 40, rings = 22, seed = 1 }) {
     const geo = new THREE.CylinderGeometry(1, 1, 1, segs, rings, false);
     const pos = geo.attributes.position;
     const col = new Float32Array(pos.count * 3);
+    const fract = (v) => v - Math.floor(v);
+    const hsh = (a, b) => fract(Math.sin(a * 127.1 + b * 311.7 + seed * 19.2) * 43758.5453);
     for (let i = 0; i < pos.count; i++) {
       let x = pos.getX(i), y0 = pos.getY(i), z = pos.getZ(i);
       const ty = y0 + 0.5;
       const ang = Math.atan2(z, x);
       const rad0 = Math.hypot(x, z);
-      let jag = 1
-        + 0.18 * Math.sin(ang * 5 + seed)
-        + 0.11 * Math.sin(ang * 9 + seed * 1.7)
-        + 0.07 * Math.sin(ang * 3 + ty * 7 + seed)
-        + 0.05 * Math.sin(ang * 13 + seed * 0.6);
-      if (ty < 0.38) {
-        jag += 0.22 * Math.max(0, Math.sin(ang * 4.2 + seed * 2.1)) * (1 - ty / 0.38);
-      }
+      // Irregular multi-lobe plan — not a circle, not a bowl.
+      let plan = 0.70
+        + 0.22 * Math.sin(ang * 3 + seed)
+        + 0.14 * Math.sin(ang * 5 + seed * 2.1)
+        + 0.10 * Math.sin(ang * 8 + seed * 0.7)
+        + 0.07 * Math.sin(ang * 13 + seed * 1.4);
+      if (hsh(ang, 1.3) > 0.84) plan *= 0.62; // broken bites
+      if (hsh(ang, 4.2) > 0.90) plan *= 1.18; // jutting buttress
+      const shelf = Math.floor((1 - ty) * 7);
+      const ledge = 1.0 + 0.11 * Math.sin(shelf * 2.3 + seed + ang);
       let prof;
-      if (ty > 0.88) {
-        prof = 0.90 + (1 - ty) * 0.5;
+      if (ty > 0.90) {
+        // Uneven crown, not a flat pancake
+        prof = plan * (0.82 + 0.20 * Math.sin(ang * 4 + seed) + 0.08 * hsh(ang, 9));
       } else if (ty > 0.58) {
-        prof = 1.0 + 0.04 * Math.sin(ang * 6 + seed);
-      } else if (ty > 0.30) {
-        const k = (0.58 - ty) / 0.28;
-        prof = 1.0 - 0.32 * k * k + 0.14 * Math.sin(ang * 6.5 + seed) * k;
+        // Near-vertical upper walls, slight flare/inset
+        prof = plan * (0.96 + 0.16 * Math.sin(ang * 3.2 + seed) * (ty < 0.78 ? 1 : 0.25)) * ledge;
+      } else if (ty > 0.22) {
+        // Mid: overhangs and undercuts (wider than the crown in places)
+        const over = 1.05 + 0.28 * Math.max(0, Math.sin(ang * 2.6 + seed * 1.3));
+        const under = 1.0 - 0.18 * Math.max(0, Math.sin(ang * 4.1 + seed * 2.0 + 1));
+        prof = plan * over * under * ledge;
       } else {
-        const k = ty / 0.30;
-        prof = 0.38 + 0.30 * k + 0.22 * Math.abs(Math.sin(ang * 3.4 + seed * 1.3));
+        // Broken tapering teeth — not a smooth cone
+        const teeth = 0.28 + 0.48 * Math.abs(Math.sin(ang * 5 + seed)) + 0.22 * Math.abs(Math.sin(ang * 11 + seed * 1.1));
+        prof = plan * teeth;
       }
-      const rMul = (rad0 < 0.001 ? 0 : 1) * jag * prof;
-      const yOut = -depth + (top + depth) * ty;
-      const y = ty > 0.84 ? -depth + (top + depth) * (0.84 + (ty - 0.84) * 0.28) : yOut;
+      const rMul = (rad0 < 0.001 ? 0 : 1) * prof;
+      let y = -depth + (top + depth) * ty;
+      // Irregular top and strata notches
+      if (ty > 0.84) y += 2.4 * Math.sin(ang * 3 + seed) * ((ty - 0.84) / 0.16);
+      y += 0.7 * Math.sin(ty * 22 + seed) * (ty < 0.92 ? 1 : 0.3);
       pos.setXYZ(i, x * rx * rMul, y, z * rz * rMul);
-      const shade = 0.86 + 0.14 * Math.sin(ang * 3 + seed) + 0.06 * Math.sin(ty * 11);
+      // Horizontal strata tints + moss in folds
+      const band = shelf % 3;
       let r, gC, b;
-      if (ty > 0.80) {
-        const k = Math.min(1, (ty - 0.80) / 0.16);
-        const rr = 0.46 * shade, rg = 0.40 * shade, rb = 0.32 * shade;
-        r = rr + (0.32 - rr) * k;
-        gC = rg + (0.54 - rg) * k;
-        b = rb + (0.22 - rb) * k;
-      } else {
-        const deep = Math.max(0, (0.45 - ty) / 0.45);
-        r = (0.56 - deep * 0.10) * shade;
-        gC = (0.51 - deep * 0.08) * shade;
-        b = (0.44 - deep * 0.05) * shade;
-      }
-      col[i * 3] = r; col[i * 3 + 1] = gC; col[i * 3 + 2] = b;
+      if (band === 0) { r = 0.58; gC = 0.50; b = 0.40; }
+      else if (band === 1) { r = 0.72; gC = 0.64; b = 0.50; }
+      else { r = 0.48; gC = 0.44; b = 0.36; }
+      const shade = 0.82 + 0.18 * Math.sin(ang * 2.4 + seed) + 0.06 * Math.sin(ty * 14);
+      const crease = plan < 0.62 || hsh(ang, ty) < 0.16;
+      if (crease && ty < 0.88) { r = 0.28; gC = 0.36; b = 0.20; } // mossy fold
+      if (ty > 0.90) { r = r * 0.55 + 0.28; gC = gC * 0.45 + 0.42; b = b * 0.5 + 0.16; }
+      col[i * 3] = r * shade; col[i * 3 + 1] = gC * shade; col[i * 3 + 2] = b * shade;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
     geo.computeVertexNormals();
     retagGeometry(geo, MAT.ROCK, 0);
     const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-      vertexColors: true, flatShading: false,
+      vertexColors: true, flatShading: true,
     })));
     mesh.userData.matId = MAT.ROCK;
     return mesh;
   }
 
-  // Upper (larger) and lower (offset toward the SW / postcard camera) tiers.
-  const upper = cragGeo({ rx: 40, rz: 34, top: 7.5, depth: 28, seed: 1.2 });
+  // Upper mass and a smaller, offset lower island (not a second cake).
+  const upper = cragGeo({ rx: 42, rz: 34, top: 8.0, depth: 34, seed: 1.2 });
   g.add(upper);
-  const lower = cragGeo({ rx: 26, rz: 22, top: 5.5, depth: 20, segs: 28, rings: 14, seed: 4.8 });
-  lower.position.set(-6, -24, -18);
+  const lower = cragGeo({ rx: 18, rz: 15, top: 4.2, depth: 16, segs: 28, rings: 16, seed: 4.8 });
+  lower.position.set(-8, -30, -22);
   g.add(lower);
 
-  function turf(parent, y, pts) {
+  function turf(y, pts, grassCol) {
     for (const [x, z, s] of pts) {
-      const mound = mesh(new THREE.SphereGeometry(s, 8, 6), moss, MAT.FOLIAGE);
-      mound.scale.set(1, 0.30, 1);
+      const mound = mesh(new THREE.SphereGeometry(s, 8, 6), grassCol, MAT.FOLIAGE);
+      mound.scale.set(1.15, 0.38, 1.10);
       mound.position.set(x, y, z);
-      parent.add(mound);
+      g.add(mound);
     }
   }
-  add(g, box(36, 1.1, 28, grass, MAT.GRASS), 0, 7.2, 0);
-  turf(g, 7.6, [[-12, 8, 5.0], [10, -6, 4.2], [14, 9, 3.6], [-8, -10, 3.8], [2, 2, 5.6], [16, -2, 3.0]]);
-  add(g, box(22, 0.9, 18, grass, MAT.GRASS), -6, -24 + 5.4, -18);
-  turf(g, -24 + 5.8, [[-12, -12, 3.6], [2, -24, 3.2], [-10, -22, 4.0], [0, -14, 2.8]]);
+  const sage = 0x3e5c30, olive = 0x2f4a24;
+  // No flat lawn boxes — lumpy foliage spilling over the rims.
+  turf(6.6, [
+    [-10, 8, 6.2], [8, -5, 5.4], [16, 7, 4.6], [-14, -8, 5.0],
+    [2, 2, 7.0], [18, -2, 4.2], [-18, 2, 4.8], [6, 14, 4.0],
+    [12, 12, 3.6], [-6, -14, 4.4], [20, 6, 3.2], [-20, -6, 3.4],
+    // spill over the south rim
+    [4, -18, 3.8], [-8, -16, 3.4], [14, -12, 3.0],
+  ], sage);
+  turf(6.9, [
+    [-4, 6, 2.4], [10, 2, 2.2], [-16, 10, 2.0], [16, -8, 1.8], [0, -10, 2.1],
+  ], olive);
+  // Lower island — smaller clumps only
+  turf(-30 + 3.8, [
+    [-14, -28, 3.2], [-4, -34, 2.8], [-12, -18, 2.6], [2, -26, 2.2],
+  ], sage);
 
-  // Hanging roots and vines on both undersides
+  // Bushes spilling over both rims
+  for (const [x, y, z, s] of [
+    [18, 7.2, 4, 1.6], [-20, 7.0, 8, 1.5], [8, 6.6, -16, 1.8],
+    [-12, 6.5, -14, 1.7], [22, 6.8, -4, 1.4], [-22, 6.7, -2, 1.5],
+    [4, 6.4, -20, 1.9], [-6, 6.4, 16, 1.5], [14, 7.0, 10, 1.3],
+    [-16, -26, -28, 1.4], [-2, -26, -36, 1.3],
+  ]) {
+    const bsh = mesh(new THREE.SphereGeometry(s, 6, 5), olive, MAT.FOLIAGE);
+    bsh.scale.set(1.2, 0.7, 1.1);
+    bsh.position.set(x, y, z);
+    g.add(bsh);
+  }
+
+  // Hanging roots and vines under overhangs
   const hang = [
-    [ -8,  -8, 3.2, 20, 0.20], [ 10, -10, 2.8, 18, -0.16],
-    [  4,  12, 2.4, 16, 0.26], [-16,  -2, 2.6, 17, -0.22],
-    [ 14,   4, 2.2, 14, 0.14], [ -4, -16, 2.4, 15, 0.10],
-    [-20,   6, 2.0, 13, -0.18], [ 8,  16, 1.8, 12, 0.22],
-    // lower tier (world-ish local)
-    [-18, -28, 2.2, 14, 0.16], [ -4, -40, 2.0, 13, -0.14],
-    [-22, -36, 1.8, 12, 0.20], [ -8, -24, 1.6, 11, -0.12],
+    [ -10,  -6, 3.4, 24, 0.22], [ 12, -12, 3.0, 22, -0.18],
+    [  6,  14, 2.6, 18, 0.28], [-18,  -4, 2.8, 20, -0.24],
+    [ 16,   2, 2.4, 16, 0.16], [ -6, -18, 2.6, 18, 0.12],
+    [-22,   8, 2.2, 15, -0.20], [ 10,  16, 2.0, 14, 0.24],
+    [ 20,  -8, 2.2, 17, 0.14], [-14,  12, 2.0, 15, -0.16],
+    [  2, -20, 2.4, 19, 0.10], [-24,   0, 2.0, 14, -0.18],
+    // lower island
+    [-16, -30, 2.0, 12, 0.16], [ -4, -42, 1.8, 11, -0.14],
+    [-20, -36, 1.6, 10, 0.20], [ -8, -24, 1.5, 9, -0.12],
   ];
   for (const [x, z, r, h, lean] of hang) {
-    const yBase = (z < -20 || x < -14 && z < -22) ? -38 - 2 : -2;
+    const yBase = (z < -24 || (x < -12 && z < -22)) ? -42 : 2;
     const root = cone(r * 0.22, h, 7, earth, MAT.ROCK);
     root.rotation.x = Math.PI + lean;
     root.rotation.z = lean * 0.5;
@@ -1172,15 +1206,16 @@ function makeHangingKeep() {
     g.add(root);
   }
   for (const [x, z, h, y0] of [
-    [-18, 4, 16, -2], [16, -8, 14, -2], [8, 16, 13, -2], [-10, -16, 15, -2],
-    [20, 6, 12, -2], [-14, 12, 14, -2],
-    [-20, -30, 12, -40], [-4, -42, 11, -40], [-24, -34, 10, -40],
+    [-20, 6, 20, 2], [18, -10, 18, 2], [10, 16, 16, 2], [-12, -18, 18, 2],
+    [22, 4, 14, 2], [-16, 12, 16, 2], [8, -18, 15, 2], [-24, -4, 14, 2],
+    [4, 18, 13, 2], [-8, 16, 14, 2],
+    [-18, -32, 12, -42], [-2, -44, 11, -42], [-22, -36, 10, -42],
   ]) {
     const v = cyl(0.10, 0.16, h, 4, vine, MAT.FOLIAGE);
     v.position.set(x, y0 - h * 0.22, z);
     v.rotation.z = (x > 0 ? 0.16 : -0.16);
     g.add(v);
-    const leaf = mesh(new THREE.SphereGeometry(0.9, 6, 5), moss, MAT.FOLIAGE);
+    const leaf = mesh(new THREE.SphereGeometry(1.05, 6, 5), moss, MAT.FOLIAGE);
     leaf.position.set(x * 0.98, y0 - h * 0.55, z);
     g.add(leaf);
   }
@@ -1213,17 +1248,15 @@ function makeHangingKeep() {
 
   // Tall ruined aqueduct / colonnade on the upper crown, facing the SW camera.
   function colonnade(n, aw, wallH, depth, c, skip) {
-    const pier = aw * 0.22;
     const totalW = n * aw;
     const shape = new THREE.Shape();
     shape.moveTo(-totalW / 2, 0);
-    // Jagged ruined crown — no flat boxy back wall.
     for (let i = 0; i <= n; i++) {
       const x = -totalW / 2 + aw * i;
       const broken = skip && (skip.has(i) || skip.has(i - 1));
       let hh = broken
-        ? wallH * (0.38 + (i % 3) * 0.10)
-        : wallH * (0.78 + 0.16 * Math.sin(i * 1.7) + ((i === 0 || i === n) ? -0.20 : 0.06));
+        ? wallH * (0.42 + (i % 3) * 0.10)
+        : wallH * (0.86 + 0.12 * Math.sin(i * 1.7) + ((i === 0 || i === n) ? -0.16 : 0.06));
       if (i > 0 && i < n && !broken) {
         shape.lineTo(x - aw * 0.16, hh * 0.90);
         shape.lineTo(x, hh);
@@ -1238,11 +1271,11 @@ function makeHangingKeep() {
       if (skip && skip.has(i)) continue;
       const cx = -totalW / 2 + aw * (i + 0.5);
       const hole = new THREE.Path();
-      const hw = aw * 0.32, hh = wallH * 0.52;
-      hole.moveTo(cx - hw, 1.1);
-      hole.lineTo(cx - hw, 1.1 + hh * 0.48);
-      hole.absarc(cx, 1.1 + hh * 0.48, hw, Math.PI, 0, true);
-      hole.lineTo(cx + hw, 1.1);
+      const hw = aw * 0.32, hh = wallH * 0.62;
+      hole.moveTo(cx - hw, 0.8);
+      hole.lineTo(cx - hw, 0.8 + hh * 0.48);
+      hole.absarc(cx, 0.8 + hh * 0.48, hw, Math.PI, 0, true);
+      hole.lineTo(cx + hw, 0.8);
       hole.closePath();
       shape.holes.push(hole);
     }
@@ -1256,44 +1289,68 @@ function makeHangingKeep() {
       color: c, flatShading: false,
     })));
   }
-  const col1 = colonnade(6, 6.0, 26, 4.4, stoneLt, new Set([4]));
-  col1.position.set(-2, 7.4, -8);
-  col1.rotation.y = 0.12;
-  g.add(col1);
-  const col2 = colonnade(4, 5.2, 18, 3.6, stone, new Set([1]));
-  col2.position.set(8, 7.4, 4);
-  col2.rotation.y = 1.05;
-  g.add(col2);
-  const col3 = colonnade(3, 4.6, 14, 3.0, stoneDk, new Set([2]));
-  col3.position.set(-8, 7.4, 6);
-  col3.rotation.y = -0.55;
-  g.add(col3);
-  // Broken stumps and a fallen lintel
-  add(g, box(7.5, 3.4, 2.0, stone, MAT.ROCK), 12, 9.2, -8, 0, 0.4, 0.15);
-  add(g, box(2.4, 14, 2.4, stoneDk, MAT.ROCK), 14, 14.4, 2);
-  add(g, box(2.2, 10, 2.2, stone, MAT.ROCK), -16, 12.4, 0);
-  add(g, box(2.0, 7, 2.0, stoneDk, MAT.ROCK), -18, 10.8, -6);
+  // 3 stacked arcade tiers dominating the crown
+  const facade = new THREE.Group();
+  const rowH = 11.2;
+  const t0 = colonnade(6, 5.6, rowH, 4.4, stoneLt, new Set());
+  t0.position.set(0, 0, 0);
+  facade.add(t0);
+  const t1 = colonnade(5, 5.4, rowH, 4.0, stone, new Set([3]));
+  t1.position.set(-1.2, rowH, 0.4);
+  facade.add(t1);
+  const t2 = colonnade(4, 5.0, 9.4, 3.6, stoneLt, new Set([0, 2]));
+  t2.position.set(1.0, rowH * 2, 0.9);
+  facade.add(t2);
+  facade.position.set(-2, 6.8, -11);
+  facade.rotation.y = 0.16;
+  g.add(facade);
+  // Side arcade, one storey plus a broken upper
+  const side = new THREE.Group();
+  side.add(colonnade(4, 5.0, 10.0, 3.6, stone, new Set([1])));
+  const sideU = colonnade(3, 4.6, 8.5, 3.2, stoneDk, new Set([2]));
+  sideU.position.set(0, 10.0, 0.3);
+  side.add(sideU);
+  side.position.set(10, 6.8, 2);
+  side.rotation.y = 1.05;
+  g.add(side);
+  // Broken towers at the facade ends
+  function brokenTower(h, c, lean) {
+    const tw = new THREE.Group();
+    add(tw, box(3.6, h, 3.6, c, MAT.ROCK), 0, h / 2, 0, lean, 0, lean * 0.4);
+    add(tw, box(3.0, h * 0.22, 3.0, stoneDk, MAT.ROCK), 0.4, h * 0.92, -0.2, 0.15, 0.2, 0.1);
+    add(tw, box(1.6, h * 0.18, 1.6, c, MAT.ROCK), -0.6, h * 1.08, 0.3, 0.2, 0, -0.15);
+    return tw;
+  }
+  const twL = brokenTower(34, stoneDk, 0.04);
+  twL.position.set(-18, 6.8, -10);
+  g.add(twL);
+  const twR = brokenTower(28, stone, -0.05);
+  twR.position.set(16, 6.8, -8);
+  g.add(twR);
+  add(g, box(7.5, 3.4, 2.0, stone, MAT.ROCK), 12, 9.2, -6, 0, 0.4, 0.15);
   const aWing = ruinArch(10, 16, 2.8, stone);
-  aWing.position.set(-12, 7.4, -8);
+  aWing.position.set(-14, 6.8, -6);
   aWing.rotation.y = 1.05;
   g.add(aWing);
 
-  // Trees: a great tree beside (not covering) the colonnade, plus rim trees on both tiers
+  // Trees and canopy clumps in and around the ruins
   const tr = cyl(0.7, 1.15, 11, 7, 0x5a3a22, MAT.WOOD);
-  tr.position.set(-14, 13.0, -6);
+  tr.position.set(-14, 12.4, -4);
   g.add(tr);
   for (const [ox, oy, oz, r] of [
     [0, 8.0, 0, 6.4], [4.2, 6.0, 2.0, 4.8], [-4.0, 6.2, -2.2, 4.6],
     [2.0, 9.6, -2.4, 4.0], [-2.2, 9.4, 2.6, 3.8], [4.8, 7.6, -1.0, 3.2],
+    [-3.0, 5.0, 3.0, 3.4], [5.2, 4.4, 1.6, 2.8],
   ]) {
     const leaf = mesh(new THREE.SphereGeometry(r, 9, 7), moss, MAT.FOLIAGE);
-    leaf.position.set(-14 + ox, 13.0 + oy, -6 + oz);
+    leaf.position.set(-14 + ox, 12.4 + oy, -4 + oz);
     g.add(leaf);
   }
   for (const [x, z, s, y] of [
-    [16, 8, 1.1, 7.4], [18, -6, 0.95, 7.4], [4, -14, 0.85, 7.4],
-    [-20, 6, 0.9, 7.4], [-8, 16, 0.8, 7.4],
-    [2, -10, 0.85, -24 + 5.5], [-14, -26, 1.0, -24 + 5.5], [-8, -14, 0.75, -24 + 5.5],
+    [16, 8, 1.15, 6.8], [20, -4, 1.0, 6.8], [4, -16, 0.95, 6.8],
+    [-22, 6, 1.0, 6.8], [-8, 16, 0.9, 6.8], [10, 14, 0.85, 6.8],
+    [-18, -8, 0.9, 6.8], [8, -18, 0.8, 6.8],
+    [0, -28, 0.8, -30 + 4.0], [-16, -34, 0.95, -30 + 4.0], [-8, -20, 0.7, -30 + 4.0],
   ]) {
     const t2 = cyl(0.22 * s, 0.36 * s, 4.6 * s, 5, 0x5a3a22, MAT.WOOD);
     t2.position.set(x, y + 2.2 * s, z);
@@ -1307,7 +1364,7 @@ function makeHangingKeep() {
   poolU.position.set(6, 7.5, -10);
   g.add(poolU);
   const poolL = box(6, 0.28, 4.5, 0x2e8aaa, MAT.WATER_DEEP);
-  poolL.position.set(-4, -24 + 5.6, -24);
+  poolL.position.set(-8, -30 + 4.0, -28);
   g.add(poolL);
 
   // Waterfalls — crossed cards, baked into ONE mesh (shared uTime).
@@ -1327,12 +1384,10 @@ function makeHangingKeep() {
     geo.applyMatrix4(m);
     fallGeos.push(geo);
   }
-  // Upper rim → lower terrace
-  placeFall(18, 28, 2, -6, -22, Math.PI + 0.08, 1.0);
-  // Lower rim → mist
-  placeFall(16, 28, -4, -40, -34, Math.PI + 0.04, 1.0);
-  // Side veil
-  placeFall(10, 18, 24, -4, -8, Math.PI * 0.55, 0.75);
+  // Upper rim pours off the south edge, past the lower island, into mist
+  placeFall(16, 36, 2, -8, -20, Math.PI + 0.08, 1.0);
+  placeFall(14, 32, -8, -40, -36, Math.PI + 0.04, 1.0);
+  placeFall(8, 20, 20, -6, -10, Math.PI * 0.55, 0.8);
   const fallGeo = mergeGeos(fallGeos, MAT.WATERFALL);
   retagGeometry(fallGeo, MAT.WATERFALL, 1);
   const fallMat = makeFallsMat();
@@ -1350,10 +1405,10 @@ function makeHangingKeep() {
   mist.name = "mist";
   const md = new THREE.Object3D();
   [
-    [-4, -54, -36, 4.6], [0, -58, -34, 3.4], [-8, -56, -38, 3.2],
-    [2, -20, -24, 2.4], [6, -24, -22, 2.0],
-    [24, -16, -8, 2.2], [22, -20, -6, 1.6],
-    [-4, -62, -32, 2.8],
+    [-6, -58, -40, 5.2], [2, -62, -38, 4.0], [-10, -60, -42, 3.8],
+    [0, -24, -26, 2.6], [6, -28, -24, 2.2],
+    [20, -16, -10, 2.2], [18, -20, -8, 1.7],
+    [-4, -68, -36, 3.2],
   ].forEach((s, i) => {
     md.position.set(s[0], s[1], s[2]);
     md.scale.set(s[3] * 1.25, s[3] * 0.42, s[3] * 1.25);
@@ -1664,14 +1719,14 @@ function makeWestCapeCliffs(H) {
     const hatch = stripe > 0.5 ? 0.78 : stripe > 0.15 ? 0.88 : stripe > -0.2 ? 0.95 : 1;
     const n = 0.04 * Math.sin(x * 0.2 + z * 0.16);
     let r, g, b;
-    if (grass) { r = 0.38 + n; g = 0.55 + n * 0.6; b = 0.26; }
+    if (grass) { r = 0.34 + n; g = 0.46 + n * 0.5; b = 0.24; }
     else if (shade) { r = 0.62 * hatch + n; g = 0.58 * hatch + n * 0.7; b = 0.48 * hatch + n * 0.4; }
     else { r = 0.88 * hatch + n; g = 0.82 * hatch + n * 0.7; b = 0.66 * hatch + n * 0.4; }
     colors.push(Math.min(1, r), Math.min(1, g), Math.min(1, b));
     return i;
   }
   const pts = [];
-  for (let x = -360; x <= -20; x += 3.5) {
+  for (let x = -360; x <= 80; x += 3.5) {
     const nearArch = Math.abs(x - LANDMARKS.arch.x) < 14;
     let zLand = null, h = 0;
     for (let z = -1360; z <= -1140; z += 4) {
@@ -1974,7 +2029,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Near the flight path (runway / hangar) = real houses with doors, windows, chimneys.
   // Further up the hill = denser instanced impostors so the postcard still reads as a town.
   const houseColors = [0xfbf6ea, 0xf4e4c4, 0xe8d0a0, 0xfff8ec, 0xecd8b0, 0xf8f1dc, 0xe6c98a];
-  const roofColors = [0xc45a3a, 0xb4482e, 0xd26540, 0xa8422c, 0xc05638, 0x9a3a28, 0xcc6a44];
+  const roofColors = [0xc45a3a, 0xa8422c, 0xd26540, 0x8a3a22, 0xcc6a44, 0x9a4a28, 0xb45630];
   const spots = [];
   const chimneys = [];
   const winData = [];
@@ -2030,6 +2085,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
         const hgt = H(jx, jz);
         const yaw = Math.PI + (rnd() - 0.5) * 0.08; // face south, almost aligned
         if (b.near) {
+          if (rnd() < 0.16) { farList.push({ kind: "gap", x: jx, y: hgt, z: jz }); hi++; continue; }
           const w = 5.6 + rnd() * 3.4, d = 5.2 + rnd() * 2.2, hh = 3.6 + rnd() * 3.4, rh = 2.0 + rnd() * 1.6;
           const h = house(w, d, hh, rh, houseColors[hi % 7], roofColors[hi % 7], true, hi % 4);
           h.position.set(jx, hgt, jz);
@@ -2046,44 +2102,107 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           });
           hi++;
         } else {
-          farList.push({ x: jx, y: hgt, z: jz, yaw, s: 0.82 + rnd() * 0.28, hs: 0.78 + rnd() * 0.7, wall: houseColors[hi % 7], roof: roofColors[hi % 7] });
+          if (rnd() < 0.38) { farList.push({ kind: "gap", x: jx, y: hgt, z: jz }); hi++; continue; }
+          const wallsFar = [0xfbf6ea, 0xf0d8a8, 0xe2c07a, 0xfff8ec, 0xd4b07c, 0xe8d0a0, 0xf6e6c8];
+          const roofsFar = [0xc45a3a, 0xa8422c, 0xd26540, 0x8a3a22, 0xcc6a44, 0xb45630, 0x9a4a28];
+          farList.push({ x: jx, y: hgt, z: jz, yaw, s: 0.78 + rnd() * 0.34, hs: 0.72 + rnd() * 0.85, wall: wallsFar[hi % 7], roof: roofsFar[hi % 7], hip: (hi % 3 === 0) });
+          hi++;
         }
       }
     }
   }
   if (farList.length) {
+    const houses = farList.filter((f) => f.kind !== "gap");
+    const gaps = farList.filter((f) => f.kind === "gap");
     const farWallGeo = retagGeometry(new THREE.BoxGeometry(6.2, 4.6, 6.0), MAT.BUILDING, 0);
     const farRoofGeo = retagGeometry(gableRoofGeo(6.2, 6.0, 2.7), MAT.ROOF, 0);
-    const farWallMat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, color: 0xf6efe0, flatShading: false, matId: MAT.BUILDING });
-    const farRoofMat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, color: 0xb85a3c, vertexColors: false, flatShading: false, matId: MAT.ROOF });
-    const farWalls = new THREE.InstancedMesh(farWallGeo, farWallMat, farList.length);
-    const farRoofs = new THREE.InstancedMesh(farRoofGeo, farRoofMat, farList.length);
+    const farHipGeo = retagGeometry(gableRoofGeo(6.2, 6.0, 1.6), MAT.ROOF, 0);
+    const farWallMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: false }));
+    farWallMat.userData.matId = MAT.BUILDING;
+    const farRoofMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: false }));
+    farRoofMat.userData.matId = MAT.ROOF;
+    const nGable = houses.filter((f) => !f.hip).length || 1;
+    const nHip = houses.filter((f) => f.hip).length || 1;
+    const farWalls = new THREE.InstancedMesh(farWallGeo, farWallMat, houses.length);
+    const farRoofs = new THREE.InstancedMesh(farRoofGeo, farRoofMat, nGable);
+    const farHips = new THREE.InstancedMesh(farHipGeo, farRoofMat, nHip);
     farWalls.name = "far-house";
     farRoofs.name = "far-house";
+    farHips.name = "far-house";
     farWalls.userData.matId = MAT.BUILDING;
     farRoofs.userData.matId = MAT.ROOF;
+    farHips.userData.matId = MAT.ROOF;
     const dummyF = new THREE.Object3D();
     const wc = new THREE.Color();
     const rc = new THREE.Color();
-    farList.forEach((f, i) => {
+    let gi = 0, hi2 = 0;
+    houses.forEach((f, i) => {
       const hs = f.hs || 1;
       dummyF.position.set(f.x, f.y + 2.3 * f.s * hs, f.z);
       dummyF.rotation.set(0, f.yaw, 0);
       dummyF.scale.set(f.s, f.s * hs, f.s);
       dummyF.updateMatrix();
       farWalls.setMatrixAt(i, dummyF.matrix);
+      farWalls.setColorAt(i, wc.setHex(f.wall || 0xf6efe0));
       dummyF.position.set(f.x, f.y + 4.6 * f.s * hs, f.z);
       dummyF.scale.set(f.s, f.s, f.s);
       dummyF.updateMatrix();
-      farRoofs.setMatrixAt(i, dummyF.matrix);
-      farWalls.setColorAt(i, wc.setHex(f.wall || 0xf6efe0));
-      farRoofs.setColorAt(i, rc.setHex(f.roof || 0xb85a3c));
+      if (f.hip) {
+        farHips.setMatrixAt(hi2, dummyF.matrix);
+        farHips.setColorAt(hi2, rc.setHex(f.roof || 0xb85a3c));
+        hi2++;
+      } else {
+        farRoofs.setMatrixAt(gi, dummyF.matrix);
+        farRoofs.setColorAt(gi, rc.setHex(f.roof || 0xb85a3c));
+        gi++;
+      }
     });
+    farWalls.count = houses.length;
+    farRoofs.count = gi;
+    farHips.count = hi2;
     farWalls.instanceMatrix.needsUpdate = true;
     farRoofs.instanceMatrix.needsUpdate = true;
+    farHips.instanceMatrix.needsUpdate = true;
     if (farWalls.instanceColor) farWalls.instanceColor.needsUpdate = true;
     if (farRoofs.instanceColor) farRoofs.instanceColor.needsUpdate = true;
-    group.add(farWalls, farRoofs);
+    if (farHips.instanceColor) farHips.instanceColor.needsUpdate = true;
+    group.add(farWalls, farRoofs, farHips);
+    // Trees and garden bushes in the gaps, following the terraces
+    if (gaps.length) {
+      const treeParts = [
+        retagGeometry((() => { const c = new THREE.CylinderGeometry(0.18, 0.28, 3.4, 5); c.translate(0, 1.7, 0); return c; })(), MAT.WOOD),
+        retagGeometry((() => { const c = new THREE.ConeGeometry(1.35, 5.2, 7); c.translate(0, 4.6, 0); return c; })(), MAT.FOLIAGE),
+      ];
+      // mergeSimple may not be in this file — use a simple cone+trunk group instanced as one geo
+      const trunk = new THREE.CylinderGeometry(0.18, 0.28, 3.4, 5);
+      trunk.translate(0, 1.7, 0);
+      const canopy = new THREE.ConeGeometry(1.35, 5.2, 7);
+      canopy.translate(0, 4.6, 0);
+      const tgeo = mergeGeos([retagGeometry(trunk, MAT.FOLIAGE), retagGeometry(canopy, MAT.FOLIAGE)], MAT.FOLIAGE);
+      const tmat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a5a2c, flatShading: true }));
+      tmat.userData.matId = MAT.FOLIAGE;
+      const farTrees = new THREE.InstancedMesh(tgeo, tmat, gaps.length);
+      farTrees.name = "far-house";
+      const bgeo = retagGeometry(new THREE.SphereGeometry(1.1, 6, 5), MAT.FOLIAGE);
+      const bmat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2c4a24, flatShading: true }));
+      bmat.userData.matId = MAT.FOLIAGE;
+      const farBush = new THREE.InstancedMesh(bgeo, bmat, gaps.length);
+      farBush.name = "far-house";
+      gaps.forEach((f, i) => {
+        dummyF.position.set(f.x, f.y, f.z);
+        dummyF.rotation.set(0, f.yaw || 0, 0);
+        dummyF.scale.setScalar(1.55 + (i % 5) * 0.22);
+        dummyF.updateMatrix();
+        farTrees.setMatrixAt(i, dummyF.matrix);
+        dummyF.position.set(f.x + 2.2, f.y + 0.4, f.z + 1.4);
+        dummyF.scale.set(1.4, 0.7, 1.3);
+        dummyF.updateMatrix();
+        farBush.setMatrixAt(i, dummyF.matrix);
+      });
+      farTrees.instanceMatrix.needsUpdate = true;
+      farBush.instanceMatrix.needsUpdate = true;
+      group.add(farTrees, farBush);
+    }
   }
 
   let winInst = null;
@@ -2270,13 +2389,15 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   boats.push(steamer);
   const coastal = [
     [70, -1390, 0xf4efe4, 0.8], [20, -1335, 0xf0e6d0, 2.1], [-150, -1310, 0xe8dcc0, 4.0],
+    [160, -1360, 0xf7f2e4, 1.4], [-80, -1380, 0xe8dcc0, 3.1], [110, -1310, 0xf0e6d0, 5.2],
+    [-220, -1340, 0xf4efe4, 2.6], [200, -1410, 0xe8dcc0, 0.3],
   ];
   for (const [x, z, col, a0] of coastal) {
     const b = makeSailboat(col);
     b.position.set(x, 0.45, z);
     b.rotation.y = -0.55;
-    b.scale.setScalar(2.25);
-    b.userData.cruise = { cx: x, cz: z, rx: 28, rz: 16, a: a0, spd: 0.08 };
+    b.scale.setScalar(1.7 + (Math.abs(x) % 70) / 80);
+    b.userData.cruise = { cx: x, cz: z, rx: 36, rz: 20, a: a0, spd: 0.07 };
     group.add(b);
     boats.push(b);
   }
@@ -2544,15 +2665,15 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           const sm = b.userData.smoke;
           const dummy = b.userData._smokeDummy || (b.userData._smokeDummy = new THREE.Object3D());
           for (let i = 0; i < sm.count; i++) {
-            const u = (time * 0.35 + i * 0.16) % 1;
-            dummy.position.set(Math.sin(time * 0.8 + i) * u * 0.8, u * 5.5, Math.cos(time * 0.6 + i) * u * 0.5);
+            const u = (time * 0.28 + i * 0.11) % 1;
+            dummy.position.set(Math.sin(time * 0.7 + i) * u * 1.4, u * 9.5, Math.cos(time * 0.5 + i) * u * 0.9);
             dummy.rotation.set(0, 0, 0);
-            dummy.scale.setScalar(0.5 + u * 1.6);
+            dummy.scale.setScalar(0.9 + u * 2.4);
             dummy.updateMatrix();
             sm.setMatrixAt(i, dummy.matrix);
           }
           sm.instanceMatrix.needsUpdate = true;
-          if (sm.material) sm.material.opacity = 0.45;
+          if (sm.material) sm.material.opacity = 0.68;
         }
       }
       if (windsock && windsock.userData.sock) {

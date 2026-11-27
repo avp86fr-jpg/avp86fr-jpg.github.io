@@ -170,25 +170,42 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudTex = paintCloudAtlas();
   const cloudMat = makeCloudMaterial(cloudTex);
   const clouds = new THREE.Group();
-  const nCloud = Math.floor(4 * q.clouds);
+  const nCloud = Math.max(6, Math.floor(16 * q.clouds));
   // Frame left/right of the postcard; stay off the hoop (16,27,-1358) and Courrier.
   const heroSpots = [
-    [  300,  52, -1310, 160,  80, 0],
-    [  420,  70, -1250, 200, 100, 2],
-    [  210,  90, -1330, 130,  70, 2],
-    [ -260,  50, -1310, 160,  80, 0],
-    [ -400,  68, -1250, 200, 100, 2],
-    [ -200,  88, -1330, 130,  70, 2],
-    [  540,  82, -1200, 220, 110, 3],
-    [ -530,  80, -1200, 220, 110, 3],
-    // Far banks beside the keep / flanks
-    [  520, 110,  -220, 320, 170, 1],
-    [ -300, 100,    20, 300, 160, 1],
-    [  280, 120,   120, 280, 150, 0],
+    // Framing the postcard — large, stay off the hoop (16,27,-1358) and Courrier
+    [  340,  80, -1270, 280, 150, 0],
+    [  500, 100, -1180, 340, 180, 2],
+    [  200, 120, -1290, 240, 130, 2],
+    [ -300,  78, -1270, 280, 150, 0],
+    [ -500,  98, -1180, 340, 180, 2],
+    [ -190, 118, -1290, 240, 130, 2],
+    [  660, 110, -1120, 400, 210, 3],
+    [ -660, 108, -1120, 400, 210, 3],
+    [  800, 130,  -980, 440, 240, 1],
+    [ -800, 128,  -980, 440, 240, 1],
+    // Around the hanging keep (440, 280, -280)
+    [  640, 260,  -180, 420, 260, 1],
+    [  760, 280,  -380, 460, 280, 1],
+    [  280, 240,  -140, 380, 230, 0],
+    [  540, 320,   -60, 360, 220, 3],
+    [  880, 220,  -500, 440, 260, 1],
+    [  200, 210,  -320, 340, 200, 3],
+    // Far flanks
+    [  520, 140,   200, 400, 220, 1],
+    [ -360, 130,   180, 380, 210, 1],
+    [  160, 160,   320, 360, 200, 0],
   ];
   const towerSpots = [
-    [ 900,  90, -200, 420, 280, 1],
-    [-880, 100,  -80, 400, 270, 1],
+    [  980, 140,  -220, 620, 420, 1],
+    [ -960, 150,   -60, 600, 400, 1],
+    [  720, 170,  -620, 540, 360, 3],
+    [ -740, 160,  -540, 560, 370, 1],
+    [ 1200, 180,  -860, 680, 440, 3],
+    [-1200, 170,  -740, 660, 430, 1],
+    [  400, 200,   500, 560, 360, 1],
+    [ -420, 190,   560, 540, 350, 3],
+    [  100, 220,   900, 700, 420, 0],
   ];
   const nHero = heroSpots.length;
   const nTower = towerSpots.length;
@@ -285,7 +302,7 @@ export function createSkyProps(scene, quality = "medium") {
   group.add(blimp);
 
   // Birds
-  const birds = makeBirdFlock(36);
+  const birds = makeBirdFlock(64);
   group.add(birds.group);
 
   // Distant blue mountain ranges on the horizon (in front of the sky far-plane).
@@ -520,13 +537,18 @@ function makeBirdFlock(n) {
     [LANDMARKS.harbor.x, LANDMARKS.harbor.z - 30],
     [430, -720],
     [LANDMARKS.lighthouse.x - 40, LANDMARKS.lighthouse.z + 20],
+    [40, -1340],
+    [200, -1380],
+    [-80, -1320],
+    [LANDMARKS.hangingKeep.x, LANDMARKS.hangingKeep.z],
+    [80, -1260],
   ];
   for (let i = 0; i < n; i++) {
     const ro = roosts[i % roosts.length];
     data.push({
       a: (i / n) * TAU + (i % 5) * 0.4,
       r: 40 + (i % 8) * 14,
-      y: 16 + (i % 7) * 4.2 + (i % roosts.length) * 3,
+      y: 22 + (i % 7) * 5.5 + (i % roosts.length) * 4,
       s: 1.0 + (i % 3) * 0.15,
       cx: ro[0] + (i % 5 - 2) * 10,
       cz: ro[1] - (i % 4) * 8,
