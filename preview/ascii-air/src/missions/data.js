@@ -39,7 +39,7 @@ export const MISSIONS = [
   {
     id: "rings-b2", activity: "rings", klass: "beginner", title: "Coast Run",
     brief: "Follow the south beach from the lagoon to the lighthouse cape. Stay low and enjoy the water.",
-    hour: 9, plane: "trainer",
+    hour: 6.8, plane: "trainer",
     start: { x: -750, y: 40, z: -1240, heading: 0, speed: 44 },
     timeLimits: [100, 80, 65],
     rings: pathRings([

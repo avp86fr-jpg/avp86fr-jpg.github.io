@@ -74,6 +74,8 @@ export function createIsland(scene, quality = "medium") {
     return sum;
   }
 
+  let stormOn = false;
+
   function update(dt, time, hour) {
     sky.setHour(hour);
     if (typeof sky.tickStars === "function") sky.tickStars(time);
@@ -83,13 +85,17 @@ export function createIsland(scene, quality = "medium") {
     thermals.update(dt);
     if (backdrop && backdrop.material) {
       const night = sky.night || 0;
-      backdrop.visible = night < 0.55;
+      // The painted day-sky cylinder would keep a storm looking like a clear afternoon.
+      backdrop.visible = !stormOn && night < 0.55;
       backdrop.material.transparent = night > 0.12;
       backdrop.material.opacity = 1 - Math.min(1, night * 1.8);
     }
   }
 
   function setStorm(on, windKt) {
+    stormOn = !!on;
+    if (sky && typeof sky.setStorm === "function") sky.setStorm(on);
+    if (water && typeof water.setStorm === "function") water.setStorm(on);
     if (skyprops && typeof skyprops.setStorm === "function") skyprops.setStorm(on);
     if (landmarks && typeof landmarks.setWind === "function") landmarks.setWind(windKt, on);
   }

@@ -40,6 +40,26 @@ export function createMissionSystem(scene, world, audio) {
   const group = new THREE.Group();
   group.name = "missions";
   scene.add(group);
+  let feelFX = null;
+  function setFeelFX(f) { feelFX = f; }
+
+  function fadeNearCam(mesh, cam) {
+    if (!mesh || !cam) return;
+    const rad = (mesh.userData.base && mesh.userData.base.r) || 16;
+    const d = cam.position.distanceTo(mesh.position);
+    // Fade before the torus clips the near plane / becomes a broken screen-space arc
+    const fade = Math.max(0, Math.min(1, (d - 8) / Math.max(16, rad * 1.35)));
+    const core = mesh.userData.core, rim = mesh.userData.rim;
+    if (core && core.material) {
+      core.material.transparent = true;
+      core.material.opacity = fade;
+      core.material.depthWrite = fade > 0.6;
+    }
+    if (rim && rim.material) {
+      if (rim.userData.baseOp == null) rim.userData.baseOp = rim.material.opacity || 0.7;
+      rim.material.opacity = rim.userData.baseOp * fade;
+    }
+  }
 
   const state = {
     active: null,
@@ -389,6 +409,10 @@ export function createMissionSystem(scene, world, audio) {
       return state;
     }
     state.t += dt;
+    if (cam) {
+      for (const o of state.objects) fadeNearCam(o, cam);
+      for (const o of state.mailStops) fadeNearCam(o, cam);
+    }
 
     if (m.activity === "rings") {
       const meshes = state.objects;
@@ -407,6 +431,7 @@ export function createMissionSystem(scene, world, audio) {
           state.next++;
           state.ringsPassed++;
           audio?.play("ring");
+          feelFX?.burstRing(p);
           tint(0x5a2208);
           cur.visible = false;
           if (state.next >= meshes.length) {
@@ -467,7 +492,16 @@ export function createMissionSystem(scene, world, audio) {
         if (d < stop.r + 6) {
           if (stop.type === "pickup") state.mailHasBag = true;
           state.next++;
-          audio?.play("ring");
+          if (stop.type === "drop") {
+            audio?.play("success");
+            feelFX?.burstMail(cur.position, true);
+          } else if (stop.type === "pickup") {
+            audio?.play("ui_ok");
+            feelFX?.burstMail(cur.position, false);
+          } else {
+            audio?.play("ring");
+            feelFX?.burstRing(cur.position);
+          }
           cur.visible = false;
           if (state.next >= state.mailStops.length && !m.target) {
             const stars = starsFromTime(m, state.t);
@@ -545,13 +579,14 @@ export function createMissionSystem(scene, world, audio) {
       if (rim && rim.material) {
         rim.material.color.setHex(dark ? 0xc4a04a : 0x4a3218);
         rim.material.opacity = dark ? 0.5 : 0.7;
+        rim.userData.baseOp = rim.material.opacity;
       }
       if (core && core.material) {
         core.material.color.setHex(dark ? 0xffe07a : 0xffe14a);
       }
     });
   }
-  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight };
+  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight, setFeelFX };
 
 
 }

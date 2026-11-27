@@ -7,6 +7,7 @@ import { makeColorDepthRT, makeRT } from "./render/targets.js";
 import { createBloom } from "./post/bloom.js";
 import { createIsland } from "./world/island.js";
 import { createWeather } from "./world/weather.js";
+import { createFeelFX } from "./world/fx.js";
 import { createPlaneMesh } from "./flight/planes.js";
 import { createCraft, resetCraft, launchCraft, stepCraft, startTow } from "./flight/physics.js";
 import { createFlightCamera } from "./flight/camera.js";
@@ -126,6 +127,7 @@ ui.setLoad(0.05, "raising the island…");
 
 let island = null;
 let weather = null;
+let feel = null;
 let craft = createCraft(save.plane || "trainer");
 let planeMesh = null;
 let contrail = null;
@@ -307,9 +309,19 @@ function handleCraftEvents() {
   const ev = craft.events;
   if (!ev || !ev.length) return;
   for (const e of ev) {
-    if (e === "touchdown") audio.play("touchdown");
-    if (e === "rough") { audio.play("touchdown"); flyCam.bump(0.5); }
-    if (e === "splash") audio.play("splash");
+    if (e === "touchdown") {
+      audio.play("touchdown");
+      feel?.touchdown(craft.pos, craft.heading, craft.lastSurface || "runway");
+    }
+    if (e === "rough") {
+      audio.play("touchdown");
+      flyCam.bump(0.5);
+      feel?.touchdown(craft.pos, craft.heading, craft.lastSurface || "runway");
+    }
+    if (e === "splash") {
+      audio.play("splash");
+      feel?.touchdown(craft.pos, craft.heading, "water");
+    }
     if (e === "crash") { audio.play("crash"); flyCam.bump(1.2); }
     if (e === "tow-release") audio.play("tow_release");
   }
@@ -601,9 +613,10 @@ function step(now) {
     }
     clock.step(dtRaw);
     island.update(dtRaw, now / 1000, clock.hour);
+    if (feel) feel.update(dtRaw);
     if (missions.applyRingNight) missions.applyRingNight(island.sky && island.sky.night || 0);
     if (weather) {
-      weather.update(dtRaw, now / 1000);
+      weather.update(dtRaw, now / 1000, craft && craft.pos);
       weather.applyToCraft(craft, dtRaw);
       look.uniforms.uRain.value = weather.state.rain;
       look.uniforms.uFlash.value = weather.state.flash;
@@ -628,6 +641,11 @@ function step(now) {
       }
       if (inp.actionPressed && craft.id === "glider" && craft.onGround && !currentMissionId) {
         startTow(craft);
+      }
+      if (inp.boost) flyCam.bump(0.15);
+      else if (weather && weather.state && weather.state.turbulence > 0.35) {
+        const g = 0.5 + 0.5 * Math.sin(now * 0.007);
+        if (g > 0.82) flyCam.bump(0.10 * weather.state.turbulence);
       }
       audio.updateFlight(craft, settings, coastalAmt(), craft.thermal);
       if (craft.stalled && !craft.onGround) {
@@ -685,7 +703,9 @@ async function boot() {
   flattenLook(scene);
   ensureShadow();
   weather = createWeather(scene, island.sky, island.water);
+  feel = createFeelFX(scene);
   missions = createMissionSystem(scene, island, audio);
+  if (missions.setFeelFX) missions.setFeelFX(feel);
   rebuildPlane(save.plane || "trainer");
   resetCraft(craft, SPAWN.airport, SPAWN.airport.heading, craft.id);
 

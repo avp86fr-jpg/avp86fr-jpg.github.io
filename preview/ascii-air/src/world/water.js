@@ -133,9 +133,16 @@ void main() {
   float foam = max(shoreFoam * 0.55, boatFoam * 0.70) * (0.40 + 0.60 * day);
   water = mix(water, vec3(0.93, 0.96, 0.98), foam * 0.85);
 
-  if (uChop > 2.0) {
-    float spray = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 6.0) * 43758.5));
-    water = mix(water, vec3(0.93, 0.96, 1.0), spray * 0.22 * sat(vWave * uChop));
+  if (uChop > 1.6) {
+    // Tiny, sparse whitecaps — high-frequency noise only. Never use the
+    // large-scale vWave as a mask (that made ice-floe-sized white blobs).
+    float nW = n2(vWorld.xz * 0.62 + vec2(uTime * 1.05, uTime * 0.22));
+    float nF = n2(vWorld.xz * 1.8 - vec2(uTime * 0.7, 3.1));
+    float nG = n2(vWorld.xz * 0.09 + vec2(2.4, uTime * 0.05));
+    float cap = step(0.84, nW) * step(0.68, nF) * step(0.42, nG) * sat((uChop - 1.6) / 2.0);
+    cap *= mix(0.7, 1.0, sat(vWave * 1.5 + 0.3));
+    water = mix(water, vec3(0.86, 0.90, 0.88), cap * 0.70);
+    water = mix(water, water * vec3(0.80, 0.90, 0.82), sat((uChop - 1.6) * 0.4));
   }
   gl_FragColor = vec4(water, uMatId / 255.0);
 }
@@ -162,7 +169,7 @@ export function createWater() {
       uBoat0: { value: new THREE.Vector2(155, -1425) },
       uBoat1: { value: new THREE.Vector2(35, -1348) },
       uBoat2: { value: new THREE.Vector2(-90, -1295) },
-      uBoat3: { value: new THREE.Vector2(-150, -1338) },
+      uBoat3: { value: new THREE.Vector2(18, -1268) },
     },
     vertexShader: VERT,
     fragmentShader: FRAG,
@@ -200,13 +207,13 @@ export function createWater() {
     _storm: false,
     setStorm(on) {
       this._storm = !!on;
-      const chop = on ? 2.6 : 1.0;
+      const chop = on ? 2.8 : 1.0;
       mat.uniforms.uChop.value = chop;
-      if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.6 : 1.0;
+      if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.8 : 1.0;
       if (on) {
-        mat.uniforms.uDeep.value.setHex(0x2a5580);
-        mat.uniforms.uShallow.value.setHex(0x4a7a9a);
-        mat.uniforms.uSky.value.setHex(0x6a8498);
+        mat.uniforms.uDeep.value.setHex(0x16383a);
+        mat.uniforms.uShallow.value.setHex(0x3a5a52);
+        mat.uniforms.uSky.value.setHex(0x3a4a54);
       } else {
         mat.uniforms.uDeep.value.setHex(0x0a3888);
         mat.uniforms.uShallow.value.setHex(0x3ec8c0);

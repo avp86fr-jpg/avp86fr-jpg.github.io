@@ -164,10 +164,10 @@ export function computeHeight(x, z) {
     const along = smoothstep(-1080, -1160, z) * smoothstep(-1420, -1260, z);
     const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 50, Math.abs(x - 80) / 280)), 1.2);
     const inlet = fbm(x * 0.0045, z * 0.0045, 3, 29);
-    const cut = smoothstep(0.62, 0.82, inlet);
+    // Slight scallop only — never drop the coast below water (those cuts read as dark oval holes).
+    const cut = smoothstep(0.70, 0.90, inlet) * 0.22;
     const cliffH = 16 + 32 * fbm(x * 0.0032, z * 0.0032, 3, 17) + 10 * ridge(x * 0.012, z * 0.01, 2, 5);
-    h = Math.max(h, cliffH * along * notAirport * (1 - cut * 0.85));
-    h = lerp(h, -1.2, along * cut * 0.7 * notAirport);
+    h = Math.max(h, cliffH * along * notAirport * (1 - cut));
   }
 
   // Ochre sea-cliffs ringing the whole coast, with noisy inlets, sparing the runway.
@@ -460,9 +460,9 @@ export function createTerrain(quality = "medium") {
         if (vd < 280 && h > 150) return [0.42 + n * 0.08, 0.38 + n * 0.04, 0.32];
         if (vd < 420 && h > 90) return [0.48 + n * 0.08, 0.44 + n * 0.05, 0.34];
         // Grey-ochre coastal rock with ink crevices (not a sandy beige slab)
-        const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.32;
-        const base = [0.48 + n * 0.08, 0.45 + n * 0.05, 0.38 + n * 0.04];
-        return crevice ? [base[0] * 0.78, base[1] * 0.76, base[2] * 0.74] : base;
+        const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.45;
+        const base = [0.52 + n * 0.08, 0.48 + n * 0.05, 0.40 + n * 0.04];
+        return crevice ? [base[0] * 0.88, base[1] * 0.86, base[2] * 0.84] : base;
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: return [0.66, 0.52, 0.30];

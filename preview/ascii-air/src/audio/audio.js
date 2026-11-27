@@ -120,8 +120,8 @@ export function createAudio() {
       if (L) L.gain.gain.setTargetAtTime(0, ac.currentTime, 0.1);
     }
     // wind
-    const w = clamp((craft.airspeed - 10) / 70, 0, 1);
-    loop("wind", { gain: 0.05 + w * 0.4, playbackRate: 0.85 + w * 0.3 });
+    const w = clamp((craft.airspeed - 8) / 62, 0, 1);
+    loop("wind", { gain: 0.06 + w * 0.62, playbackRate: 0.82 + w * 0.42 });
     loop("waves", { gain: nearCoast * 0.35, playbackRate: 1 });
     if (inThermal > 2) loop("thermal", { gain: clamp(inThermal / 20, 0, 0.25) });
     else {

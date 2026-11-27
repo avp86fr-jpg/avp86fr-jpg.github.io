@@ -98,7 +98,7 @@ export function createSkyProps(scene, quality = "medium") {
     dummy.rotation.y = a;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(i, dummy.matrix);
-    cloudData.push({ x, y, z, s, a, r, speed: 2 + (i % 5) });
+    cloudData.push({ x, y, z, s, a, r, speed: 2 + (i % 5), baseY: y, baseS: s });
   }
   for (let i = 0; i < heroSpots.length; i++) {
     const [x, y, z, s] = heroSpots[i];
@@ -199,13 +199,21 @@ export function createSkyProps(scene, quality = "medium") {
       if (on === stormOn) return;
       stormOn = on;
       if (on) {
-        cloudMat.color.setHex(0x6a7380);
-        cloudMat.emissive.setHex(0x3a4450);
-        cloudMat.emissiveIntensity = 0.25;
+        cloudMat.color.setHex(0x3a4450);
+        cloudMat.emissive.setHex(0x1a222c);
+        cloudMat.emissiveIntensity = 0.12;
+        inkMat.color.setHex(0x12161c);
+        inkMat.opacity = 0.85;
+        if (balloonInst) balloonInst.visible = false;
+        if (blimp) blimp.visible = false;
       } else {
         cloudMat.color.setHex(0xfffdf8);
         cloudMat.emissive.setHex(0xf0f4ff);
         cloudMat.emissiveIntensity = 0.55;
+        inkMat.color.setHex(0x4a5868);
+        inkMat.opacity = 0.7;
+        if (balloonInst) balloonInst.visible = true;
+        if (blimp) blimp.visible = true;
       }
     },
     update(dt, time) {
@@ -216,13 +224,36 @@ export function createSkyProps(scene, quality = "medium") {
         c.a += dt * 0.003 * c.speed;
         c.x = Math.cos(c.a) * c.r;
         c.z = Math.sin(c.a) * c.r * 0.8;
-        dummy.position.set(c.x, c.y, c.z);
-        dummy.scale.set(c.s, c.s * 0.6, c.s);
+        const y = stormOn ? 85 + ((c.baseY || c.y) - 220) * 0.18 + (i % 5) * 8 : (c.baseY || c.y);
+        const s = stormOn ? (c.baseS || c.s) * 1.28 : (c.baseS || c.s);
+        c.y = y;
+        dummy.position.set(c.x, y, c.z);
+        dummy.scale.set(s, s * (stormOn ? 0.58 : 0.6), s * (stormOn ? 1.2 : 1));
         dummy.rotation.y = c.a;
         dummy.updateMatrix();
         cloudInst.setMatrixAt(i, dummy.matrix);
       }
+      for (let i = 0; i < heroSpots.length; i++) {
+        const [x, y, z, s] = heroSpots[i];
+        const yy = stormOn ? 70 + y * 0.22 : y;
+        const ss = stormOn ? s * 1.45 : s;
+        dummy.position.set(x, yy, z);
+        dummy.scale.set(ss, ss * (stormOn ? 0.55 : 0.45), ss * (stormOn ? 1.2 : 1.2));
+        dummy.rotation.y = i * 0.7;
+        dummy.updateMatrix();
+        cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
+      }
       cloudInst.instanceMatrix.needsUpdate = true;
+      if (cloudInk) {
+        for (let i = 0; i < cloudInst.count; i++) {
+          cloudInst.getMatrixAt(i, _m);
+          _m.decompose(_p, _q, _s);
+          _s.multiplyScalar(1.022);
+          _m.compose(_p, _q, _s);
+          cloudInk.setMatrixAt(i, _m);
+        }
+        cloudInk.instanceMatrix.needsUpdate = true;
+      }
 
       for (let i = 0; i < balloons.length; i++) {
         const b = balloons[i];

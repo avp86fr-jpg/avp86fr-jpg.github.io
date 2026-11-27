@@ -116,16 +116,27 @@ void main() {
   col += bloom * uBloom;
 
   if (uRain > 0.04) {
-    // Dense diagonal comic-book rain slashes
+    // Heavier slashes, denser toward the top of the frame (near the cloud ceiling)
     vec2 ruv = vUv * uRes;
-    float axis = ruv.x * 0.62 + ruv.y;
-    float id = floor(axis / 13.0);
-    float phase = fract(axis / 13.0);
-    float drop = fract(ruv.y * 0.035 - uTime * 1.9 + id * 0.41);
-    float line = step(phase, 0.11);
-    float dash = step(0.28, drop) * step(drop, 0.92);
-    col = mix(col, vec3(0.78, 0.84, 0.92), line * dash * 0.62 * uRain);
-    col *= 1.0 - 0.07 * uRain;
+    float skyAmt = smoothstep(0.28, 0.88, vUv.y);
+    float dens = 0.75 + 0.55 * skyAmt;
+    vec2 ruv2 = ruv;
+    float axis = ruv2.x * 0.70 + ruv2.y;
+    float id = floor(axis / 10.0);
+    float phase = fract(axis / 10.0);
+    float drop = fract(ruv2.y * 0.045 - uTime * 2.4 + id * 0.41);
+    float line = step(phase, 0.10 * dens);
+    float dash = step(0.22, drop) * step(drop, 0.94);
+    col = mix(col, vec3(0.72, 0.78, 0.84), line * dash * 0.72 * uRain * dens);
+    // A second, sparser layer at a different angle so it doesn't read as one texture
+    float axisB = ruv2.x * 0.38 + ruv2.y * 1.15;
+    float idB = floor(axisB / 17.0);
+    float phaseB = fract(axisB / 17.0);
+    float dropB = fract(ruv2.y * 0.03 - uTime * 1.6 + idB * 0.27);
+    float lineB = step(phaseB, 0.055 * dens);
+    float dashB = step(0.30, dropB) * step(dropB, 0.9);
+    col = mix(col, vec3(0.68, 0.74, 0.80), lineB * dashB * 0.45 * uRain);
+    col *= 1.0 - 0.16 * uRain;
   }
   if (uSpeed > 0.12) {
     vec2 ruv = vUv * uRes;

@@ -272,28 +272,31 @@ export function createSky(scene) {
   }
 
   function applyStormLook() {
-    skyMat.uniforms.uZenith.value.setHex(0x3a5570);
-    skyMat.uniforms.uHorizon.value.setHex(0x6a8498);
-    skyMat.uniforms.uGround.value.setHex(0x4a5a60);
-    skyMat.uniforms.uSunCol.value.setHex(0xc8d0dc);
-    skyMat.uniforms.uNight.value = 0.22;
-    state.sunColor.setHex(0xc8d0dc);
-    state.horizonColor.setHex(0x6a8498);
-    state.zenithColor.setHex(0x3a5570);
-    state.fogColor.setHex(0x5a7080);
-    hemi.color.setHex(0x8aa0b4);
-    hemi.groundColor.setHex(0x3a4038);
-    hemi.intensity = 0.75;
-    sun.color.setHex(0xc8d0dc);
-    sun.intensity = 0.28;
-    amb.intensity = 0.45;
-    fog.color.setHex(0x5a7080);
-    fog.near = 1100;
-    fog.far = 4600;
+    // Dark slate, low ceiling — not a bright afternoon blue
+    skyMat.uniforms.uZenith.value.setHex(0x151c28);
+    skyMat.uniforms.uHorizon.value.setHex(0x3a4654);
+    skyMat.uniforms.uGround.value.setHex(0x2a3238);
+    skyMat.uniforms.uSunCol.value.setHex(0xb0b8c4);
+    skyMat.uniforms.uNight.value = 0.38;
+    state.sunColor.setHex(0xb0b8c4);
+    state.horizonColor.setHex(0x3a4654);
+    state.zenithColor.setHex(0x151c28);
+    state.fogColor.setHex(0x3a4650);
+    hemi.color.setHex(0x6a7888);
+    hemi.groundColor.setHex(0x2a302c);
+    hemi.intensity = 0.52;
+    sun.color.setHex(0xb0b8c4);
+    sun.intensity = 0.14;
+    amb.intensity = 0.34;
+    fog.color.setHex(0x3a4650);
+    fog.near = 600;
+    fog.far = 2600;
     stars.material.opacity = 0;
     stars.visible = false;
+    moon.visible = false;
+    moonLit.intensity = 0;
     for (const L of state.lights) {
-      L.intensity = L.userData.baseInt * (L.userData.always ? 1 : 0.7);
+      L.intensity = L.userData.baseInt * (L.userData.always ? 1 : 0.55);
     }
   }
 

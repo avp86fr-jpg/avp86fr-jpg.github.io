@@ -50,6 +50,8 @@ function house(w, d, h, roofH, wall, roof, bodyId = MAT.BUILDING, roofId = MAT.R
   g.add(r);
   // door
   add(g, box(Math.min(1.2, w * 0.25), h * 0.55, 0.2, 0x3a2a1a, MAT.WOOD), 0, h * 0.28, d / 2 + 0.05);
+  // Daytime window recess (night glow is a separate instanced light)
+  add(g, box(Math.min(1.15, w * 0.28), h * 0.32, 0.16, 0x2a3540, MAT.METAL), w * 0.22, h * 0.58, d / 2 + 0.06);
   return g;
 }
 
@@ -57,10 +59,12 @@ function makeHangar() {
   const g = new THREE.Group();
   g.name = "hangar";
   // Cream hall, barrel roof running east-west so the arched profile faces the south (hero)
-  add(g, box(36, 8, 24, 0xfffaf0, MAT.BUILDING), 0, 4, 0);
+  add(g, box(36, 8, 24, 0xf3e6cc, MAT.BUILDING), 0, 4, 0);
+  // Warm ochre plinth so the south face is not a washed-out slab
+  add(g, box(37.2, 1.3, 25.2, 0xb88958, MAT.ROCK), 0, 0.55, 0);
   // Top-half barrel only (a full cylinder plus two arched walls read as cat-ears from the runway)
   const hallGeo = new THREE.CylinderGeometry(16, 16, 38, 22, 1, false, -Math.PI / 2, Math.PI);
-  const hall = mesh(hallGeo, 0xfff8ee, MAT.BUILDING);
+  const hall = mesh(hallGeo, 0xe8d7b0, MAT.ROOF);
   hall.rotation.z = Math.PI / 2;
   hall.position.set(0, 11, 0);
   g.add(hall);
@@ -71,19 +75,23 @@ function makeHangar() {
   face.holes.push(door);
   const faceGeo = new THREE.ExtrudeGeometry(face, { depth: 1.2, bevelEnabled: false });
   faceGeo.translate(0, 0, 12.6);
-  g.add(mesh(faceGeo, 0xfffaf0, MAT.BUILDING));
+  g.add(mesh(faceGeo, 0xf3e6cc, MAT.BUILDING));
   // South face (hero-facing): same arched wall — never a blank khaki slab
   const faceS = face.clone();
   const faceGeoS = new THREE.ExtrudeGeometry(faceS, { depth: 1.2, bevelEnabled: false });
   faceGeoS.rotateY(Math.PI);
   faceGeoS.translate(0, 0, -12.6);
-  g.add(mesh(faceGeoS, 0xfffaf0, MAT.BUILDING));
+  g.add(mesh(faceGeoS, 0xf3e6cc, MAT.BUILDING));
+  // Dark interior so the door opening reads as a hall, not a hole through the building
+  add(g, box(13.2, 10.5, 8, 0x2a2218, MAT.WOOD), 0, 5.2, 0);
   // Dark windows + red door so the hall reads as a building, not a box
   add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), -10, 6.2, -13.5);
   add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), 10, 6.2, -13.5);
   add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), -10, 6.2, 13.5);
   add(g, box(3.2, 3.6, 0.5, 0x1a2230, MAT.METAL), 10, 6.2, 13.5);
   add(g, box(6.5, 8, 0.6, 0x9a2018, MAT.ROOF), 0, 4.2, -13.6);
+  // Terracotta arch trim on the south face
+  add(g, box(16.4, 0.55, 0.45, 0xa03a28, MAT.ROOF), 0, 16.4, -13.4);
   // envelope emblem
   add(g, box(6.2, 4.2, 0.4, 0xf4ead0, MAT.BUILDING), 0, 16.2, 15.0);
   add(g, box(6.2, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 16.2, 15.2);
@@ -252,24 +260,27 @@ function makeSailboat(color = 0xc8b48a) {
 function makeSteamer(color = 0x2a2e36) {
   const g = new THREE.Group();
   g.name = "steamer";
-  // Dark hull, pointed bow
-  add(g, box(7.4, 2.6, 22, color, MAT.METAL), 0, 1.3, 0);
-  add(g, box(5.2, 2.0, 5.0, color, MAT.METAL), 0, 1.1, 11.0);
-  add(g, box(3.6, 1.4, 3.4, color, MAT.METAL), 0, 0.95, 13.6);
-  // Red waterline — the hull's readable stripe
-  add(g, box(7.7, 0.5, 23.4, 0xc01418, MAT.ROOF), 0, 0.48, 0);
-  add(g, box(7.5, 0.22, 23.6, 0x1a1816, MAT.METAL), 0, 0.16, 0);
-  // White/cream superstructure, large enough to read at postcard distance
-  add(g, box(6.6, 2.8, 11.4, 0xf7f1e2, MAT.BUILDING), 0, 4.05, -1.0);
-  add(g, box(5.2, 2.1, 6.4, 0xfff8ec, MAT.BUILDING), 0, 6.4, -1.0);
-  add(g, box(4.2, 1.15, 3.6, 0xf7f1e2, MAT.BUILDING), 0, 7.9, -0.6);
+  // Long low liner: hull ~32 long, funnel top ~8 → length about 4× height.
+  add(g, box(5.2, 1.7, 28, color, MAT.METAL), 0, 1.05, -0.4);
+  add(g, box(4.2, 1.4, 4.4, color, MAT.METAL), 0, 0.95, 14.2);
+  add(g, box(2.8, 1.05, 3.2, color, MAT.METAL), 0, 0.85, 16.8);
+  add(g, box(4.6, 1.4, 3.2, color, MAT.METAL), 0, 0.95, -15.2);
+  // Red waterline + dark boot topping
+  add(g, box(5.45, 0.38, 32.2, 0xc01418, MAT.ROOF), 0, 0.38, -0.2);
+  add(g, box(5.3, 0.18, 32.4, 0x1a1816, MAT.METAL), 0, 0.14, -0.2);
+  // Cream superstructure sits low along the midships — not a tower
+  add(g, box(4.4, 1.45, 14.5, 0xf7f1e2, MAT.BUILDING), 0, 2.55, -1.6);
+  add(g, box(3.6, 1.15, 6.2, 0xfff8ec, MAT.BUILDING), 0, 3.85, -0.8);
+  add(g, box(3.1, 0.7, 3.0, 0xf7f1e2, MAT.BUILDING), 0, 4.75, 0.6);
   // Bridge windows
-  add(g, box(4.4, 0.75, 0.28, 0x1a2230, MAT.METAL), 0, 6.45, 2.25);
-  // Funnel: dark stack, wide red stripe, black cap
-  add(g, cyl(1.35, 1.5, 6.6, 10, 0x2a2a2c, MAT.METAL), 0, 9.0, 1.8);
-  add(g, cyl(1.58, 1.58, 1.9, 10, 0xc01418, MAT.ROOF), 0, 8.7, 1.8);
-  add(g, cyl(1.25, 1.38, 0.7, 10, 0x1a1a1a, MAT.METAL), 0, 12.3, 1.8);
-  add(g, cyl(0.12, 0.12, 8.2, 6, 0x333333, MAT.METAL), 0, 7.6, -7.2);
+  add(g, box(3.2, 0.45, 0.2, 0x1a2230, MAT.METAL), 0, 3.9, 2.35);
+  add(g, box(0.2, 0.4, 4.4, 0x1a2230, MAT.METAL), 1.85, 2.55, -1.4);
+  // Funnel: modest stack, red stripe, black cap
+  add(g, cyl(0.85, 0.95, 3.4, 10, 0x2a2a2c, MAT.METAL), 0, 6.2, 0.4);
+  add(g, cyl(1.02, 1.02, 1.05, 10, 0xc01418, MAT.ROOF), 0, 5.85, 0.4);
+  add(g, cyl(0.78, 0.88, 0.45, 10, 0x1a1a1a, MAT.METAL), 0, 7.95, 0.4);
+  add(g, cyl(0.08, 0.08, 6.4, 6, 0x333333, MAT.METAL), 0, 5.0, -8.4);
+  add(g, cyl(0.08, 0.08, 5.2, 6, 0x333333, MAT.METAL), 0, 4.4, 8.8);
   return g;
 }
 
@@ -508,24 +519,42 @@ function makeCave(heightAt) {
 
 function makeWaterfall() {
   const g = new THREE.Group();
+  // Rock lip and plunge pool so the cascade is a landmark, not a pale slab
+  add(g, box(18, 3.2, 8, 0x6a5a48, MAT.ROCK), 0, 20, 2);
+  add(g, box(16, 1.2, 10, 0x5a4a3a, MAT.ROCK), 0, 18.6, 0);
+  add(g, box(14, 0.8, 12, 0x8a8070, MAT.ROCK), 0, -19.2, 4);
   const mat = new THREE.MeshBasicMaterial({
-    color: 0xd8f4ff,
+    color: 0xb8d8ec,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.58,
     side: THREE.DoubleSide,
     depthWrite: false,
+    toneMapped: true,
   });
-  const geo = new THREE.PlaneGeometry(8, 36, 1, 10);
+  const geo = new THREE.PlaneGeometry(12, 40, 1, 14);
   retagGeometry(geo, MAT.WATERFALL, 1);
   const sheet = new THREE.Mesh(geo, mat);
   sheet.name = "falls";
   g.add(sheet);
   const sheet2 = new THREE.Mesh(geo.clone(), mat.clone());
+  sheet2.material.color.setHex(0xd0eaf6);
+  sheet2.material.opacity = 0.48;
   sheet2.name = "falls";
-  sheet2.position.set(6, -4, 3);
-  sheet2.rotation.y = 0.12;
-  sheet2.scale.set(0.75, 0.9, 1);
+  sheet2.position.set(5.5, -2, 2.4);
+  sheet2.rotation.y = 0.14;
+  sheet2.scale.set(0.7, 0.92, 1);
   g.add(sheet2);
+  const sheet3 = new THREE.Mesh(geo.clone(), mat.clone());
+  sheet3.material.color.setHex(0xa8c8d8);
+  sheet3.material.opacity = 0.40;
+  sheet3.name = "falls";
+  sheet3.position.set(-4.5, -3, 1.8);
+  sheet3.rotation.y = -0.1;
+  sheet3.scale.set(0.55, 0.8, 1);
+  g.add(sheet3);
+  // White lip + splash
+  add(g, box(12, 0.8, 3.2, 0xc8dce8, MAT.FOAM), 0, 19.4, 1.2);
+  add(g, box(10, 1.1, 6, 0xb8d0dc, MAT.FOAM), 0, -18.2, 3.5);
   // mist particles
   const n = 80;
   const p = new Float32Array(n * 3);
@@ -812,9 +841,8 @@ function makeCoastalCliffs(H) {
           const n = Math.sin(x * 0.07) * 0.5 + Math.sin(x * 0.19) * 0.3;
           zx += n * 14;
           hx = Math.min(hMax, Math.max(8, hx * (0.65 + 0.55 * (0.5 + 0.5 * Math.sin(x * 0.11)))));
-          // Leave the arch window and a couple of coves open
+          // Leave the arch window open; do not punch regular coves (they read as black holes)
           if (Math.abs(x - LANDMARKS.arch.x) < 12) continue;
-          if (Math.abs((x + 320) % 47) < 7) continue;
         }
         pts.push({ x, z: zx, h: hx, band: R.x0 });
       }
@@ -1007,6 +1035,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const houseColors = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
   const roofColors = [0xe02018, 0xc41010, 0xff3020, 0xd01814, 0xff3a22];
   const spots = [];
+  const winData = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const houseFrac = (q && q.houses != null) ? q.houses : 1;
@@ -1038,9 +1067,39 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
         h.scale.setScalar(ter.s);
         group.add(h);
         spots.push(h.position.clone());
+        if (rnd() > 0.48) {
+          winData.push({
+            x: x + Math.sin(h.rotation.y) * (2.6 * ter.s),
+            y: hgt + 2.6 * ter.s,
+            z: z + Math.cos(h.rotation.y) * (2.6 * ter.s),
+            s: ter.s,
+          });
+        }
         hi++;
       }
     }
+  }
+
+  let winInst = null;
+  if (winData.length) {
+    const winGeo = retagGeometry(new THREE.BoxGeometry(0.85, 0.65, 0.14), MAT.LIGHT, 1);
+    const winMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+      color: 0xffc45a, toneMapped: false, fog: true,
+    }));
+    winInst = new THREE.InstancedMesh(winGeo, winMat, winData.length);
+    winInst.name = "winlight";
+    winInst.userData.matId = MAT.LIGHT;
+    const dummyW = new THREE.Object3D();
+    winData.forEach((w, i) => {
+      dummyW.position.set(w.x, w.y, w.z);
+      dummyW.scale.setScalar(w.s * 0.62);
+      dummyW.rotation.set(0, 0, 0);
+      dummyW.updateMatrix();
+      winInst.setMatrixAt(i, dummyW.matrix);
+    });
+    winInst.instanceMatrix.needsUpdate = true;
+    winInst.visible = false;
+    group.add(winInst);
   }
 
   const church = makeChurch();
@@ -1074,10 +1133,10 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
   const steamer = makeSteamer(0x2a2e36);
-  // Mid-bay, profile to the hero camera, clear of the plane
-  steamer.position.set(-150, 0.25, -1338);
-  steamer.rotation.y = -0.7;
-  steamer.scale.setScalar(2.7);
+  // Mid-bay, farther into the scene, hull broadside so it reads as a long low ship
+  steamer.position.set(18, 0.22, -1268);
+  steamer.rotation.y = 1.05;
+  steamer.scale.setScalar(2.35);
   group.add(steamer);
   boats.push(steamer);
   const coastal = [
@@ -1158,8 +1217,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const falls = makeWaterfall();
   // sheet hangs down from ~88 to ~16, center at ~52
   const wx = LANDMARKS.waterfall.x, wz = LANDMARKS.waterfall.z;
-  falls.scale.set(0.7, 0.55, 0.7);
-  falls.position.set(wx, H(wx, wz) - 6, wz - 10);
+  falls.scale.set(1.15, 1.05, 1.15);
+  falls.position.set(wx, H(wx, wz) + 8, wz - 6);
   // Dark rock flanks so the sheet reads as a fall, not a white slab
   const lip = box(8, 4, 8, 0x8a7a60, MAT.ROCK);
   lip.position.set(wx, H(wx, wz) + 4, wz + 1);
@@ -1200,13 +1259,13 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Collapse each boat/steamer to a handful of meshes so they can still
   // bob as groups without blowing the 150-draw cap.
   for (const b of boats) mergeStatic(b, new Set());
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock", "steamer", "boat"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight"]));
   group.add(makeCoastalCliffs(H));
   // keep boat meshes (they bob)
   scene.add(group);
 
   return {
-    group, hangar, tower, church, light, pier, wreck, bridge, castle, mills, arch, cave, falls, boats, windsock,
+    group, hangar, tower, church, light, pier, wreck, bridge, castle, mills, arch, cave, falls, boats, windsock, winInst,
     _windKt: 6,
     _storm: false,
     setWind(kt, storm) {
@@ -1222,8 +1281,9 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       if (beam) {
         beam.rotation.y += dt * 0.6;
         beam.visible = true;
-        beam.material.opacity = 0.48 + night * 0.22;
+        beam.material.opacity = 0.42 + night * 0.38;
       }
+      if (winInst) winInst.visible = night > 0.35;
       const blow = this._storm ? 0.7 : 0.15;
       for (const b of boats) {
         const amp = b.name === "steamer" ? (this._storm ? 1.15 : 0.28) : (this._storm ? 0.55 : 0.15);

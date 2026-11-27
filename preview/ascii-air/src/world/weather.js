@@ -72,7 +72,7 @@ export function createWeather(scene, sky, water) {
     }
   }
 
-  function update(dt, time) {
+  function update(dt, time, focus) {
     const wantRain = state.id === "storm" ? 1 : 0;
     state.rain += (wantRain - state.rain) * Math.min(1, dt * 1.8);
     if (state.id !== "storm") {
@@ -88,28 +88,41 @@ export function createWeather(scene, sky, water) {
     }
     if (nextBolt <= 0) {
       state.flash = 1;
-      nextBolt = 2.2 + Math.random() * 4.5;
+      nextBolt = 2.0 + Math.random() * 3.8;
       const a = -0.6 + Math.random() * 0.8;
-      bolt.position.set(Math.sin(time * 0.1) * 400 + 200, 220, Math.cos(time * 0.07) * 500 + 100);
+      const fx = focus && focus.x != null ? focus.x : Math.sin(time * 0.1) * 400;
+      const fz = focus && focus.z != null ? focus.z : Math.cos(time * 0.07) * 500;
+      // Strike ahead of the plane so the bolt is in frame, not over the far north
+      bolt.position.set(fx + Math.sin(time) * 220 + 80, 160 + Math.random() * 80, fz + 180 + Math.cos(time * 0.7) * 160);
       bolt.userData.yaw = a;
       bolt.rotation.y = a;
+      bolt.scale.set(2.8, 3.6, 2.8);
       bolt.visible = true;
     }
     return state;
   }
 
   function applyToCraft(craft, dt) {
-    if (!craft || state.turbulence <= 0) return;
+    if (!craft || state.id !== "storm") return;
     const t = state.turbulence;
-    const n = Math.sin(craft.pos.x * 0.03 + craft.pos.z * 0.02 + (craft.airTime || 0) * 7.1);
-    const n2 = Math.cos(craft.pos.z * 0.04 + (craft.airTime || 0) * 5.3);
+    const at = craft.airTime || 0;
+    // Gentle gust envelope (fair) in the wind direction, plus light turbulence
+    const gust = 0.55 + 0.45 * Math.sin(at * 0.55) * Math.sin(at * 0.17 + 1.2);
+    const rad = ((state.windDeg || 270) * Math.PI) / 180;
+    const push = (state.windKt || 20) * 0.085 * gust;
     if (craft.vel) {
-      craft.vel.y += n * t * 6 * dt;
-      craft.vel.x += n2 * t * 4 * dt;
-    }
-    if (craft.angVel) {
-      craft.angVel.x += (n - 0.1) * t * 0.7 * dt;
-      craft.angVel.z += n2 * t * 0.8 * dt;
+      craft.vel.x += Math.cos(rad) * push * dt;
+      craft.vel.z += Math.sin(rad) * push * dt;
+      if (t > 0) {
+        const n = Math.sin(craft.pos.x * 0.03 + craft.pos.z * 0.02 + at * 7.1);
+        const n2 = Math.cos(craft.pos.z * 0.04 + at * 5.3);
+        craft.vel.y += n * t * 4.2 * dt;
+        craft.vel.x += n2 * t * 2.8 * dt;
+        if (craft.angVel) {
+          craft.angVel.x += (n - 0.1) * t * 0.45 * dt;
+          craft.angVel.z += n2 * t * 0.5 * dt;
+        }
+      }
     }
   }
 
