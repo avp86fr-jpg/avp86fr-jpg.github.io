@@ -200,29 +200,66 @@ function makeBoat(color = 0xc05030) {
   return makeSailboat(color);
 }
 
-function makeSailboat(color = 0xc05030) {
+function makeSailboat(color = 0xc8b48a) {
   const g = new THREE.Group();
   g.name = "boat";
-  add(g, box(3.2, 1.1, 9.4, color, MAT.WOOD), 0, 0.55, 0);
-  add(g, box(2.2, 0.9, 2.2, color, MAT.WOOD), 0, 0.7, 4.4);
-  add(g, cyl(0.12, 0.12, 11, 6, 0xefe6d2, MAT.WOOD), 0, 6.2, 0.4);
-  const sail = box(0.12, 7.2, 4.6, 0xf4f0e4, MAT.BUILDING);
-  sail.position.set(0.15, 5.4, 0.2);
-  g.add(sail);
-  add(g, box(0.08, 0.08, 5.5, 0x3a2a1a, MAT.WOOD), 0, 1.4, 0.2);
+  // Pointed wooden/white hull (not a blue box)
+  const hull = new THREE.Shape();
+  hull.moveTo(0, 5.2);
+  hull.lineTo(1.15, 1.6);
+  hull.lineTo(1.05, -4.6);
+  hull.lineTo(0, -5.0);
+  hull.lineTo(-1.05, -4.6);
+  hull.lineTo(-1.15, 1.6);
+  hull.closePath();
+  const hullGeo = new THREE.ExtrudeGeometry(hull, { depth: 1.15, bevelEnabled: false });
+  hullGeo.rotateX(Math.PI / 2);
+  hullGeo.translate(0, 0, -0.575);
+  const hullMesh = mesh(hullGeo, 0xf4efe4, MAT.WOOD);
+  hullMesh.position.y = 0.55;
+  g.add(hullMesh);
+  add(g, box(1.7, 0.45, 4.4, 0xd8c8a0, MAT.WOOD), 0, 1.05, -0.4);
+  // Waterline / keel ink
+  add(g, box(2.15, 0.12, 9.6, 0x2a2218, MAT.WOOD), 0, 0.12, 0);
+  // Mast + boom
+  add(g, cyl(0.08, 0.10, 10.2, 6, 0x3a2a18, MAT.WOOD), 0, 6.1, 0.3);
+  add(g, box(0.08, 0.08, 5.2, 0x3a2a18, MAT.WOOD), 0, 1.55, -0.4);
+  // Triangular sail (not a rectangular slab)
+  const sailShape = new THREE.Shape();
+  sailShape.moveTo(0, 0);
+  sailShape.lineTo(0, 8.4);
+  sailShape.lineTo(-0.05, 8.4);
+  sailShape.lineTo(4.4, 0.4);
+  sailShape.closePath();
+  const sailGeo = new THREE.ExtrudeGeometry(sailShape, { depth: 0.08, bevelEnabled: false });
+  sailGeo.translate(0, 0, -0.04);
+  const sailMesh = mesh(sailGeo, 0xf7f2e4, MAT.BUILDING);
+  sailMesh.position.set(0.08, 1.7, 0.35);
+  sailMesh.rotation.y = 0.08;
+  g.add(sailMesh);
   return g;
 }
 
 function makeSteamer(color = 0x3a4a58) {
   const g = new THREE.Group();
   g.name = "steamer";
-  add(g, box(7.5, 2.2, 22, color, MAT.METAL), 0, 1.1, 0);
-  add(g, box(5.4, 2.4, 8, 0xe8e0d0, MAT.BUILDING), 0, 3.2, -2);
-  add(g, box(4.2, 1.6, 4, 0xe8e0d0, MAT.BUILDING), 0, 4.8, -2);
-  add(g, cyl(1.1, 1.1, 4.4, 8, 0x2a2a2c, MAT.METAL), 0, 6.6, 1.2);
-  add(g, cyl(1.15, 1.15, 0.7, 8, 0xe8e0d0, MAT.BUILDING), 0, 7.8, 1.2);
-  add(g, cyl(0.12, 0.12, 6, 6, 0x333333, MAT.METAL), 0, 6.2, -6);
-  add(g, box(6.6, 0.4, 2.2, 0xc01418, MAT.ROOF), 0, 2.4, 8.5);
+  // Pointed black/grey hull
+  add(g, box(7.2, 2.4, 20, color, MAT.METAL), 0, 1.2, -0.4);
+  add(g, box(5.0, 1.8, 4.2, color, MAT.METAL), 0, 1.0, 10.2);
+  add(g, box(4.2, 1.2, 3.2, color, MAT.METAL), 0, 0.85, 12.6);
+  add(g, box(7.4, 0.18, 24, 0x1a1816, MAT.METAL), 0, 0.18, 0);
+  // Cream superstructure
+  add(g, box(5.6, 2.2, 8.4, 0xf0e6d0, MAT.BUILDING), 0, 3.4, -1.6);
+  add(g, box(4.0, 1.5, 4.2, 0xf0e6d0, MAT.BUILDING), 0, 5.1, -1.2);
+  add(g, box(3.2, 0.7, 2.2, 0xf0e6d0, MAT.BUILDING), 0, 6.2, -1.2);
+  // Bridge windows
+  add(g, box(3.4, 0.55, 0.2, 0x1a2230, MAT.METAL), 0, 5.15, 0.95);
+  // Tall funnel with a red band — the steamer's signature
+  add(g, cyl(1.15, 1.25, 5.4, 10, 0x2a2a2c, MAT.METAL), 0, 7.4, 1.4);
+  add(g, cyl(1.22, 1.22, 1.15, 10, 0xc01418, MAT.ROOF), 0, 7.6, 1.4);
+  add(g, cyl(1.05, 1.15, 0.6, 10, 0x1a1a1a, MAT.METAL), 0, 10.2, 1.4);
+  add(g, cyl(0.12, 0.12, 7.2, 6, 0x333333, MAT.METAL), 0, 6.6, -7);
+  add(g, box(6.4, 0.45, 2.0, 0xc01418, MAT.ROOF), 0, 2.5, 8.8);
   return g;
 }
 
@@ -369,35 +406,37 @@ function makeArch() {
   const mid = 0xd2c4a0;
   const shade = 0xc0b08a;
   const dark = 0x8a7a5c;
-  // Tall pale-ochre limestone headland with an arch CUT through, facing south.
+  // Chunky pale limestone headland with a window cut through, attached to the cape.
   const shape = new THREE.Shape();
-  const W = 14, Hgt = 58;
+  const W = 22, Hgt = 52;
   shape.moveTo(-W, 0);
-  shape.lineTo(-W - 4, 10);
-  shape.lineTo(-W + 2, 28);
-  shape.lineTo(-W + 1, Hgt);
-  shape.lineTo(W - 2, Hgt - 2);
-  shape.lineTo(W + 3, 26);
-  shape.lineTo(W + 2, 8);
+  shape.lineTo(-W - 6, 8);
+  shape.lineTo(-W - 2, 24);
+  shape.lineTo(-W + 2, Hgt);
+  shape.lineTo(W - 2, Hgt - 3);
+  shape.lineTo(W + 5, 22);
+  shape.lineTo(W + 3, 7);
   shape.lineTo(W, 0);
   shape.closePath();
   const hole = new THREE.Path();
-  hole.absellipse(0, 18, 6.2, 16, 0, Math.PI * 2, true);
+  // Opening is clearly a window in a mass, not a thin frame
+  hole.absellipse(0, 16, 5.4, 11.5, 0, Math.PI * 2, true);
   shape.holes.push(hole);
   const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: 14, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.2, bevelSegments: 2, curveSegments: 16,
+    depth: 24, bevelEnabled: true, bevelThickness: 2.4, bevelSize: 1.8, bevelSegments: 2, curveSegments: 20,
   });
-  geo.translate(0, 0, -7);
+  geo.translate(0, 0, -12);
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const stripe = Math.sin(x * 0.55 + y * 1.15) + 0.5 * Math.sin((x - y) * 1.8 + z * 0.2);
-    const hatch = stripe > 0.35 ? 0.62 : stripe > 0.0 ? 0.8 : stripe > -0.3 ? 0.92 : 1;
-    const shadeAmt = (z > 4 ? 0.82 : 1) * (y < 4 ? 0.85 : 1);
-    col[i * 3] = 0.86 * hatch * shadeAmt;
-    col[i * 3 + 1] = 0.78 * hatch * shadeAmt;
-    col[i * 3 + 2] = 0.58 * hatch * shadeAmt;
+    const stripe = Math.sin(x * 0.35 + y * 0.7) + 0.5 * Math.sin((x - y) * 1.1 + z * 0.15);
+    const hatch = stripe > 0.35 ? 0.78 : stripe > 0.0 ? 0.88 : stripe > -0.3 ? 0.95 : 1;
+    const shadeAmt = (z > 8 ? 0.88 : 1) * (y < 4 ? 0.9 : 1);
+    // Pale limestone, not brown
+    col[i * 3] = 0.90 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.84 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.68 * hatch * shadeAmt;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
@@ -405,10 +444,11 @@ function makeArch() {
   const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
   mesh.userData.matId = MAT.ROCK;
   g.add(mesh);
-  // Irregular rocky toes under the arch — never rectangular buttress boxes
-  add(g, box(5.5, 7, 8, dark, MAT.ROCK), -10, 3.2, 6, 0.1, 0.4, 0.15);
-  add(g, box(6.0, 6, 7, shade, MAT.ROCK), 10, 2.8, 5, -0.08, -0.35, -0.12);
-  add(g, box(4.5, 5, 9, mid, MAT.ROCK), 0, 2.0, 11, 0.2, 0.2, 0);
+  // Chunky limestone toes and a spine attaching the arch to the cape (north, +Z)
+  add(g, box(10, 14, 16, pale, MAT.ROCK), -14, 7, 10, 0.06, 0.2, 0.1);
+  add(g, box(10, 13, 16, mid, MAT.ROCK), 14, 6.5, 10, -0.05, -0.18, -0.08);
+  add(g, box(16, 12, 22, pale, MAT.ROCK), 0, 6, 18, 0.04, 0.1, 0);
+  add(g, box(12, 10, 18, mid, MAT.ROCK), 2, 5, 28, 0, 0.15, 0);
   return g;
 }
 
@@ -790,7 +830,7 @@ function makeCoastalCliffs(H) {
   if (bushPts.length) {
     const inst = new THREE.InstancedMesh(
       retagGeometry(new THREE.SphereGeometry(2.1, 6, 5), MAT.FOLIAGE, 0),
-      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2f8a32, flatShading: true })),
+      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2a4a28, flatShading: true })),
       bushPts.length
     );
     inst.userData.matId = MAT.FOLIAGE;
@@ -974,20 +1014,21 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
-  const steamer = makeSteamer(0x3a4a58);
-  steamer.position.set(-80, 0.9, -1310);
-  steamer.rotation.y = -0.55;
-  steamer.scale.setScalar(2.35);
+  const steamer = makeSteamer(0x3a4550);
+  // Mid-bay toward the lighthouse, well clear of the hero plane silhouette
+  steamer.position.set(-155, 0.9, -1320);
+  steamer.rotation.y = -0.85;
+  steamer.scale.setScalar(2.5);
   group.add(steamer);
   boats.push(steamer);
   const coastal = [
-    [130, -1410, 0x2a6cb6], [20, -1335, 0xe8e0c8], [-40, -1270, 0xc05030],
+    [155, -1425, 0xf4efe4], [35, -1348, 0xf0e6d0], [-90, -1295, 0xe8dcc0],
   ];
   for (const [x, z, col] of coastal) {
     const b = makeSailboat(col);
-    b.position.set(x, 0.5, z);
+    b.position.set(x, 0.45, z);
     b.rotation.y = -0.55;
-    b.scale.setScalar(1.85);
+    b.scale.setScalar(2.25);
     group.add(b);
     boats.push(b);
   }
@@ -1044,7 +1085,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   const arch = makeArch();
-  arch.scale.set(0.88, 0.78, 0.85);
+  arch.scale.set(1.15, 1.05, 1.20);
   const aH = Math.max(0, H(LANDMARKS.arch.x, LANDMARKS.arch.z + 16));
   arch.position.set(LANDMARKS.arch.x, aH, LANDMARKS.arch.z);
   arch.rotation.y = 0.08;

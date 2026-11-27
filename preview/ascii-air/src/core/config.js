@@ -219,14 +219,16 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // Wide postcard: camera behind-above the plane, looking at the far
-  // horizon (not down at the nose) so ~35% of the frame is sky.
+  // Postcard + a true rear-3/4 of the plane (~22° down, ~21° side).
+  // shiftY is a film-gate offset (fraction of frame) so the horizon can
+  // stay high while the camera sits above the plane.
   plane: { x: 55, y: 54, z: -1540 },
-  look:  { x: 8, y: 18, z: -800 },
-  dist: 38,
-  height: 9.0,
-  side: 11.0,
-  fov: 56,
+  look:  { x: 8, y: 22, z: -820 },
+  dist: 41,
+  height: 16.2,
+  side: 18.0,
+  fov: 60,
+  shiftY: 0.16,
 };
 
 export const SPAWN = {

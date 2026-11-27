@@ -120,30 +120,22 @@ void main() {
   float inkLine = (1.0 - smoothstep(0.0, 0.03, tick)) * shore * 0.35 * (0.4 + 0.6 * nB);
   water = mix(water, vec3(0.06, 0.14, 0.32), inkLine);
 
-  // White crest dashes only on real nearby peaks — a world-space fract over all
-  // the water was painting regular open-water stripes, especially in the title shot.
-  float distC = length(vWorld.xz - cameraPosition.xz);
-  float crest = sat(vWave * uChop * 5.0 - 0.15);
-  float dash = step(0.7, fract(vWorld.x * 0.08 + vWorld.z * 0.06 + nA * 2.2 + uTime * 0.15));
-  float nearCrest = (1.0 - sat((distC - 60.0) / 220.0)) * (1.0 - shore * 0.35) * day;
-  float crestDash = crest * dash * nearCrest;
-  water = mix(water, vec3(0.93, 0.97, 1.0), crestDash * 0.40);
-
-  // Foam around the shore, rocks, and boats
-  float foamLine = sat(1.0 - abs(foamZone - 0.28) * 12.0);
+  // No open-water crest dashes — they read as glitchy white curved bands
+  // in the foreground. Foam only in a tight strip at the actual shore
+  // and as a small wake around boats.
   float boatFoam = 0.0;
-  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat0) / 9.0));
-  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat1) / 9.0));
-  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat2) / 11.0));
-  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat3) / 14.0));
-  float foam = max(foamLine * 0.75, boatFoam * 0.85) * (0.35 + 0.65 * day);
-  water = mix(water, vec3(0.92, 0.96, 0.98), foam);
-  float foamEdge = sat((foam - 0.40) * 14.0) * (1.0 - sat((foam - 0.72) * 16.0));
-  water = mix(water, vec3(0.12, 0.16, 0.22), foamEdge * 0.35);
+  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat0) / 6.0));
+  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat1) / 6.0));
+  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat2) / 6.5));
+  boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat3) / 8.0));
+  // Tight shoreline only (foamZone close to 1), never a mid-bay isoline
+  float shoreFoam = sat(foamZone * 1.8 - 1.15) * (0.5 + 0.5 * nB);
+  float foam = max(shoreFoam * 0.55, boatFoam * 0.70) * (0.40 + 0.60 * day);
+  water = mix(water, vec3(0.93, 0.96, 0.98), foam * 0.85);
 
   if (uChop > 2.0) {
     float spray = step(0.92, fract(sin(dot(vWorld.xz, vec2(12.9898, 78.233)) + uTime * 6.0) * 43758.5));
-    water = mix(water, vec3(0.93, 0.96, 1.0), spray * 0.35 * sat(crest));
+    water = mix(water, vec3(0.93, 0.96, 1.0), spray * 0.22 * sat(vWave * uChop));
   }
   gl_FragColor = vec4(water, uMatId / 255.0);
 }
@@ -167,10 +159,10 @@ export function createWater() {
       uChop: { value: 1.0 },
       uNight: { value: 0 },
       uWaveTex: { value: loadTex("water.png") },
-      uBoat0: { value: new THREE.Vector2(130, -1410) },
-      uBoat1: { value: new THREE.Vector2(20, -1335) },
-      uBoat2: { value: new THREE.Vector2(-40, -1270) },
-      uBoat3: { value: new THREE.Vector2(-80, -1310) },
+      uBoat0: { value: new THREE.Vector2(155, -1425) },
+      uBoat1: { value: new THREE.Vector2(35, -1348) },
+      uBoat2: { value: new THREE.Vector2(-90, -1295) },
+      uBoat3: { value: new THREE.Vector2(-155, -1320) },
     },
     vertexShader: VERT,
     fragmentShader: FRAG,

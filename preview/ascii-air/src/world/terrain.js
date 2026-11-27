@@ -390,6 +390,9 @@ export function computeMaterial(x, z, h, slope) {
   // forest belts
   const forestN = fbm(x * 0.0022, z * 0.0022, 4, 44);
   if (h > 12 && h < 95 && slope < 0.42 && forestN > 0.40 && vd > 240) return MAT.FOREST;
+  // Ochre terraced fields on the mid-south slopes
+  const fieldN = fbm(x * 0.0055, z * 0.0055, 3, 12);
+  if (h > 8 && h < 55 && slope < 0.28 && fieldN < 0.32 && z > -1050 && z < -200 && Math.abs(x) < 700) return MAT.DIRT;
   return MAT.GRASS;
 }
 
@@ -433,14 +436,20 @@ export function createTerrain(quality = "medium") {
     switch (m) {
       case MAT.SEA: return [0.07, 0.32 + n * 0.04, 0.40];
       case MAT.WATER_DEEP: return [0.06, 0.22, 0.30];
-      case MAT.SAND: return [0.98, 0.90, 0.58 + n * 0.06];
+      case MAT.SAND: return [0.90 + n * 0.04, 0.78 + n * 0.04, 0.52 + n * 0.04];
       case MAT.GRASS: {
-        const dry = saturate((n - 0.45) * 2) * saturate((z + 400) / 800);
-        const lime = [0.34 + n * 0.12, 0.78 + n * 0.12, 0.14 + n * 0.05];
-        const ochre = [0.55 + n * 0.08, 0.68, 0.20];
-        return [lime[0] + (ochre[0]-lime[0])*dry*0.45, lime[1] + (ochre[1]-lime[1])*dry*0.45, lime[2] + (ochre[2]-lime[2])*dry*0.45];
+        const n2 = fbm(x * 0.007, z * 0.007, 3, 7);
+        const terrace = Math.abs(Math.sin(h * 0.62 + x * 0.028 + z * 0.018)) < 0.07;
+        let col;
+        if (n2 < 0.30) col = [0.64 + n * 0.05, 0.52 + n * 0.03, 0.24];       // ochre field
+        else if (n2 < 0.48) col = [0.48, 0.52, 0.32];                       // sage
+        else if (n2 < 0.66) col = [0.40, 0.44, 0.20];                       // olive
+        else if (n2 > 0.82) col = [0.20, 0.34, 0.16];                       // deep pine lawn
+        else col = [0.38 + n * 0.04, 0.50 + n * 0.04, 0.22];                // muted meadow, never lime
+        if (terrace) col = [col[0] * 0.78, col[1] * 0.72, col[2] * 0.70];
+        return col;
       }
-      case MAT.FOREST: return [0.12 + n * 0.04, 0.50 + n * 0.16, 0.14];
+      case MAT.FOREST: return [0.16 + n * 0.04, 0.32 + n * 0.08, 0.14];
       case MAT.ROCK: {
         const vd = Math.hypot(x, z - 200);
         // Crater glow only at the lip — the cone itself is brown/grey rock

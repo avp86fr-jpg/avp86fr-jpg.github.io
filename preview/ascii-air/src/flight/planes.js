@@ -90,17 +90,33 @@ function wire(g, dark, x0, y0, z0, x1, y1, z1) {
   return m;
 }
 
+
+/** Shape in XY (+X = toward nose, +Y = up); bake into the YZ plane so
+ *  animation can use rotation.y as a rudder hinge without a base offset. */
+function extrudeYZ(shape, depth) {
+  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, steps: 1, curveSegments: 1 });
+  geo.translate(0, 0, -depth / 2);
+  geo.rotateY(-Math.PI / 2);
+  return geo;
+}
+
 function buildTrainer(s) {
   const g = new THREE.Group();
   const red = s.body, cream = s.accent, dark = s.dark;
 
   // Builder space: +Z is the nose (prop), -Z is the tail. Flipped later to flight -Z.
-  // Fat cowling, mid cockpit, then a slim tail boom — never a rear disc.
-  add(g, new THREE.CylinderGeometry(0.80, 0.66, 2.15, 14), red, MAT.PLANE, 0, 0.28, 2.20, Math.PI / 2, 0, 0);
-  add(g, new THREE.SphereGeometry(0.80, 12, 10), red, MAT.PLANE, 0, 0.28, 3.28);
-  add(g, new THREE.CylinderGeometry(0.66, 0.34, 2.05, 14), red, MAT.PLANE, 0, 0.28, 0.10, Math.PI / 2, 0, 0);
-  add(g, new THREE.CylinderGeometry(0.34, 0.11, 3.55, 12), red, MAT.PLANE, 0, 0.30, -2.60, Math.PI / 2, 0, 0);
-  add(g, new THREE.BoxGeometry(0.80, 0.12, 5.0), cream, MAT.PLANE, 0, -0.16, 0.35);
+  // SOLID taper (closed cylinders) ending in a pointed cone. Open ends read as
+  // a dark circular hole from behind — the "red cowl disc" misread.
+  const open = false;
+  add(g, new THREE.CylinderGeometry(0.78, 0.58, 2.05, 14, 1, open), red, MAT.PLANE, 0, 0.28, 2.15, Math.PI / 2, 0, 0);
+  add(g, new THREE.SphereGeometry(0.78, 12, 10), red, MAT.PLANE, 0, 0.28, 3.18);
+  add(g, new THREE.CylinderGeometry(0.58, 0.26, 2.20, 14, 1, open), red, MAT.PLANE, 0, 0.30, 0.05, Math.PI / 2, 0, 0);
+  const boom = add(g, new THREE.CylinderGeometry(0.26, 0.055, 4.15, 12, 1, open), red, MAT.PLANE, 0, 0.34, -2.95, Math.PI / 2, 0, 0);
+  boom.name = "tail-boom";
+  // Small pointed tail cone — never a round cap
+  const cone = add(g, new THREE.ConeGeometry(0.10, 0.70, 10), red, MAT.PLANE, 0, 0.34, -5.28, -Math.PI / 2, 0, 0);
+  cone.name = "tail-cone";
+  add(g, new THREE.BoxGeometry(0.62, 0.10, 5.2), cream, MAT.PLANE, 0, -0.10, 0.15);
 
   // Radial engine + cowling rings, clearly at the FRONT
   add(g, new THREE.CylinderGeometry(0.92, 0.92, 0.22, 16), dark, MAT.METAL, 0, 0.28, 3.22, Math.PI / 2);
@@ -150,15 +166,63 @@ function buildTrainer(s) {
     wire(g, dark, side * 4.20, 1.70, 0.85, side * 2.45, 0.08, -0.55);
   }
 
-  // Cream vertical fin + red rudder stripe and leading edge; slim so it never reads as a disc
-  add(g, new THREE.BoxGeometry(0.08, 2.55, 1.90), cream, MAT.PLANE, 0, 1.62, -3.95);
-  add(g, new THREE.BoxGeometry(0.09, 2.55, 0.22), red, MAT.PLANE, 0, 1.62, -4.82);
-  add(g, new THREE.BoxGeometry(0.09, 2.55, 0.14), red, MAT.PLANE, 0, 1.62, -3.05);
-  const rudder = add(g, new THREE.BoxGeometry(0.08, 2.10, 0.50), cream, MAT.PLANE, 0, 1.48, -5.05);
-  add(g, new THREE.BoxGeometry(4.55, 0.10, 1.40), cream, MAT.PLANE, 0, 0.38, -4.05);
-  const elev = add(g, new THREE.BoxGeometry(4.15, 0.09, 0.42), cream, MAT.PLANE, 0, 0.38, -4.75);
-  add(g, new THREE.BoxGeometry(0.16, 0.12, 1.40), red, MAT.PLANE, 1.95, 0.46, -4.05);
-  add(g, new THREE.BoxGeometry(0.16, 0.12, 1.40), red, MAT.PLANE, -1.95, 0.46, -4.05);
+  // Cream vertical fin + red rudder: raked, tapered, modest size (not a wall).
+  // Shape XY: +X toward the nose, +Y up. Then ry = -PI/2 so +X becomes +Z.
+  const finSh = new THREE.Shape();
+  // Tip must clear the upper wing (y≈1.87) so a 20° rear-above shot
+  // shows a cream upright fin, not just a red fuselage end.
+  finSh.moveTo(0.00, 0.04);
+  finSh.lineTo(1.28, 0.04);   // leading-edge root
+  finSh.lineTo(0.74, 2.10);   // leading-edge tip (raked)
+  finSh.lineTo(0.14, 2.22);   // trailing tip  → world y ≈ 2.62
+  finSh.lineTo(0.00, 0.35);
+  finSh.closePath();
+  // Thickness 0.20 so the fin still reads when viewed nearly edge-on from behind.
+  const fin = add(g, extrudeYZ(finSh, 0.20), cream, MAT.PLANE, 0, 0.40, -5.02);
+  fin.name = "tail-fin";
+  // Thin red leading-edge stripe
+  const leSh = new THREE.Shape();
+  leSh.moveTo(1.10, 0.04);
+  leSh.lineTo(1.30, 0.04);
+  leSh.lineTo(0.78, 2.12);
+  leSh.lineTo(0.62, 2.06);
+  leSh.closePath();
+  add(g, extrudeYZ(leSh, 0.22), red, MAT.PLANE, 0, 0.40, -5.02);
+  // Rudder aft of the hinge. Orientation is baked so rotation.y is a hinge, not a reset.
+  const rudSh = new THREE.Shape();
+  rudSh.moveTo(0.00, 0.12);
+  rudSh.lineTo(-0.58, 0.22);
+  rudSh.lineTo(-0.42, 1.85);
+  rudSh.lineTo(0.00, 2.14);
+  rudSh.closePath();
+  const rudder = add(g, extrudeYZ(rudSh, 0.16), cream, MAT.PLANE, 0, 0.40, -5.02);
+  rudder.name = "tail-rudder";
+  const rstSh = new THREE.Shape();
+  rstSh.moveTo(-0.42, 0.24);
+  rstSh.lineTo(-0.60, 0.24);
+  rstSh.lineTo(-0.44, 1.82);
+  rstSh.lineTo(-0.30, 1.80);
+  rstSh.closePath();
+  const rst = add(g, extrudeYZ(rstSh, 0.18), red, MAT.PLANE, 0, 0.40, -5.02);
+  rudder.add(rst);
+  rst.position.set(0, 0, 0);
+  // Horizontal tailplanes — modest span, slightly tapered, not a giant slab
+  const stabSh = new THREE.Shape();
+  stabSh.moveTo(-1.80, 0.00);   // left tip trailing
+  stabSh.lineTo(-1.80, 0.78);   // left tip leading
+  stabSh.lineTo(0.00, 1.15);    // root leading
+  stabSh.lineTo(1.80, 0.78);
+  stabSh.lineTo(1.80, 0.00);
+  stabSh.lineTo(0.00, 0.05);
+  stabSh.closePath();
+  const stabGeo = new THREE.ExtrudeGeometry(stabSh, { depth: 0.08, bevelEnabled: false, steps: 1, curveSegments: 1 });
+  stabGeo.rotateX(-Math.PI / 2);
+  stabGeo.translate(0, 0.04, 0);
+  const stab = add(g, stabGeo, cream, MAT.PLANE, 0, 0.48, -4.85);
+  stab.name = "tail-stab";
+  const elev = add(g, new THREE.BoxGeometry(3.30, 0.07, 0.34), cream, MAT.PLANE, 0, 0.48, -5.32);
+  add(g, new THREE.BoxGeometry(0.12, 0.09, 0.78), red, MAT.PLANE, 1.72, 0.54, -4.50);
+  add(g, new THREE.BoxGeometry(0.12, 0.09, 0.78), red, MAT.PLANE, -1.72, 0.54, -4.50);
 
   // Gear under the forward fuselage
   add(g, new THREE.BoxGeometry(0.08, 1.25, 0.08), dark, MAT.METAL, 1.12, -0.62, 0.85);
@@ -168,8 +232,8 @@ function buildTrainer(s) {
   const wR = add(g, new THREE.CylinderGeometry(0.46, 0.46, 0.22, 14), dark, MAT.METAL, -1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
   add(g, new THREE.CylinderGeometry(0.24, 0.24, 0.14, 10), cream, MAT.PLANE, 1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
   add(g, new THREE.CylinderGeometry(0.24, 0.24, 0.14, 10), cream, MAT.PLANE, -1.20, -1.28, 0.85, 0, 0, Math.PI / 2);
-  add(g, new THREE.BoxGeometry(0.07, 0.78, 0.07), dark, MAT.METAL, 0, -0.28, -2.70, 0.5, 0, 0);
-  const wT = add(g, new THREE.CylinderGeometry(0.16, 0.16, 0.10, 8), dark, MAT.METAL, 0, -0.70, -2.88, 0, 0, Math.PI / 2);
+  add(g, new THREE.BoxGeometry(0.06, 0.62, 0.06), dark, MAT.METAL, 0, -0.12, -4.55, 0.55, 0, 0);
+  const wT = add(g, new THREE.CylinderGeometry(0.11, 0.11, 0.08, 8), dark, MAT.METAL, 0, -0.48, -4.78, 0, 0, Math.PI / 2);
 
   // Prop at the very front, with a blur disc for high RPM
   const prop = new THREE.Group();
@@ -208,8 +272,9 @@ function buildTrainer(s) {
   g.add(prop);
 
   const pilot = seatPilot(g);
-  pilot.position.set(0, 1.08, 0.85);
-  pilot.scale.setScalar(0.78);
+  pilot.position.set(0, 1.16, 0.70);
+  pilot.scale.setScalar(0.88);
+  pilot.name = "pilot";
 
   g.userData.prop = prop;
   g.userData.propBlur = disc;
@@ -217,6 +282,10 @@ function buildTrainer(s) {
   g.userData.wheels = [wL, wR, wT];
   g.userData.elevator = elev;
   g.userData.rudder = rudder;
+  g.userData.fin = fin;
+  g.userData.cone = cone;
+  g.userData.stab = stab;
+  g.userData.boom = boom;
   g.userData.ailL = ailL;
   g.userData.ailR = ailR;
   return g;
@@ -346,15 +415,18 @@ export function createPlaneMesh(id, colors) {
   const s = scheme(colors?.color || def.color, colors?.accent || def.accent);
   const visual = BUILDERS[id](s);
   // Builders place the nose at +Z; flight/camera forward is -Z, so flip the visual.
+  // Merge FIRST while the visual is still identity, then flip+scale so the baked
+  // body and the kept parts (prop, fin, stab, boom, cone) share one transform.
+  // Merging after the flip baked the body twice and put the engine on the tail.
   visual.name = "plane-visual";
-  visual.rotation.y = Math.PI;
-  visual.scale.setScalar(1.32);
   const g = new THREE.Group();
   g.name = "plane-" + id;
   g.add(visual);
   const ud = visual.userData || {};
   g.userData = ud;
-  mergePlaneStatic(visual, [ud.prop, ud.elevator, ud.rudder, ud.ailL, ud.ailR]);
+  mergePlaneStatic(visual, [ud.prop, ud.elevator, ud.rudder, ud.ailL, ud.ailR, ud.fin, ud.cone, ud.stab, ud.boom]);
+  visual.rotation.y = Math.PI;
+  visual.scale.setScalar(1.32);
   tagMesh(g, MAT.PLANE, 1);
   return g;
 }

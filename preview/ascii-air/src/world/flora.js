@@ -3,7 +3,7 @@ import { MAT, QUALITY } from "../core/config.js";
 import { retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { fbm } from "./noise.js";
 
-const GREENS = [0x3cb44a, 0x2a8f34, 0x5bc45a];
+const GREENS = [0x3a5228, 0x2a4324, 0x4a5a32, 0x1e3a22, 0x3d4f2c];
 
 function trunkGeo() {
   return retagGeometry(new THREE.CylinderGeometry(0.28, 0.48, 4.4, 6), MAT.WOOD);

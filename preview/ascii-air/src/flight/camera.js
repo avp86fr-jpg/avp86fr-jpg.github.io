@@ -7,6 +7,17 @@ const _up = new THREE.Vector3();
 const _right = new THREE.Vector3();
 const _pos = new THREE.Vector3();
 const _look = new THREE.Vector3();
+function applyHeroFilm(camera, hero, portrait) {
+  if (hero && !portrait && HERO_VIEW.shiftY) {
+    const w = 1000, h = 1000 / Math.max(0.5, camera.aspect);
+    // Positive offsetY slides the look-at UP the frame so a high camera
+    // can still keep the plane (below the look) in the lower third.
+    camera.setViewOffset(w, h, 0, HERO_VIEW.shiftY * h, w, h);
+  } else if (camera.view) {
+    camera.clearViewOffset();
+  }
+}
+
 const _ray = new THREE.Raycaster();
 const _from = new THREE.Vector3();
 const _dir = new THREE.Vector3();
@@ -293,6 +304,7 @@ export function createFlightCamera(camera) {
     collide(camera.position, r.look);
     camera.up.copy(r.up);
     camera.lookAt(r.look);
+    applyHeroFilm(camera, state.hero, portrait);
 
     if (!state.hero && state.mode !== "title") {
       const sh = k * k * 0.11;
@@ -318,6 +330,7 @@ export function createFlightCamera(camera) {
     camera.up.copy(r.up);
     camera.lookAt(r.look);
     camera.fov = state.hero ? HERO_VIEW.fov : (portrait ? CAM.fovPortrait : CAM.fov);
+    applyHeroFilm(camera, state.hero, portrait);
     camera.updateProjectionMatrix();
     state.hasPose = true;
   }

@@ -26,12 +26,12 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0xffffff,
     vertexColors: true,
-    emissive: 0xd8e8ff,
-    emissiveIntensity: 0.28,
+    emissive: 0xeef4ff,
+    emissiveIntensity: 0.18,
     flatShading: false,
   }));
   const clouds = new THREE.Group();
-  const nCloud = Math.floor(40 * q.clouds);
+  const nCloud = Math.floor(10 * q.clouds);
   const puff = cloudPuff(cloudMat);
   puff.updateMatrixWorld(true);
   // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
@@ -51,15 +51,16 @@ export function createSkyProps(scene, quality = "medium") {
     // manual merge of positions
     cloudGeo = mergeSimple(geos, MAT.CLOUD);
   }
+  // Horizon banks behind the island + a few large high clouds. Not a cluttered field.
   const heroSpots = [
-    [-420, 280, -900, 36], [-400, 340, -880, 24],
-    [360, 300, -720, 32], [340, 370, -700, 22],
-    [-80, 340, -400, 40], [-40, 410, -420, 26],
-    [500, 260, -1000, 28], [-560, 300, -600, 30],
-    [220, 320, -200, 34], [200, 390, -180, 22],
-    [-280, 290, -200, 32], [80, 360, 200, 38],
-    [140, 300, -1100, 30], [-200, 310, -1050, 28],
-    [80, 250, -800, 22], [80, 310, -820, 16],
+    // left horizon bank
+    [-520, 245, -200, 52], [-380, 230, -80, 44], [-240, 250, 40, 48],
+    // right horizon bank
+    [280, 240, 60, 50], [440, 255, -80, 46], [580, 235, -220, 40],
+    // far mid skyline, just above the volcano
+    [-40, 280, 200, 56], [120, 270, 160, 42],
+    // a few large high ones
+    [-180, 430, -600, 58], [260, 450, -500, 54], [40, 470, -200, 62],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -74,10 +75,11 @@ export function createSkyProps(scene, quality = "medium") {
     const span = Math.max(0.001, ymax - ymin);
     for (let i = 0; i < pos.count; i++) {
       const k = (pos.getY(i) - ymin) / span;
-      // underside pale blue-grey, crown bright white
-      col[i * 3] = 0.78 + 0.22 * k;
-      col[i * 3 + 1] = 0.84 + 0.16 * k;
-      col[i * 3 + 2] = 0.92 + 0.08 * k;
+      // Bright white crown, only a light-blue wash at the base — not grey
+      const b = k * k; // more of the puff is white
+      col[i * 3] = 0.88 + 0.12 * b;
+      col[i * 3 + 1] = 0.91 + 0.09 * b;
+      col[i * 3 + 2] = 0.96 + 0.04 * b;
     }
     cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   }
@@ -86,13 +88,13 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudData = [];
   for (let i = 0; i < nCloud; i++) {
     const a = (i / nCloud) * TAU + 0.3;
-    const r = 200 + (i * 97) % 1400;
+    const r = 900 + (i * 97) % 800;
     const x = Math.cos(a) * r;
-    const z = Math.sin(a) * r * 0.8;
-    const y = 240 + (i * 17) % 200;
-    const s = 16 + (i * 11) % 28;
+    const z = Math.sin(a) * r * 0.85;
+    const y = 220 + (i * 11) % 80;
+    const s = 36 + (i * 13) % 24;
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 0.6, s);
+    dummy.scale.set(s, s * 0.48, s * 1.15);
     dummy.rotation.y = a;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(i, dummy.matrix);
@@ -101,7 +103,7 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < heroSpots.length; i++) {
     const [x, y, z, s] = heroSpots[i];
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 0.55, s);
+    dummy.scale.set(s, s * 0.45, s * 1.2);
     dummy.rotation.y = i * 0.7;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
@@ -110,9 +112,11 @@ export function createSkyProps(scene, quality = "medium") {
   group.add(cloudInst);
   // Ink outline hulls (back-face, slightly larger) so cumulus read as ligne-claire volumes
   const inkMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x3a342c,
+    color: 0x4a5868,
     side: THREE.BackSide,
     fog: true,
+    transparent: true,
+    opacity: 0.7,
   }));
   inkMat.userData.matId = MAT.CLOUD;
   const cloudInk = new THREE.InstancedMesh(cloudGeo, inkMat, nCloud + heroSpots.length);
@@ -120,7 +124,7 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < cloudInst.count; i++) {
     cloudInst.getMatrixAt(i, _m);
     _m.decompose(_p, _q, _s);
-    _s.multiplyScalar(1.035);
+    _s.multiplyScalar(1.022);
     _m.compose(_p, _q, _s);
     cloudInk.setMatrixAt(i, _m);
   }
