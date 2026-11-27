@@ -471,3 +471,6 @@ body.touch .hdetect { top: calc(var(--st) + 56px); width: min(240px, 40vw); }
 @media (orientation: portrait) { #title .keyart { background-image: linear-gradient(0deg, rgba(5,7,10,0.92) 0%, rgba(5,7,10,0.5) 45%, rgba(0,0,0,0) 65%), url(assets/cover_2x3_720.webp); } }
 #loading { justify-content: flex-end; padding-bottom: 12vh; box-sizing: border-box; }
 @media (orientation: portrait) { .keyart, #title .keyart, #loading { background-size: 100% auto; background-position: center top; background-repeat: no-repeat; background-color: #07080a; } .keyart { animation: none; } }
+/* large desktop (1080p+): menus, briefing, results, options and panels were laid out for ~720p and read tiny; scale their content */
+@media (min-width: 1700px) and (min-height: 950px) { .screen > :not(.keyart), .panel > * { zoom: 1.35; } }
+@media (min-width: 2400px) and (min-height: 1350px) { .screen > :not(.keyart), .panel > * { zoom: 1.8; } }

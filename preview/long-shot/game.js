@@ -33219,6 +33219,7 @@ void main() {
   }
   function adaptQuality(dt, onChange) {
     if (G.settings.quality !== "auto") return;
+    if (G.quality.mobile) return;
     const fps = G.stats.fps;
     if (G.quality.mobile) {
       if (G.quality.name === "low") {
@@ -33659,6 +33660,957 @@ void main() {
     }
   });
 
+  // node_modules/three/examples/jsm/utils/BufferGeometryUtils.js
+  function mergeGeometries(geometries, useGroups = false) {
+    const isIndexed = geometries[0].index !== null;
+    const attributesUsed = new Set(Object.keys(geometries[0].attributes));
+    const morphAttributesUsed = new Set(Object.keys(geometries[0].morphAttributes));
+    const attributes = {};
+    const morphAttributes = {};
+    const morphTargetsRelative = geometries[0].morphTargetsRelative;
+    const mergedGeometry = new BufferGeometry();
+    mergedGeometry.morphTargetsRelative = morphTargetsRelative;
+    let offset = 0;
+    for (let i = 0; i < geometries.length; ++i) {
+      const geometry = geometries[i];
+      let attributesCount = 0;
+      let morphAttributesCount = 0;
+      if (isIndexed !== (geometry.index !== null)) {
+        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.");
+        return null;
+      }
+      for (const name in geometry.attributes) {
+        if (!attributesUsed.has(name)) {
+          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.');
+          return null;
+        }
+        if (attributes[name] === void 0) attributes[name] = [];
+        attributes[name].push(geometry.attributes[name]);
+        attributesCount++;
+      }
+      if (attributesCount !== attributesUsed.size) {
+        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". Make sure all geometries have the same number of attributes.");
+        return null;
+      }
+      if (morphTargetsRelative !== geometry.morphTargetsRelative) {
+        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". .morphTargetsRelative must be consistent throughout all geometries.");
+        return null;
+      }
+      for (const name in geometry.morphAttributes) {
+        if (!morphAttributesUsed.has(name)) {
+          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ".  .morphAttributes must be consistent throughout all geometries.");
+          return null;
+        }
+        if (geometry.morphAttributes[name].length !== geometries[0].morphAttributes[name].length) {
+          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + '. All geometries must have the same number of morph targets for the "' + name + '" morph attribute.');
+          return null;
+        }
+        if (morphAttributes[name] === void 0) morphAttributes[name] = [];
+        morphAttributes[name].push(geometry.morphAttributes[name]);
+        morphAttributesCount++;
+      }
+      if (morphAttributesCount !== morphAttributesUsed.size) {
+        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". Make sure all geometries have the same number of morph attributes.");
+        return null;
+      }
+      if (useGroups) {
+        let count;
+        if (isIndexed) {
+          count = geometry.index.count;
+        } else if (geometry.attributes.position !== void 0) {
+          count = geometry.attributes.position.count;
+        } else {
+          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". The geometry must have either an index or a position attribute");
+          return null;
+        }
+        mergedGeometry.addGroup(offset, count, i);
+        offset += count;
+      }
+    }
+    if (isIndexed) {
+      let indexOffset = 0;
+      const mergedIndex = [];
+      for (let i = 0; i < geometries.length; ++i) {
+        const index = geometries[i].index;
+        for (let j = 0; j < index.count; ++j) {
+          mergedIndex.push(index.getX(j) + indexOffset);
+        }
+        indexOffset += geometries[i].attributes.position.count;
+      }
+      mergedGeometry.setIndex(mergedIndex);
+    }
+    for (const name in attributes) {
+      const mergedAttribute = mergeAttributes(attributes[name]);
+      if (!mergedAttribute) {
+        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the " + name + " attribute.");
+        return null;
+      }
+      mergedGeometry.setAttribute(name, mergedAttribute);
+    }
+    for (const name in morphAttributes) {
+      const numMorphTargets = morphAttributes[name][0].length;
+      if (numMorphTargets === 0) continue;
+      mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
+      mergedGeometry.morphAttributes[name] = [];
+      for (let i = 0; i < numMorphTargets; ++i) {
+        const morphAttributesToMerge = [];
+        for (let j = 0; j < morphAttributes[name].length; ++j) {
+          morphAttributesToMerge.push(morphAttributes[name][j][i]);
+        }
+        const mergedMorphAttribute = mergeAttributes(morphAttributesToMerge);
+        if (!mergedMorphAttribute) {
+          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the " + name + " morphAttribute.");
+          return null;
+        }
+        mergedGeometry.morphAttributes[name].push(mergedMorphAttribute);
+      }
+    }
+    return mergedGeometry;
+  }
+  function mergeAttributes(attributes) {
+    let TypedArray;
+    let itemSize;
+    let normalized;
+    let gpuType = -1;
+    let arrayLength = 0;
+    for (let i = 0; i < attributes.length; ++i) {
+      const attribute = attributes[i];
+      if (TypedArray === void 0) TypedArray = attribute.array.constructor;
+      if (TypedArray !== attribute.array.constructor) {
+        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.");
+        return null;
+      }
+      if (itemSize === void 0) itemSize = attribute.itemSize;
+      if (itemSize !== attribute.itemSize) {
+        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.");
+        return null;
+      }
+      if (normalized === void 0) normalized = attribute.normalized;
+      if (normalized !== attribute.normalized) {
+        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.");
+        return null;
+      }
+      if (gpuType === -1) gpuType = attribute.gpuType;
+      if (gpuType !== attribute.gpuType) {
+        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.gpuType must be consistent across matching attributes.");
+        return null;
+      }
+      arrayLength += attribute.count * itemSize;
+    }
+    const array = new TypedArray(arrayLength);
+    const result = new BufferAttribute(array, itemSize, normalized);
+    let offset = 0;
+    for (let i = 0; i < attributes.length; ++i) {
+      const attribute = attributes[i];
+      if (attribute.isInterleavedBufferAttribute) {
+        const tupleOffset = offset / itemSize;
+        for (let j = 0, l = attribute.count; j < l; j++) {
+          for (let c = 0; c < itemSize; c++) {
+            const value = attribute.getComponent(j, c);
+            result.setComponent(j + tupleOffset, c, value);
+          }
+        }
+      } else {
+        array.set(attribute.array, offset);
+      }
+      offset += attribute.count * itemSize;
+    }
+    if (gpuType !== void 0) {
+      result.gpuType = gpuType;
+    }
+    return result;
+  }
+  function mergeVertices(geometry, tolerance = 1e-4) {
+    tolerance = Math.max(tolerance, Number.EPSILON);
+    const hashToIndex = {};
+    const indices = geometry.getIndex();
+    const positions = geometry.getAttribute("position");
+    const vertexCount = indices ? indices.count : positions.count;
+    let nextIndex = 0;
+    const attributeNames = Object.keys(geometry.attributes);
+    const sourceIndices = [];
+    const buffers = /* @__PURE__ */ new Map();
+    const newIndices = [];
+    const getters = ["getX", "getY", "getZ", "getW"];
+    const halfTolerance = tolerance * 0.5;
+    const exponent = Math.log10(1 / tolerance);
+    const hashMultiplier = Math.pow(10, exponent);
+    const hashAdditive = halfTolerance * hashMultiplier;
+    for (let i = 0; i < vertexCount; i++) {
+      const index = indices ? indices.getX(i) : i;
+      let hash = "";
+      for (let j = 0, l = attributeNames.length; j < l; j++) {
+        const name = attributeNames[j];
+        const attribute = geometry.getAttribute(name);
+        const itemSize = attribute.itemSize;
+        for (let k = 0; k < itemSize; k++) {
+          hash += `${Math.trunc(attribute[getters[k]](index) * hashMultiplier + hashAdditive)},`;
+        }
+      }
+      if (hash in hashToIndex) {
+        newIndices.push(hashToIndex[hash]);
+      } else {
+        sourceIndices.push(index);
+        hashToIndex[hash] = nextIndex;
+        newIndices.push(nextIndex);
+        nextIndex++;
+      }
+    }
+    const result = geometry.clone();
+    for (const name in geometry.attributes) {
+      result.setAttribute(name, remapAttribute(geometry.attributes[name], sourceIndices, buffers));
+    }
+    for (const name in geometry.morphAttributes) {
+      result.morphAttributes[name] = geometry.morphAttributes[name].map((attribute) => remapAttribute(attribute, sourceIndices, buffers));
+    }
+    result.setIndex(newIndices);
+    return result;
+  }
+  function remapAttribute(attribute, sourceIndices, buffers = /* @__PURE__ */ new Map()) {
+    const interleaved = attribute.isInterleavedBufferAttribute;
+    const source = interleaved ? attribute.data : attribute;
+    const stride = interleaved ? source.stride : attribute.itemSize;
+    let data2 = interleaved ? buffers.get(source) : void 0;
+    if (data2 === void 0) {
+      const array = new source.array.constructor(sourceIndices.length * stride);
+      for (let i = 0; i < sourceIndices.length; i++) {
+        for (let j = 0; j < stride; j++) array[i * stride + j] = source.array[sourceIndices[i] * stride + j];
+      }
+      data2 = interleaved ? new source.constructor(array, stride, source.meshPerAttribute) : new attribute.constructor(array, attribute.itemSize, attribute.normalized, attribute.meshPerAttribute);
+      data2.setUsage(source.usage);
+      if (interleaved) buffers.set(source, data2);
+    }
+    const result = interleaved ? new attribute.constructor(data2, attribute.itemSize, attribute.offset, attribute.normalized) : data2;
+    result.name = attribute.name;
+    if (!interleaved) result.gpuType = attribute.gpuType;
+    return result;
+  }
+  var init_BufferGeometryUtils = __esm({
+    "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"() {
+      init_three_module();
+    }
+  });
+
+  // node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js
+  function getUv(faceDirVector, normal, uvAxis, projectionAxis, radius, sideLength) {
+    const totArcLength = 2 * Math.PI * radius / 4;
+    const centerLength = Math.max(sideLength - 2 * radius, 0);
+    const halfArc = Math.PI / 4;
+    _tempNormal.copy(normal);
+    _tempNormal[projectionAxis] = 0;
+    _tempNormal.normalize();
+    const arcUvRatio = 0.5 * totArcLength / (totArcLength + centerLength);
+    const arcAngleRatio = 1 - _tempNormal.angleTo(faceDirVector) / halfArc;
+    if (Math.sign(_tempNormal[uvAxis]) === 1) {
+      return arcAngleRatio * arcUvRatio;
+    } else {
+      const lenUv = centerLength / (totArcLength + centerLength);
+      return lenUv + arcUvRatio + arcUvRatio * (1 - arcAngleRatio);
+    }
+  }
+  var _tempNormal, RoundedBoxGeometry;
+  var init_RoundedBoxGeometry = __esm({
+    "node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js"() {
+      init_three_module();
+      _tempNormal = new Vector3();
+      RoundedBoxGeometry = class _RoundedBoxGeometry extends BoxGeometry {
+        /**
+         * Constructs a new rounded box geometry.
+         *
+         * @param {number} [width=1] - The width. That is, the length of the edges parallel to the X axis.
+         * @param {number} [height=1] - The height. That is, the length of the edges parallel to the Y axis.
+         * @param {number} [depth=1] - The depth. That is, the length of the edges parallel to the Z axis.
+         * @param {number} [segments=2] - Number of segments that form the rounded corners.
+         * @param {number} [radius=0.1] - The radius of the rounded corners.
+         */
+        constructor(width = 1, height8 = 1, depth = 1, segments = 2, radius = 0.1) {
+          const totalSegments = segments * 2 + 1;
+          radius = Math.min(width / 2, height8 / 2, depth / 2, radius);
+          super(1, 1, 1, totalSegments, totalSegments, totalSegments);
+          this.type = "RoundedBoxGeometry";
+          this.parameters = {
+            width,
+            height: height8,
+            depth,
+            segments,
+            radius
+          };
+          if (totalSegments === 1) return;
+          const geometry2 = this.toNonIndexed();
+          this.index = null;
+          this.attributes.position = geometry2.attributes.position;
+          this.attributes.normal = geometry2.attributes.normal;
+          this.attributes.uv = geometry2.attributes.uv;
+          const position = new Vector3();
+          const normal = new Vector3();
+          const box = new Vector3(width, height8, depth).divideScalar(2).subScalar(radius);
+          const positions = this.attributes.position.array;
+          const normals = this.attributes.normal.array;
+          const uvs2 = this.attributes.uv.array;
+          const faceTris = positions.length / 6;
+          const faceDirVector = new Vector3();
+          const halfSegmentSize = 0.5 / totalSegments;
+          for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
+            position.fromArray(positions, i);
+            normal.copy(position);
+            normal.x -= Math.sign(normal.x) * halfSegmentSize;
+            normal.y -= Math.sign(normal.y) * halfSegmentSize;
+            normal.z -= Math.sign(normal.z) * halfSegmentSize;
+            normal.normalize();
+            positions[i + 0] = box.x * Math.sign(position.x) + normal.x * radius;
+            positions[i + 1] = box.y * Math.sign(position.y) + normal.y * radius;
+            positions[i + 2] = box.z * Math.sign(position.z) + normal.z * radius;
+            normals[i + 0] = normal.x;
+            normals[i + 1] = normal.y;
+            normals[i + 2] = normal.z;
+            const side = Math.floor(i / faceTris);
+            switch (side) {
+              case 0:
+                faceDirVector.set(1, 0, 0);
+                uvs2[j + 0] = getUv(faceDirVector, normal, "z", "y", radius, depth);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
+                break;
+              case 1:
+                faceDirVector.set(-1, 0, 0);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "z", "y", radius, depth);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
+                break;
+              case 2:
+                faceDirVector.set(0, 1, 0);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
+                uvs2[j + 1] = getUv(faceDirVector, normal, "z", "x", radius, depth);
+                break;
+              case 3:
+                faceDirVector.set(0, -1, 0);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "z", "x", radius, depth);
+                break;
+              case 4:
+                faceDirVector.set(0, 0, 1);
+                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "y", radius, width);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
+                break;
+              case 5:
+                faceDirVector.set(0, 0, -1);
+                uvs2[j + 0] = getUv(faceDirVector, normal, "x", "y", radius, width);
+                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
+                break;
+            }
+          }
+        }
+        /**
+         * Factory method for creating an instance of this class from the given
+         * JSON object.
+         *
+         * @param {Object} data - A JSON object representing the serialized geometry.
+         * @returns {RoundedBoxGeometry} A new instance.
+         */
+        static fromJSON(data2) {
+          return new _RoundedBoxGeometry(
+            data2.width,
+            data2.height,
+            data2.depth,
+            data2.segments,
+            data2.radius
+          );
+        }
+      };
+    }
+  });
+
+  // src/render/surfaces.js
+  function rng(seed) {
+    let s = seed >>> 0;
+    return () => (s = s * 1664525 + 1013904223 >>> 0) / 4294967296;
+  }
+  function heights(kind, N) {
+    const h = new Float32Array(N * N), r = rng(kind.length * 7919 + 13);
+    if (kind === "speckle" || kind === "grain") {
+      for (let i = 0; i < h.length; i++) h[i] = r();
+      const passes = kind === "speckle" ? 2 : 1;
+      for (let p = 0; p < passes; p++) {
+        const t = h.slice();
+        for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) {
+          let s = 0;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) s += t[(y2 + dy + N) % N * N + (x + dx + N) % N];
+          h[y2 * N + x] = s / 9;
+        }
+      }
+    } else if (kind === "stipple") {
+      for (let k = 0; k < 900; k++) {
+        const cx2 = r() * N, cy = r() * N, rad = 2 + r() * 2.5;
+        for (let y2 = -4; y2 <= 4; y2++) for (let x = -4; x <= 4; x++) {
+          const d = Math.hypot(x, y2) / rad;
+          if (d < 1) {
+            const i = (Math.floor(cy + y2) + N) % N * N + (Math.floor(cx2 + x) + N) % N;
+            h[i] = Math.max(h[i], Math.cos(d * Math.PI / 2));
+          }
+        }
+      }
+    } else if (kind === "brushed") {
+      const row = new Float32Array(N);
+      for (let y2 = 0; y2 < N; y2++) row[y2] = r();
+      for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) h[y2 * N + x] = row[y2] * 0.7 + r() * 0.3;
+    } else if (kind === "knurl") {
+      for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) {
+        const a = Math.abs((x + y2) % 16 - 8) / 8, b = Math.abs((x - y2 + N) % 16 - 8) / 8;
+        h[y2 * N + x] = Math.min(a, b);
+      }
+    }
+    return h;
+  }
+  function toCanvas(N, fill) {
+    const c = document.createElement("canvas");
+    c.width = c.height = N;
+    const g = c.getContext("2d"), im = g.createImageData(N, N);
+    fill(im.data);
+    g.putImageData(im, 0, 0);
+    return c;
+  }
+  function surfaceMaps(kind, repeat = 4) {
+    const key = kind + repeat;
+    if (cache[key]) return cache[key];
+    const N = 256, h = heights(kind, N), str = { speckle: 2.2, grain: 1.6, stipple: 3.5, brushed: 1.2, knurl: 4 }[kind] || 2;
+    const nc = toCanvas(N, (d) => {
+      for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) {
+        const hx3 = h[y2 * N + (x + 1) % N] - h[y2 * N + (x - 1 + N) % N], hy = h[(y2 + 1) % N * N + x] - h[(y2 - 1 + N) % N * N + x];
+        let nx = -hx3 * str, ny = -hy * str, nz = 1;
+        const l = Math.hypot(nx, ny, nz);
+        nx /= l;
+        ny /= l;
+        nz /= l;
+        const i = (y2 * N + x) * 4;
+        d[i] = (nx * 0.5 + 0.5) * 255;
+        d[i + 1] = (ny * 0.5 + 0.5) * 255;
+        d[i + 2] = (nz * 0.5 + 0.5) * 255;
+        d[i + 3] = 255;
+      }
+    });
+    const rc = toCanvas(N, (d) => {
+      for (let i = 0; i < N * N; i++) {
+        const v3 = 150 + (h[i] - 0.5) * (kind === "brushed" ? 60 : 90);
+        d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = Math.max(0, Math.min(255, v3));
+        d[i * 4 + 3] = 255;
+      }
+    });
+    const mk = (c, srgb) => {
+      const t = new CanvasTexture(c);
+      t.wrapS = t.wrapT = RepeatWrapping;
+      t.repeat.set(repeat, repeat);
+      t.anisotropy = 4;
+      if (srgb) t.colorSpace = SRGBColorSpace;
+      return t;
+    };
+    return cache[key] = { normalMap: mk(nc), roughnessMap: mk(rc) };
+  }
+  function rifleEnv() {
+    const r = G.renderer;
+    if (!r) return null;
+    const fog = G.world?.scene?.fog?.color, key = fog ? fog.getHexString() : "def";
+    if (envs[key]) return envs[key];
+    const sc = new Scene();
+    const top = new Color("#6d86b0"), hor = fog ? fog.clone().lerp(new Color("#d8c8b0"), 0.3) : new Color("#c8b8a0"), gnd = new Color("#3a342c");
+    const dome = new Mesh(new SphereGeometry(10, 32, 16), new ShaderMaterial({
+      side: BackSide,
+      depthWrite: false,
+      uniforms: { t: { value: top }, h: { value: hor }, g: { value: gnd } },
+      vertexShader: "varying vec3 vp; void main(){ vp = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
+      fragmentShader: "uniform vec3 t,h,g; varying vec3 vp; void main(){ float y = normalize(vp).y; vec3 c = y > 0.0 ? mix(h, t, pow(y, 0.6)) : mix(h, g, pow(-y, 0.4)); gl_FragColor = vec4(c, 1.0); }"
+    }));
+    sc.add(dome);
+    const sun = new Mesh(new SphereGeometry(0.7, 16, 8), new MeshBasicMaterial({ color: new Color("#fff0d0").multiplyScalar(14) }));
+    sun.position.set(5, 5, -5);
+    sc.add(sun);
+    for (const [x, y2, z, s] of [[-6, 3, 2, 3], [2, 6, 6, 2.5]]) {
+      const p = new Mesh(new PlaneGeometry(s, s * 0.6), new MeshBasicMaterial({ color: new Color("#ffffff").multiplyScalar(2.2), side: DoubleSide }));
+      p.position.set(x, y2, z);
+      p.lookAt(0, 0, 0);
+      sc.add(p);
+    }
+    const pm = new PMREMGenerator(r);
+    const tex2 = pm.fromScene(sc, 0.03).texture;
+    envs[key] = tex2;
+    pm.dispose();
+    sc.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+    return tex2;
+  }
+  function wearMap(repeat = 0.3) {
+    const key = "wear" + repeat;
+    if (cache[key]) return cache[key];
+    const N = 512, r = rng(4242), c = document.createElement("canvas");
+    c.width = c.height = N;
+    const g = c.getContext("2d");
+    g.fillStyle = "rgb(222,222,222)";
+    g.fillRect(0, 0, N, N);
+    const wrap = (f) => {
+      for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+        g.save();
+        g.translate(ox, oy);
+        f();
+        g.restore();
+      }
+    };
+    for (const [n, col, rad] of [[30, "rgba(165,155,128,0.42)", 40], [20, "rgba(132,134,108,0.34)", 30]]) for (let k = 0; k < n; k++) {
+      const cx2 = r() * N, cy = r() * N, rr = rad * (0.6 + r() * 0.8);
+      wrap(() => {
+        g.fillStyle = col;
+        g.beginPath();
+        for (let a = 0; a <= 24; a++) {
+          const t2 = a / 24 * Math.PI * 2, q = rr * (0.7 + 0.3 * Math.sin(t2 * 3 + k) + 0.15 * Math.sin(t2 * 7 + k * 2));
+          g.lineTo(cx2 + Math.cos(t2) * q, cy + Math.sin(t2) * q * 0.7);
+        }
+        g.fill();
+      });
+    }
+    for (let k = 0; k < 2600; k++) {
+      const v3 = 150 + r() * 80;
+      g.fillStyle = `rgba(${v3 | 0},${v3 | 0},${v3 * 0.95 | 0},0.25)`;
+      g.fillRect(r() * N, r() * N, 1 + r() * 2, 1 + r() * 2);
+    }
+    g.lineCap = "round";
+    for (let k = 0; k < 70; k++) {
+      const x = r() * N, y2 = r() * N, a = r() * Math.PI, l = 8 + r() * 46;
+      wrap(() => {
+        g.strokeStyle = `rgba(255,252,240,${0.35 + r() * 0.4})`;
+        g.lineWidth = 0.6 + r() * 0.9;
+        g.beginPath();
+        g.moveTo(x, y2);
+        g.quadraticCurveTo(x + Math.cos(a) * l * 0.5 + (r() - 0.5) * 6, y2 + Math.sin(a) * l * 0.5 + (r() - 0.5) * 6, x + Math.cos(a) * l, y2 + Math.sin(a) * l);
+        g.stroke();
+      });
+    }
+    for (let k = 0; k < 40; k++) {
+      const x = r() * N, y2 = r() * N, s = 1.5 + r() * 3.5;
+      wrap(() => {
+        g.fillStyle = "rgba(255,255,250,0.85)";
+        g.beginPath();
+        g.ellipse(x, y2, s, s * (0.4 + r() * 0.6), r() * 3, 0, Math.PI * 2);
+        g.fill();
+      });
+    }
+    const t = new CanvasTexture(c);
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.repeat.set(repeat, repeat);
+    t.anisotropy = 4;
+    t.colorSpace = SRGBColorSpace;
+    return cache[key] = t;
+  }
+  var cache, envs;
+  var init_surfaces = __esm({
+    "src/render/surfaces.js"() {
+      init_three_module();
+      init_state();
+      cache = {};
+      envs = {};
+    }
+  });
+
+  // src/scene/rifle.js
+  function prep(g, key, uvs2 = 1) {
+    if (g.index) g = g.toNonIndexed();
+    for (const k of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(k)) g.deleteAttribute(k);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const n = g.attributes.position.count, [hex, me, ro] = C[key], c = new Color(hex);
+    const col = new Float32Array(n * 3), pbr = new Float32Array(n * 2);
+    const nor = g.attributes.normal, pos = g.attributes.position, wearK = WEAR[key] || 0, bare = WEAR_BARE[key] || BARE;
+    for (let i = 0; i < n; i++) {
+      let r = c.r, gg = c.g, b = c.b, m = me, rr = ro;
+      if (wearK) {
+        const ax = Math.abs(nor.getX(i)), ay = Math.abs(nor.getY(i)), az = Math.abs(nor.getZ(i)), e = smooth(0.1, 0.42, 1 - Math.max(ax, ay, az));
+        const x = pos.getX(i), y2 = pos.getY(i), z = pos.getZ(i), nz = 0.5 + 0.5 * Math.sin(x * 211 + z * 97) * Math.sin(y2 * 173 - z * 61), w = e * wearK * (0.45 + 0.75 * nz);
+        const mott = 1 + Math.sin(x * 57 + y2 * 91) * Math.sin(z * 43 + x * 29) * 0.05;
+        r = (r + (bare.r - r) * w) * mott;
+        gg = (gg + (bare.g - gg) * w) * mott;
+        b = (b + (bare.b - b) * w) * mott;
+        m = me + (0.9 - me) * w;
+        rr = ro + (0.32 - ro) * w;
+        if (y2 < -0.1 && (key === "fde" || key === "fdeD")) {
+          const d = 0.92;
+          r *= d;
+          gg *= d;
+          b *= d;
+        }
+      }
+      col[i * 3] = r;
+      col[i * 3 + 1] = gg;
+      col[i * 3 + 2] = b;
+      pbr[i * 2] = m;
+      pbr[i * 2 + 1] = rr;
+    }
+    g.setAttribute("color", new BufferAttribute(col, 3));
+    g.setAttribute("pbr", new BufferAttribute(pbr, 2));
+    if (!g.attributes.uv) g.setAttribute("uv", new BufferAttribute(new Float32Array(n * 2), 2));
+    if (uvs2 !== 1) {
+      const uv = g.attributes.uv;
+      for (let i = 0; i < n; i++) uv.setXY(i, uv.getX(i) * uvs2, uv.getY(i) * uvs2);
+    }
+    return g;
+  }
+  function T(g, x = 0, y2 = 0, z = 0, rx = 0, ry = 0, rz = 0, s = 1) {
+    g.applyMatrix4(new Matrix4().compose(new Vector3(x, y2, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(s, s, s)));
+    return g;
+  }
+  function lathe(prof2, segs, y2, z0, disp) {
+    const g = new LatheGeometry(prof2.map(([r, h]) => new Vector2(Math.max(r, 1e-5), h)), segs);
+    if (disp) {
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), h = p.getY(i), z = p.getZ(i), r = Math.hypot(x, z);
+        if (r < 1e-4) continue;
+        const nr = r + disp(Math.atan2(x, z), h, r);
+        p.setXYZ(i, x * nr / r, h, z * nr / r);
+      }
+      g.computeVertexNormals();
+    }
+    g.rotateX(-RX);
+    g.translate(0, y2, z0);
+    return g;
+  }
+  function knurled(r, h, segs, amp, count, hs = 1) {
+    const g = new CylinderGeometry(r, r, h, segs, Math.max(1, hs), false), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y2 = p.getY(i), z = p.getZ(i), rr = Math.hypot(x, z);
+      if (Math.abs(rr - r) > 1e-5 || Math.abs(Math.abs(y2) - h / 2) < 1e-6) continue;
+      const a = Math.atan2(x, z), k = 1 + (Math.cos(a * count) > 0 ? amp : -amp) / r;
+      p.setXYZ(i, x * k, y2, z * k);
+    }
+    g.computeVertexNormals();
+    return g;
+  }
+  function extrudeSide(pts, holes, thick, bevel, curveSeg) {
+    const sh = new Shape(pts.map(([a, b]) => new Vector2(a, b)));
+    for (const hpts of holes || []) sh.holes.push(new Path(hpts.map(([a, b]) => new Vector2(a, b))));
+    const g = new ExtrudeGeometry(sh, { depth: thick - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: curveSeg });
+    g.rotateY(RX);
+    g.translate(-(thick - 2 * bevel) / 2, 0, 0);
+    return g;
+  }
+  function screw(add, x, y2, z, rx, ry, rz, r = 32e-4, q = 1) {
+    const sg = Math.max(10, Math.round(20 * q));
+    add("blk", T(new CylinderGeometry(r, r * 1.05, r * 0.9, sg), x, y2, z, rx, ry, rz));
+    const sock = T(new CylinderGeometry(r * 0.48, r * 0.48, r * 0.25, 6), 0, r * 0.38, 0);
+    sock.applyMatrix4(new Matrix4().compose(new Vector3(x, y2, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(1, 1, 1)));
+    add("hole", sock);
+  }
+  function patch(m) {
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec2 pbr; varying vec2 vPbr;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvPbr = pbr;");
+      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec2 vPbr;").replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n#ifdef USE_ROUGHNESSMAP\nroughnessFactor = vPbr.y * (0.7 + 0.5 * texelRoughness.g);\n#else\nroughnessFactor = vPbr.y;\n#endif").replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = vPbr.x;");
+    };
+    m.customProgramCacheKey = () => "rifle-pbr-v1";
+    return m;
+  }
+  function rifleMaterials() {
+    const env2 = rifleEnv();
+    if (!MATS) {
+      const mk = (kind, rep, ns) => {
+        const s = surfaceMaps(kind, rep);
+        return patch(new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1, normalMap: s.normalMap, roughnessMap: s.roughnessMap, normalScale: new Vector2(ns, ns), envMapIntensity: 1 }));
+      };
+      MATS = {
+        metal: mk("grain", 3, 0.35),
+        cera: Object.assign(mk("speckle", 3, 0.55), { map: wearMap(0.45) }),
+        poly: mk("stipple", 2, 0.9),
+        knurl: mk("knurl", 6, 0.8),
+        glass: new MeshPhysicalMaterial({ color: "#0a1a24", metalness: 0, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, iridescence: 0.9, iridescenceIOR: 1.6, iridescenceThicknessMinimum: 180, iridescenceThicknessMaximum: 520, envMapIntensity: 2.2, specularIntensity: 1 })
+      };
+    }
+    for (const m of Object.values(MATS)) if (m.envMap !== env2) {
+      m.envMap = env2;
+      m.needsUpdate = true;
+    }
+    return MATS;
+  }
+  function buildRifle(opts = {}) {
+    const q = opts.q ?? QSEG(), S2 = (n) => Math.max(8, Math.round(n * q));
+    const L = { blk: [], alu: [], steel: [], bright: [], hole: [], paint: [], fde: [], fdeD: [], poly: [], rub: [], red: [], glass: [], knurl: [], brake: [], can: [] };
+    const add = (key, g, uvs2) => {
+      L[key].push(prep(g, key === "knurl" ? "blk" : key === "brake" || key === "can" ? "blk" : key === "glass" ? "hole" : key, uvs2));
+    };
+    {
+      const pr = [[0, 0], [0.0165, 0], [0.0165, 0.05]];
+      const N = S2(60);
+      for (let i = 0; i <= N; i++) {
+        const h = 0.06 + i / N * 0.74;
+        pr.push([h < 0.12 ? 0.0165 - (h - 0.06) / 0.06 * 15e-4 : 0.015 - (h - 0.12) / 0.68 * 42e-4, h]);
+      }
+      pr.push([0, 0.8]);
+      add("steel", lathe(pr, S2(96), 0, -0.2, (a, h) => {
+        const e = smooth(0.17, 0.21, h) * (1 - smooth(0.6, 0.64, h));
+        return e ? -21e-4 * e * smooth(0.45, 0.92, Math.cos(a * 6)) : 0;
+      }), 10);
+    }
+    {
+      const pr = [[0.0108, 0.79], [0.0168, 0.791], [0.0176, 0.796], [0.0176, 0.884], [0.016, 0.892], [52e-4, 0.892], [52e-4, 0.88]];
+      L.brake.push(prep(lathe(pr, S2(64), 0, -0.2), "blk", 8));
+      for (const sx of [-1, 1]) for (const h of [0.813, 0.836, 0.859]) L.brake.push(prep(T(rbox(6e-3, 0.013, 0.015, 15e-4), sx * 0.0158, 0, -0.2 - h), "hole"));
+      for (const h of [0.82, 0.85]) L.brake.push(prep(T(new CylinderGeometry(28e-4, 28e-4, 6e-3, 12), 0, 0.0158, -0.2 - h), "hole"));
+      L.brake.push(prep(T(new CylinderGeometry(32e-4, 32e-4, 4e-3, 14), 0.0185, 0, -1, 0, 0, RX), "blk"));
+    }
+    {
+      const pr = [[0.0172, 0.785], [0.0215, 0.786], [0.0215, 0.83], [0.024, 0.833], [0.025, 0.84], [0.025, 1], [0.023, 1.008], [68e-4, 1.009], [68e-4, 0.995]];
+      L.can.push(prep(lathe(pr, S2(72), 0, -0.2, (a, h) => (h > 0.79 && h < 0.828 ? Math.cos(a * 48) > 0 ? 5e-4 : -5e-4 : 0) + (h > 0.86 && h < 0.98 ? -6e-4 * smooth(0.8, 1, Math.cos((h - 0.86) * 330)) : 0)), "blk", 6));
+    }
+    add("steel", lathe([[0, 0], [0.026, 0], [0.03, 4e-3], [0.03, 0.236], [0.0265, 0.24], [0, 0.24]], S2(72), 0, 0.04), 6);
+    add("steel", lathe([[0.031, 0.236], [0.034, 0.238], [0.034, 0.25], [0.031, 0.252]], S2(64), 0, 0.04));
+    add("hole", T(rbox(0.012, 0.012, 0.07, 4e-3), 0.025, 0.012, -0.03, 0, 0, -0.62));
+    add("bright", T(rbox(4e-3, 8e-3, 0.02, 15e-4), -0.03, 6e-3, 0.02));
+    add("alu", T(rbox(0.022, 9e-3, 0.34, 2e-3), 0, 0.034, -0.1), 4);
+    for (let i = 0; i < 17; i++) add("alu", T(rbox(0.0245, 62e-4, 0.0105, 12e-4), 0, 0.0405, -0.26 + i * 0.02));
+    for (const z of [-0.24, -0.14, -0.02, 0.05]) screw(add, 0, 0.0384, z + 0.01, 0, 0, 0, 28e-4, q);
+    add("fde", extrudeSide([[0.635, -0.016], [0.2, -0.016], [-0.065, -0.016], [-0.075, -0.03], [-0.075, -0.062], [-0.02, -0.066], [0.025, -0.066], [0.03, -0.088], [0.13, -0.09], [0.14, -0.078], [0.2, -0.08], [0.58, -0.077], [0.628, -0.068], [0.642, -0.045], [0.64, -0.026]], null, 0.064, 4e-3, S2(12)), 14);
+    for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) add("hole", T(rbox(14e-4, 0.012, 0.044, 6e-4), sx * 0.0362, -0.046, -0.26 - i * 0.08));
+    for (const sx of [-1, 1]) for (const [y2, z] of [[-0.04, -0.05], [-0.04, -0.19], [-0.058, 0.045]]) screw(add, sx * 0.0362, y2, z, 0, 0, -sx * RX, 36e-4, q);
+    add("alu", T(new TorusGeometry(0.03, 42e-4, S2(10), S2(36), Math.PI), 0, -0.068, 0.035, 0, RX, Math.PI));
+    add("bright", T(new TorusGeometry(0.022, 26e-4, 8, S2(20), 1.1), 0, -0.05, 0.05, 0, RX, Math.PI * 1.08));
+    add("poly", T(rbox(0.044, 0.112, 0.084, 5e-3, 3), 0, -0.12, -0.08, 0.08), 6);
+    add("alu", T(rbox(0.05, 0.014, 0.093, 4e-3, 3), 0, -0.178, -0.085, 0.08), 6);
+    add("alu", T(rbox(0.016, 6e-3, 0.012, 2e-3), 0, -0.07, 0));
+    add("poly", extrudeSide([[-0.058, -0.058], [-0.064, -0.07], [-0.074, -0.1], [-0.07, -0.11], [-0.082, -0.135], [-0.078, -0.145], [-0.092, -0.17], [-0.1, -0.188], [-0.148, -0.192], [-0.142, -0.16], [-0.118, -0.07], [-0.11, -0.058]], null, 0.042, 6e-3, S2(10)), 16);
+    add("fde", extrudeSide(
+      [[-0.07, -0.012], [-0.465, -0.012], [-0.476, -0.026], [-0.476, -0.176], [-0.455, -0.19], [-0.3, -0.15], [-0.15, -0.086], [-0.115, -0.07], [-0.078, -0.062]],
+      [[[-0.17, -0.034], [-0.19, -0.074], [-0.3, -0.124], [-0.44, -0.158], [-0.44, -0.034]]],
+      0.05,
+      4e-3,
+      S2(12)
+    ), 14);
+    add("fdeD", T(rbox(0.05, 0.042, 0.17, 0.01, 3), 0, 0.012, 0.3), 8);
+    for (const z of [0.255, 0.345]) add("bright", T(new CylinderGeometry(45e-4, 45e-4, 0.03, S2(16)), 0, -0.012, z));
+    add("knurl", T(knurled(0.011, 0.01, S2(48), 5e-4, 36), 0.032, -4e-3, 0.3, 0, 0, RX));
+    add("rub", T(rbox(0.056, 0.2, 0.028, 9e-3, 3), 0, -0.072, 0.49, -0.06), 8);
+    for (const [z, k] of [[0.474, "alu"], [0.468, "blk"]]) add(k, T(rbox(0.054, 0.19, 5e-3, 2e-3), 0, -0.07, z, -0.06));
+    add("knurl", T(knurled(0.012, 0.06, S2(48), 6e-4, 40, 2), 0, -0.2, 0.41));
+    add("rub", T(new SphereGeometry(0.014, S2(16), S2(10)), 0, -0.232, 0.41, 0, 0, 0));
+    for (const z of [0.12, 0.43]) {
+      add("alu", T(new CylinderGeometry(75e-4, 75e-4, 6e-3, S2(18)), 0.027, -0.03, z, 0, 0, RX));
+      add("hole", T(new CylinderGeometry(45e-4, 45e-4, 7e-3, S2(14)), 0.027, -0.03, z, 0, 0, RX));
+    }
+    screw(add, 0.026, -0.035, 0.09, 0, 0, -RX, 42e-4, q);
+    screw(add, -0.026, -0.035, 0.09, 0, 0, RX, 42e-4, q);
+    {
+      const knurlRing = (a, h) => h > 0.087 && h < 0.123 || h > 0.578 && h < 0.596 ? Math.cos(a * 72) > 0 ? 7e-4 : -4e-4 : 0;
+      add("alu", lathe([[0.0302, 0], [0.0372, 3e-3], [0.0382, 8e-3], [0.0382, 0.028], [0.036, 0.034], [0.0338, 0.06], [0.0312, 0.074], [0.0312, 0.082], [0.0355, 0.086], [0.0362, 0.09], [0.0362, 0.12], [0.0355, 0.124], [0.0305, 0.128], [0.029, 0.134], [0.029, 0.48], [0.031, 0.49], [0.0405, 0.55], [0.0462, 0.572], [0.047, 0.578], [0.047, 0.598], [0.0455, 0.6], [0.0442, 0.6], [0.0442, 0.593]], S2(80), 0.078, 0.2, knurlRing), 8);
+      add("paint", lathe([[0.0364, 0.106], [0.0364, 0.1065], [0.0364, 0.107]], S2(80), 0.078, 0.2));
+      add("alu", T(rbox(6e-3, 0.026, 0.011, 2e-3), 0.031, 0.106, 0.095, 0, 0, -0.45));
+      add("glass", T(new CylinderGeometry(0.0442, 0.0442, 3e-3, S2(48)), 0, 0.078, -0.392, RX));
+      add("glass", T(new CylinderGeometry(0.0298, 0.0298, 2e-3, S2(40)), 0, 0.078, 0.199, RX));
+      add("hole", T(new CylinderGeometry(0.043, 0.043, 2e-3, S2(40)), 0, 0.078, -0.385, RX));
+      add("alu", T(rbox(0.058, 0.03, 0.072, 8e-3, 3), 0, 0.093, -0.08), 8);
+      const turret = (M2) => {
+        const P = [];
+        P.push(["alu", new CylinderGeometry(0.0232, 0.0236, 0.01, S2(64))]);
+        P.push(["knurl", T(knurled(0.021, 0.028, S2(96), 6e-4, 48, 1), 0, 0.019, 0)]);
+        P.push(["alu", T(new CylinderGeometry(0.0222, 0.0222, 6e-3, S2(64)), 0, 75e-4, 0)]);
+        P.push(["bright", T(new CylinderGeometry(0.0185, 0.0195, 4e-3, S2(48)), 0, 0.035, 0)]);
+        for (let i = 0; i < 40; i++) {
+          const a = i / 40 * Math.PI * 2, len = i % 10 === 0 ? 45e-4 : i % 5 === 0 ? 32e-4 : 22e-4;
+          P.push(["paint", T(new BoxGeometry(7e-4, len, 12e-4), Math.sin(a) * 0.02235, 75e-4 + 3e-3 - len / 2, Math.cos(a) * 0.02235, 0, a, 0)]);
+        }
+        P.push(["paint", T(new BoxGeometry(9e-4, 6e-3, 12e-4), 0, 0, 0.0237)]);
+        for (let i = 0; i < 3; i++) {
+          const a = i / 3 * Math.PI * 2 + 0.5;
+          P.push(["hole", T(new CylinderGeometry(16e-4, 16e-4, 1e-3, 6), Math.sin(a) * 0.012, 0.0374, Math.cos(a) * 0.012)]);
+        }
+        for (const [k, g] of P) add(k, g.applyMatrix4(M2));
+      };
+      turret(new Matrix4().makeTranslation(0, 0.112, -0.08));
+      turret(new Matrix4().compose(new Vector3(0.033, 0.078, -0.08), new Quaternion().setFromEuler(new Euler(0, 0, -RX)), new Vector3(1, 1, 1)));
+      add("knurl", T(knurled(0.03, 0.012, S2(96), 6e-4, 60), -0.04, 0.078, -0.08, 0, 0, RX));
+      add("alu", T(new CylinderGeometry(0.018, 0.02, 0.012, S2(48)), -0.031, 0.078, -0.08, 0, 0, RX));
+      add("red", T(new CylinderGeometry(4e-3, 4e-3, 15e-4, S2(16)), -0.047, 0.078, -0.08, 0, 0, RX));
+      for (const z of [-0.17, 0.01]) {
+        add("alu", T(new CylinderGeometry(0.0362, 0.0362, 0.022, S2(64)), 0, 0.078, z, RX), 6);
+        add("hole", T(new CylinderGeometry(0.0364, 0.0364, 12e-4, S2(64)), 0, 0.078, z, RX));
+        for (const sx of [-1, 1]) {
+          add("alu", T(rbox(0.012, 0.012, 0.022, 2e-3), sx * 0.04, 0.078, z));
+          screw(add, sx * 0.04, 0.0846, z - 6e-3, 0, 0, 0, 26e-4, q);
+          screw(add, sx * 0.04, 0.0846, z + 6e-3, 0, 0, 0, 26e-4, q);
+        }
+        add("alu", T(rbox(0.034, 0.034, 0.022, 3e-3, 3), 0, 0.05, z));
+        add("bright", T(new CylinderGeometry(35e-4, 35e-4, 0.044, S2(14)), 0, 0.043, z, 0, 0, RX));
+        add("alu", T(new CylinderGeometry(62e-4, 62e-4, 6e-3, 6), 0.024, 0.043, z, 0, 0, RX));
+      }
+    }
+    add("alu", lathe([[0.0462, 0], [0.0466, 2e-3], [0.0466, 0.062], [0.0472, 0.064], [0.0472, 0.07], [0.0445, 0.07]], S2(72), 0.078, -0.402), 8);
+    add("hole", T(new CylinderGeometry(0.0445, 0.0445, 2e-3, S2(40)), 0, 0.078, -0.47, RX));
+    {
+      const cap = (M2) => {
+        const P = [["poly", lathe([[0, 0], [0.05, 0], [0.051, 2e-3], [0.051, 0.013], [0.048, 0.014], [0, 0.014]], S2(48), 0, 0)], ["poly", T(rbox(0.016, 0.012, 0.014, 3e-3), 0, 0.052, -7e-3)], ["bright", T(new CylinderGeometry(22e-4, 22e-4, 0.018, 10), 0, 0.058, -7e-3, 0, 0, RX)]];
+        for (const [k, g] of P) add(k, g.applyMatrix4(M2));
+      };
+      cap(new Matrix4().compose(new Vector3(-0.1, 0.078, -0.47), new Quaternion().setFromEuler(new Euler(0, -RX - 0.3, 0)), new Vector3(1, 1, 1).multiplyScalar(0.95)));
+      cap(new Matrix4().compose(new Vector3(0.071, 0.078, 0.216), new Quaternion().setFromEuler(new Euler(0, RX + 0.25, 0)), new Vector3(0.72, 0.72, 0.72)));
+    }
+    add("rub", lathe([[0.0372, -0.012], [0.0385, -0.01], [0.0385, 0], [0.0372, 2e-3], [0.0305, 2e-3], [0.0305, -0.012]], S2(64), 0.078, 0.214), 6);
+    for (let i = 0; i < 7; i++) {
+      const a = -0.9 + i * 0.3;
+      add("paint", T(new BoxGeometry(8e-4, i % 2 ? 24e-4 : 42e-4, 12e-4), Math.sin(a) * 0.0366, 0.078 + Math.cos(a) * 0.0366, 0.2 - 0.095, 0, 0, -a));
+    }
+    add("alu", T(rbox(0.012, 0.014, 0.02, 3e-3), 0.044, 0.068, 0.01));
+    add("glass", T(new CylinderGeometry(38e-4, 38e-4, 0.016, 12), 0.044, 0.075, 0.01, RX));
+    add("bright", T(new SphereGeometry(15e-4, 8, 6), 0.044, 0.0785, 0.01));
+    for (const [y2, z] of [[-0.094, -0.4], [-0.158, 0.31]]) {
+      add("bright", T(new CylinderGeometry(42e-4, 48e-4, 0.012, S2(16)), 0, y2, z));
+      add("steel", T(new TorusGeometry(0.011, 17e-4, 6, S2(18)), 0, y2 - 0.016, z, 0, RX, 0.25));
+      add("blk", T(new CylinderGeometry(22e-4, 22e-4, 0.014, 10), 0, y2 - 7e-3, z, 0, 0, RX));
+    }
+    for (const z of [-0.06, 0.07]) screw(add, 0, -0.091, z, Math.PI, 0, 0, 34e-4, q);
+    add("alu", T(rbox(0.046, 0.028, 0.046, 5e-3, 3), 0, -0.093, -0.555), 6);
+    add("bright", T(new CylinderGeometry(5e-3, 5e-3, 0.064, S2(16)), 0, -0.1, -0.545, 0, 0, RX));
+    for (const sx of [-1, 1]) {
+      const M2 = new Matrix4().compose(new Vector3(0.024 * sx, -0.098, -0.538), new Quaternion().setFromEuler(new Euler(0.22, 0, 0.32 * sx)), new Vector3(1, 1, 1));
+      const P = [
+        ["alu", T(new CylinderGeometry(82e-4, 82e-4, 0.13, S2(24)), 0, -0.065, 0)],
+        ["bright", T(new CylinderGeometry(62e-4, 62e-4, 0.13, S2(20)), 0, -0.185, 0)],
+        ["knurl", T(knurled(98e-4, 0.013, S2(40), 4e-4, 30), 0, -0.132, 0)],
+        ["rub", T(new SphereGeometry(0.0125, S2(18), S2(12)), 0, -0.252, 0)],
+        ["blk", T(new CylinderGeometry(72e-4, 9e-3, 0.012, S2(20)), 0, -0.242, 0)]
+      ];
+      for (let i = 0; i < 5; i++) P.push(["hole", T(new CylinderGeometry(64e-4, 64e-4, 15e-4, S2(20)), 0, -0.155 - i * 0.014, 0)]);
+      P.push(["steel", T(new TorusGeometry(4e-3, 11e-4, 6, S2(14)), 9e-3, -0.03, 0, 0, RX, 0)]);
+      for (const [k, g] of P) add(k, g.applyMatrix4(M2));
+    }
+    const merge = (keys) => {
+      const arr = keys.flatMap((k) => L[k]);
+      return arr.length ? mergeGeometries(arr, false) : null;
+    };
+    const Mt = rifleMaterials();
+    const body = new Group();
+    for (const [keys, m] of [[["steel", "alu", "bright", "blk", "paint", "hole", "red"], Mt.metal], [["fde", "fdeD"], Mt.cera], [["poly", "rub"], Mt.poly], [["knurl"], Mt.knurl], [["glass"], Mt.glass]]) {
+      const g = merge(keys);
+      if (g) body.add(new Mesh(g, m));
+    }
+    const brake = new Mesh(mergeGeometries(L.brake, false), Mt.metal);
+    body.add(brake);
+    const can = new Mesh(mergeGeometries(L.can, false), Mt.cera);
+    can.geometry.getAttribute("color").array.fill(0);
+    {
+      const c = can.geometry.getAttribute("color"), col = new Color("#5a5446");
+      for (let i = 0; i < c.count; i++) c.setXYZ(i, col.r, col.g, col.b);
+      const p = can.geometry.getAttribute("pbr");
+      for (let i = 0; i < p.count; i++) p.setXY(i, 0.35, 0.58);
+    }
+    can.visible = !!opts.suppressor;
+    brake.visible = !opts.suppressor;
+    const B3 = { bright: [], blk: [], red: [], knurl: [] };
+    B3.bright.push(prep(lathe([[0, -0.08], [0.0155, -0.08], [0.0165, -0.077], [0.0165, 0.077], [0.0155, 0.08], [0, 0.08]].map(([r, h]) => [r, h]), S2(64), 0, 0, (a, h) => Math.abs(h) < 0.06 ? -12e-4 * smooth(0.55, 0.95, Math.cos(4 * a + h * 40)) : 0), "bright", 6));
+    B3.blk.push(prep(lathe([[0, 0], [0.0125, 0], [0.0145, 4e-3], [0.0145, 0.026], [0.012, 0.032], [0, 0.032]], S2(48), 0, 0.112), "blk"));
+    B3.red.push(prep(T(new CylinderGeometry(25e-4, 25e-4, 6e-3, 12), 0, 0, 0.114, RX), "red"));
+    B3.blk.push(prep(T(new CylinderGeometry(55e-4, 62e-4, 0.062, S2(20)), 0.03, -0.012, 0.03, 0, 0, 1.15), "blk"));
+    B3.knurl.push(prep(T(knurled(0.0135, 0.026, S2(48), 6e-4, 28, 2), 0.06, -0.026, 0.03, 0, 0, 1.15), "blk"));
+    B3.blk.push(prep(T(new SphereGeometry(0.0135, S2(24), S2(12), 0, Math.PI * 2, 0, Math.PI / 2), 0.0715, -0.032, 0.03, 0, 0, 1.15 - Math.PI / 2), "blk"));
+    const bolt2 = new Group();
+    bolt2.add(new Mesh(mergeGeometries([...B3.bright, ...B3.blk, ...B3.red], false), Mt.metal), new Mesh(mergeGeometries(B3.knurl, false), Mt.knurl));
+    bolt2.position.set(0, 0, 0.02);
+    let tris = 0;
+    body.traverse((o) => {
+      if (o.geometry) tris += o.geometry.attributes.position.count / 3;
+    });
+    bolt2.traverse((o) => {
+      if (o.geometry) tris += o.geometry.attributes.position.count / 3;
+    });
+    return { body, bolt: bolt2, can, brake, tris: Math.round(tris + can.geometry.attributes.position.count / 3) };
+  }
+  var RX, C, BARE, WEAR_BARE, WEAR, rbox, smooth, MATS, QSEG;
+  var init_rifle = __esm({
+    "src/scene/rifle.js"() {
+      init_three_module();
+      init_BufferGeometryUtils();
+      init_RoundedBoxGeometry();
+      init_state();
+      init_surfaces();
+      RX = Math.PI / 2;
+      C = {
+        fde: ["#8c7a58", 0.08, 0.62],
+        fdeD: ["#7a6a4c", 0.08, 0.66],
+        blk: ["#17181a", 0.78, 0.36],
+        alu: ["#232427", 0.85, 0.3],
+        steel: ["#34373a", 0.88, 0.46],
+        bright: ["#b9bdc1", 1, 0.16],
+        hole: ["#060606", 0, 0.95],
+        paint: ["#d8d8d2", 0, 0.55],
+        poly: ["#1b1b1c", 0, 0.82],
+        rub: ["#121212", 0, 0.92],
+        red: ["#b01a12", 0.1, 0.5],
+        brass: ["#c99a44", 1, 0.24],
+        gold: ["#a88638", 1, 0.3]
+      };
+      BARE = new Color("#a7a59e");
+      WEAR_BARE = { blk: new Color("#8a8c8e"), steel: new Color("#9a9c9e") };
+      WEAR = { fde: 0.95, fdeD: 0.9, alu: 0.75, blk: 0.55, steel: 0.45, poly: 0.25 };
+      rbox = (w, h, d, r, s = 2) => new RoundedBoxGeometry(w, h, d, s, Math.min(r, Math.min(w, h, d) / 2 - 1e-5));
+      smooth = (a, b, x) => {
+        const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
+        return k * k * (3 - 2 * k);
+      };
+      MATS = null;
+      QSEG = () => ({ low: 0.5, medium: 0.75 })[G.quality?.name] || 1;
+    }
+  });
+
+  // src/core/rng.js
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+      a |= 0;
+      a = a + 1831565813 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hash2(x, y2, s) {
+    let h = x * 374761393 + y2 * 668265263 + s * 2147483647 | 0;
+    h = Math.imul(h ^ h >>> 13, 1274126177);
+    return ((h ^ h >>> 16) >>> 0) / 4294967296;
+  }
+  function vnoise(x, y2, s = 0) {
+    const xi = Math.floor(x), yi = Math.floor(y2);
+    const xf = x - xi, yf = y2 - yi;
+    const a = hash2(xi, yi, s), b = hash2(xi + 1, yi, s), c = hash2(xi, yi + 1, s), d = hash2(xi + 1, yi + 1, s);
+    const u = fade(xf), v3 = fade(yf);
+    return a + (b - a) * u + (c + (d - c) * u - (a + (b - a) * u)) * v3;
+  }
+  function fbm(x, y2, oct = 5, s = 0) {
+    let sum = 0, amp = 0.5, f = 1, norm = 0;
+    for (let i = 0; i < oct; i++) {
+      sum += amp * vnoise(x * f, y2 * f, s + i * 17);
+      norm += amp;
+      amp *= 0.5;
+      f *= 2.03;
+    }
+    return sum / norm;
+  }
+  function ridged(x, y2, oct = 5, s = 0) {
+    let sum = 0, amp = 0.5, f = 1, norm = 0;
+    for (let i = 0; i < oct; i++) {
+      const n = 1 - Math.abs(vnoise(x * f, y2 * f, s + i * 31) * 2 - 1);
+      sum += amp * n * n;
+      norm += amp;
+      amp *= 0.5;
+      f *= 2.1;
+    }
+    return sum / norm;
+  }
+  function noise1(t, s = 0) {
+    return vnoise(t, s * 13.7, 7) * 2 - 1;
+  }
+  var fade, clamp2, lerp2, smoothstep2;
+  var init_rng = __esm({
+    "src/core/rng.js"() {
+      fade = (t) => t * t * (3 - 2 * t);
+      clamp2 = (v3, a, b) => v3 < a ? a : v3 > b ? b : v3;
+      lerp2 = (a, b, t) => a + (b - a) * t;
+      smoothstep2 = (a, b, x) => {
+        const t = clamp2((x - a) / (b - a), 0, 1);
+        return t * t * (3 - 2 * t);
+      };
+    }
+  });
+
   // src/render/materials.js
   function hazeify(mat2, opts = {}) {
     const key = "hz" + (opts.detail ? "d" : "") + (opts.sway ? "s" + opts.sway : "") + (opts.flag ? "f" + opts.flag : "") + (opts.rim ? "r" : "") + (opts.snowCap ? "c" : "") + (opts.wdetail ? "w" : "");
@@ -33724,7 +34676,7 @@ void main() {
   function mat(color, o = {}) {
     const lam = !!(G.quality && G.quality.mobile) && (o.metal ?? 0) < 0.4 && !o.transparent && !o.keepPBR;
     const k = JSON.stringify([color, o, lam]);
-    if (cache.has(k) && !o.unique) return cache.get(k);
+    if (cache2.has(k) && !o.unique) return cache2.get(k);
     const m = lam ? new MeshLambertMaterial({
       color: new Color(color),
       emissive: o.emissive ? new Color(o.emissive) : new Color(0),
@@ -33747,13 +34699,13 @@ void main() {
       depthWrite: o.depthWrite ?? true
     });
     hazeify(m, o.patch || {});
-    if (!o.unique) cache.set(k, m);
+    if (!o.unique) cache2.set(k, m);
     return m;
   }
   function clearMatCache() {
-    cache.clear();
+    cache2.clear();
   }
-  var SCOPE_RIM, HAZE, NOISE_GLSL, cache;
+  var SCOPE_RIM, HAZE, NOISE_GLSL, cache2;
   var init_materials = __esm({
     "src/render/materials.js"() {
       init_three_module();
@@ -33777,7 +34729,709 @@ float hzNoise(vec2 p){ vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f);
   return mix(mix(hzHash(i),hzHash(i+vec2(1,0)),u.x), mix(hzHash(i+vec2(0,1)),hzHash(i+vec2(1,1)),u.x), u.y); }
 float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); p*=2.07; a*=0.5; } return s; }
 `;
-      cache = /* @__PURE__ */ new Map();
+      cache2 = /* @__PURE__ */ new Map();
+    }
+  });
+
+  // src/scene/common.js
+  function colorGeo(geo, color) {
+    const g = geo.index ? geo.toNonIndexed() : geo;
+    const c = new Color(color), n = g.attributes.position.count, a = new Float32Array(n * 3), tn = g.attributes.tint;
+    for (let i = 0; i < n; i++) {
+      const k = tn ? tn.array : null;
+      a[i * 3] = c.r * (k ? k[i * 3] : 1);
+      a[i * 3 + 1] = c.g * (k ? k[i * 3 + 1] : 1);
+      a[i * 3 + 2] = c.b * (k ? k[i * 3 + 2] : 1);
+    }
+    if (tn) g.deleteAttribute("tint");
+    g.setAttribute("color", new BufferAttribute(a, 3));
+    if (!g.attributes.uv) g.setAttribute("uv", new BufferAttribute(new Float32Array(n * 2), 2));
+    return g;
+  }
+  function tf(geo, x = 0, y2 = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
+    geo.applyMatrix4(new Matrix4().compose(new Vector3(x, y2, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(sx, sy, sz)));
+    return geo;
+  }
+  function mergedMesh(list, o = {}) {
+    const geos = list.map(([g3, c]) => {
+      const q = colorGeo(g3, c);
+      for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
+      return q;
+    });
+    const g = mergeGeometries(geos, false);
+    const wd = o.wdetail ?? !(G.quality && G.quality.name === "low" && G.quality.mobile);
+    const m = mat("#ffffff", { vc: true, rough: o.rough ?? 0.8, metal: o.metal ?? 0, patch: wd ? Object.assign({ wdetail: 1 }, o.patch || {}) : o.patch, emissive: o.emissive, flat: o.flat });
+    const mesh = new Mesh(g, m);
+    mesh.castShadow = o.cast ?? true;
+    mesh.receiveShadow = o.receive ?? true;
+    return mesh;
+  }
+  function glowTexture() {
+    if (glowTex) return glowTex;
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g = c.getContext("2d");
+    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, "rgba(255,255,255,1)");
+    gr.addColorStop(0.25, "rgba(255,255,255,0.55)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 64, 64);
+    glowTex = new CanvasTexture(c);
+    return glowTex;
+  }
+  function glow(color, size, x, y2, z, intensity = 1) {
+    const s = new Sprite(new SpriteMaterial({ map: glowTexture(), color: new Color(color).multiplyScalar(intensity), blending: AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
+    s.scale.set(size, size, 1);
+    s.position.set(x, y2, z);
+    return s;
+  }
+  function makeCar(color = "#151719", type = "suv") {
+    const sh = new Shape();
+    if (type === "suv") {
+      sh.moveTo(-2.4, 0.35);
+      sh.lineTo(2.4, 0.35);
+      sh.lineTo(2.45, 0.95);
+      sh.lineTo(2.1, 1.05);
+      sh.lineTo(1.4, 1.12);
+      sh.lineTo(0.95, 1.85);
+      sh.lineTo(-2.25, 1.9);
+      sh.lineTo(-2.42, 1.2);
+      sh.closePath();
+    } else if (type === "truck") {
+      sh.moveTo(-3.6, 0.5);
+      sh.lineTo(3.4, 0.5);
+      sh.lineTo(3.45, 1.4);
+      sh.lineTo(3.1, 1.45);
+      sh.lineTo(2.7, 2.5);
+      sh.lineTo(1.4, 2.55);
+      sh.lineTo(1.3, 1.5);
+      sh.lineTo(-3.6, 1.5);
+      sh.closePath();
+    } else {
+      sh.moveTo(-2.3, 0.32);
+      sh.lineTo(2.3, 0.32);
+      sh.lineTo(2.35, 0.8);
+      sh.lineTo(1.2, 0.95);
+      sh.lineTo(0.55, 1.42);
+      sh.lineTo(-1.2, 1.45);
+      sh.lineTo(-1.9, 1);
+      sh.lineTo(-2.35, 0.95);
+      sh.closePath();
+    }
+    const W = type === "truck" ? 2.3 : 1.85;
+    const body = new ExtrudeGeometry(sh, { depth: W, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 2, curveSegments: 2 });
+    tf(body, 0, 0, -W / 2);
+    tf(body, 0, 0, 0, 0, -Math.PI / 2, 0);
+    const parts = [[body, color]];
+    const glass = "#0b0f14";
+    if (type === "suv") {
+      parts.push([tf(new BoxGeometry(1.9, 0.62, 3), 0, 1.5, -0.6), glass]);
+    } else if (type === "truck") {
+      parts.push([tf(new BoxGeometry(2.36, 0.75, 1.1), 0, 2, 2.05), glass]);
+      parts.push([tf(new BoxGeometry(2.3, 1.5, 4.6), 0, 2.25, -1.25), "#6d6450"]);
+    } else {
+      parts.push([tf(new BoxGeometry(1.75, 0.42, 1.9), 0, 1.15, -0.25), glass]);
+    }
+    const wy = type === "truck" ? 0.5 : 0.38, wr = type === "truck" ? 0.5 : 0.38, wx = W / 2 + 0.02, wz = type === "truck" ? [2.4, -2.2] : [1.5, -1.55];
+    for (const z of wz) for (const sx of [1, -1]) {
+      parts.push([tf(new CylinderGeometry(wr, wr, 0.3, 14), sx * wx, wy, z, 0, 0, Math.PI / 2), "#0c0c0c"]);
+      parts.push([tf(new CylinderGeometry(wr * 0.55, wr * 0.55, 0.32, 10), sx * wx, wy, z, 0, 0, Math.PI / 2), "#8a8c90"]);
+    }
+    const g = new Group();
+    const m = mergedMesh(parts, { rough: 0.35, metal: 0.45 });
+    g.add(m);
+    const fz = type === "truck" ? 3.5 : 2.45;
+    const hl = mergedMesh([[tf(new BoxGeometry(0.4, 0.14, 0.05), 0.6, 0.8, fz), "#fff3d8"], [tf(new BoxGeometry(0.4, 0.14, 0.05), -0.6, 0.8, fz), "#fff3d8"]], { emissive: "#fff0cc", cast: false });
+    hl.material = mat("#fff0cc", { emissive: "#fff0cc", ei: 3 });
+    g.add(hl);
+    const tl = new Mesh(tf(new BoxGeometry(1.5, 0.1, 0.05), 0, 0.95, type === "truck" ? -3.65 : -2.45), mat("#ff2020", { emissive: "#ff1010", ei: 2 }));
+    g.add(tl);
+    g.userData.type = type;
+    return g;
+  }
+  function pineGeometry(snow = 0.6, seed = 0, palette = {}) {
+    const trunk = palette.trunk || "#3a2a1c", leaf = new Color(palette.leaf || "#1f3524"), snowC = new Color(palette.snow || "#e8eef6");
+    const mob = !!(G.quality && G.quality.mobile), lite = !!palette.lite, arms = mob ? 6 : lite ? 8 : 11, tiers = mob ? 4 : lite ? 5 : 7, R = mulberry32(17 + Math.floor(seed * 100));
+    const parts = [[new CylinderGeometry(0.1, 0.24, 3.2, lite ? 5 : 7).translate(0, 1.6, 0), trunk]];
+    const H0 = 1.5, H1 = 12.8;
+    for (let i = 0; i < tiers; i++) {
+      const f = i / (tiers - 1), y2 = H0 + f * (H1 - H0 - 2.2), r = (2.7 * (1 - f) ** 0.9 + 0.35) * (0.92 + R() * 0.16), h = 1.9 - f * 0.6, droop = 0.55 + 0.25 * (1 - f);
+      const pos = [], idx = [];
+      const rot = R() * 6.28;
+      pos.push(0, y2 + h, 0);
+      pos.push(0, y2 + h * 0.15, 0);
+      for (let k = 0; k < arms * 2; k++) {
+        const tip = k % 2 === 0, ang = rot + k / (arms * 2) * Math.PI * 2 + (R() - 0.5) * 0.12;
+        const rr = tip ? r * (0.85 + R() * 0.3) : r * 0.5;
+        pos.push(Math.cos(ang) * rr, y2 - (tip ? droop : droop * 0.25) + (R() - 0.5) * 0.15, Math.sin(ang) * rr);
+      }
+      const n = arms * 2;
+      for (let k = 0; k < n; k++) {
+        const a0 = 2 + k, a1 = 2 + (k + 1) % n;
+        idx.push(0, a1, a0);
+        idx.push(1, a0, a1);
+      }
+      const g = new BufferGeometry();
+      g.setAttribute("position", new Float32BufferAttribute(pos, 3));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      const tint = new Float32Array(pos.length), nrm = g.attributes.normal.array, base = leaf.clone().multiplyScalar(0.78 + f * 0.25);
+      for (let v3 = 0; v3 < pos.length / 3; v3++) {
+        const isTip = v3 >= 2 && (v3 - 2) % 2 === 0, under = v3 === 1;
+        const c = base.clone().multiplyScalar(under ? 0.45 : isTip ? 1.15 : 0.85);
+        const sn = snow * (v3 === 0 ? 0.85 : under ? 0 : isTip ? 0.75 : 0.55) * (0.65 + 0.7 * vnoise(pos[v3 * 3] * 1.7 + i, pos[v3 * 3 + 2] * 1.7, 5));
+        if (sn > 0) c.lerp(snowC, Math.min(0.92, sn * Math.max(0, nrm[v3 * 3 + 1]) * 1.2));
+        tint[v3 * 3] = c.r;
+        tint[v3 * 3 + 1] = c.g;
+        tint[v3 * 3 + 2] = c.b;
+      }
+      g.setAttribute("tint", new BufferAttribute(tint, 3));
+      parts.push([g, "#ffffff"]);
+    }
+    const geos = parts.map(([g, c]) => {
+      const q = colorGeo(g, c);
+      if (!q.attributes.normal) q.computeVertexNormals();
+      return q;
+    });
+    return mergeGeometries(geos, false);
+  }
+  function blocksLOF(x, z, top, rad, from, targets) {
+    for (const t of targets) {
+      const dx = t[0] - from.x, dz = t[2] - from.z, L2 = dx * dx + dz * dz;
+      const u = Math.max(0, Math.min(1, ((x - from.x) * dx + (z - from.z) * dz) / L2));
+      const px2 = from.x + dx * u, pz2 = from.z + dz * u, d = Math.hypot(x - px2, z - pz2);
+      if (d > rad + 2.5) continue;
+      const ly = from.y + (t[1] - from.y) * u;
+      if (top + 1.5 > ly && u > 2e-3 && u < 0.995) return true;
+    }
+    return false;
+  }
+  function impostorTexture(geo) {
+    if (_impCache.has(geo)) return _impCache.get(geo);
+    const r = G.renderer;
+    if (!r) return null;
+    geo.computeBoundingBox();
+    const bb = geo.boundingBox, hw = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2 * 1.04, h = bb.max.y - bb.min.y;
+    const W = 128, H = Math.round(W * h / (hw * 2) / 4) * 4 || 256;
+    const rt = new WebGLRenderTarget(W, H, { depthBuffer: true, generateMipmaps: true, minFilter: LinearMipmapLinearFilter, magFilter: LinearFilter });
+    const out = { tex: rt.texture, hw, y0: bb.min.y, h, rt, geo };
+    drawImpostor(out);
+    _impCache.set(geo, out);
+    return out;
+  }
+  function refreshImpostors() {
+    for (const I of _impCache.values()) drawImpostor(I);
+  }
+  function drawImpostor(I) {
+    const r = G.renderer;
+    if (!r) return;
+    const { rt, geo, hw } = I, bb = geo.boundingBox;
+    const sc = new Scene();
+    sc.add(new AmbientLight("#ffffff", 1.5));
+    const dl = new DirectionalLight("#ffffff", 1.1);
+    dl.position.set(0.5, 1, 1);
+    sc.add(dl);
+    sc.add(new Mesh(geo, new MeshLambertMaterial({ vertexColors: true })));
+    const cam = new OrthographicCamera(-hw, hw, bb.max.y, bb.min.y, -50, 50);
+    cam.position.set(0, 0, 10);
+    cam.lookAt(0, 0, 0);
+    cam.position.set(0, 0, 10);
+    const prevT = r.getRenderTarget(), prevC = new Color();
+    r.getClearColor(prevC);
+    const prevA = r.getClearAlpha(), prevTM = r.toneMapping;
+    r.setRenderTarget(rt);
+    r.setClearColor(1912864, 0);
+    r.toneMapping = NoToneMapping;
+    r.clear();
+    r.render(sc, cam);
+    r.setRenderTarget(prevT);
+    r.setClearColor(prevC, prevA);
+    r.toneMapping = prevTM;
+  }
+  function impostorGeometry(I) {
+    const g1 = new PlaneGeometry(I.hw * 2, I.h).translate(0, I.y0 + I.h / 2, 0), g22 = g1.clone().rotateY(Math.PI / 2);
+    const g = mergeGeometries([g1, g22], false);
+    const n = g.attributes.normal;
+    for (let i = 0; i < n.count; i++) n.setXYZ(i, 0, 1, 0);
+    return g;
+  }
+  function makeForest(geo, count, placeFn, o = {}) {
+    if (o.isNear && G.renderer) {
+      const near2 = [], far = [];
+      let n = 0;
+      for (let i = 0; i < count * 4 && n < count; i++) {
+        const p = placeFn(i);
+        if (!p) continue;
+        n++;
+        (o.isNear(p) ? near2 : far).push(p);
+      }
+      const grp = new Group();
+      if (near2.length) grp.add(makeForest(geo, near2.length, (i) => near2[i], { ...o, isNear: null, tries: 1 }));
+      const I = impostorTexture(geo);
+      if (I && far.length) {
+        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.3, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff", emissive: "#26303c", emissiveIntensity: 0.55 });
+        hazeify(m2, {});
+        const im2 = makeForestMesh(impostorGeometry(I), m2, far.length, (i) => far[i], 1);
+        im2.castShadow = false;
+        im2.receiveShadow = false;
+        im2.userData.impostor = true;
+        grp.add(im2);
+      }
+      grp.userData.lod = { near: near2.length, far: far.length };
+      return grp;
+    }
+    const m = G.quality && G.quality.mobile ? new MeshLambertMaterial({ vertexColors: true }) : new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+    hazeify(m, { sway: o.sway ?? 0.5 });
+    const im = makeForestMesh(geo, m, count, placeFn, o.tries || 4);
+    im.castShadow = o.cast ?? false;
+    im.receiveShadow = true;
+    return im;
+  }
+  function makeForestMesh(geo, m, count, placeFn, tries) {
+    const im = new InstancedMesh(geo, m, count);
+    const d = new Object3D();
+    let n = 0;
+    for (let i = 0; i < count * tries && n < count; i++) {
+      const p = placeFn(i);
+      if (!p) continue;
+      d.position.set(p.x, p.y - 0.3, p.z);
+      d.rotation.set(0, p.r || 0, 0);
+      const s = p.s || 1;
+      d.scale.set(s, s * (p.sy || 1), s);
+      d.updateMatrix();
+      im.setMatrixAt(n, d.matrix);
+      const hsh = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) % 1, hs2 = Math.abs(Math.sin(p.x * 39.35 + p.z * 11.13) * 24634.63) % 1;
+      _vc.setRGB(1, 1, 1).multiplyScalar(0.8 + hsh * 0.45);
+      _vc.g *= 0.97 + hs2 * 0.08;
+      _vc.b *= 0.96 + (1 - hs2) * 0.1;
+      im.setColorAt(n, _vc);
+      n++;
+    }
+    im.count = n;
+    im.instanceMatrix.needsUpdate = true;
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    im.computeBoundingSphere();
+    return im;
+  }
+  function n3(x, y2, z, s) {
+    return vnoise(x + z * 0.71, y2 - z * 0.53, s) * 0.5 + vnoise(y2 * 1.13 + 3.1, z * 1.07 - x * 0.31, s + 1) * 0.5;
+  }
+  function rockGeometry(seed = 1, detail = 1, o = {}) {
+    if (G.quality && G.quality.mobile) detail = Math.max(0, detail - 1);
+    const det = Math.max(1, Math.min(8, detail * 2 + 1));
+    let g = new IcosahedronGeometry(1, det);
+    g.deleteAttribute("normal");
+    g.deleteAttribute("uv");
+    g = mergeVertices(g);
+    const p = g.attributes.position, disp = new Float32Array(p.count);
+    const sq = o.squash ?? 0.72, strata = o.strata ?? 1;
+    for (let i = 0; i < p.count; i++) {
+      let x = p.getX(i), y2 = p.getY(i), z = p.getZ(i);
+      const big = n3(x * 1.1 + seed, y2 * 1.1, z * 1.1, seed) - 0.5, mid = n3(x * 2.6, y2 * 2.6 + seed, z * 2.6, seed + 7) - 0.5, fine = n3(x * 6.5, y2 * 6.5, z * 6.5 + seed, seed + 3) - 0.5;
+      let k = 1 + big * 0.55 + mid * 0.22 + fine * 0.07;
+      const band = Math.sin((y2 * 5.2 + big * 2) * strata) * 0.035 * strata;
+      k += band;
+      x *= k;
+      y2 *= k * sq;
+      z *= k;
+      if (y2 < -0.25 * sq) y2 = -0.25 * sq + (y2 + 0.25 * sq) * 0.25;
+      p.setXYZ(i, x, y2, z);
+      disp[i] = big * 0.55 + mid * 0.22;
+    }
+    g.computeVertexNormals();
+    const nrm = g.attributes.normal, tint = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      const y2 = p.getY(i), up = nrm.getY(i);
+      const ao = 0.55 + 0.45 * Math.min(1, Math.max(0, (disp[i] + 0.3) / 0.55));
+      const base = 0.72 + 0.28 * Math.max(0, Math.min(1, (y2 + 0.3) / 0.9));
+      const st = 0.9 + 0.12 * Math.sin(y2 * 17 + n3(p.getX(i) * 3, y2, p.getZ(i) * 3, seed + 9) * 3) * strata;
+      const crack = n3(p.getX(i) * 9, y2 * 9, p.getZ(i) * 9, seed + 11);
+      const cr = crack > 0.78 ? 0.55 : 1;
+      const top = o.topTint && up > 0.55 ? 1 : 0;
+      const v3 = ao * base * st * cr * (o.rockDark ?? 1);
+      if (top) {
+        const t = o.topTint, m = Math.min(1, (up - 0.55) * 3) * (0.6 + 0.4 * n3(p.getX(i) * 4, 0, p.getZ(i) * 4, seed));
+        tint[i * 3] = v3 * (1 - m) + t[0] * m;
+        tint[i * 3 + 1] = v3 * (1 - m) + t[1] * m;
+        tint[i * 3 + 2] = v3 * (1 - m) + t[2] * m;
+      } else {
+        tint[i * 3] = v3 * (o.warm ? 1.04 : 1);
+        tint[i * 3 + 1] = v3;
+        tint[i * 3 + 2] = v3 * (o.warm ? 0.94 : 1);
+      }
+    }
+    g.setAttribute("tint", new BufferAttribute(tint, 3));
+    return g;
+  }
+  function sandbagGeometry(seed = 0) {
+    const lo = G.quality && G.quality.mobile;
+    let g = lo ? new BoxGeometry(0.62, 0.2, 0.34, 5, 2, 3) : new BoxGeometry(0.62, 0.2, 0.34, 8, 3, 5);
+    g.deleteAttribute("normal");
+    g.deleteAttribute("uv");
+    g = mergeVertices(g);
+    const p = g.attributes.position, R = mulberry32(seed + 5);
+    const j = (R() - 0.5) * 0.05;
+    for (let i = 0; i < p.count; i++) {
+      let x = p.getX(i), y2 = p.getY(i), z = p.getZ(i);
+      const nx = x / 0.31, ny = y2 / 0.1, nz = z / 0.17;
+      const r = Math.max(Math.abs(nx), Math.abs(ny), Math.abs(nz));
+      const sph = Math.sqrt(nx * nx * 0.35 + ny * ny + nz * nz) || 1;
+      const pillow = 1 - 0.32 * (1 - Math.abs(nx) ** 3);
+      x = x * (0.92 + 0.08 / sph);
+      y2 = y2 * pillow * (1 + j) * (0.85 + 0.15 / Math.max(0.6, r));
+      z = z * (0.9 + 0.1 * (1 - Math.abs(nx) ** 4)) * pillow ** 0.4;
+      if (y2 > 0) y2 -= 0.02 * (1 - nx * nx);
+      p.setXYZ(i, x + (n3(x * 9, y2 * 9, z * 9, seed) - 0.5) * 0.012, y2, z);
+    }
+    g.computeVertexNormals();
+    const tint = new Float32Array(p.count * 3), nrm = g.attributes.normal;
+    for (let i = 0; i < p.count; i++) {
+      const v3 = (0.78 + 0.22 * Math.max(0, nrm.getY(i))) * (0.92 + 0.12 * n3(p.getX(i) * 14, p.getY(i) * 14, p.getZ(i) * 14, seed + 2));
+      tint[i * 3] = v3;
+      tint[i * 3 + 1] = v3;
+      tint[i * 3 + 2] = v3 * 0.97;
+    }
+    g.setAttribute("tint", new BufferAttribute(tint, 3));
+    return g;
+  }
+  function sandbagWall(x0, x1, y2, z, courses, ry = 0, colors = ["#8e7c5a", "#9a8862", "#857452"]) {
+    const out = [];
+    let s = 0;
+    for (let c = 0; c < courses; c++) for (let x = x0 + c % 2 * 0.3; x < x1 - 0.2; x += 0.6) {
+      const g = sandbagGeometry(s++ % 7);
+      g.rotateY((s * 0.37 % 1 - 0.5) * 0.12);
+      g.translate(x, y2 + 0.09 + c * 0.17, z + (s % 3 - 1) * 0.02);
+      if (ry) g.rotateY(ry);
+      out.push([g, colors[s % colors.length]]);
+    }
+    return out;
+  }
+  function butteGeometry(seed, radius, height8, o = {}) {
+    const R = mulberry32(seed * 31 + 7), seg = o.seg || (G.quality && G.quality.mobile ? G.quality.name === "low" ? 16 : 22 : 48), tiersN = 3 + Math.floor(R() * 3), parts = [];
+    const cols = o.colors || ["#b8693c", "#d09060", "#9c5634", "#c47c4c", "#e0b080"];
+    const outline = (a, s) => 1 + 0.18 * (fbm(Math.cos(a) * 2 + seed, Math.sin(a) * 2, 3, s) - 0.5) * 2 + 0.06 * Math.sin(a * 7 + seed);
+    {
+      const g = new CylinderGeometry(radius * 1, radius * 1.75, height8 * 0.3, seg, 2, true);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), a = Math.atan2(z, x), k = outline(a, seed);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+        p.setY(i, p.getY(i) + (fbm(x / 60, z / 60, 2, seed) - 0.5) * height8 * 0.05);
+      }
+      g.translate(0, height8 * 0.15, 0);
+      g.computeVertexNormals();
+      parts.push([g, o.skirt || "#c99a68"]);
+    }
+    let y2 = height8 * 0.3, r = radius;
+    for (let t = 0; t < tiersN; t++) {
+      const th = height8 * 0.7 / tiersN * (0.8 + R() * 0.4), rTop = r * (0.94 - R() * 0.05);
+      const g = new CylinderGeometry(rTop, r, th, seg, 4, false);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), a = Math.atan2(z, x), k = outline(a, seed + t * 3) * (1 + (vnoise(a * 9, p.getY(i) / 6, seed + t) - 0.5) * 0.08);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+      }
+      g.translate(0, y2 + th / 2, 0);
+      g.computeVertexNormals();
+      parts.push([g, cols[(seed + t) % cols.length]]);
+      y2 += th;
+      r = rTop * (0.86 + R() * 0.08);
+    }
+    const cap = new CylinderGeometry(r * 1.02, r * 1.1, height8 * 0.02, seg, 1);
+    {
+      const p = cap.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), k = outline(Math.atan2(z, x), seed + 99);
+        p.setX(i, x * k);
+        p.setZ(i, z * k);
+      }
+    }
+    cap.translate(0, y2, 0);
+    cap.computeVertexNormals();
+    parts.push([cap, "#d6a676"]);
+    return parts;
+  }
+  function makeFlag(w, h, color, o = {}) {
+    const g = new PlaneGeometry(w, h, 16, 6).translate(w / 2, 0, 0);
+    let tex2 = null;
+    if (o.emblem) {
+      const c = document.createElement("canvas");
+      c.width = 128;
+      c.height = 80;
+      const x = c.getContext("2d");
+      x.fillStyle = color;
+      x.fillRect(0, 0, 128, 80);
+      x.strokeStyle = o.emblem;
+      x.lineWidth = 6;
+      x.beginPath();
+      x.arc(64, 40, 20, 0, Math.PI * 2);
+      x.stroke();
+      x.beginPath();
+      x.moveTo(64, 10);
+      x.lineTo(64, 70);
+      x.moveTo(34, 40);
+      x.lineTo(94, 40);
+      x.stroke();
+      tex2 = new CanvasTexture(c);
+      tex2.colorSpace = SRGBColorSpace;
+    }
+    const m = new MeshStandardMaterial({ color: tex2 ? "#ffffff" : color, map: tex2, side: DoubleSide, roughness: 0.9 });
+    hazeify(m, { flag: o.amp ?? 1 });
+    const mesh = new Mesh(g, m);
+    mesh.castShadow = true;
+    mesh.userData.windFlag = true;
+    return mesh;
+  }
+  function addWindMarkers(S2, w, height8, pts, o = {}) {
+    const poleG = [];
+    for (const [x, z] of pts) {
+      const y2 = height8(x, z);
+      poleG.push([new CylinderGeometry(0.06, 0.08, o.pole || 7, 5).translate(x, y2 + (o.pole || 7) / 2, z), o.poleColor || "#2a2a2c"]);
+      const f = makeFlag(o.fw || 2.4, o.fh || 0.9, o.color || "#ff5a1f", { amp: 0.8 });
+      f.position.set(x, y2 + (o.pole || 7) - 0.5, z);
+      f.castShadow = false;
+      S2.add(f);
+      const f2 = makeFlag((o.fw || 2.4) * 0.8, (o.fh || 0.9) * 0.6, o.color2 || "#f2f2f0", { amp: 0.9 });
+      f2.position.set(x, y2 + (o.pole || 7) - 1.6, z);
+      f2.castShadow = false;
+      S2.add(f2);
+      if (o.drift !== false) {
+        const d = new Smoke(S2, { at: [x, y2 + 0.4, z], n: 16, rate: 2.2, life: 5, size: 2.2, grow: 2.2, rise: 0.25, spread: 1.6, color: o.driftColor || "#eef2f8", opacity: o.driftOpacity ?? 0.22, windMul: 1.4 });
+        w.updaters.push((dt, wind) => d.update(dt, wind));
+      }
+    }
+    S2.add(mergedMesh(poleG, { rough: 0.6 }));
+  }
+  function orientWindFlags(world, wind, mt, dt) {
+    if (!world.windFlags) {
+      world.windFlags = [];
+      world.scene.traverse((o) => {
+        if (o.userData.windFlag) world.windFlags.push(o);
+      });
+    }
+    for (const f of world.windFlags) {
+      wind.sample(f.position, mt, _fw);
+      const target = Math.atan2(_fw.z, _fw.x) * -1;
+      let d = target - f.rotation.y;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      f.rotation.y += d * Math.min(1, dt * 2.5);
+    }
+  }
+  function makeBanner(w, h, color, trim = "#d8b45a") {
+    const c = document.createElement("canvas");
+    c.width = 64;
+    c.height = 160;
+    const x = c.getContext("2d");
+    x.fillStyle = color;
+    x.fillRect(0, 0, 64, 160);
+    x.fillStyle = trim;
+    x.fillRect(0, 0, 64, 8);
+    x.fillRect(0, 150, 64, 10);
+    x.strokeStyle = trim;
+    x.lineWidth = 4;
+    x.beginPath();
+    x.moveTo(32, 40);
+    x.lineTo(50, 70);
+    x.lineTo(32, 100);
+    x.lineTo(14, 70);
+    x.closePath();
+    x.stroke();
+    const tex2 = new CanvasTexture(c);
+    tex2.colorSpace = SRGBColorSpace;
+    const g = new PlaneGeometry(h, w, 10, 3).translate(h / 2, 0, 0).rotateZ(-Math.PI / 2);
+    const m = new MeshStandardMaterial({ map: tex2, side: DoubleSide, roughness: 0.9 });
+    tex2.center.set(0.5, 0.5);
+    tex2.rotation = Math.PI / 2;
+    hazeify(m, { flag: 0.35 });
+    const mesh = new Mesh(g, m);
+    mesh.castShadow = true;
+    return mesh;
+  }
+  function makeRifle(opts = {}) {
+    const RF = buildRifle(opts);
+    const build2 = (list) => mergeGeometries(list.map(([g, c]) => {
+      let q = colorGeo(g.index ? g.toNonIndexed() : g, c);
+      for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
+      return q;
+    }), false);
+    const glove = "#2b2a26", pad = "#3c3a33", sleeve = "#4d5238", cuff = "#3b3f2b";
+    const H = (list) => new Mesh(build2(list), GLOVE_MAT());
+    const R = [
+      [tf(new BoxGeometry(0.05, 0.07, 0.085), 0, 0, 0, 0.38), glove],
+      [tf(new BoxGeometry(0.052, 0.02, 0.03), 4e-3, 0.032, -0.03, 0.38), pad],
+      [tf(new CapsuleGeometry(0.0115, 0.04, 3, 6), -0.03, 5e-3, -0.03, 0.3, 0, 0.25), glove],
+      // thumb
+      [tf(new CylinderGeometry(0.048, 0.06, 0.34, 10), 0.03, -0.06, 0.22, 1.25, 0, 0.12), sleeve],
+      [tf(new CylinderGeometry(0.05, 0.05, 0.05, 10), 0.012, -0.025, 0.07, 1.25, 0, 0.12), cuff]
+    ];
+    for (let i = 0; i < 4; i++) R.push([tf(new CapsuleGeometry(0.0105, 0.03, 3, 6), -0.012, -0.022 - i * 0.017, -0.035 + i * 4e-3, 1.5, 0, 0.1), glove]);
+    const handR = H(R);
+    handR.position.set(0.012, -0.12, 0.09);
+    const Lh = [
+      [tf(new BoxGeometry(0.075, 0.035, 0.1), 0, 0, 0, 0, 0.25), glove],
+      [tf(new BoxGeometry(0.06, 0.012, 0.05), 0, -0.02, 0, 0, 0.25), pad],
+      [tf(new CylinderGeometry(0.052, 0.066, 0.42, 10), -0.1, -0.1, 0.17, 1.15, 0.45, 0), sleeve],
+      [tf(new CylinderGeometry(0.054, 0.054, 0.05, 10), -0.03, -0.035, 0.03, 1.15, 0.45, 0), cuff]
+    ];
+    for (let i = 0; i < 4; i++) Lh.push([tf(new CapsuleGeometry(0.0105, 0.035, 3, 6), 0.03 + i * 4e-3, 0.02 + i * 0, -0.02 - i * 0.017, 0.2, 0, -1.2), glove]);
+    const handL = H(Lh);
+    handL.position.set(-0.01, -0.095, -0.4);
+    const hands = new Group();
+    hands.add(handR, handL);
+    const grp = new Group();
+    grp.add(RF.body);
+    grp.add(hands);
+    grp.add(RF.bolt);
+    grp.add(RF.can);
+    grp.userData = { bolt: RF.bolt, handR, can: RF.can, brake: RF.brake, tris: RF.tris, handRHome: handR.position.clone(), boltHome: RF.bolt.position.clone() };
+    return grp;
+  }
+  function lightPoints(pts, o = {}) {
+    const n = pts.length, pos = new Float32Array(n * 3), col = new Float32Array(n * 3), sz = new Float32Array(n);
+    const c = new Color();
+    pts.forEach((p2, i) => {
+      pos.set([p2[0], p2[1], p2[2]], i * 3);
+      c.set(p2[4] || "#ffd9a0");
+      col.set([c.r, c.g, c.b], i * 3);
+      sz[i] = p2[3] || 2;
+    });
+    const g = new BufferGeometry();
+    g.setAttribute("position", new BufferAttribute(pos, 3));
+    g.setAttribute("color", new BufferAttribute(col, 3));
+    g.setAttribute("aSize", new BufferAttribute(sz, 1));
+    const m = new ShaderMaterial({
+      uniforms: { map: { value: glowTexture() }, uScale: { value: 400 }, uI: { value: o.intensity ?? 1.6 }, uTime: { value: 0 } },
+      transparent: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      vertexColors: true,
+      vertexShader: (
+        /* glsl */
+        `attribute float aSize; uniform float uScale, uTime; varying vec3 vC; varying float vF;
+      void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+        float d = max(-mv.z, 1.0); gl_PointSize = clamp(aSize * uScale / d, 1.5, 160.0);
+        vF = 0.85 + 0.15 * sin(uTime * 3.0 + position.x * 1.7 + position.z); // gentle sodium flicker
+        vF *= clamp(aSize * uScale / d / 2.0, 0.25, 1.0); }`
+      ),
+      fragmentShader: (
+        /* glsl */
+        `uniform sampler2D map; uniform float uI; varying vec3 vC; varying float vF;
+      void main(){ vec4 t = texture2D(map, gl_PointCoord); gl_FragColor = vec4(vC * uI * vF * t.a, t.a); }`
+      )
+    });
+    const p = new Points(g, m);
+    p.frustumCulled = false;
+    p.renderOrder = 5;
+    p.onBeforeRender = (r, s, cam) => {
+      const rt = r.getRenderTarget();
+      m.uniforms.uScale.value = (rt ? rt.height : r.domElement.height) / (2 * Math.tan(cam.fov * Math.PI / 360));
+      m.uniforms.uTime.value = performance.now() / 1e3;
+    };
+    return p;
+  }
+  var glowTex, _impCache, _vc, _fw, Smoke, _gm, GLOVE_MAT;
+  var init_common = __esm({
+    "src/scene/common.js"() {
+      init_rifle();
+      init_surfaces();
+      init_three_module();
+      init_BufferGeometryUtils();
+      init_rng();
+      init_materials();
+      init_state();
+      glowTex = null;
+      _impCache = /* @__PURE__ */ new Map();
+      _vc = new Color();
+      _fw = new Vector3();
+      Smoke = class {
+        constructor(scene, o) {
+          this.o = Object.assign({ n: 40, rate: 6, life: 9, size: 6, grow: 2.2, rise: 2.2, color: "#9aa0a8", opacity: 0.45, additive: false, spread: 0.6, windMul: 1 }, o);
+          const n = this.o.n;
+          this.p = new Float32Array(n * 3);
+          this.age = new Float32Array(n).fill(999);
+          this.vel = new Float32Array(n * 3);
+          const g = new BufferGeometry();
+          g.setAttribute("position", new BufferAttribute(this.p, 3));
+          g.setAttribute("aAge", new BufferAttribute(new Float32Array(n).fill(2), 1));
+          this.mat = new ShaderMaterial({
+            transparent: true,
+            depthWrite: false,
+            blending: this.o.additive ? AdditiveBlending : NormalBlending,
+            uniforms: { uColor: { value: new Color(this.o.color) }, uSize: { value: this.o.size }, uGrow: { value: this.o.grow }, uOpacity: { value: this.o.opacity }, uScale: { value: 600 }, uHot: { value: new Color(this.o.hot || this.o.color) }, ...HAZE },
+            vertexShader: (
+              /* glsl */
+              `attribute float aAge; uniform float uSize, uGrow, uScale; varying float vA; varying float vD; varying vec3 vW;
+        void main(){ vA = aAge; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mv; vD = -mv.z; vW = (modelMatrix*vec4(position,1.0)).xyz;
+          gl_PointSize = (aAge > 1.0 ? 0.0 : uSize * (1.0 + aAge * uGrow)) * uScale / max(-mv.z, 1.0); }`
+            ),
+            fragmentShader: (
+              /* glsl */
+              `uniform vec3 uColor, uHot, uHazeColor; uniform float uOpacity, uHazeDensity; varying float vA; varying float vD; varying vec3 vW;
+        void main(){ vec2 c = gl_PointCoord*2.0-1.0; float r = dot(c,c); if (r>1.0) discard;
+          float a = (1.0 - r) * (1.0 - r) * uOpacity * smoothstep(0.0, 0.08, vA) * (1.0 - vA);
+          vec3 col = mix(uHot, uColor, smoothstep(0.0, 0.35, vA));
+          float f = 1.0 - exp(-uHazeDensity * vD * 0.8); col = mix(col, uHazeColor, f);
+          gl_FragColor = vec4(col, a); }`
+            )
+          });
+          this.points = new Points(g, this.mat);
+          this.points.frustumCulled = false;
+          scene.add(this.points);
+          this.acc = 0;
+          this.origin = new Vector3(...this.o.at || [0, 0, 0]);
+          this.on = true;
+          this.burst = 0;
+        }
+        update(dt, wind) {
+          const o = this.o, n = o.n;
+          if (this.on) this.acc += dt * o.rate;
+          while (this.acc >= 1 || this.burst > 0) {
+            if (this.burst > 0) this.burst--;
+            else this.acc -= 1;
+            let k = -1;
+            for (let i = 0; i < n; i++) if (this.age[i] >= 1) {
+              k = i;
+              break;
+            }
+            if (k < 0) break;
+            this.age[k] = 0;
+            this.p[k * 3] = this.origin.x + (Math.random() - 0.5) * o.spread;
+            this.p[k * 3 + 1] = this.origin.y;
+            this.p[k * 3 + 2] = this.origin.z + (Math.random() - 0.5) * o.spread;
+            const sv = o.burstSpeed || 0;
+            this.vel[k * 3] = (Math.random() - 0.5) * (0.4 + sv);
+            this.vel[k * 3 + 1] = o.rise * (0.7 + Math.random() * 0.6) + sv * Math.random();
+            this.vel[k * 3 + 2] = (Math.random() - 0.5) * (0.4 + sv);
+          }
+          const ag = this.points.geometry.attributes.aAge;
+          for (let i = 0; i < n; i++) {
+            if (this.age[i] >= 1) {
+              ag.array[i] = 2;
+              continue;
+            }
+            this.age[i] += dt / o.life;
+            const lift = Math.min(1, this.age[i] * 3);
+            this.p[i * 3] += (this.vel[i * 3] + wind.x * o.windMul * lift) * dt;
+            this.p[i * 3 + 1] += this.vel[i * 3 + 1] * dt;
+            this.p[i * 3 + 2] += (this.vel[i * 3 + 2] + wind.z * o.windMul * lift) * dt;
+            this.vel[i * 3 + 1] *= 1 - dt * 0.15;
+            ag.array[i] = this.age[i];
+          }
+          ag.needsUpdate = true;
+          this.points.geometry.attributes.position.needsUpdate = true;
+        }
+      };
+      _gm = null;
+      GLOVE_MAT = () => {
+        if (!_gm) {
+          const sm = surfaceMaps("speckle", 6);
+          _gm = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9, normalMap: sm.normalMap, normalScale: new Vector2(0.6, 0.6) });
+        }
+        return _gm;
+      };
     }
   });
 
@@ -34029,66 +35683,6 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       press = (a) => IN.pressed.add(a);
       KEYMAP = { KeyN: "therm", KeyG: "spot", KeyB: "bino", KeyR: "range", KeyT: "tag", KeyQ: "windL", KeyE: "windR", PageUp: "elevUp", PageDown: "elevDn", Tab: "intel", KeyV: "scope", KeyP: "pause", ArrowUp: "elevUp", ArrowDown: "elevDn", ArrowLeft: "windL", ArrowRight: "windR", Escape: "pause", Enter: "confirm", Space: "skip", Backquote: "debug", KeyX: "zero", Digit1: "z1", Digit2: "z2", Digit3: "z3", Digit4: "z4", KeyZ: "zoomCycle" };
       prevBtn = [];
-    }
-  });
-
-  // src/core/rng.js
-  function mulberry32(seed) {
-    let a = seed >>> 0;
-    return function() {
-      a |= 0;
-      a = a + 1831565813 | 0;
-      let t = Math.imul(a ^ a >>> 15, 1 | a);
-      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-  }
-  function hash2(x, y2, s) {
-    let h = x * 374761393 + y2 * 668265263 + s * 2147483647 | 0;
-    h = Math.imul(h ^ h >>> 13, 1274126177);
-    return ((h ^ h >>> 16) >>> 0) / 4294967296;
-  }
-  function vnoise(x, y2, s = 0) {
-    const xi = Math.floor(x), yi = Math.floor(y2);
-    const xf = x - xi, yf = y2 - yi;
-    const a = hash2(xi, yi, s), b = hash2(xi + 1, yi, s), c = hash2(xi, yi + 1, s), d = hash2(xi + 1, yi + 1, s);
-    const u = fade(xf), v3 = fade(yf);
-    return a + (b - a) * u + (c + (d - c) * u - (a + (b - a) * u)) * v3;
-  }
-  function fbm(x, y2, oct = 5, s = 0) {
-    let sum = 0, amp = 0.5, f = 1, norm = 0;
-    for (let i = 0; i < oct; i++) {
-      sum += amp * vnoise(x * f, y2 * f, s + i * 17);
-      norm += amp;
-      amp *= 0.5;
-      f *= 2.03;
-    }
-    return sum / norm;
-  }
-  function ridged(x, y2, oct = 5, s = 0) {
-    let sum = 0, amp = 0.5, f = 1, norm = 0;
-    for (let i = 0; i < oct; i++) {
-      const n = 1 - Math.abs(vnoise(x * f, y2 * f, s + i * 31) * 2 - 1);
-      sum += amp * n * n;
-      norm += amp;
-      amp *= 0.5;
-      f *= 2.1;
-    }
-    return sum / norm;
-  }
-  function noise1(t, s = 0) {
-    return vnoise(t, s * 13.7, 7) * 2 - 1;
-  }
-  var fade, clamp2, lerp2, smoothstep2;
-  var init_rng = __esm({
-    "src/core/rng.js"() {
-      fade = (t) => t * t * (3 - 2 * t);
-      clamp2 = (v3, a, b) => v3 < a ? a : v3 > b ? b : v3;
-      lerp2 = (a, b, t) => a + (b - a) * t;
-      smoothstep2 = (a, b, x) => {
-        const t = clamp2((x - a) / (b - a), 0, 1);
-        return t * t * (3 - 2 * t);
-      };
     }
   });
 
@@ -35204,7 +36798,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     M.timer = setInterval(schedule, 40);
   }
   function setChord(ci, t) {
-    const T2 = THEMES[M.theme];
+    const T2 = THEMES[M.theme] || THEMES[SYNTH_ALIAS[M.theme]] || THEMES.menu;
     const ch = T2.prog[ci % T2.prog.length];
     for (const v3 of M.pad) v3.o.frequency.setTargetAtTime(mtof(T2.root + 12 + ch[v3.i] + (v3.i === 0 ? -12 : 0)), t, 0.25);
     M.tremVoices?.forEach((o, i) => o.frequency.setTargetAtTime(mtof(T2.root + 36 + ch[(i + 1) % 4]), t, 0.1));
@@ -35270,7 +36864,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (M.cur && M.layers) for (const l of M.layers) l.g.gain.setTargetAtTime(l.trim * (l.n === "calm" ? 0.95 - I2 * 0.45 : l.n === "tension" ? Math.max(0, Math.min(1, (I2 - 0.12) * 2.2)) * 0.9 : Math.max(0, Math.min(1, (I2 - 0.55) * 2.4)) * 0.85), t02, 0.8);
       return;
     }
-    const T2 = THEMES[M.theme], spb = 60 / T2.bpm / 4;
+    const T2 = THEMES[M.theme] || THEMES[SYNTH_ALIAS[M.theme]] || THEMES.menu, spb = 60 / T2.bpm / 4;
     M.I += (M.It - M.I) * 0.04;
     const I = M.I, t0 = now();
     const set = (n, v3) => M.stems[n].g.gain.setTargetAtTime(v3, t0, 0.8);
@@ -35429,8 +37023,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function setMusicTheme(name) {
     M.themeId = name;
-    if (THEMES[name]) M.theme = name;
-    else if (THEMES[THEME_ALIAS[name]]) M.theme = THEME_ALIAS[name];
+    if (THEMES[name] || OWN_THEMES.has(name)) M.theme = name;
   }
   function setIntensity(v3) {
     A.intensity = v3;
@@ -35438,7 +37031,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function stinger(kind) {
     if (!ctx || !M.duck) return;
-    const t = now(), T2 = THEMES[M.theme];
+    const t = now(), T2 = THEMES[M.theme] || THEMES[SYNTH_ALIAS[M.theme]] || THEMES.menu;
     M.duck.gain.cancelScheduledValues(t);
     M.duck.gain.setValueAtTime(M.duck.gain.value, t);
     M.duck.gain.linearRampToValueAtTime(0.25, t + 0.05);
@@ -35559,7 +37152,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       o.stop(t + d + 0.2);
     }
   }
-  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, STEM_TRIM, MUS_RATE, OWN_THEMES, themeKey, siren;
+  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, STEM_TRIM, MUS_RATE, OWN_THEMES, themeKey, SYNTH_ALIAS, siren;
   var init_audio = __esm({
     "src/audio/audio.js"() {
       init_state();
@@ -35615,6 +37208,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       MUS_RATE = {};
       OWN_THEMES = /* @__PURE__ */ new Set(["villa", "refinery", "harbour", "pass", "neon", "dam"]);
       themeKey = (th) => OWN_THEMES.has(th) ? th : "menu";
+      SYNTH_ALIAS = { harbour: "villa", pass: "villa", neon: "refinery", dam: "villa" };
       siren = null;
     }
   });
@@ -36488,7 +38082,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const o = bObs.o;
       if (o && o.holder && o.alive && o.def?.look) {
         const L = o.def.look, dist = Math.round(G.camera.position.distanceTo(o.pos));
-        const bw = 178, bx = Math.min(W - bw - 12, cX + H * 0.12), by = cY - 60, bh = 40 + traits.length * 15;
+        const bw = 178, ph = G.quality?.mobile, bx = ph ? W - bw - 14 : Math.min(W - bw - 12, cX + H * 0.12), by = ph ? 82 : cY - 60, bh = 40 + traits.length * 15;
         cx.fillStyle = "rgba(6,9,12,0.72)";
         cx.fillRect(bx, by, bw, bh);
         cx.strokeStyle = "rgba(255,222,112,0.6)";
@@ -36775,1590 +38369,6 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       isFs = () => !!(D.fullscreenElement || D.webkitFullscreenElement || D.webkitCurrentFullScreenElement);
       isStandalone = () => !!(navigator.standalone || window.matchMedia && (matchMedia("(display-mode: fullscreen)").matches || matchMedia("(display-mode: standalone)").matches));
       isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-    }
-  });
-
-  // node_modules/three/examples/jsm/utils/BufferGeometryUtils.js
-  function mergeGeometries(geometries, useGroups = false) {
-    const isIndexed = geometries[0].index !== null;
-    const attributesUsed = new Set(Object.keys(geometries[0].attributes));
-    const morphAttributesUsed = new Set(Object.keys(geometries[0].morphAttributes));
-    const attributes = {};
-    const morphAttributes = {};
-    const morphTargetsRelative = geometries[0].morphTargetsRelative;
-    const mergedGeometry = new BufferGeometry();
-    mergedGeometry.morphTargetsRelative = morphTargetsRelative;
-    let offset = 0;
-    for (let i = 0; i < geometries.length; ++i) {
-      const geometry = geometries[i];
-      let attributesCount = 0;
-      let morphAttributesCount = 0;
-      if (isIndexed !== (geometry.index !== null)) {
-        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.");
-        return null;
-      }
-      for (const name in geometry.attributes) {
-        if (!attributesUsed.has(name)) {
-          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.');
-          return null;
-        }
-        if (attributes[name] === void 0) attributes[name] = [];
-        attributes[name].push(geometry.attributes[name]);
-        attributesCount++;
-      }
-      if (attributesCount !== attributesUsed.size) {
-        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". Make sure all geometries have the same number of attributes.");
-        return null;
-      }
-      if (morphTargetsRelative !== geometry.morphTargetsRelative) {
-        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". .morphTargetsRelative must be consistent throughout all geometries.");
-        return null;
-      }
-      for (const name in geometry.morphAttributes) {
-        if (!morphAttributesUsed.has(name)) {
-          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ".  .morphAttributes must be consistent throughout all geometries.");
-          return null;
-        }
-        if (geometry.morphAttributes[name].length !== geometries[0].morphAttributes[name].length) {
-          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + '. All geometries must have the same number of morph targets for the "' + name + '" morph attribute.');
-          return null;
-        }
-        if (morphAttributes[name] === void 0) morphAttributes[name] = [];
-        morphAttributes[name].push(geometry.morphAttributes[name]);
-        morphAttributesCount++;
-      }
-      if (morphAttributesCount !== morphAttributesUsed.size) {
-        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". Make sure all geometries have the same number of morph attributes.");
-        return null;
-      }
-      if (useGroups) {
-        let count;
-        if (isIndexed) {
-          count = geometry.index.count;
-        } else if (geometry.attributes.position !== void 0) {
-          count = geometry.attributes.position.count;
-        } else {
-          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index " + i + ". The geometry must have either an index or a position attribute");
-          return null;
-        }
-        mergedGeometry.addGroup(offset, count, i);
-        offset += count;
-      }
-    }
-    if (isIndexed) {
-      let indexOffset = 0;
-      const mergedIndex = [];
-      for (let i = 0; i < geometries.length; ++i) {
-        const index = geometries[i].index;
-        for (let j = 0; j < index.count; ++j) {
-          mergedIndex.push(index.getX(j) + indexOffset);
-        }
-        indexOffset += geometries[i].attributes.position.count;
-      }
-      mergedGeometry.setIndex(mergedIndex);
-    }
-    for (const name in attributes) {
-      const mergedAttribute = mergeAttributes(attributes[name]);
-      if (!mergedAttribute) {
-        console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the " + name + " attribute.");
-        return null;
-      }
-      mergedGeometry.setAttribute(name, mergedAttribute);
-    }
-    for (const name in morphAttributes) {
-      const numMorphTargets = morphAttributes[name][0].length;
-      if (numMorphTargets === 0) continue;
-      mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
-      mergedGeometry.morphAttributes[name] = [];
-      for (let i = 0; i < numMorphTargets; ++i) {
-        const morphAttributesToMerge = [];
-        for (let j = 0; j < morphAttributes[name].length; ++j) {
-          morphAttributesToMerge.push(morphAttributes[name][j][i]);
-        }
-        const mergedMorphAttribute = mergeAttributes(morphAttributesToMerge);
-        if (!mergedMorphAttribute) {
-          console.error("THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the " + name + " morphAttribute.");
-          return null;
-        }
-        mergedGeometry.morphAttributes[name].push(mergedMorphAttribute);
-      }
-    }
-    return mergedGeometry;
-  }
-  function mergeAttributes(attributes) {
-    let TypedArray;
-    let itemSize;
-    let normalized;
-    let gpuType = -1;
-    let arrayLength = 0;
-    for (let i = 0; i < attributes.length; ++i) {
-      const attribute = attributes[i];
-      if (TypedArray === void 0) TypedArray = attribute.array.constructor;
-      if (TypedArray !== attribute.array.constructor) {
-        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.");
-        return null;
-      }
-      if (itemSize === void 0) itemSize = attribute.itemSize;
-      if (itemSize !== attribute.itemSize) {
-        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.");
-        return null;
-      }
-      if (normalized === void 0) normalized = attribute.normalized;
-      if (normalized !== attribute.normalized) {
-        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.");
-        return null;
-      }
-      if (gpuType === -1) gpuType = attribute.gpuType;
-      if (gpuType !== attribute.gpuType) {
-        console.error("THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.gpuType must be consistent across matching attributes.");
-        return null;
-      }
-      arrayLength += attribute.count * itemSize;
-    }
-    const array = new TypedArray(arrayLength);
-    const result = new BufferAttribute(array, itemSize, normalized);
-    let offset = 0;
-    for (let i = 0; i < attributes.length; ++i) {
-      const attribute = attributes[i];
-      if (attribute.isInterleavedBufferAttribute) {
-        const tupleOffset = offset / itemSize;
-        for (let j = 0, l = attribute.count; j < l; j++) {
-          for (let c = 0; c < itemSize; c++) {
-            const value = attribute.getComponent(j, c);
-            result.setComponent(j + tupleOffset, c, value);
-          }
-        }
-      } else {
-        array.set(attribute.array, offset);
-      }
-      offset += attribute.count * itemSize;
-    }
-    if (gpuType !== void 0) {
-      result.gpuType = gpuType;
-    }
-    return result;
-  }
-  function mergeVertices(geometry, tolerance = 1e-4) {
-    tolerance = Math.max(tolerance, Number.EPSILON);
-    const hashToIndex = {};
-    const indices = geometry.getIndex();
-    const positions = geometry.getAttribute("position");
-    const vertexCount = indices ? indices.count : positions.count;
-    let nextIndex = 0;
-    const attributeNames = Object.keys(geometry.attributes);
-    const sourceIndices = [];
-    const buffers = /* @__PURE__ */ new Map();
-    const newIndices = [];
-    const getters = ["getX", "getY", "getZ", "getW"];
-    const halfTolerance = tolerance * 0.5;
-    const exponent = Math.log10(1 / tolerance);
-    const hashMultiplier = Math.pow(10, exponent);
-    const hashAdditive = halfTolerance * hashMultiplier;
-    for (let i = 0; i < vertexCount; i++) {
-      const index = indices ? indices.getX(i) : i;
-      let hash = "";
-      for (let j = 0, l = attributeNames.length; j < l; j++) {
-        const name = attributeNames[j];
-        const attribute = geometry.getAttribute(name);
-        const itemSize = attribute.itemSize;
-        for (let k = 0; k < itemSize; k++) {
-          hash += `${Math.trunc(attribute[getters[k]](index) * hashMultiplier + hashAdditive)},`;
-        }
-      }
-      if (hash in hashToIndex) {
-        newIndices.push(hashToIndex[hash]);
-      } else {
-        sourceIndices.push(index);
-        hashToIndex[hash] = nextIndex;
-        newIndices.push(nextIndex);
-        nextIndex++;
-      }
-    }
-    const result = geometry.clone();
-    for (const name in geometry.attributes) {
-      result.setAttribute(name, remapAttribute(geometry.attributes[name], sourceIndices, buffers));
-    }
-    for (const name in geometry.morphAttributes) {
-      result.morphAttributes[name] = geometry.morphAttributes[name].map((attribute) => remapAttribute(attribute, sourceIndices, buffers));
-    }
-    result.setIndex(newIndices);
-    return result;
-  }
-  function remapAttribute(attribute, sourceIndices, buffers = /* @__PURE__ */ new Map()) {
-    const interleaved = attribute.isInterleavedBufferAttribute;
-    const source = interleaved ? attribute.data : attribute;
-    const stride = interleaved ? source.stride : attribute.itemSize;
-    let data2 = interleaved ? buffers.get(source) : void 0;
-    if (data2 === void 0) {
-      const array = new source.array.constructor(sourceIndices.length * stride);
-      for (let i = 0; i < sourceIndices.length; i++) {
-        for (let j = 0; j < stride; j++) array[i * stride + j] = source.array[sourceIndices[i] * stride + j];
-      }
-      data2 = interleaved ? new source.constructor(array, stride, source.meshPerAttribute) : new attribute.constructor(array, attribute.itemSize, attribute.normalized, attribute.meshPerAttribute);
-      data2.setUsage(source.usage);
-      if (interleaved) buffers.set(source, data2);
-    }
-    const result = interleaved ? new attribute.constructor(data2, attribute.itemSize, attribute.offset, attribute.normalized) : data2;
-    result.name = attribute.name;
-    if (!interleaved) result.gpuType = attribute.gpuType;
-    return result;
-  }
-  var init_BufferGeometryUtils = __esm({
-    "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"() {
-      init_three_module();
-    }
-  });
-
-  // node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js
-  function getUv(faceDirVector, normal, uvAxis, projectionAxis, radius, sideLength) {
-    const totArcLength = 2 * Math.PI * radius / 4;
-    const centerLength = Math.max(sideLength - 2 * radius, 0);
-    const halfArc = Math.PI / 4;
-    _tempNormal.copy(normal);
-    _tempNormal[projectionAxis] = 0;
-    _tempNormal.normalize();
-    const arcUvRatio = 0.5 * totArcLength / (totArcLength + centerLength);
-    const arcAngleRatio = 1 - _tempNormal.angleTo(faceDirVector) / halfArc;
-    if (Math.sign(_tempNormal[uvAxis]) === 1) {
-      return arcAngleRatio * arcUvRatio;
-    } else {
-      const lenUv = centerLength / (totArcLength + centerLength);
-      return lenUv + arcUvRatio + arcUvRatio * (1 - arcAngleRatio);
-    }
-  }
-  var _tempNormal, RoundedBoxGeometry;
-  var init_RoundedBoxGeometry = __esm({
-    "node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js"() {
-      init_three_module();
-      _tempNormal = new Vector3();
-      RoundedBoxGeometry = class _RoundedBoxGeometry extends BoxGeometry {
-        /**
-         * Constructs a new rounded box geometry.
-         *
-         * @param {number} [width=1] - The width. That is, the length of the edges parallel to the X axis.
-         * @param {number} [height=1] - The height. That is, the length of the edges parallel to the Y axis.
-         * @param {number} [depth=1] - The depth. That is, the length of the edges parallel to the Z axis.
-         * @param {number} [segments=2] - Number of segments that form the rounded corners.
-         * @param {number} [radius=0.1] - The radius of the rounded corners.
-         */
-        constructor(width = 1, height8 = 1, depth = 1, segments = 2, radius = 0.1) {
-          const totalSegments = segments * 2 + 1;
-          radius = Math.min(width / 2, height8 / 2, depth / 2, radius);
-          super(1, 1, 1, totalSegments, totalSegments, totalSegments);
-          this.type = "RoundedBoxGeometry";
-          this.parameters = {
-            width,
-            height: height8,
-            depth,
-            segments,
-            radius
-          };
-          if (totalSegments === 1) return;
-          const geometry2 = this.toNonIndexed();
-          this.index = null;
-          this.attributes.position = geometry2.attributes.position;
-          this.attributes.normal = geometry2.attributes.normal;
-          this.attributes.uv = geometry2.attributes.uv;
-          const position = new Vector3();
-          const normal = new Vector3();
-          const box = new Vector3(width, height8, depth).divideScalar(2).subScalar(radius);
-          const positions = this.attributes.position.array;
-          const normals = this.attributes.normal.array;
-          const uvs2 = this.attributes.uv.array;
-          const faceTris = positions.length / 6;
-          const faceDirVector = new Vector3();
-          const halfSegmentSize = 0.5 / totalSegments;
-          for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
-            position.fromArray(positions, i);
-            normal.copy(position);
-            normal.x -= Math.sign(normal.x) * halfSegmentSize;
-            normal.y -= Math.sign(normal.y) * halfSegmentSize;
-            normal.z -= Math.sign(normal.z) * halfSegmentSize;
-            normal.normalize();
-            positions[i + 0] = box.x * Math.sign(position.x) + normal.x * radius;
-            positions[i + 1] = box.y * Math.sign(position.y) + normal.y * radius;
-            positions[i + 2] = box.z * Math.sign(position.z) + normal.z * radius;
-            normals[i + 0] = normal.x;
-            normals[i + 1] = normal.y;
-            normals[i + 2] = normal.z;
-            const side = Math.floor(i / faceTris);
-            switch (side) {
-              case 0:
-                faceDirVector.set(1, 0, 0);
-                uvs2[j + 0] = getUv(faceDirVector, normal, "z", "y", radius, depth);
-                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
-                break;
-              case 1:
-                faceDirVector.set(-1, 0, 0);
-                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "z", "y", radius, depth);
-                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "z", radius, height8);
-                break;
-              case 2:
-                faceDirVector.set(0, 1, 0);
-                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
-                uvs2[j + 1] = getUv(faceDirVector, normal, "z", "x", radius, depth);
-                break;
-              case 3:
-                faceDirVector.set(0, -1, 0);
-                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "z", radius, width);
-                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "z", "x", radius, depth);
-                break;
-              case 4:
-                faceDirVector.set(0, 0, 1);
-                uvs2[j + 0] = 1 - getUv(faceDirVector, normal, "x", "y", radius, width);
-                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
-                break;
-              case 5:
-                faceDirVector.set(0, 0, -1);
-                uvs2[j + 0] = getUv(faceDirVector, normal, "x", "y", radius, width);
-                uvs2[j + 1] = 1 - getUv(faceDirVector, normal, "y", "x", radius, height8);
-                break;
-            }
-          }
-        }
-        /**
-         * Factory method for creating an instance of this class from the given
-         * JSON object.
-         *
-         * @param {Object} data - A JSON object representing the serialized geometry.
-         * @returns {RoundedBoxGeometry} A new instance.
-         */
-        static fromJSON(data2) {
-          return new _RoundedBoxGeometry(
-            data2.width,
-            data2.height,
-            data2.depth,
-            data2.segments,
-            data2.radius
-          );
-        }
-      };
-    }
-  });
-
-  // src/render/surfaces.js
-  function rng(seed) {
-    let s = seed >>> 0;
-    return () => (s = s * 1664525 + 1013904223 >>> 0) / 4294967296;
-  }
-  function heights(kind, N) {
-    const h = new Float32Array(N * N), r = rng(kind.length * 7919 + 13);
-    if (kind === "speckle" || kind === "grain") {
-      for (let i = 0; i < h.length; i++) h[i] = r();
-      const passes = kind === "speckle" ? 2 : 1;
-      for (let p = 0; p < passes; p++) {
-        const t = h.slice();
-        for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) {
-          let s = 0;
-          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) s += t[(y2 + dy + N) % N * N + (x + dx + N) % N];
-          h[y2 * N + x] = s / 9;
-        }
-      }
-    } else if (kind === "stipple") {
-      for (let k = 0; k < 900; k++) {
-        const cx2 = r() * N, cy = r() * N, rad = 2 + r() * 2.5;
-        for (let y2 = -4; y2 <= 4; y2++) for (let x = -4; x <= 4; x++) {
-          const d = Math.hypot(x, y2) / rad;
-          if (d < 1) {
-            const i = (Math.floor(cy + y2) + N) % N * N + (Math.floor(cx2 + x) + N) % N;
-            h[i] = Math.max(h[i], Math.cos(d * Math.PI / 2));
-          }
-        }
-      }
-    } else if (kind === "brushed") {
-      const row = new Float32Array(N);
-      for (let y2 = 0; y2 < N; y2++) row[y2] = r();
-      for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) h[y2 * N + x] = row[y2] * 0.7 + r() * 0.3;
-    } else if (kind === "knurl") {
-      for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) {
-        const a = Math.abs((x + y2) % 16 - 8) / 8, b = Math.abs((x - y2 + N) % 16 - 8) / 8;
-        h[y2 * N + x] = Math.min(a, b);
-      }
-    }
-    return h;
-  }
-  function toCanvas(N, fill) {
-    const c = document.createElement("canvas");
-    c.width = c.height = N;
-    const g = c.getContext("2d"), im = g.createImageData(N, N);
-    fill(im.data);
-    g.putImageData(im, 0, 0);
-    return c;
-  }
-  function surfaceMaps(kind, repeat = 4) {
-    const key = kind + repeat;
-    if (cache2[key]) return cache2[key];
-    const N = 256, h = heights(kind, N), str = { speckle: 2.2, grain: 1.6, stipple: 3.5, brushed: 1.2, knurl: 4 }[kind] || 2;
-    const nc = toCanvas(N, (d) => {
-      for (let y2 = 0; y2 < N; y2++) for (let x = 0; x < N; x++) {
-        const hx3 = h[y2 * N + (x + 1) % N] - h[y2 * N + (x - 1 + N) % N], hy = h[(y2 + 1) % N * N + x] - h[(y2 - 1 + N) % N * N + x];
-        let nx = -hx3 * str, ny = -hy * str, nz = 1;
-        const l = Math.hypot(nx, ny, nz);
-        nx /= l;
-        ny /= l;
-        nz /= l;
-        const i = (y2 * N + x) * 4;
-        d[i] = (nx * 0.5 + 0.5) * 255;
-        d[i + 1] = (ny * 0.5 + 0.5) * 255;
-        d[i + 2] = (nz * 0.5 + 0.5) * 255;
-        d[i + 3] = 255;
-      }
-    });
-    const rc = toCanvas(N, (d) => {
-      for (let i = 0; i < N * N; i++) {
-        const v3 = 150 + (h[i] - 0.5) * (kind === "brushed" ? 60 : 90);
-        d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = Math.max(0, Math.min(255, v3));
-        d[i * 4 + 3] = 255;
-      }
-    });
-    const mk = (c, srgb) => {
-      const t = new CanvasTexture(c);
-      t.wrapS = t.wrapT = RepeatWrapping;
-      t.repeat.set(repeat, repeat);
-      t.anisotropy = 4;
-      if (srgb) t.colorSpace = SRGBColorSpace;
-      return t;
-    };
-    return cache2[key] = { normalMap: mk(nc), roughnessMap: mk(rc) };
-  }
-  function rifleEnv() {
-    const r = G.renderer;
-    if (!r) return null;
-    const fog = G.world?.scene?.fog?.color, key = fog ? fog.getHexString() : "def";
-    if (envs[key]) return envs[key];
-    const sc = new Scene();
-    const top = new Color("#6d86b0"), hor = fog ? fog.clone().lerp(new Color("#d8c8b0"), 0.3) : new Color("#c8b8a0"), gnd = new Color("#3a342c");
-    const dome = new Mesh(new SphereGeometry(10, 32, 16), new ShaderMaterial({
-      side: BackSide,
-      depthWrite: false,
-      uniforms: { t: { value: top }, h: { value: hor }, g: { value: gnd } },
-      vertexShader: "varying vec3 vp; void main(){ vp = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
-      fragmentShader: "uniform vec3 t,h,g; varying vec3 vp; void main(){ float y = normalize(vp).y; vec3 c = y > 0.0 ? mix(h, t, pow(y, 0.6)) : mix(h, g, pow(-y, 0.4)); gl_FragColor = vec4(c, 1.0); }"
-    }));
-    sc.add(dome);
-    const sun = new Mesh(new SphereGeometry(0.7, 16, 8), new MeshBasicMaterial({ color: new Color("#fff0d0").multiplyScalar(14) }));
-    sun.position.set(5, 5, -5);
-    sc.add(sun);
-    for (const [x, y2, z, s] of [[-6, 3, 2, 3], [2, 6, 6, 2.5]]) {
-      const p = new Mesh(new PlaneGeometry(s, s * 0.6), new MeshBasicMaterial({ color: new Color("#ffffff").multiplyScalar(2.2), side: DoubleSide }));
-      p.position.set(x, y2, z);
-      p.lookAt(0, 0, 0);
-      sc.add(p);
-    }
-    const pm = new PMREMGenerator(r);
-    const tex2 = pm.fromScene(sc, 0.03).texture;
-    envs[key] = tex2;
-    pm.dispose();
-    sc.traverse((o) => {
-      if (o.geometry) o.geometry.dispose();
-      if (o.material) o.material.dispose();
-    });
-    return tex2;
-  }
-  function wearMap(repeat = 0.3) {
-    const key = "wear" + repeat;
-    if (cache2[key]) return cache2[key];
-    const N = 512, r = rng(4242), c = document.createElement("canvas");
-    c.width = c.height = N;
-    const g = c.getContext("2d");
-    g.fillStyle = "rgb(222,222,222)";
-    g.fillRect(0, 0, N, N);
-    const wrap = (f) => {
-      for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
-        g.save();
-        g.translate(ox, oy);
-        f();
-        g.restore();
-      }
-    };
-    for (const [n, col, rad] of [[30, "rgba(165,155,128,0.42)", 40], [20, "rgba(132,134,108,0.34)", 30]]) for (let k = 0; k < n; k++) {
-      const cx2 = r() * N, cy = r() * N, rr = rad * (0.6 + r() * 0.8);
-      wrap(() => {
-        g.fillStyle = col;
-        g.beginPath();
-        for (let a = 0; a <= 24; a++) {
-          const t2 = a / 24 * Math.PI * 2, q = rr * (0.7 + 0.3 * Math.sin(t2 * 3 + k) + 0.15 * Math.sin(t2 * 7 + k * 2));
-          g.lineTo(cx2 + Math.cos(t2) * q, cy + Math.sin(t2) * q * 0.7);
-        }
-        g.fill();
-      });
-    }
-    for (let k = 0; k < 2600; k++) {
-      const v3 = 150 + r() * 80;
-      g.fillStyle = `rgba(${v3 | 0},${v3 | 0},${v3 * 0.95 | 0},0.25)`;
-      g.fillRect(r() * N, r() * N, 1 + r() * 2, 1 + r() * 2);
-    }
-    g.lineCap = "round";
-    for (let k = 0; k < 70; k++) {
-      const x = r() * N, y2 = r() * N, a = r() * Math.PI, l = 8 + r() * 46;
-      wrap(() => {
-        g.strokeStyle = `rgba(255,252,240,${0.35 + r() * 0.4})`;
-        g.lineWidth = 0.6 + r() * 0.9;
-        g.beginPath();
-        g.moveTo(x, y2);
-        g.quadraticCurveTo(x + Math.cos(a) * l * 0.5 + (r() - 0.5) * 6, y2 + Math.sin(a) * l * 0.5 + (r() - 0.5) * 6, x + Math.cos(a) * l, y2 + Math.sin(a) * l);
-        g.stroke();
-      });
-    }
-    for (let k = 0; k < 40; k++) {
-      const x = r() * N, y2 = r() * N, s = 1.5 + r() * 3.5;
-      wrap(() => {
-        g.fillStyle = "rgba(255,255,250,0.85)";
-        g.beginPath();
-        g.ellipse(x, y2, s, s * (0.4 + r() * 0.6), r() * 3, 0, Math.PI * 2);
-        g.fill();
-      });
-    }
-    const t = new CanvasTexture(c);
-    t.wrapS = t.wrapT = RepeatWrapping;
-    t.repeat.set(repeat, repeat);
-    t.anisotropy = 4;
-    t.colorSpace = SRGBColorSpace;
-    return cache2[key] = t;
-  }
-  var cache2, envs;
-  var init_surfaces = __esm({
-    "src/render/surfaces.js"() {
-      init_three_module();
-      init_state();
-      cache2 = {};
-      envs = {};
-    }
-  });
-
-  // src/scene/rifle.js
-  function prep(g, key, uvs2 = 1) {
-    if (g.index) g = g.toNonIndexed();
-    for (const k of Object.keys(g.attributes)) if (!["position", "normal", "uv"].includes(k)) g.deleteAttribute(k);
-    if (!g.attributes.normal) g.computeVertexNormals();
-    const n = g.attributes.position.count, [hex, me, ro] = C[key], c = new Color(hex);
-    const col = new Float32Array(n * 3), pbr = new Float32Array(n * 2);
-    const nor = g.attributes.normal, pos = g.attributes.position, wearK = WEAR[key] || 0, bare = WEAR_BARE[key] || BARE;
-    for (let i = 0; i < n; i++) {
-      let r = c.r, gg = c.g, b = c.b, m = me, rr = ro;
-      if (wearK) {
-        const ax = Math.abs(nor.getX(i)), ay = Math.abs(nor.getY(i)), az = Math.abs(nor.getZ(i)), e = smooth(0.1, 0.42, 1 - Math.max(ax, ay, az));
-        const x = pos.getX(i), y2 = pos.getY(i), z = pos.getZ(i), nz = 0.5 + 0.5 * Math.sin(x * 211 + z * 97) * Math.sin(y2 * 173 - z * 61), w = e * wearK * (0.45 + 0.75 * nz);
-        const mott = 1 + Math.sin(x * 57 + y2 * 91) * Math.sin(z * 43 + x * 29) * 0.05;
-        r = (r + (bare.r - r) * w) * mott;
-        gg = (gg + (bare.g - gg) * w) * mott;
-        b = (b + (bare.b - b) * w) * mott;
-        m = me + (0.9 - me) * w;
-        rr = ro + (0.32 - ro) * w;
-        if (y2 < -0.1 && (key === "fde" || key === "fdeD")) {
-          const d = 0.92;
-          r *= d;
-          gg *= d;
-          b *= d;
-        }
-      }
-      col[i * 3] = r;
-      col[i * 3 + 1] = gg;
-      col[i * 3 + 2] = b;
-      pbr[i * 2] = m;
-      pbr[i * 2 + 1] = rr;
-    }
-    g.setAttribute("color", new BufferAttribute(col, 3));
-    g.setAttribute("pbr", new BufferAttribute(pbr, 2));
-    if (!g.attributes.uv) g.setAttribute("uv", new BufferAttribute(new Float32Array(n * 2), 2));
-    if (uvs2 !== 1) {
-      const uv = g.attributes.uv;
-      for (let i = 0; i < n; i++) uv.setXY(i, uv.getX(i) * uvs2, uv.getY(i) * uvs2);
-    }
-    return g;
-  }
-  function T(g, x = 0, y2 = 0, z = 0, rx = 0, ry = 0, rz = 0, s = 1) {
-    g.applyMatrix4(new Matrix4().compose(new Vector3(x, y2, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(s, s, s)));
-    return g;
-  }
-  function lathe(prof2, segs, y2, z0, disp) {
-    const g = new LatheGeometry(prof2.map(([r, h]) => new Vector2(Math.max(r, 1e-5), h)), segs);
-    if (disp) {
-      const p = g.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i), h = p.getY(i), z = p.getZ(i), r = Math.hypot(x, z);
-        if (r < 1e-4) continue;
-        const nr = r + disp(Math.atan2(x, z), h, r);
-        p.setXYZ(i, x * nr / r, h, z * nr / r);
-      }
-      g.computeVertexNormals();
-    }
-    g.rotateX(-RX);
-    g.translate(0, y2, z0);
-    return g;
-  }
-  function knurled(r, h, segs, amp, count, hs = 1) {
-    const g = new CylinderGeometry(r, r, h, segs, Math.max(1, hs), false), p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), y2 = p.getY(i), z = p.getZ(i), rr = Math.hypot(x, z);
-      if (Math.abs(rr - r) > 1e-5 || Math.abs(Math.abs(y2) - h / 2) < 1e-6) continue;
-      const a = Math.atan2(x, z), k = 1 + (Math.cos(a * count) > 0 ? amp : -amp) / r;
-      p.setXYZ(i, x * k, y2, z * k);
-    }
-    g.computeVertexNormals();
-    return g;
-  }
-  function extrudeSide(pts, holes, thick, bevel, curveSeg) {
-    const sh = new Shape(pts.map(([a, b]) => new Vector2(a, b)));
-    for (const hpts of holes || []) sh.holes.push(new Path(hpts.map(([a, b]) => new Vector2(a, b))));
-    const g = new ExtrudeGeometry(sh, { depth: thick - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: curveSeg });
-    g.rotateY(RX);
-    g.translate(-(thick - 2 * bevel) / 2, 0, 0);
-    return g;
-  }
-  function screw(add, x, y2, z, rx, ry, rz, r = 32e-4, q = 1) {
-    const sg = Math.max(10, Math.round(20 * q));
-    add("blk", T(new CylinderGeometry(r, r * 1.05, r * 0.9, sg), x, y2, z, rx, ry, rz));
-    const sock = T(new CylinderGeometry(r * 0.48, r * 0.48, r * 0.25, 6), 0, r * 0.38, 0);
-    sock.applyMatrix4(new Matrix4().compose(new Vector3(x, y2, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(1, 1, 1)));
-    add("hole", sock);
-  }
-  function patch(m) {
-    m.onBeforeCompile = (sh) => {
-      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nattribute vec2 pbr; varying vec2 vPbr;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvPbr = pbr;");
-      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec2 vPbr;").replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n#ifdef USE_ROUGHNESSMAP\nroughnessFactor = vPbr.y * (0.7 + 0.5 * texelRoughness.g);\n#else\nroughnessFactor = vPbr.y;\n#endif").replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = vPbr.x;");
-    };
-    m.customProgramCacheKey = () => "rifle-pbr-v1";
-    return m;
-  }
-  function rifleMaterials() {
-    const env2 = rifleEnv();
-    if (!MATS) {
-      const mk = (kind, rep, ns) => {
-        const s = surfaceMaps(kind, rep);
-        return patch(new MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1, normalMap: s.normalMap, roughnessMap: s.roughnessMap, normalScale: new Vector2(ns, ns), envMapIntensity: 1 }));
-      };
-      MATS = {
-        metal: mk("grain", 3, 0.35),
-        cera: Object.assign(mk("speckle", 3, 0.55), { map: wearMap(0.45) }),
-        poly: mk("stipple", 2, 0.9),
-        knurl: mk("knurl", 6, 0.8),
-        glass: new MeshPhysicalMaterial({ color: "#0a1a24", metalness: 0, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, iridescence: 0.9, iridescenceIOR: 1.6, iridescenceThicknessMinimum: 180, iridescenceThicknessMaximum: 520, envMapIntensity: 2.2, specularIntensity: 1 })
-      };
-    }
-    for (const m of Object.values(MATS)) if (m.envMap !== env2) {
-      m.envMap = env2;
-      m.needsUpdate = true;
-    }
-    return MATS;
-  }
-  function buildRifle(opts = {}) {
-    const q = opts.q ?? QSEG(), S2 = (n) => Math.max(8, Math.round(n * q));
-    const L = { blk: [], alu: [], steel: [], bright: [], hole: [], paint: [], fde: [], fdeD: [], poly: [], rub: [], red: [], glass: [], knurl: [], brake: [], can: [] };
-    const add = (key, g, uvs2) => {
-      L[key].push(prep(g, key === "knurl" ? "blk" : key === "brake" || key === "can" ? "blk" : key === "glass" ? "hole" : key, uvs2));
-    };
-    {
-      const pr = [[0, 0], [0.0165, 0], [0.0165, 0.05]];
-      const N = S2(60);
-      for (let i = 0; i <= N; i++) {
-        const h = 0.06 + i / N * 0.74;
-        pr.push([h < 0.12 ? 0.0165 - (h - 0.06) / 0.06 * 15e-4 : 0.015 - (h - 0.12) / 0.68 * 42e-4, h]);
-      }
-      pr.push([0, 0.8]);
-      add("steel", lathe(pr, S2(96), 0, -0.2, (a, h) => {
-        const e = smooth(0.17, 0.21, h) * (1 - smooth(0.6, 0.64, h));
-        return e ? -21e-4 * e * smooth(0.45, 0.92, Math.cos(a * 6)) : 0;
-      }), 10);
-    }
-    {
-      const pr = [[0.0108, 0.79], [0.0168, 0.791], [0.0176, 0.796], [0.0176, 0.884], [0.016, 0.892], [52e-4, 0.892], [52e-4, 0.88]];
-      L.brake.push(prep(lathe(pr, S2(64), 0, -0.2), "blk", 8));
-      for (const sx of [-1, 1]) for (const h of [0.813, 0.836, 0.859]) L.brake.push(prep(T(rbox(6e-3, 0.013, 0.015, 15e-4), sx * 0.0158, 0, -0.2 - h), "hole"));
-      for (const h of [0.82, 0.85]) L.brake.push(prep(T(new CylinderGeometry(28e-4, 28e-4, 6e-3, 12), 0, 0.0158, -0.2 - h), "hole"));
-      L.brake.push(prep(T(new CylinderGeometry(32e-4, 32e-4, 4e-3, 14), 0.0185, 0, -1, 0, 0, RX), "blk"));
-    }
-    {
-      const pr = [[0.0172, 0.785], [0.0215, 0.786], [0.0215, 0.83], [0.024, 0.833], [0.025, 0.84], [0.025, 1], [0.023, 1.008], [68e-4, 1.009], [68e-4, 0.995]];
-      L.can.push(prep(lathe(pr, S2(72), 0, -0.2, (a, h) => (h > 0.79 && h < 0.828 ? Math.cos(a * 48) > 0 ? 5e-4 : -5e-4 : 0) + (h > 0.86 && h < 0.98 ? -6e-4 * smooth(0.8, 1, Math.cos((h - 0.86) * 330)) : 0)), "blk", 6));
-    }
-    add("steel", lathe([[0, 0], [0.026, 0], [0.03, 4e-3], [0.03, 0.236], [0.0265, 0.24], [0, 0.24]], S2(72), 0, 0.04), 6);
-    add("steel", lathe([[0.031, 0.236], [0.034, 0.238], [0.034, 0.25], [0.031, 0.252]], S2(64), 0, 0.04));
-    add("hole", T(rbox(0.012, 0.012, 0.07, 4e-3), 0.025, 0.012, -0.03, 0, 0, -0.62));
-    add("bright", T(rbox(4e-3, 8e-3, 0.02, 15e-4), -0.03, 6e-3, 0.02));
-    add("alu", T(rbox(0.022, 9e-3, 0.34, 2e-3), 0, 0.034, -0.1), 4);
-    for (let i = 0; i < 17; i++) add("alu", T(rbox(0.0245, 62e-4, 0.0105, 12e-4), 0, 0.0405, -0.26 + i * 0.02));
-    for (const z of [-0.24, -0.14, -0.02, 0.05]) screw(add, 0, 0.0384, z + 0.01, 0, 0, 0, 28e-4, q);
-    add("fde", extrudeSide([[0.635, -0.016], [0.2, -0.016], [-0.065, -0.016], [-0.075, -0.03], [-0.075, -0.062], [-0.02, -0.066], [0.025, -0.066], [0.03, -0.088], [0.13, -0.09], [0.14, -0.078], [0.2, -0.08], [0.58, -0.077], [0.628, -0.068], [0.642, -0.045], [0.64, -0.026]], null, 0.064, 4e-3, S2(12)), 14);
-    for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) add("hole", T(rbox(14e-4, 0.012, 0.044, 6e-4), sx * 0.0362, -0.046, -0.26 - i * 0.08));
-    for (const sx of [-1, 1]) for (const [y2, z] of [[-0.04, -0.05], [-0.04, -0.19], [-0.058, 0.045]]) screw(add, sx * 0.0362, y2, z, 0, 0, -sx * RX, 36e-4, q);
-    add("alu", T(new TorusGeometry(0.03, 42e-4, S2(10), S2(36), Math.PI), 0, -0.068, 0.035, 0, RX, Math.PI));
-    add("bright", T(new TorusGeometry(0.022, 26e-4, 8, S2(20), 1.1), 0, -0.05, 0.05, 0, RX, Math.PI * 1.08));
-    add("poly", T(rbox(0.044, 0.112, 0.084, 5e-3, 3), 0, -0.12, -0.08, 0.08), 6);
-    add("alu", T(rbox(0.05, 0.014, 0.093, 4e-3, 3), 0, -0.178, -0.085, 0.08), 6);
-    add("alu", T(rbox(0.016, 6e-3, 0.012, 2e-3), 0, -0.07, 0));
-    add("poly", extrudeSide([[-0.058, -0.058], [-0.064, -0.07], [-0.074, -0.1], [-0.07, -0.11], [-0.082, -0.135], [-0.078, -0.145], [-0.092, -0.17], [-0.1, -0.188], [-0.148, -0.192], [-0.142, -0.16], [-0.118, -0.07], [-0.11, -0.058]], null, 0.042, 6e-3, S2(10)), 16);
-    add("fde", extrudeSide(
-      [[-0.07, -0.012], [-0.465, -0.012], [-0.476, -0.026], [-0.476, -0.176], [-0.455, -0.19], [-0.3, -0.15], [-0.15, -0.086], [-0.115, -0.07], [-0.078, -0.062]],
-      [[[-0.17, -0.034], [-0.19, -0.074], [-0.3, -0.124], [-0.44, -0.158], [-0.44, -0.034]]],
-      0.05,
-      4e-3,
-      S2(12)
-    ), 14);
-    add("fdeD", T(rbox(0.05, 0.042, 0.17, 0.01, 3), 0, 0.012, 0.3), 8);
-    for (const z of [0.255, 0.345]) add("bright", T(new CylinderGeometry(45e-4, 45e-4, 0.03, S2(16)), 0, -0.012, z));
-    add("knurl", T(knurled(0.011, 0.01, S2(48), 5e-4, 36), 0.032, -4e-3, 0.3, 0, 0, RX));
-    add("rub", T(rbox(0.056, 0.2, 0.028, 9e-3, 3), 0, -0.072, 0.49, -0.06), 8);
-    for (const [z, k] of [[0.474, "alu"], [0.468, "blk"]]) add(k, T(rbox(0.054, 0.19, 5e-3, 2e-3), 0, -0.07, z, -0.06));
-    add("knurl", T(knurled(0.012, 0.06, S2(48), 6e-4, 40, 2), 0, -0.2, 0.41));
-    add("rub", T(new SphereGeometry(0.014, S2(16), S2(10)), 0, -0.232, 0.41, 0, 0, 0));
-    for (const z of [0.12, 0.43]) {
-      add("alu", T(new CylinderGeometry(75e-4, 75e-4, 6e-3, S2(18)), 0.027, -0.03, z, 0, 0, RX));
-      add("hole", T(new CylinderGeometry(45e-4, 45e-4, 7e-3, S2(14)), 0.027, -0.03, z, 0, 0, RX));
-    }
-    screw(add, 0.026, -0.035, 0.09, 0, 0, -RX, 42e-4, q);
-    screw(add, -0.026, -0.035, 0.09, 0, 0, RX, 42e-4, q);
-    {
-      const knurlRing = (a, h) => h > 0.087 && h < 0.123 || h > 0.578 && h < 0.596 ? Math.cos(a * 72) > 0 ? 7e-4 : -4e-4 : 0;
-      add("alu", lathe([[0.0302, 0], [0.0372, 3e-3], [0.0382, 8e-3], [0.0382, 0.028], [0.036, 0.034], [0.0338, 0.06], [0.0312, 0.074], [0.0312, 0.082], [0.0355, 0.086], [0.0362, 0.09], [0.0362, 0.12], [0.0355, 0.124], [0.0305, 0.128], [0.029, 0.134], [0.029, 0.48], [0.031, 0.49], [0.0405, 0.55], [0.0462, 0.572], [0.047, 0.578], [0.047, 0.598], [0.0455, 0.6], [0.0442, 0.6], [0.0442, 0.593]], S2(80), 0.078, 0.2, knurlRing), 8);
-      add("paint", lathe([[0.0364, 0.106], [0.0364, 0.1065], [0.0364, 0.107]], S2(80), 0.078, 0.2));
-      add("alu", T(rbox(6e-3, 0.026, 0.011, 2e-3), 0.031, 0.106, 0.095, 0, 0, -0.45));
-      add("glass", T(new CylinderGeometry(0.0442, 0.0442, 3e-3, S2(48)), 0, 0.078, -0.392, RX));
-      add("glass", T(new CylinderGeometry(0.0298, 0.0298, 2e-3, S2(40)), 0, 0.078, 0.199, RX));
-      add("hole", T(new CylinderGeometry(0.043, 0.043, 2e-3, S2(40)), 0, 0.078, -0.385, RX));
-      add("alu", T(rbox(0.058, 0.03, 0.072, 8e-3, 3), 0, 0.093, -0.08), 8);
-      const turret = (M2) => {
-        const P = [];
-        P.push(["alu", new CylinderGeometry(0.0232, 0.0236, 0.01, S2(64))]);
-        P.push(["knurl", T(knurled(0.021, 0.028, S2(96), 6e-4, 48, 1), 0, 0.019, 0)]);
-        P.push(["alu", T(new CylinderGeometry(0.0222, 0.0222, 6e-3, S2(64)), 0, 75e-4, 0)]);
-        P.push(["bright", T(new CylinderGeometry(0.0185, 0.0195, 4e-3, S2(48)), 0, 0.035, 0)]);
-        for (let i = 0; i < 40; i++) {
-          const a = i / 40 * Math.PI * 2, len = i % 10 === 0 ? 45e-4 : i % 5 === 0 ? 32e-4 : 22e-4;
-          P.push(["paint", T(new BoxGeometry(7e-4, len, 12e-4), Math.sin(a) * 0.02235, 75e-4 + 3e-3 - len / 2, Math.cos(a) * 0.02235, 0, a, 0)]);
-        }
-        P.push(["paint", T(new BoxGeometry(9e-4, 6e-3, 12e-4), 0, 0, 0.0237)]);
-        for (let i = 0; i < 3; i++) {
-          const a = i / 3 * Math.PI * 2 + 0.5;
-          P.push(["hole", T(new CylinderGeometry(16e-4, 16e-4, 1e-3, 6), Math.sin(a) * 0.012, 0.0374, Math.cos(a) * 0.012)]);
-        }
-        for (const [k, g] of P) add(k, g.applyMatrix4(M2));
-      };
-      turret(new Matrix4().makeTranslation(0, 0.112, -0.08));
-      turret(new Matrix4().compose(new Vector3(0.033, 0.078, -0.08), new Quaternion().setFromEuler(new Euler(0, 0, -RX)), new Vector3(1, 1, 1)));
-      add("knurl", T(knurled(0.03, 0.012, S2(96), 6e-4, 60), -0.04, 0.078, -0.08, 0, 0, RX));
-      add("alu", T(new CylinderGeometry(0.018, 0.02, 0.012, S2(48)), -0.031, 0.078, -0.08, 0, 0, RX));
-      add("red", T(new CylinderGeometry(4e-3, 4e-3, 15e-4, S2(16)), -0.047, 0.078, -0.08, 0, 0, RX));
-      for (const z of [-0.17, 0.01]) {
-        add("alu", T(new CylinderGeometry(0.0362, 0.0362, 0.022, S2(64)), 0, 0.078, z, RX), 6);
-        add("hole", T(new CylinderGeometry(0.0364, 0.0364, 12e-4, S2(64)), 0, 0.078, z, RX));
-        for (const sx of [-1, 1]) {
-          add("alu", T(rbox(0.012, 0.012, 0.022, 2e-3), sx * 0.04, 0.078, z));
-          screw(add, sx * 0.04, 0.0846, z - 6e-3, 0, 0, 0, 26e-4, q);
-          screw(add, sx * 0.04, 0.0846, z + 6e-3, 0, 0, 0, 26e-4, q);
-        }
-        add("alu", T(rbox(0.034, 0.034, 0.022, 3e-3, 3), 0, 0.05, z));
-        add("bright", T(new CylinderGeometry(35e-4, 35e-4, 0.044, S2(14)), 0, 0.043, z, 0, 0, RX));
-        add("alu", T(new CylinderGeometry(62e-4, 62e-4, 6e-3, 6), 0.024, 0.043, z, 0, 0, RX));
-      }
-    }
-    add("alu", lathe([[0.0462, 0], [0.0466, 2e-3], [0.0466, 0.062], [0.0472, 0.064], [0.0472, 0.07], [0.0445, 0.07]], S2(72), 0.078, -0.402), 8);
-    add("hole", T(new CylinderGeometry(0.0445, 0.0445, 2e-3, S2(40)), 0, 0.078, -0.47, RX));
-    {
-      const cap = (M2) => {
-        const P = [["poly", lathe([[0, 0], [0.05, 0], [0.051, 2e-3], [0.051, 0.013], [0.048, 0.014], [0, 0.014]], S2(48), 0, 0)], ["poly", T(rbox(0.016, 0.012, 0.014, 3e-3), 0, 0.052, -7e-3)], ["bright", T(new CylinderGeometry(22e-4, 22e-4, 0.018, 10), 0, 0.058, -7e-3, 0, 0, RX)]];
-        for (const [k, g] of P) add(k, g.applyMatrix4(M2));
-      };
-      cap(new Matrix4().compose(new Vector3(-0.1, 0.078, -0.47), new Quaternion().setFromEuler(new Euler(0, -RX - 0.3, 0)), new Vector3(1, 1, 1).multiplyScalar(0.95)));
-      cap(new Matrix4().compose(new Vector3(0.071, 0.078, 0.216), new Quaternion().setFromEuler(new Euler(0, RX + 0.25, 0)), new Vector3(0.72, 0.72, 0.72)));
-    }
-    add("rub", lathe([[0.0372, -0.012], [0.0385, -0.01], [0.0385, 0], [0.0372, 2e-3], [0.0305, 2e-3], [0.0305, -0.012]], S2(64), 0.078, 0.214), 6);
-    for (let i = 0; i < 7; i++) {
-      const a = -0.9 + i * 0.3;
-      add("paint", T(new BoxGeometry(8e-4, i % 2 ? 24e-4 : 42e-4, 12e-4), Math.sin(a) * 0.0366, 0.078 + Math.cos(a) * 0.0366, 0.2 - 0.095, 0, 0, -a));
-    }
-    add("alu", T(rbox(0.012, 0.014, 0.02, 3e-3), 0.044, 0.068, 0.01));
-    add("glass", T(new CylinderGeometry(38e-4, 38e-4, 0.016, 12), 0.044, 0.075, 0.01, RX));
-    add("bright", T(new SphereGeometry(15e-4, 8, 6), 0.044, 0.0785, 0.01));
-    for (const [y2, z] of [[-0.094, -0.4], [-0.158, 0.31]]) {
-      add("bright", T(new CylinderGeometry(42e-4, 48e-4, 0.012, S2(16)), 0, y2, z));
-      add("steel", T(new TorusGeometry(0.011, 17e-4, 6, S2(18)), 0, y2 - 0.016, z, 0, RX, 0.25));
-      add("blk", T(new CylinderGeometry(22e-4, 22e-4, 0.014, 10), 0, y2 - 7e-3, z, 0, 0, RX));
-    }
-    for (const z of [-0.06, 0.07]) screw(add, 0, -0.091, z, Math.PI, 0, 0, 34e-4, q);
-    add("alu", T(rbox(0.046, 0.028, 0.046, 5e-3, 3), 0, -0.093, -0.555), 6);
-    add("bright", T(new CylinderGeometry(5e-3, 5e-3, 0.064, S2(16)), 0, -0.1, -0.545, 0, 0, RX));
-    for (const sx of [-1, 1]) {
-      const M2 = new Matrix4().compose(new Vector3(0.024 * sx, -0.098, -0.538), new Quaternion().setFromEuler(new Euler(0.22, 0, 0.32 * sx)), new Vector3(1, 1, 1));
-      const P = [
-        ["alu", T(new CylinderGeometry(82e-4, 82e-4, 0.13, S2(24)), 0, -0.065, 0)],
-        ["bright", T(new CylinderGeometry(62e-4, 62e-4, 0.13, S2(20)), 0, -0.185, 0)],
-        ["knurl", T(knurled(98e-4, 0.013, S2(40), 4e-4, 30), 0, -0.132, 0)],
-        ["rub", T(new SphereGeometry(0.0125, S2(18), S2(12)), 0, -0.252, 0)],
-        ["blk", T(new CylinderGeometry(72e-4, 9e-3, 0.012, S2(20)), 0, -0.242, 0)]
-      ];
-      for (let i = 0; i < 5; i++) P.push(["hole", T(new CylinderGeometry(64e-4, 64e-4, 15e-4, S2(20)), 0, -0.155 - i * 0.014, 0)]);
-      P.push(["steel", T(new TorusGeometry(4e-3, 11e-4, 6, S2(14)), 9e-3, -0.03, 0, 0, RX, 0)]);
-      for (const [k, g] of P) add(k, g.applyMatrix4(M2));
-    }
-    const merge = (keys) => {
-      const arr = keys.flatMap((k) => L[k]);
-      return arr.length ? mergeGeometries(arr, false) : null;
-    };
-    const Mt = rifleMaterials();
-    const body = new Group();
-    for (const [keys, m] of [[["steel", "alu", "bright", "blk", "paint", "hole", "red"], Mt.metal], [["fde", "fdeD"], Mt.cera], [["poly", "rub"], Mt.poly], [["knurl"], Mt.knurl], [["glass"], Mt.glass]]) {
-      const g = merge(keys);
-      if (g) body.add(new Mesh(g, m));
-    }
-    const brake = new Mesh(mergeGeometries(L.brake, false), Mt.metal);
-    body.add(brake);
-    const can = new Mesh(mergeGeometries(L.can, false), Mt.cera);
-    can.geometry.getAttribute("color").array.fill(0);
-    {
-      const c = can.geometry.getAttribute("color"), col = new Color("#5a5446");
-      for (let i = 0; i < c.count; i++) c.setXYZ(i, col.r, col.g, col.b);
-      const p = can.geometry.getAttribute("pbr");
-      for (let i = 0; i < p.count; i++) p.setXY(i, 0.35, 0.58);
-    }
-    can.visible = !!opts.suppressor;
-    brake.visible = !opts.suppressor;
-    const B3 = { bright: [], blk: [], red: [], knurl: [] };
-    B3.bright.push(prep(lathe([[0, -0.08], [0.0155, -0.08], [0.0165, -0.077], [0.0165, 0.077], [0.0155, 0.08], [0, 0.08]].map(([r, h]) => [r, h]), S2(64), 0, 0, (a, h) => Math.abs(h) < 0.06 ? -12e-4 * smooth(0.55, 0.95, Math.cos(4 * a + h * 40)) : 0), "bright", 6));
-    B3.blk.push(prep(lathe([[0, 0], [0.0125, 0], [0.0145, 4e-3], [0.0145, 0.026], [0.012, 0.032], [0, 0.032]], S2(48), 0, 0.112), "blk"));
-    B3.red.push(prep(T(new CylinderGeometry(25e-4, 25e-4, 6e-3, 12), 0, 0, 0.114, RX), "red"));
-    B3.blk.push(prep(T(new CylinderGeometry(55e-4, 62e-4, 0.062, S2(20)), 0.03, -0.012, 0.03, 0, 0, 1.15), "blk"));
-    B3.knurl.push(prep(T(knurled(0.0135, 0.026, S2(48), 6e-4, 28, 2), 0.06, -0.026, 0.03, 0, 0, 1.15), "blk"));
-    B3.blk.push(prep(T(new SphereGeometry(0.0135, S2(24), S2(12), 0, Math.PI * 2, 0, Math.PI / 2), 0.0715, -0.032, 0.03, 0, 0, 1.15 - Math.PI / 2), "blk"));
-    const bolt2 = new Group();
-    bolt2.add(new Mesh(mergeGeometries([...B3.bright, ...B3.blk, ...B3.red], false), Mt.metal), new Mesh(mergeGeometries(B3.knurl, false), Mt.knurl));
-    bolt2.position.set(0, 0, 0.02);
-    let tris = 0;
-    body.traverse((o) => {
-      if (o.geometry) tris += o.geometry.attributes.position.count / 3;
-    });
-    bolt2.traverse((o) => {
-      if (o.geometry) tris += o.geometry.attributes.position.count / 3;
-    });
-    return { body, bolt: bolt2, can, brake, tris: Math.round(tris + can.geometry.attributes.position.count / 3) };
-  }
-  var RX, C, BARE, WEAR_BARE, WEAR, rbox, smooth, MATS, QSEG;
-  var init_rifle = __esm({
-    "src/scene/rifle.js"() {
-      init_three_module();
-      init_BufferGeometryUtils();
-      init_RoundedBoxGeometry();
-      init_state();
-      init_surfaces();
-      RX = Math.PI / 2;
-      C = {
-        fde: ["#8c7a58", 0.08, 0.62],
-        fdeD: ["#7a6a4c", 0.08, 0.66],
-        blk: ["#17181a", 0.78, 0.36],
-        alu: ["#232427", 0.85, 0.3],
-        steel: ["#34373a", 0.88, 0.46],
-        bright: ["#b9bdc1", 1, 0.16],
-        hole: ["#060606", 0, 0.95],
-        paint: ["#d8d8d2", 0, 0.55],
-        poly: ["#1b1b1c", 0, 0.82],
-        rub: ["#121212", 0, 0.92],
-        red: ["#b01a12", 0.1, 0.5],
-        brass: ["#c99a44", 1, 0.24],
-        gold: ["#a88638", 1, 0.3]
-      };
-      BARE = new Color("#a7a59e");
-      WEAR_BARE = { blk: new Color("#8a8c8e"), steel: new Color("#9a9c9e") };
-      WEAR = { fde: 0.95, fdeD: 0.9, alu: 0.75, blk: 0.55, steel: 0.45, poly: 0.25 };
-      rbox = (w, h, d, r, s = 2) => new RoundedBoxGeometry(w, h, d, s, Math.min(r, Math.min(w, h, d) / 2 - 1e-5));
-      smooth = (a, b, x) => {
-        const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
-        return k * k * (3 - 2 * k);
-      };
-      MATS = null;
-      QSEG = () => ({ low: 0.5, medium: 0.75 })[G.quality?.name] || 1;
-    }
-  });
-
-  // src/scene/common.js
-  function colorGeo(geo, color) {
-    const g = geo.index ? geo.toNonIndexed() : geo;
-    const c = new Color(color), n = g.attributes.position.count, a = new Float32Array(n * 3), tn = g.attributes.tint;
-    for (let i = 0; i < n; i++) {
-      const k = tn ? tn.array : null;
-      a[i * 3] = c.r * (k ? k[i * 3] : 1);
-      a[i * 3 + 1] = c.g * (k ? k[i * 3 + 1] : 1);
-      a[i * 3 + 2] = c.b * (k ? k[i * 3 + 2] : 1);
-    }
-    if (tn) g.deleteAttribute("tint");
-    g.setAttribute("color", new BufferAttribute(a, 3));
-    if (!g.attributes.uv) g.setAttribute("uv", new BufferAttribute(new Float32Array(n * 2), 2));
-    return g;
-  }
-  function tf(geo, x = 0, y2 = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
-    geo.applyMatrix4(new Matrix4().compose(new Vector3(x, y2, z), new Quaternion().setFromEuler(new Euler(rx, ry, rz)), new Vector3(sx, sy, sz)));
-    return geo;
-  }
-  function mergedMesh(list, o = {}) {
-    const geos = list.map(([g3, c]) => {
-      const q = colorGeo(g3, c);
-      for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
-      return q;
-    });
-    const g = mergeGeometries(geos, false);
-    const wd = o.wdetail ?? !(G.quality && G.quality.name === "low" && G.quality.mobile);
-    const m = mat("#ffffff", { vc: true, rough: o.rough ?? 0.8, metal: o.metal ?? 0, patch: wd ? Object.assign({ wdetail: 1 }, o.patch || {}) : o.patch, emissive: o.emissive, flat: o.flat });
-    const mesh = new Mesh(g, m);
-    mesh.castShadow = o.cast ?? true;
-    mesh.receiveShadow = o.receive ?? true;
-    return mesh;
-  }
-  function glowTexture() {
-    if (glowTex) return glowTex;
-    const c = document.createElement("canvas");
-    c.width = c.height = 64;
-    const g = c.getContext("2d");
-    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gr.addColorStop(0, "rgba(255,255,255,1)");
-    gr.addColorStop(0.25, "rgba(255,255,255,0.55)");
-    gr.addColorStop(1, "rgba(255,255,255,0)");
-    g.fillStyle = gr;
-    g.fillRect(0, 0, 64, 64);
-    glowTex = new CanvasTexture(c);
-    return glowTex;
-  }
-  function glow(color, size, x, y2, z, intensity = 1) {
-    const s = new Sprite(new SpriteMaterial({ map: glowTexture(), color: new Color(color).multiplyScalar(intensity), blending: AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
-    s.scale.set(size, size, 1);
-    s.position.set(x, y2, z);
-    return s;
-  }
-  function makeCar(color = "#151719", type = "suv") {
-    const sh = new Shape();
-    if (type === "suv") {
-      sh.moveTo(-2.4, 0.35);
-      sh.lineTo(2.4, 0.35);
-      sh.lineTo(2.45, 0.95);
-      sh.lineTo(2.1, 1.05);
-      sh.lineTo(1.4, 1.12);
-      sh.lineTo(0.95, 1.85);
-      sh.lineTo(-2.25, 1.9);
-      sh.lineTo(-2.42, 1.2);
-      sh.closePath();
-    } else if (type === "truck") {
-      sh.moveTo(-3.6, 0.5);
-      sh.lineTo(3.4, 0.5);
-      sh.lineTo(3.45, 1.4);
-      sh.lineTo(3.1, 1.45);
-      sh.lineTo(2.7, 2.5);
-      sh.lineTo(1.4, 2.55);
-      sh.lineTo(1.3, 1.5);
-      sh.lineTo(-3.6, 1.5);
-      sh.closePath();
-    } else {
-      sh.moveTo(-2.3, 0.32);
-      sh.lineTo(2.3, 0.32);
-      sh.lineTo(2.35, 0.8);
-      sh.lineTo(1.2, 0.95);
-      sh.lineTo(0.55, 1.42);
-      sh.lineTo(-1.2, 1.45);
-      sh.lineTo(-1.9, 1);
-      sh.lineTo(-2.35, 0.95);
-      sh.closePath();
-    }
-    const W = type === "truck" ? 2.3 : 1.85;
-    const body = new ExtrudeGeometry(sh, { depth: W, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.06, bevelSegments: 2, curveSegments: 2 });
-    tf(body, 0, 0, -W / 2);
-    tf(body, 0, 0, 0, 0, -Math.PI / 2, 0);
-    const parts = [[body, color]];
-    const glass = "#0b0f14";
-    if (type === "suv") {
-      parts.push([tf(new BoxGeometry(1.9, 0.62, 3), 0, 1.5, -0.6), glass]);
-    } else if (type === "truck") {
-      parts.push([tf(new BoxGeometry(2.36, 0.75, 1.1), 0, 2, 2.05), glass]);
-      parts.push([tf(new BoxGeometry(2.3, 1.5, 4.6), 0, 2.25, -1.25), "#6d6450"]);
-    } else {
-      parts.push([tf(new BoxGeometry(1.75, 0.42, 1.9), 0, 1.15, -0.25), glass]);
-    }
-    const wy = type === "truck" ? 0.5 : 0.38, wr = type === "truck" ? 0.5 : 0.38, wx = W / 2 + 0.02, wz = type === "truck" ? [2.4, -2.2] : [1.5, -1.55];
-    for (const z of wz) for (const sx of [1, -1]) {
-      parts.push([tf(new CylinderGeometry(wr, wr, 0.3, 14), sx * wx, wy, z, 0, 0, Math.PI / 2), "#0c0c0c"]);
-      parts.push([tf(new CylinderGeometry(wr * 0.55, wr * 0.55, 0.32, 10), sx * wx, wy, z, 0, 0, Math.PI / 2), "#8a8c90"]);
-    }
-    const g = new Group();
-    const m = mergedMesh(parts, { rough: 0.35, metal: 0.45 });
-    g.add(m);
-    const fz = type === "truck" ? 3.5 : 2.45;
-    const hl = mergedMesh([[tf(new BoxGeometry(0.4, 0.14, 0.05), 0.6, 0.8, fz), "#fff3d8"], [tf(new BoxGeometry(0.4, 0.14, 0.05), -0.6, 0.8, fz), "#fff3d8"]], { emissive: "#fff0cc", cast: false });
-    hl.material = mat("#fff0cc", { emissive: "#fff0cc", ei: 3 });
-    g.add(hl);
-    const tl = new Mesh(tf(new BoxGeometry(1.5, 0.1, 0.05), 0, 0.95, type === "truck" ? -3.65 : -2.45), mat("#ff2020", { emissive: "#ff1010", ei: 2 }));
-    g.add(tl);
-    g.userData.type = type;
-    return g;
-  }
-  function pineGeometry(snow = 0.6, seed = 0, palette = {}) {
-    const trunk = palette.trunk || "#3a2a1c", leaf = new Color(palette.leaf || "#1f3524"), snowC = new Color(palette.snow || "#e8eef6");
-    const mob = !!(G.quality && G.quality.mobile), lite = !!palette.lite, arms = mob ? 6 : lite ? 8 : 11, tiers = mob ? 4 : lite ? 5 : 7, R = mulberry32(17 + Math.floor(seed * 100));
-    const parts = [[new CylinderGeometry(0.1, 0.24, 3.2, lite ? 5 : 7).translate(0, 1.6, 0), trunk]];
-    const H0 = 1.5, H1 = 12.8;
-    for (let i = 0; i < tiers; i++) {
-      const f = i / (tiers - 1), y2 = H0 + f * (H1 - H0 - 2.2), r = (2.7 * (1 - f) ** 0.9 + 0.35) * (0.92 + R() * 0.16), h = 1.9 - f * 0.6, droop = 0.55 + 0.25 * (1 - f);
-      const pos = [], idx = [];
-      const rot = R() * 6.28;
-      pos.push(0, y2 + h, 0);
-      pos.push(0, y2 + h * 0.15, 0);
-      for (let k = 0; k < arms * 2; k++) {
-        const tip = k % 2 === 0, ang = rot + k / (arms * 2) * Math.PI * 2 + (R() - 0.5) * 0.12;
-        const rr = tip ? r * (0.85 + R() * 0.3) : r * 0.5;
-        pos.push(Math.cos(ang) * rr, y2 - (tip ? droop : droop * 0.25) + (R() - 0.5) * 0.15, Math.sin(ang) * rr);
-      }
-      const n = arms * 2;
-      for (let k = 0; k < n; k++) {
-        const a0 = 2 + k, a1 = 2 + (k + 1) % n;
-        idx.push(0, a1, a0);
-        idx.push(1, a0, a1);
-      }
-      const g = new BufferGeometry();
-      g.setAttribute("position", new Float32BufferAttribute(pos, 3));
-      g.setIndex(idx);
-      g.computeVertexNormals();
-      const tint = new Float32Array(pos.length), nrm = g.attributes.normal.array, base = leaf.clone().multiplyScalar(0.78 + f * 0.25);
-      for (let v3 = 0; v3 < pos.length / 3; v3++) {
-        const isTip = v3 >= 2 && (v3 - 2) % 2 === 0, under = v3 === 1;
-        const c = base.clone().multiplyScalar(under ? 0.45 : isTip ? 1.15 : 0.85);
-        const sn = snow * (v3 === 0 ? 0.85 : under ? 0 : isTip ? 0.75 : 0.55) * (0.65 + 0.7 * vnoise(pos[v3 * 3] * 1.7 + i, pos[v3 * 3 + 2] * 1.7, 5));
-        if (sn > 0) c.lerp(snowC, Math.min(0.92, sn * Math.max(0, nrm[v3 * 3 + 1]) * 1.2));
-        tint[v3 * 3] = c.r;
-        tint[v3 * 3 + 1] = c.g;
-        tint[v3 * 3 + 2] = c.b;
-      }
-      g.setAttribute("tint", new BufferAttribute(tint, 3));
-      parts.push([g, "#ffffff"]);
-    }
-    const geos = parts.map(([g, c]) => {
-      const q = colorGeo(g, c);
-      if (!q.attributes.normal) q.computeVertexNormals();
-      return q;
-    });
-    return mergeGeometries(geos, false);
-  }
-  function blocksLOF(x, z, top, rad, from, targets) {
-    for (const t of targets) {
-      const dx = t[0] - from.x, dz = t[2] - from.z, L2 = dx * dx + dz * dz;
-      const u = Math.max(0, Math.min(1, ((x - from.x) * dx + (z - from.z) * dz) / L2));
-      const px2 = from.x + dx * u, pz2 = from.z + dz * u, d = Math.hypot(x - px2, z - pz2);
-      if (d > rad + 2.5) continue;
-      const ly = from.y + (t[1] - from.y) * u;
-      if (top + 1.5 > ly && u > 2e-3 && u < 0.995) return true;
-    }
-    return false;
-  }
-  function impostorTexture(geo) {
-    if (_impCache.has(geo)) return _impCache.get(geo);
-    const r = G.renderer;
-    if (!r) return null;
-    geo.computeBoundingBox();
-    const bb = geo.boundingBox, hw = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2 * 1.04, h = bb.max.y - bb.min.y;
-    const W = 128, H = Math.round(W * h / (hw * 2) / 4) * 4 || 256;
-    const rt = new WebGLRenderTarget(W, H, { depthBuffer: true, generateMipmaps: true, minFilter: LinearMipmapLinearFilter, magFilter: LinearFilter });
-    const sc = new Scene();
-    sc.add(new AmbientLight("#ffffff", 1.5));
-    const dl = new DirectionalLight("#ffffff", 1.1);
-    dl.position.set(0.5, 1, 1);
-    sc.add(dl);
-    sc.add(new Mesh(geo, new MeshLambertMaterial({ vertexColors: true })));
-    const cam = new OrthographicCamera(-hw, hw, bb.max.y, bb.min.y, -50, 50);
-    cam.position.set(0, 0, 10);
-    cam.lookAt(0, 0, 0);
-    cam.position.set(0, 0, 10);
-    const prevT = r.getRenderTarget(), prevC = new Color();
-    r.getClearColor(prevC);
-    const prevA = r.getClearAlpha(), prevTM = r.toneMapping;
-    r.setRenderTarget(rt);
-    r.setClearColor(1912864, 0);
-    r.toneMapping = NoToneMapping;
-    r.clear();
-    r.render(sc, cam);
-    r.setRenderTarget(prevT);
-    r.setClearColor(prevC, prevA);
-    r.toneMapping = prevTM;
-    const out = { tex: rt.texture, hw, y0: bb.min.y, h };
-    _impCache.set(geo, out);
-    return out;
-  }
-  function impostorGeometry(I) {
-    const g1 = new PlaneGeometry(I.hw * 2, I.h).translate(0, I.y0 + I.h / 2, 0), g22 = g1.clone().rotateY(Math.PI / 2);
-    const g = mergeGeometries([g1, g22], false);
-    const n = g.attributes.normal;
-    for (let i = 0; i < n.count; i++) n.setXYZ(i, 0, 1, 0);
-    return g;
-  }
-  function makeForest(geo, count, placeFn, o = {}) {
-    if (o.isNear && G.renderer) {
-      const near2 = [], far = [];
-      let n = 0;
-      for (let i = 0; i < count * 4 && n < count; i++) {
-        const p = placeFn(i);
-        if (!p) continue;
-        n++;
-        (o.isNear(p) ? near2 : far).push(p);
-      }
-      const grp = new Group();
-      if (near2.length) grp.add(makeForest(geo, near2.length, (i) => near2[i], { ...o, isNear: null, tries: 1 }));
-      const I = impostorTexture(geo);
-      if (I && far.length) {
-        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.3, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff", emissive: "#26303c", emissiveIntensity: 0.55 });
-        hazeify(m2, {});
-        const im2 = makeForestMesh(impostorGeometry(I), m2, far.length, (i) => far[i], 1);
-        im2.castShadow = false;
-        im2.receiveShadow = false;
-        im2.userData.impostor = true;
-        grp.add(im2);
-      }
-      grp.userData.lod = { near: near2.length, far: far.length };
-      return grp;
-    }
-    const m = G.quality && G.quality.mobile ? new MeshLambertMaterial({ vertexColors: true }) : new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
-    hazeify(m, { sway: o.sway ?? 0.5 });
-    const im = makeForestMesh(geo, m, count, placeFn, o.tries || 4);
-    im.castShadow = o.cast ?? false;
-    im.receiveShadow = true;
-    return im;
-  }
-  function makeForestMesh(geo, m, count, placeFn, tries) {
-    const im = new InstancedMesh(geo, m, count);
-    const d = new Object3D();
-    let n = 0;
-    for (let i = 0; i < count * tries && n < count; i++) {
-      const p = placeFn(i);
-      if (!p) continue;
-      d.position.set(p.x, p.y - 0.3, p.z);
-      d.rotation.set(0, p.r || 0, 0);
-      const s = p.s || 1;
-      d.scale.set(s, s * (p.sy || 1), s);
-      d.updateMatrix();
-      im.setMatrixAt(n, d.matrix);
-      const hsh = Math.abs(Math.sin(p.x * 12.9898 + p.z * 78.233) * 43758.5453) % 1, hs2 = Math.abs(Math.sin(p.x * 39.35 + p.z * 11.13) * 24634.63) % 1;
-      _vc.setRGB(1, 1, 1).multiplyScalar(0.8 + hsh * 0.45);
-      _vc.g *= 0.97 + hs2 * 0.08;
-      _vc.b *= 0.96 + (1 - hs2) * 0.1;
-      im.setColorAt(n, _vc);
-      n++;
-    }
-    im.count = n;
-    im.instanceMatrix.needsUpdate = true;
-    if (im.instanceColor) im.instanceColor.needsUpdate = true;
-    im.computeBoundingSphere();
-    return im;
-  }
-  function n3(x, y2, z, s) {
-    return vnoise(x + z * 0.71, y2 - z * 0.53, s) * 0.5 + vnoise(y2 * 1.13 + 3.1, z * 1.07 - x * 0.31, s + 1) * 0.5;
-  }
-  function rockGeometry(seed = 1, detail = 1, o = {}) {
-    if (G.quality && G.quality.mobile) detail = Math.max(0, detail - 1);
-    const det = Math.max(1, Math.min(8, detail * 2 + 1));
-    let g = new IcosahedronGeometry(1, det);
-    g.deleteAttribute("normal");
-    g.deleteAttribute("uv");
-    g = mergeVertices(g);
-    const p = g.attributes.position, disp = new Float32Array(p.count);
-    const sq = o.squash ?? 0.72, strata = o.strata ?? 1;
-    for (let i = 0; i < p.count; i++) {
-      let x = p.getX(i), y2 = p.getY(i), z = p.getZ(i);
-      const big = n3(x * 1.1 + seed, y2 * 1.1, z * 1.1, seed) - 0.5, mid = n3(x * 2.6, y2 * 2.6 + seed, z * 2.6, seed + 7) - 0.5, fine = n3(x * 6.5, y2 * 6.5, z * 6.5 + seed, seed + 3) - 0.5;
-      let k = 1 + big * 0.55 + mid * 0.22 + fine * 0.07;
-      const band = Math.sin((y2 * 5.2 + big * 2) * strata) * 0.035 * strata;
-      k += band;
-      x *= k;
-      y2 *= k * sq;
-      z *= k;
-      if (y2 < -0.25 * sq) y2 = -0.25 * sq + (y2 + 0.25 * sq) * 0.25;
-      p.setXYZ(i, x, y2, z);
-      disp[i] = big * 0.55 + mid * 0.22;
-    }
-    g.computeVertexNormals();
-    const nrm = g.attributes.normal, tint = new Float32Array(p.count * 3);
-    for (let i = 0; i < p.count; i++) {
-      const y2 = p.getY(i), up = nrm.getY(i);
-      const ao = 0.55 + 0.45 * Math.min(1, Math.max(0, (disp[i] + 0.3) / 0.55));
-      const base = 0.72 + 0.28 * Math.max(0, Math.min(1, (y2 + 0.3) / 0.9));
-      const st = 0.9 + 0.12 * Math.sin(y2 * 17 + n3(p.getX(i) * 3, y2, p.getZ(i) * 3, seed + 9) * 3) * strata;
-      const crack = n3(p.getX(i) * 9, y2 * 9, p.getZ(i) * 9, seed + 11);
-      const cr = crack > 0.78 ? 0.55 : 1;
-      const top = o.topTint && up > 0.55 ? 1 : 0;
-      const v3 = ao * base * st * cr * (o.rockDark ?? 1);
-      if (top) {
-        const t = o.topTint, m = Math.min(1, (up - 0.55) * 3) * (0.6 + 0.4 * n3(p.getX(i) * 4, 0, p.getZ(i) * 4, seed));
-        tint[i * 3] = v3 * (1 - m) + t[0] * m;
-        tint[i * 3 + 1] = v3 * (1 - m) + t[1] * m;
-        tint[i * 3 + 2] = v3 * (1 - m) + t[2] * m;
-      } else {
-        tint[i * 3] = v3 * (o.warm ? 1.04 : 1);
-        tint[i * 3 + 1] = v3;
-        tint[i * 3 + 2] = v3 * (o.warm ? 0.94 : 1);
-      }
-    }
-    g.setAttribute("tint", new BufferAttribute(tint, 3));
-    return g;
-  }
-  function sandbagGeometry(seed = 0) {
-    const lo = G.quality && G.quality.mobile;
-    let g = lo ? new BoxGeometry(0.62, 0.2, 0.34, 5, 2, 3) : new BoxGeometry(0.62, 0.2, 0.34, 8, 3, 5);
-    g.deleteAttribute("normal");
-    g.deleteAttribute("uv");
-    g = mergeVertices(g);
-    const p = g.attributes.position, R = mulberry32(seed + 5);
-    const j = (R() - 0.5) * 0.05;
-    for (let i = 0; i < p.count; i++) {
-      let x = p.getX(i), y2 = p.getY(i), z = p.getZ(i);
-      const nx = x / 0.31, ny = y2 / 0.1, nz = z / 0.17;
-      const r = Math.max(Math.abs(nx), Math.abs(ny), Math.abs(nz));
-      const sph = Math.sqrt(nx * nx * 0.35 + ny * ny + nz * nz) || 1;
-      const pillow = 1 - 0.32 * (1 - Math.abs(nx) ** 3);
-      x = x * (0.92 + 0.08 / sph);
-      y2 = y2 * pillow * (1 + j) * (0.85 + 0.15 / Math.max(0.6, r));
-      z = z * (0.9 + 0.1 * (1 - Math.abs(nx) ** 4)) * pillow ** 0.4;
-      if (y2 > 0) y2 -= 0.02 * (1 - nx * nx);
-      p.setXYZ(i, x + (n3(x * 9, y2 * 9, z * 9, seed) - 0.5) * 0.012, y2, z);
-    }
-    g.computeVertexNormals();
-    const tint = new Float32Array(p.count * 3), nrm = g.attributes.normal;
-    for (let i = 0; i < p.count; i++) {
-      const v3 = (0.78 + 0.22 * Math.max(0, nrm.getY(i))) * (0.92 + 0.12 * n3(p.getX(i) * 14, p.getY(i) * 14, p.getZ(i) * 14, seed + 2));
-      tint[i * 3] = v3;
-      tint[i * 3 + 1] = v3;
-      tint[i * 3 + 2] = v3 * 0.97;
-    }
-    g.setAttribute("tint", new BufferAttribute(tint, 3));
-    return g;
-  }
-  function sandbagWall(x0, x1, y2, z, courses, ry = 0, colors = ["#8e7c5a", "#9a8862", "#857452"]) {
-    const out = [];
-    let s = 0;
-    for (let c = 0; c < courses; c++) for (let x = x0 + c % 2 * 0.3; x < x1 - 0.2; x += 0.6) {
-      const g = sandbagGeometry(s++ % 7);
-      g.rotateY((s * 0.37 % 1 - 0.5) * 0.12);
-      g.translate(x, y2 + 0.09 + c * 0.17, z + (s % 3 - 1) * 0.02);
-      if (ry) g.rotateY(ry);
-      out.push([g, colors[s % colors.length]]);
-    }
-    return out;
-  }
-  function butteGeometry(seed, radius, height8, o = {}) {
-    const R = mulberry32(seed * 31 + 7), seg = o.seg || (G.quality && G.quality.mobile ? G.quality.name === "low" ? 16 : 22 : 48), tiersN = 3 + Math.floor(R() * 3), parts = [];
-    const cols = o.colors || ["#b8693c", "#d09060", "#9c5634", "#c47c4c", "#e0b080"];
-    const outline = (a, s) => 1 + 0.18 * (fbm(Math.cos(a) * 2 + seed, Math.sin(a) * 2, 3, s) - 0.5) * 2 + 0.06 * Math.sin(a * 7 + seed);
-    {
-      const g = new CylinderGeometry(radius * 1, radius * 1.75, height8 * 0.3, seg, 2, true);
-      const p = g.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i), z = p.getZ(i), a = Math.atan2(z, x), k = outline(a, seed);
-        p.setX(i, x * k);
-        p.setZ(i, z * k);
-        p.setY(i, p.getY(i) + (fbm(x / 60, z / 60, 2, seed) - 0.5) * height8 * 0.05);
-      }
-      g.translate(0, height8 * 0.15, 0);
-      g.computeVertexNormals();
-      parts.push([g, o.skirt || "#c99a68"]);
-    }
-    let y2 = height8 * 0.3, r = radius;
-    for (let t = 0; t < tiersN; t++) {
-      const th = height8 * 0.7 / tiersN * (0.8 + R() * 0.4), rTop = r * (0.94 - R() * 0.05);
-      const g = new CylinderGeometry(rTop, r, th, seg, 4, false);
-      const p = g.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i), z = p.getZ(i), a = Math.atan2(z, x), k = outline(a, seed + t * 3) * (1 + (vnoise(a * 9, p.getY(i) / 6, seed + t) - 0.5) * 0.08);
-        p.setX(i, x * k);
-        p.setZ(i, z * k);
-      }
-      g.translate(0, y2 + th / 2, 0);
-      g.computeVertexNormals();
-      parts.push([g, cols[(seed + t) % cols.length]]);
-      y2 += th;
-      r = rTop * (0.86 + R() * 0.08);
-    }
-    const cap = new CylinderGeometry(r * 1.02, r * 1.1, height8 * 0.02, seg, 1);
-    {
-      const p = cap.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i), z = p.getZ(i), k = outline(Math.atan2(z, x), seed + 99);
-        p.setX(i, x * k);
-        p.setZ(i, z * k);
-      }
-    }
-    cap.translate(0, y2, 0);
-    cap.computeVertexNormals();
-    parts.push([cap, "#d6a676"]);
-    return parts;
-  }
-  function makeFlag(w, h, color, o = {}) {
-    const g = new PlaneGeometry(w, h, 16, 6).translate(w / 2, 0, 0);
-    let tex2 = null;
-    if (o.emblem) {
-      const c = document.createElement("canvas");
-      c.width = 128;
-      c.height = 80;
-      const x = c.getContext("2d");
-      x.fillStyle = color;
-      x.fillRect(0, 0, 128, 80);
-      x.strokeStyle = o.emblem;
-      x.lineWidth = 6;
-      x.beginPath();
-      x.arc(64, 40, 20, 0, Math.PI * 2);
-      x.stroke();
-      x.beginPath();
-      x.moveTo(64, 10);
-      x.lineTo(64, 70);
-      x.moveTo(34, 40);
-      x.lineTo(94, 40);
-      x.stroke();
-      tex2 = new CanvasTexture(c);
-      tex2.colorSpace = SRGBColorSpace;
-    }
-    const m = new MeshStandardMaterial({ color: tex2 ? "#ffffff" : color, map: tex2, side: DoubleSide, roughness: 0.9 });
-    hazeify(m, { flag: o.amp ?? 1 });
-    const mesh = new Mesh(g, m);
-    mesh.castShadow = true;
-    mesh.userData.windFlag = true;
-    return mesh;
-  }
-  function addWindMarkers(S2, w, height8, pts, o = {}) {
-    const poleG = [];
-    for (const [x, z] of pts) {
-      const y2 = height8(x, z);
-      poleG.push([new CylinderGeometry(0.06, 0.08, o.pole || 7, 5).translate(x, y2 + (o.pole || 7) / 2, z), o.poleColor || "#2a2a2c"]);
-      const f = makeFlag(o.fw || 2.4, o.fh || 0.9, o.color || "#ff5a1f", { amp: 0.8 });
-      f.position.set(x, y2 + (o.pole || 7) - 0.5, z);
-      f.castShadow = false;
-      S2.add(f);
-      const f2 = makeFlag((o.fw || 2.4) * 0.8, (o.fh || 0.9) * 0.6, o.color2 || "#f2f2f0", { amp: 0.9 });
-      f2.position.set(x, y2 + (o.pole || 7) - 1.6, z);
-      f2.castShadow = false;
-      S2.add(f2);
-      if (o.drift !== false) {
-        const d = new Smoke(S2, { at: [x, y2 + 0.4, z], n: 16, rate: 2.2, life: 5, size: 2.2, grow: 2.2, rise: 0.25, spread: 1.6, color: o.driftColor || "#eef2f8", opacity: o.driftOpacity ?? 0.22, windMul: 1.4 });
-        w.updaters.push((dt, wind) => d.update(dt, wind));
-      }
-    }
-    S2.add(mergedMesh(poleG, { rough: 0.6 }));
-  }
-  function orientWindFlags(world, wind, mt, dt) {
-    if (!world.windFlags) {
-      world.windFlags = [];
-      world.scene.traverse((o) => {
-        if (o.userData.windFlag) world.windFlags.push(o);
-      });
-    }
-    for (const f of world.windFlags) {
-      wind.sample(f.position, mt, _fw);
-      const target = Math.atan2(_fw.z, _fw.x) * -1;
-      let d = target - f.rotation.y;
-      d = Math.atan2(Math.sin(d), Math.cos(d));
-      f.rotation.y += d * Math.min(1, dt * 2.5);
-    }
-  }
-  function makeBanner(w, h, color, trim = "#d8b45a") {
-    const c = document.createElement("canvas");
-    c.width = 64;
-    c.height = 160;
-    const x = c.getContext("2d");
-    x.fillStyle = color;
-    x.fillRect(0, 0, 64, 160);
-    x.fillStyle = trim;
-    x.fillRect(0, 0, 64, 8);
-    x.fillRect(0, 150, 64, 10);
-    x.strokeStyle = trim;
-    x.lineWidth = 4;
-    x.beginPath();
-    x.moveTo(32, 40);
-    x.lineTo(50, 70);
-    x.lineTo(32, 100);
-    x.lineTo(14, 70);
-    x.closePath();
-    x.stroke();
-    const tex2 = new CanvasTexture(c);
-    tex2.colorSpace = SRGBColorSpace;
-    const g = new PlaneGeometry(h, w, 10, 3).translate(h / 2, 0, 0).rotateZ(-Math.PI / 2);
-    const m = new MeshStandardMaterial({ map: tex2, side: DoubleSide, roughness: 0.9 });
-    tex2.center.set(0.5, 0.5);
-    tex2.rotation = Math.PI / 2;
-    hazeify(m, { flag: 0.35 });
-    const mesh = new Mesh(g, m);
-    mesh.castShadow = true;
-    return mesh;
-  }
-  function makeRifle(opts = {}) {
-    const RF = buildRifle(opts);
-    const build2 = (list) => mergeGeometries(list.map(([g, c]) => {
-      let q = colorGeo(g.index ? g.toNonIndexed() : g, c);
-      for (const k of Object.keys(q.attributes)) if (!["position", "normal", "uv", "color"].includes(k)) q.deleteAttribute(k);
-      return q;
-    }), false);
-    const glove = "#2b2a26", pad = "#3c3a33", sleeve = "#4d5238", cuff = "#3b3f2b";
-    const H = (list) => new Mesh(build2(list), GLOVE_MAT());
-    const R = [
-      [tf(new BoxGeometry(0.05, 0.07, 0.085), 0, 0, 0, 0.38), glove],
-      [tf(new BoxGeometry(0.052, 0.02, 0.03), 4e-3, 0.032, -0.03, 0.38), pad],
-      [tf(new CapsuleGeometry(0.0115, 0.04, 3, 6), -0.03, 5e-3, -0.03, 0.3, 0, 0.25), glove],
-      // thumb
-      [tf(new CylinderGeometry(0.048, 0.06, 0.34, 10), 0.03, -0.06, 0.22, 1.25, 0, 0.12), sleeve],
-      [tf(new CylinderGeometry(0.05, 0.05, 0.05, 10), 0.012, -0.025, 0.07, 1.25, 0, 0.12), cuff]
-    ];
-    for (let i = 0; i < 4; i++) R.push([tf(new CapsuleGeometry(0.0105, 0.03, 3, 6), -0.012, -0.022 - i * 0.017, -0.035 + i * 4e-3, 1.5, 0, 0.1), glove]);
-    const handR = H(R);
-    handR.position.set(0.012, -0.12, 0.09);
-    const Lh = [
-      [tf(new BoxGeometry(0.075, 0.035, 0.1), 0, 0, 0, 0, 0.25), glove],
-      [tf(new BoxGeometry(0.06, 0.012, 0.05), 0, -0.02, 0, 0, 0.25), pad],
-      [tf(new CylinderGeometry(0.052, 0.066, 0.42, 10), -0.1, -0.1, 0.17, 1.15, 0.45, 0), sleeve],
-      [tf(new CylinderGeometry(0.054, 0.054, 0.05, 10), -0.03, -0.035, 0.03, 1.15, 0.45, 0), cuff]
-    ];
-    for (let i = 0; i < 4; i++) Lh.push([tf(new CapsuleGeometry(0.0105, 0.035, 3, 6), 0.03 + i * 4e-3, 0.02 + i * 0, -0.02 - i * 0.017, 0.2, 0, -1.2), glove]);
-    const handL = H(Lh);
-    handL.position.set(-0.01, -0.095, -0.4);
-    const hands = new Group();
-    hands.add(handR, handL);
-    const grp = new Group();
-    grp.add(RF.body);
-    grp.add(hands);
-    grp.add(RF.bolt);
-    grp.add(RF.can);
-    grp.userData = { bolt: RF.bolt, handR, can: RF.can, brake: RF.brake, tris: RF.tris, handRHome: handR.position.clone(), boltHome: RF.bolt.position.clone() };
-    return grp;
-  }
-  function lightPoints(pts, o = {}) {
-    const n = pts.length, pos = new Float32Array(n * 3), col = new Float32Array(n * 3), sz = new Float32Array(n);
-    const c = new Color();
-    pts.forEach((p2, i) => {
-      pos.set([p2[0], p2[1], p2[2]], i * 3);
-      c.set(p2[4] || "#ffd9a0");
-      col.set([c.r, c.g, c.b], i * 3);
-      sz[i] = p2[3] || 2;
-    });
-    const g = new BufferGeometry();
-    g.setAttribute("position", new BufferAttribute(pos, 3));
-    g.setAttribute("color", new BufferAttribute(col, 3));
-    g.setAttribute("aSize", new BufferAttribute(sz, 1));
-    const m = new ShaderMaterial({
-      uniforms: { map: { value: glowTexture() }, uScale: { value: 400 }, uI: { value: o.intensity ?? 1.6 }, uTime: { value: 0 } },
-      transparent: true,
-      depthWrite: false,
-      blending: AdditiveBlending,
-      vertexColors: true,
-      vertexShader: (
-        /* glsl */
-        `attribute float aSize; uniform float uScale, uTime; varying vec3 vC; varying float vF;
-      void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
-        float d = max(-mv.z, 1.0); gl_PointSize = clamp(aSize * uScale / d, 1.5, 160.0);
-        vF = 0.85 + 0.15 * sin(uTime * 3.0 + position.x * 1.7 + position.z); // gentle sodium flicker
-        vF *= clamp(aSize * uScale / d / 2.0, 0.25, 1.0); }`
-      ),
-      fragmentShader: (
-        /* glsl */
-        `uniform sampler2D map; uniform float uI; varying vec3 vC; varying float vF;
-      void main(){ vec4 t = texture2D(map, gl_PointCoord); gl_FragColor = vec4(vC * uI * vF * t.a, t.a); }`
-      )
-    });
-    const p = new Points(g, m);
-    p.frustumCulled = false;
-    p.renderOrder = 5;
-    p.onBeforeRender = (r, s, cam) => {
-      const rt = r.getRenderTarget();
-      m.uniforms.uScale.value = (rt ? rt.height : r.domElement.height) / (2 * Math.tan(cam.fov * Math.PI / 360));
-      m.uniforms.uTime.value = performance.now() / 1e3;
-    };
-    return p;
-  }
-  var glowTex, _impCache, _vc, _fw, Smoke, _gm, GLOVE_MAT;
-  var init_common = __esm({
-    "src/scene/common.js"() {
-      init_rifle();
-      init_surfaces();
-      init_three_module();
-      init_BufferGeometryUtils();
-      init_rng();
-      init_materials();
-      init_state();
-      glowTex = null;
-      _impCache = /* @__PURE__ */ new Map();
-      _vc = new Color();
-      _fw = new Vector3();
-      Smoke = class {
-        constructor(scene, o) {
-          this.o = Object.assign({ n: 40, rate: 6, life: 9, size: 6, grow: 2.2, rise: 2.2, color: "#9aa0a8", opacity: 0.45, additive: false, spread: 0.6, windMul: 1 }, o);
-          const n = this.o.n;
-          this.p = new Float32Array(n * 3);
-          this.age = new Float32Array(n).fill(999);
-          this.vel = new Float32Array(n * 3);
-          const g = new BufferGeometry();
-          g.setAttribute("position", new BufferAttribute(this.p, 3));
-          g.setAttribute("aAge", new BufferAttribute(new Float32Array(n).fill(2), 1));
-          this.mat = new ShaderMaterial({
-            transparent: true,
-            depthWrite: false,
-            blending: this.o.additive ? AdditiveBlending : NormalBlending,
-            uniforms: { uColor: { value: new Color(this.o.color) }, uSize: { value: this.o.size }, uGrow: { value: this.o.grow }, uOpacity: { value: this.o.opacity }, uScale: { value: 600 }, uHot: { value: new Color(this.o.hot || this.o.color) }, ...HAZE },
-            vertexShader: (
-              /* glsl */
-              `attribute float aAge; uniform float uSize, uGrow, uScale; varying float vA; varying float vD; varying vec3 vW;
-        void main(){ vA = aAge; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mv; vD = -mv.z; vW = (modelMatrix*vec4(position,1.0)).xyz;
-          gl_PointSize = (aAge > 1.0 ? 0.0 : uSize * (1.0 + aAge * uGrow)) * uScale / max(-mv.z, 1.0); }`
-            ),
-            fragmentShader: (
-              /* glsl */
-              `uniform vec3 uColor, uHot, uHazeColor; uniform float uOpacity, uHazeDensity; varying float vA; varying float vD; varying vec3 vW;
-        void main(){ vec2 c = gl_PointCoord*2.0-1.0; float r = dot(c,c); if (r>1.0) discard;
-          float a = (1.0 - r) * (1.0 - r) * uOpacity * smoothstep(0.0, 0.08, vA) * (1.0 - vA);
-          vec3 col = mix(uHot, uColor, smoothstep(0.0, 0.35, vA));
-          float f = 1.0 - exp(-uHazeDensity * vD * 0.8); col = mix(col, uHazeColor, f);
-          gl_FragColor = vec4(col, a); }`
-            )
-          });
-          this.points = new Points(g, this.mat);
-          this.points.frustumCulled = false;
-          scene.add(this.points);
-          this.acc = 0;
-          this.origin = new Vector3(...this.o.at || [0, 0, 0]);
-          this.on = true;
-          this.burst = 0;
-        }
-        update(dt, wind) {
-          const o = this.o, n = o.n;
-          if (this.on) this.acc += dt * o.rate;
-          while (this.acc >= 1 || this.burst > 0) {
-            if (this.burst > 0) this.burst--;
-            else this.acc -= 1;
-            let k = -1;
-            for (let i = 0; i < n; i++) if (this.age[i] >= 1) {
-              k = i;
-              break;
-            }
-            if (k < 0) break;
-            this.age[k] = 0;
-            this.p[k * 3] = this.origin.x + (Math.random() - 0.5) * o.spread;
-            this.p[k * 3 + 1] = this.origin.y;
-            this.p[k * 3 + 2] = this.origin.z + (Math.random() - 0.5) * o.spread;
-            const sv = o.burstSpeed || 0;
-            this.vel[k * 3] = (Math.random() - 0.5) * (0.4 + sv);
-            this.vel[k * 3 + 1] = o.rise * (0.7 + Math.random() * 0.6) + sv * Math.random();
-            this.vel[k * 3 + 2] = (Math.random() - 0.5) * (0.4 + sv);
-          }
-          const ag = this.points.geometry.attributes.aAge;
-          for (let i = 0; i < n; i++) {
-            if (this.age[i] >= 1) {
-              ag.array[i] = 2;
-              continue;
-            }
-            this.age[i] += dt / o.life;
-            const lift = Math.min(1, this.age[i] * 3);
-            this.p[i * 3] += (this.vel[i * 3] + wind.x * o.windMul * lift) * dt;
-            this.p[i * 3 + 1] += this.vel[i * 3 + 1] * dt;
-            this.p[i * 3 + 2] += (this.vel[i * 3 + 2] + wind.z * o.windMul * lift) * dt;
-            this.vel[i * 3 + 1] *= 1 - dt * 0.15;
-            ag.array[i] = this.age[i];
-          }
-          ag.needsUpdate = true;
-          this.points.geometry.attributes.position.needsUpdate = true;
-        }
-      };
-      _gm = null;
-      GLOVE_MAT = () => {
-        if (!_gm) {
-          const sm = surfaceMaps("speckle", 6);
-          _gm = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9, normalMap: sm.normalMap, normalScale: new Vector2(0.6, 0.6) });
-        }
-        return _gm;
-      };
     }
   });
 
@@ -38994,6 +39004,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.nest = { pos: new Vector3(0, nestY + 0.42, 0), yaw: -0.15, pitch: 0, yawRange: 70 * Math.PI / 180, pitchMin: -0.6, pitchMax: 0.42 };
     w.windCfg = { dir: 98, speed: 3.6, gust: 0.45, shift: 14, alt: 9e-4, local: 0.22, seed: 11, groundY: 150 };
     w.tint = { lift: [0, 4e-3, 0.016], gain: [1.06, 1, 0.96], sat: 1.08, contrast: 1.24, expo: 1 };
+    w.scopeExpo = 0.8;
+    w.scopeContrast = 1.14;
     w.bloom = 0.32;
     w.bloomTh = 1.9;
     w.rays = 0.55;
@@ -40724,9 +40736,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       sunAz: 34,
       sunColor: "#f0f2ff",
       sunI: 2.45,
-      hemiSky: "#b9c9e2",
-      hemiGround: "#8e949c",
-      hemiI: 0.85,
+      hemiSky: "#a9bcdc",
+      hemiGround: "#6e747e",
+      hemiI: 0.75,
       sky: { zenith: "#6c84a6", horizon: "#d8dfe8", ground: "#cfd6de", sunColor: "#ffffff", sunSize: 0.9993, cloudColor: "#f2f4f8", cloudShade: "#9aa4b2", cloudCover: 0.82, cloudScale: 0.9, glow: 0.35, horizonHaze: 1, stormColor: "#d0d6e0" }
     });
     w.height = height4;
@@ -40735,8 +40747,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const nestY = height4(0, 0);
     w.nest = { pos: new Vector3(0, nestY + 0.45, 0), yaw: -0.35, pitch: -0.08, yawRange: 72 * Math.PI / 180, pitchMin: -0.5, pitchMax: 0.4 };
     w.windCfg = { dir: 290, speed: 3.6, gust: 0.35, shift: 12, alt: 7e-4, local: 0.2, seed: 61, groundY: 0 };
-    w.tint = { lift: [-0.01, -4e-3, 6e-3], gain: [1, 1.02, 1.06], sat: 1.12, contrast: 1.3, expo: 0.9 };
-    w.rimMul = 0.2;
+    w.tint = { lift: [-0.02, -0.012, 0], gain: [1, 1.02, 1.06], sat: 1.12, contrast: 1.36, expo: 0.86 };
+    w.scopeExpo = 0.82;
+    w.scopeContrast = 1.12;
     w.bloom = 0.25;
     w.bloomTh = 2.2;
     w.rays = 0.2;
@@ -41229,8 +41242,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       sunAz: 25,
       sunColor: "#9fb2e0",
       sunI: 1.2,
-      hemiSky: "#5a6a9a",
-      hemiGround: "#2a2030",
+      hemiSky: "#5a6a8a",
+      hemiGround: "#28262c",
       hemiI: 1.4,
       sky: { zenith: "#0a0e22", horizon: "#2a2442", ground: "#0c0e16", sunColor: "#9aa4d0", sunSize: 0.9999, cloudColor: "#3a3450", cloudShade: "#141424", cloudCover: 0.8, cloudScale: 0.8, glow: 0.2, horizonHaze: 1, stormColor: "#2a2840" }
     });
@@ -41239,7 +41252,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const S2 = w.scene;
     w.nest = { pos: new Vector3(0, NY + 0.45, 0), yaw: 0.05, pitch: -0.02, yawRange: 70 * Math.PI / 180, pitchMin: -0.55, pitchMax: 0.35 };
     w.windCfg = { dir: 100, speed: 3.2, gust: 0.45, shift: 16, alt: 8e-4, local: 0.25, seed: 77, groundY: 0 };
-    w.tint = { lift: [0.012, 0.01, 0.03], gain: [1.02, 0.98, 1.1], sat: 1.15, contrast: 1.12, expo: 1.7 };
+    w.tint = { lift: [8e-3, 0.01, 0.016], gain: [1.04, 1, 0.98], sat: 1.05, contrast: 1.16, expo: 1.65 };
     w.bloom = 0.9;
     w.bloomTh = 1;
     w.rays = 0;
@@ -41791,18 +41804,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function buildDam(tier) {
     const mob = !!tier.mobile, low = mob && tier.name === "low";
     const w = baseWorld({
-      haze: "#b4c0cc",
-      sunHaze: "#f8dcc0",
-      hazeDensity: 45e-5,
+      haze: "#9eabbd",
+      sunHaze: "#ffc890",
+      hazeDensity: 3e-4,
       hazeHeight: 70,
       hazeBase: 0,
-      sunEl: 9,
+      sunEl: 7,
       sunAz: 140,
-      sunColor: "#ffe4c8",
-      sunI: 2.3,
-      hemiSky: "#a8b4c8",
-      hemiGround: "#6a645a",
-      hemiI: 1.1,
+      sunColor: "#ffc48a",
+      sunI: 2.9,
+      hemiSky: "#9cb0d0",
+      hemiGround: "#4a443a",
+      hemiI: 0.9,
       sky: { zenith: "#5a7090", horizon: "#e8d0b8", ground: "#b0aaa4", sunColor: "#fff0d0", sunSize: 0.9994, cloudColor: "#f8d8b8", cloudShade: "#8a8a9a", cloudCover: 0.45, cloudScale: 1, glow: 0.8, horizonHaze: 1, stormColor: "#c0b8b0" }
     });
     w.height = height6;
@@ -41810,7 +41823,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const S2 = w.scene, nestY = height6(0, 0);
     w.nest = { pos: new Vector3(0, nestY + 0.45, 0), yaw: 0.24, pitch: -0.06, yawRange: 75 * Math.PI / 180, pitchMin: -0.5, pitchMax: 0.35 };
     w.windCfg = { dir: 260, speed: 2.4, gust: 0.3, shift: 10, alt: 6e-4, local: 0.2, seed: 91, groundY: 0 };
-    w.tint = { lift: [0.01, 8e-3, 0.012], gain: [1, 1, 1], sat: 1.08, contrast: 1.18, expo: 1 };
+    w.tint = { lift: [0, 2e-3, 0.01], gain: [1.05, 1, 0.93], sat: 1.16, contrast: 1.28, expo: 1 };
+    w.scopeContrast = 1.12;
     w.bloom = 0.35;
     w.bloomTh = 1.8;
     w.rays = 0.45;
@@ -41889,7 +41903,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     for (let i = 0; i < (low ? 26 : 44); i++) {
       const a = rr() * 6.28, r = 4 + rr() * 60, x = HIDE[0] + Math.cos(a) * r, z = HIDE[1] + Math.sin(a) * r * 0.7, s = 1.2 + rr() * 2.8;
       if (Math.hypot(x - HIDE[0], z - HIDE[1]) < 3.2 || r < 24 && Math.sin(a) > -0.3) continue;
-      RK.push([tf(rockGeometry(60 + i, 1, {}), x, height6(x, z) - s * 0.2, z, rr(), rr() * 6, 0, s * 1.3, s * 0.8, s), "#77777a"]);
+      RK.push([tf(rockGeometry(60 + i, 2, { topTint: [0.66, 0.7, 0.52], rockDark: 0.72, warm: true }), x, height6(x, z) - s * 0.2, z, rr(), rr() * 6, 0, s * 1.3, s * 0.8, s), i % 3 ? "#8a8478" : "#9a8e7c"]);
     }
     RK.push([tf(rockGeometry(9, 1, {}), HIDE[0] - 2.6, HY + 0.1, HIDE[1] - 0.6, 0, 1, 0, 1.6, 1, 1.5), "#6e6a62"], [tf(rockGeometry(10, 1, {}), HIDE[0] + 2.4, HY, HIDE[1] - 0.4, 0, 2, 0, 1.5, 0.9, 1.4), "#757168"], [tf(rockGeometry(11, 1, {}), HIDE[0], HY + 0.2, HIDE[1] - 3.2, 0, 3, 0, 4.2, 2.6, 2.4), "#2e302a"], [tf(rockGeometry(12, 1, {}), HIDE[0] - 1.2, HY + 0.1, HIDE[1] - 2.2, 0, 1, 0, 2.2, 1.9, 1.6), "#34362e"]);
     S2.add(mergedMesh(RK, { rough: 0.95, wdetail: false }));
@@ -46113,6 +46127,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_save();
       init_quality();
       init_renderer();
+      init_common();
       init_materials();
       init_input();
       init_hud();
@@ -46599,6 +46614,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         document.body.classList.toggle("has-therm", !!M2.world.night);
         document.body.classList.toggle("has-spot", !!M2.world.spotter);
         document.body.classList.toggle("has-detect", !!M2.def.detect);
+        for (const id of ["hKill", "hMark"]) $2(id)?.classList.remove("on");
         G.mode = "play";
         paused = false;
         intelOpen = false;
@@ -46738,6 +46754,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         G.time = now2;
         G.dtReal = dt;
         if (G.contextLost) return;
+        if (G.needsRebuild) {
+          G.needsRebuild = false;
+          resize();
+          refreshImpostors();
+        }
         const _t0 = performance.now();
         pollGamepad(dt);
         if (consume("debug")) toggleDebug();
@@ -47060,6 +47081,17 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         G.stats.calls = r.info.render.calls;
         G.stats.tris = r.info.render.triangles;
         const view = G.mode === "play" ? G.view : "eye";
+        {
+          const bc = view === "bulletcam";
+          if (bc !== G._bcRim && G.mission?.npcs) {
+            G._bcRim = bc;
+            if (bc) duck?.(0.3, 2.8);
+            for (const n of G.mission.npcs) {
+              const rim = n.tagged && n.holder?.userData?.rim;
+              if (rim) rim.amount.value = bc ? 0.1 : 0.9;
+            }
+          }
+        }
         L.uMode.value = { eye: 0, scope: 1, bino: 2, bulletcam: 3 }[view];
         L.uTime.value = G.time;
         L.uZoom.value = view === "scope" ? Math.min(12, player.optics.mag) : view === "bino" ? 8 : 1;
@@ -47078,8 +47110,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uLift.value.set(...tint.lift || [0, 0, 0]);
         L.uGain.value.set(...tint.gain || [1, 1, 1]);
         L.uSat.value = tint.sat ?? 1;
-        L.uContrast.value = tint.contrast ?? 1;
-        L.uExpo.value = (tint.expo ?? 1) * (G.quality.hdr ? 1 : 1.25);
+        L.uContrast.value = (tint.contrast ?? 1) * (view === "scope" ? w.scopeContrast ?? 1 : 1);
+        L.uExpo.value = (tint.expo ?? 1) * (G.quality.hdr ? 1 : 1.25) * (view === "scope" ? (w.scopeExpo ?? 1) * (G.quality.hdr ? 1 : 0.9) : 1);
         L.uHeat.value = (w.heat || 0) * (1 - (G.mission?.storm || 0));
         L.uSharp.value = G.quality.mobile ? G.quality.name === "low" ? 0.45 : 0.35 : 0.28;
         L.uWindX.value = G.hudCross || 0;
