@@ -34,10 +34,9 @@ function treePrototype(kind) {
       [0, 5.7, 0, 1.85],
       [2.05, 5.15, 0.7, 1.55],
       [-1.95, 5.25, -0.65, 1.5],
-      [0.35, 6.85, 0.25, 1.25],
     ];
     for (const [x, y, z, r] of blobs) {
-      const s = new THREE.SphereGeometry(r, 7, 5);
+      const s = new THREE.SphereGeometry(r, 5, 4);
       s.scale(1, 0.82, 1);
       s.translate(x, y, z);
       parts.push(retagGeometry(s, MAT.FOLIAGE));
@@ -50,7 +49,7 @@ function treePrototype(kind) {
       [-0.06, 8.6, 0, 0.78, 2.5],
     ];
     for (const [x, y, z, r, h] of cones) {
-      const c = new THREE.ConeGeometry(r, h, 7);
+      const c = new THREE.ConeGeometry(r, h, 5);
       c.translate(x, y, z);
       parts.push(retagGeometry(c, MAT.FOLIAGE));
     }
@@ -73,7 +72,7 @@ function bushPrototype() {
   const parts = [];
   const blobs = [[0, 0.2, 0, 1.15], [0.85, 0.05, 0.35, 0.85], [-0.7, 0.0, -0.3, 0.8]];
   for (const [x, y, z, r] of blobs) {
-    const s = new THREE.SphereGeometry(r, 6, 5);
+    const s = new THREE.SphereGeometry(r, 5, 4);
     s.translate(x, y, z);
     parts.push(retagGeometry(s, MAT.FOLIAGE));
   }
@@ -93,6 +92,109 @@ function foliageMat() {
   patchMaterialIdAlpha(m);
   return m;
 }
+function farPrototype(kind) {
+  // Very low-poly stand-in (a few dozen tris). Reads as a tree past ~100 m.
+  const tg = new THREE.CylinderGeometry(0.22, 0.38, 3.8, 3);
+  tg.translate(0, 1.9, 0);
+  const parts = [retagGeometry(tg, MAT.WOOD)];
+  if (kind === "broad") {
+    const a = new THREE.SphereGeometry(1.85, 4, 3);
+    a.scale(1.15, 0.78, 1.15);
+    a.translate(0, 4.7, 0);
+    const b = new THREE.SphereGeometry(1.15, 4, 3);
+    b.scale(1.05, 0.75, 1.05);
+    b.translate(1.15, 4.4, 0.25);
+    parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
+  } else if (kind === "bush") {
+    const a = new THREE.SphereGeometry(1.2, 4, 3);
+    a.scale(1.4, 0.7, 1.3);
+    a.translate(0, 0.4, 0);
+    parts.length = 0;
+    parts.push(retagGeometry(a, MAT.FOLIAGE));
+  } else {
+    const c = new THREE.ConeGeometry(1.55, 6.8, 4);
+    c.translate(0, 5.4, 0);
+    parts.push(retagGeometry(c, MAT.FOLIAGE));
+  }
+  const geo = mergeGeos(parts, MAT.FOLIAGE);
+  paintColors(geo, (x, y, z) => {
+    const r = Math.hypot(x, z);
+    if (kind !== "bush" && r < 0.55 && y < 3.6) return 0x5a3a22;
+    if (kind === "broad") return x > 0.6 ? 0x3cb03a : 0x2d9a32;
+    if (kind === "bush") return 0x2c8a32;
+    return y > 6.5 ? 0x2a6a2c : 0x1a5224;
+  });
+  return geo;
+}
+
+function instanceLod(nearGeo, farGeo, material, placements, cap, nearR) {
+  const nInst = new THREE.InstancedMesh(nearGeo, material, Math.max(1, cap));
+  const fInst = new THREE.InstancedMesh(farGeo, material, Math.max(1, cap));
+  for (const inst of [nInst, fInst]) {
+    inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    inst.userData.matId = material.userData.matId;
+    inst.frustumCulled = true;
+    inst.count = 0;
+    let maxR = 16;
+    for (let i = 0; i < cap; i++) {
+      const p = placements[i];
+      const s = Math.max(p.s || 1, p.sy || 1, p.sx || 1);
+      const r = Math.hypot(p.x, p.y, p.z) + 12 * s;
+      if (r > maxR) maxR = r;
+    }
+    inst.geometry.computeBoundingSphere();
+    inst.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), maxR);
+    inst.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), maxR);
+  }
+  // Prime far with every placement so the first frame is populated.
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < cap; i++) {
+    const p = placements[i];
+    dummy.position.set(p.x, p.y, p.z);
+    dummy.rotation.set(0, p.r, 0);
+    if (p.sx != null) dummy.scale.set(p.sx, p.sy, p.sz);
+    else dummy.scale.setScalar(p.s);
+    dummy.updateMatrix();
+    fInst.setMatrixAt(i, dummy.matrix);
+  }
+  fInst.count = cap;
+  fInst.instanceMatrix.needsUpdate = true;
+  nInst.count = 0;
+  nInst.instanceMatrix.needsUpdate = true;
+  return { near: nInst, far: fInst, placements, cap, nearR, dummy, _acc: 1 };
+}
+
+function tickLod(lod, cam, force) {
+  if (!lod || !cam) return;
+  lod._acc = (lod._acc || 0) + 1;
+  if (!force && lod._acc < 8) return; // ~8 frames at 60fps ≈ 0.13s
+  lod._acc = 0;
+  const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
+  const nearR = lod.nearR;
+  const nearR2 = nearR * nearR;
+  const dummy = lod.dummy;
+  let nN = 0, nF = 0;
+  for (let i = 0; i < lod.cap; i++) {
+    const p = lod.placements[i];
+    const dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    dummy.position.set(p.x, p.y, p.z);
+    dummy.rotation.set(0, p.r, 0);
+    if (p.sx != null) dummy.scale.set(p.sx, p.sy, p.sz);
+    else dummy.scale.setScalar(p.s);
+    dummy.updateMatrix();
+    if (d2 < nearR2) {
+      lod.near.setMatrixAt(nN++, dummy.matrix);
+    } else {
+      lod.far.setMatrixAt(nF++, dummy.matrix);
+    }
+  }
+  lod.near.count = nN;
+  lod.far.count = nF;
+  lod.near.instanceMatrix.needsUpdate = true;
+  lod.far.instanceMatrix.needsUpdate = true;
+}
+
 function palmTrunkGeo() {
   return retagGeometry(new THREE.CylinderGeometry(0.16, 0.3, 7.6, 6), MAT.WOOD);
 }
@@ -284,22 +386,41 @@ export function createFlora(scene, terrain, quality = "medium") {
     }
     return p;
   });
+  const nearR = quality === "low" ? 70 : quality === "high" ? 130 : 100;
+  const lods = [];
+  const matNear = foliageMat();
+  const matFar = foliageMat();
   if (broads.length) {
-    group.add(instance(treePrototype("broad"), foliageMat(), broads, broads.length));
+    const lod = instanceLod(treePrototype("broad"), farPrototype("broad"), matNear, broads, broads.length, nearR);
+    group.add(lod.near, lod.far);
+    lods.push(lod);
   }
   if (conifers.length) {
-    group.add(instance(treePrototype("cone"), foliageMat(), conifers, conifers.length));
+    const lod = instanceLod(treePrototype("cone"), farPrototype("cone"), matNear, conifers, conifers.length, nearR);
+    group.add(lod.near, lod.far);
+    lods.push(lod);
   }
 
-  // Palms share the foliage-blob instance so flora stays at two draws (trees + blobs).
   for (const p of palms.slice(0, maxP)) {
     blobs.push({ x: p.x, y: p.y + 3.2, z: p.z, s: 1.3 + p.s * 0.4, r: p.r });
     blobs.push({ x: p.x, y: p.y + 6.4, z: p.z, s: 0.9 + p.s * 0.25, r: p.r + 1 });
   }
   if (blobs.length) {
-    group.add(instance(bushPrototype(), foliageMat(), blobs, blobs.length));
+    const lod = instanceLod(bushPrototype(), farPrototype("bush"), matFar, blobs, blobs.length, nearR * 0.75);
+    group.add(lod.near, lod.far);
+    lods.push(lod);
   }
 
   scene.add(group);
-  return { group, treeCount: allTrees.length, palmCount: maxP, blobCount: blobs.length };
+  return {
+    group, treeCount: allTrees.length, palmCount: maxP, blobCount: blobs.length,
+    update(cam) {
+      if (!cam) return;
+      for (const lod of lods) tickLod(lod, cam, false);
+    },
+    refresh(cam) {
+      if (!cam) return;
+      for (const lod of lods) tickLod(lod, cam, true);
+    },
+  };
 }

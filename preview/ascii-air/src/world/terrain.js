@@ -337,20 +337,15 @@ export function computeHeight(x, z) {
     }
   }
 
-  // Rocky east-coast headland (hero left): beach at the water, ochre cliffs, a vegetated top — not a lawn.
-  if (x > 40 && x < 340 && z > -1420 && z < -1170) {
-    const shelf = smoothstep(40, 90, x) * smoothstep(340, 260, x) * smoothstep(-1420, -1330, z) * smoothstep(-1170, -1230, z);
+  // East cape: a tighter limestone headland with a vegetated top — not a long sandbar.
+  if (x > 70 && x < 280 && z > -1340 && z < -1170) {
+    const shelf = smoothstep(70, 110, x) * smoothstep(280, 220, x) * smoothstep(-1340, -1280, z) * smoothstep(-1170, -1220, z);
     const n = fbm(x * 0.018, z * 0.018, 4, 9);
-    const distW = Math.abs(z + 1340) * 0.02 + Math.max(0, 80 - x) * 0.015;
-    // Beach terrace ~2 m, then a rocky rise to 14–22 m with irregular lips
-    const beach = 1.4 + 0.8 * n;
-    const cliff = 12 + 12 * n + 7 * fbm(x * 0.04, z * 0.04, 3, 21);
-    // Steep south face: only a thin beach strip, then a rocky rise
-    const fromWater = saturate((z + 1400) / 50);
-    const top = lerp(beach, cliff, smoothstep(0.12, 0.55, fromWater * shelf));
-    const cove = smoothstep(50, 85, x) * smoothstep(130, 95, x) * smoothstep(-1365, -1335, z) * smoothstep(-1288, -1320, z);
-    const target = lerp(top, beach, cove * 0.7);
-    h = Math.max(h, lerp(h, target, shelf * 0.92));
+    const beach = 1.2 + 0.6 * n;
+    const cliff = 14 + 10 * n + 6 * fbm(x * 0.04, z * 0.04, 3, 21);
+    const fromWater = saturate((z + 1340) / 40);
+    const top = lerp(beach, cliff, smoothstep(0.18, 0.62, fromWater * shelf));
+    h = Math.max(h, lerp(h, top, shelf * 0.88));
   }
 
   return h;
@@ -363,7 +358,10 @@ export function computeMaterial(x, z, h, slope) {
   // foam / wet sand near water (east beaches only — west cape stays limestone)
   const westCape = x < -40 && z < -1180;
   if (h < 1.6 && !westCape) return MAT.SAND;
-  if (westCape && h < 40) return MAT.ROCK;
+  if (westCape) {
+    if (slope > 0.30 || h < 7) return MAT.ROCK;
+    return MAT.GRASS;
+  }
   const vd = dist2(x, z, 0, 200);
   if (vd < 80 && h > 210) return MAT.SNOW;
   const wd = dist2(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
@@ -385,10 +383,10 @@ export function computeMaterial(x, z, h, slope) {
   if (h < 3.5 && dist2(x, z, -740, -1120) < 260) return MAT.SAND;
   if (h < 4.2 && dist2(x, z, 20, -1210) < 90) return MAT.SAND;
   // East-coast headland: sand at the water, rock on the face, pines/grass only on top
-  if (x > 40 && x < 340 && z > -1420 && z < -1175) {
-    if (h < 3.2) return MAT.SAND;
-    if (slope > 0.28 || h < 9.5) return MAT.ROCK;
-    return (h > 14 ? MAT.FOREST : MAT.GRASS);
+  if (x > 70 && x < 280 && z > -1340 && z < -1175) {
+    if (h < 2.4) return MAT.SAND;
+    if (slope > 0.32 || h < 8) return MAT.ROCK;
+    return MAT.GRASS;
   }
   if (h < 4.5 && dist2(x, z, LANDMARKS.lighthouse.x + 40, LANDMARKS.lighthouse.z + 40) < 80) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
@@ -487,10 +485,13 @@ export function createTerrain(quality = "medium") {
           return lava ? [0.95, 0.28, 0.08] : [0.55, 0.32, 0.22];
         }
         if (vd < 280 && h > 170) return [0.46 + n * 0.06, 0.42 + n * 0.04, 0.38];
-        // Grey limestone with darker crevices (not khaki mud)
+        // Coastal / cape rock: warm cream limestone, not khaki or cold grey
+        const coastal = z < -1080 || (x > 40 && z < -1100) || Math.hypot(x + 170, z + 1190) < 220 || Math.hypot(x + 210, z + 1250) < 140;
         const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.45;
-        const base = [0.58 + n * 0.06, 0.56 + n * 0.05, 0.50 + n * 0.04];
-        return crevice ? [base[0] * 0.72, base[1] * 0.70, base[2] * 0.68] : base;
+        const base = coastal
+          ? [0.82 + n * 0.05, 0.75 + n * 0.04, 0.58 + n * 0.03]
+          : [0.62 + n * 0.06, 0.59 + n * 0.05, 0.52 + n * 0.04];
+        return crevice ? [base[0] * 0.78, base[1] * 0.76, base[2] * 0.72] : base;
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
       case MAT.DIRT: {

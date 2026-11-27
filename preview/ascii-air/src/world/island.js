@@ -78,7 +78,7 @@ export function createIsland(scene, quality = "medium") {
 
   let stormOn = false;
 
-  function update(dt, time, hour) {
+  function update(dt, time, hour, camera) {
     sky.setHour(hour);
     if (typeof sky.tickStars === "function") sky.tickStars(time);
     water.update(time, sky);
@@ -89,6 +89,7 @@ export function createIsland(scene, quality = "medium") {
       water.setBoats(list);
     }
     skyprops.update(dt, time);
+    if (flora && flora.update && camera) flora.update(camera);
     thermals.update(dt);
     if (backdrop && backdrop.material) {
       const night = sky.night || 0;

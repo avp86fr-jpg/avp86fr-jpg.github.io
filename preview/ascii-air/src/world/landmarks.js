@@ -1434,27 +1434,43 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     const plume = new THREE.Group();
     plume.name = "smoke";
     plume.position.set(vx, vy + 8, vz);
-    const puffMat = new THREE.MeshLambertMaterial({ color: 0xddd6cc, emissive: 0xc8c0b6, emissiveIntensity: 0.12, flatShading: false, transparent: true, opacity: 0.4, depthWrite: false });
-    patchMaterialIdAlpha(puffMat);
+    // Opaque body (id-alpha overwrites gl_FragColor.a, so transparent puffs vanish).
+    const puffMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+      color: 0xfffdf8, emissive: 0xfff6ea, emissiveIntensity: 0.55, flatShading: false, fog: true,
+    }));
     puffMat.userData.matId = MAT.CLOUD;
-    const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 10, 8), MAT.CLOUD, 0);
+    const inkMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+      color: 0x6a7a88, side: THREE.BackSide,
+    }));
+    inkMat.userData.matId = MAT.CLOUD;
+    const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD, 0);
     const spots = [
-      [0, 8, 0, 5], [3, 16, 2, 4], [-2, 22, -1, 3.2],
+      [0, 8, -22, 36], [8, 32, -42, 48], [-10, 60, -62, 56],
+      [8, 90, -80, 52], [-4, 118, -94, 46], [2, 146, -104, 38],
     ];
     const inst = new THREE.InstancedMesh(puffGeo, puffMat, spots.length);
     inst.name = "smoke";
+    const ink = new THREE.InstancedMesh(puffGeo, inkMat, spots.length);
+    ink.name = "smoke";
     const dummy = new THREE.Object3D();
     spots.forEach((s, i) => {
       dummy.position.set(s[0], s[1], s[2]);
-      dummy.scale.set(s[3], s[3] * 0.72, s[3]);
+      dummy.scale.set(s[3], s[3] * 0.78, s[3]);
       dummy.rotation.set(0, i * 0.4, 0);
       dummy.updateMatrix();
       inst.setMatrixAt(i, dummy.matrix);
+      dummy.scale.multiplyScalar(1.04);
+      dummy.updateMatrix();
+      ink.setMatrixAt(i, dummy.matrix);
     });
     inst.instanceMatrix.needsUpdate = true;
+    ink.instanceMatrix.needsUpdate = true;
+    inst.frustumCulled = false;
+    ink.frustumCulled = false;
+    plume.add(ink);
     plume.add(inst);
     group.add(plume);
-    anim.push({ smoke: plume, t: 0 });
+    anim.push({ smoke: plume, inst, ink, spots, dummy, t: 0 });
   }
 
   // Street / terrace village: no overlapping footprints, consistent roof orientation.
@@ -1914,6 +1930,26 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
             }
           }
           a.smoke.geometry.attributes.position.needsUpdate = true;
+        } else if (a.inst && a.spots) {
+          a.t = (a.t || 0) + dt;
+          const dummy = a.dummy;
+          for (let i = 0; i < a.spots.length; i++) {
+            const s = a.spots[i];
+            const wobble = Math.sin(a.t * 0.35 + i * 0.9);
+            dummy.position.set(s[0] + wobble * 1.6, s[1] + Math.sin(a.t * 0.25 + i) * 2.2, s[2] + Math.cos(a.t * 0.3 + i) * 1.4);
+            const sc = s[3] * (1 + 0.06 * Math.sin(a.t * 0.4 + i));
+            dummy.scale.set(sc, sc * 0.78, sc);
+            dummy.rotation.set(0, a.t * 0.08 + i * 0.4, 0);
+            dummy.updateMatrix();
+            a.inst.setMatrixAt(i, dummy.matrix);
+            if (a.ink) {
+              dummy.scale.multiplyScalar(1.04);
+              dummy.updateMatrix();
+              a.ink.setMatrixAt(i, dummy.matrix);
+            }
+          }
+          a.inst.instanceMatrix.needsUpdate = true;
+          if (a.ink) a.ink.instanceMatrix.needsUpdate = true;
         } else {
           a.smoke.rotation.y += dt * 0.08;
         }

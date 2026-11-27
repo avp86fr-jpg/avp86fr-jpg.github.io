@@ -219,19 +219,20 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // Postcard + a true rear-3/4. planeScale is visual-only (hero shot),
-  // so the island composition stays while the Courrier reads ~35% frame.
-  // shiftX/shiftY are film-gate offsets: +shiftX slides the plane left
-  // toward lower-centre; +shiftY keeps the horizon high.
-  plane: { x: 24, y: 54, z: -1540 },
-  look:  { x: 8, y: 22, z: -820 },
-  dist: 41,
-  height: 16.2,
-  side: 15.2,
-  fov: 60,
-  shiftX: 0.19,
-  shiftY: 0.17,
-  planeScale: 1.45,
+  // Elevated 3/4 postcard: camera high over the water, bay in the middle,
+  // island spread left-to-right, plane large in the lower centre.
+  // cam is a world-space postcard camera (hero + title); dist/height/side
+  // remain as a fallback if cam is missing.
+  plane: { x: -4, y: 112, z: -1368 },
+  look:  { x: 20, y: 46, z: -780 },
+  cam:   { x: 18, y: 176, z: -1548 },
+  dist: 200,
+  height: 160,
+  side: 28,
+  fov: 47,
+  shiftX: 0.02,
+  shiftY: 0.05,
+  planeScale: 2.35,
 };
 
 export const SPAWN = {

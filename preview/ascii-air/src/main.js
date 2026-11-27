@@ -154,7 +154,9 @@ function applyVisualSettings() {
 
 // Auto quality hint
 if (!save.settings._autoQ && isMobileUA()) {
-  settings.quality = "medium";
+  settings.quality = "low";
+  save.settings._autoQ = true;
+  save.settings.quality = "low";
 }
 
 let mode = "boot"; // boot | title | fly
@@ -257,10 +259,14 @@ function backToTitle() {
   ui.showTitle(save);
   audio.setMusic("music_day", 0.45);
   // park a plane on the runway for the title loop
-  resetCraft(craft, { x: 220, y: 70, z: -1500, heading: 2.4 }, 2.4, save.plane || "trainer");
+  const hx = HERO_VIEW.plane.x, hy = HERO_VIEW.plane.y, hz = HERO_VIEW.plane.z;
+  const hdg = headingFromXZ(HERO_VIEW.look.x - hx, HERO_VIEW.look.z - hz);
+  resetCraft(craft, { x: hx, y: hy, z: hz, heading: hdg }, hdg, save.plane || "trainer");
   launchCraft(craft, 46, 0);
+  const vis = planeMesh && planeMesh.getObjectByName("plane-visual");
+  if (vis) vis.scale.setScalar(1.15 * (HERO_VIEW.planeScale || 1));
   autoPilotOn = true;
-  autoPilotTarget = { x: -80, y: 90, z: -400 };
+  autoPilotTarget = { x: HERO_VIEW.look.x, y: (HERO_VIEW.look.y || 50) + 20, z: HERO_VIEW.look.z };
   autoPilotOpts = { speed: 44 };
 }
 
@@ -639,7 +645,7 @@ function step(now) {
       accum -= PHYS.dt;
     }
     clock.step(dtRaw);
-    island.update(dtRaw, now / 1000, clock.hour);
+    island.update(dtRaw, now / 1000, clock.hour, camera);
     if (feel) feel.update(dtRaw);
     if (missions.applyRingNight) missions.applyRingNight(island.sky && island.sky.night || 0);
     if (weather) {
@@ -785,7 +791,7 @@ function heroShot(opts = {}) {
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
   clock.set(opts.hour ?? 11);
   island.sky.setHour(opts.hour ?? 11);
-  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour);
+  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour, camera);
   camOverride = null;
   const hdg = headingFromXZ(tx - x, tz - z);
   resetCraft(craft, { x, y, z, heading: hdg }, hdg, "trainer");
@@ -800,24 +806,35 @@ function heroShot(opts = {}) {
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
-  craft.roll = 0.10;
-  craft.pitch = -0.02;
+  craft.roll = 0.22;
+  craft.pitch = -0.04;
   flyCam.snap(craft, false);
+  if (island.flora && island.flora.refresh) island.flora.refresh(camera);
   paused = true;
   if (opts.showcase !== false) showcaseRings("pro", 3, 12, 27.346, null);
   if (contrail) contrail.clear();
   if (missions.spawnDemoChain) {
     const chain = [];
     for (let i = 0; i < 3; i++) {
-      const t = 0.14 + i * 0.22;
+      const t = 0.20 + i * 0.16;
       chain.push({
-        x: x + (tx - x) * t - 130,
-        y: y - 8 - i * 10,
-        z: z + (tz - z) * t + 20,
-        r: 8 - i * 1.3,
+        x: x + (tx - x) * t - 6,
+        y: y - 6 - i * 8,
+        z: z + (tz - z) * t,
+        r: 9 - i * 1.0,
       });
     }
     missions.spawnDemoChain(chain);
+  }
+  // Park the liner in the postcard bay, under the Courrier's left wing.
+  if (island && island.landmarks) {
+    const boats = island.landmarks.boats || [];
+    for (const b of boats) {
+      if (b && b.name === "steamer") {
+        b.position.set(-8, 0.45, -1230);
+        b.rotation.y = 1.05;
+      }
+    }
   }
   syncPlaneMesh();
   if (missions.applyRingNight) missions.applyRingNight(island.sky && island.sky.night || 0);
@@ -855,7 +872,7 @@ function landingShot(opts = {}) {
   if (weather) weather.set("clear", { windDeg: 310, windKt: 8 });
   clock.set(opts.hour ?? 11);
   island.sky.setHour(opts.hour ?? 11);
-  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour);
+  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour, camera);
   camOverride = null;
   const x = opts.x ?? 500;
   const y = opts.y ?? 22;
@@ -905,7 +922,7 @@ function stormShot(opts = {}) {
   }
   if (island.sky && typeof island.sky.applyFlash === "function") island.sky.applyFlash(0.62);
   weather.state.flash = 0.62;
-  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour);
+  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour, camera);
   hudShot();
   return pose;
 }
@@ -926,7 +943,7 @@ function exposeAPI() {
     startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot, look, flyCam, feel,
     get planeMesh() { return planeMesh; },
     setWeather: (id, opts) => weather && weather.set(id, opts),
-    setTime: (h) => { clock.set(h); island.sky.setHour(h); if (typeof island.update === "function") island.update(0, performance.now() / 1000, h); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },
+    setTime: (h) => { clock.set(h); island.sky.setHour(h); if (typeof island.update === "function") island.update(0, performance.now() / 1000, h, camera); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },
     setDisplayMode: () => {},
     setCharSize: () => {},
     setQuality: (q) => { settings.quality = q; applyVisualSettings(); },
@@ -1037,7 +1054,7 @@ function exposeAPI() {
           // will respawn next maybeRespawn after timer; keep going
         }
       }
-      island.update(Math.min(seconds, 0.5), t, clock.hour);
+      island.update(Math.min(seconds, 0.5), t, clock.hour, camera);
       return {
         result: missions.state.result,
         t,

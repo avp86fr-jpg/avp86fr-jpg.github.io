@@ -5,7 +5,7 @@ import { TAU } from "../core/utils.js";
 
 function cloudPuff(mat) {
   const g = new THREE.Group();
-  const geo = retagGeometry(new THREE.SphereGeometry(1, 12, 10), MAT.CLOUD);
+  const geo = retagGeometry(new THREE.SphereGeometry(1, 9, 7), MAT.CLOUD);
   // Stacked cumulus cluster — enough vertical overlap that a chase view
   // never collapses the puff into a flat ellipse / UFO disc.
   const spots = [
@@ -38,12 +38,12 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0xffffff,
     vertexColors: true,
-    emissive: 0xeef4ff,
-    emissiveIntensity: 0.18,
+    emissive: 0xfff6ea,
+    emissiveIntensity: 0.68,
     flatShading: false,
   }));
   const clouds = new THREE.Group();
-  const nCloud = Math.floor(16 * q.clouds);
+  const nCloud = Math.floor(7 * q.clouds);
   const puff = cloudPuff(cloudMat);
   puff.updateMatrixWorld(true);
   // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
@@ -65,30 +65,17 @@ export function createSkyProps(scene, quality = "medium") {
   }
   // Horizon banks behind the island + a few large high clouds. Not a cluttered field.
   const heroSpots = [
-    // Mid-distance postcard banks: sit in the upper half of a slightly
-    // downward chase/hero frame, offset so they don't swallow landmarks.
-    [-260, 195, -1080, 38],
-    [ 300, 185, -1120, 36],
-    [-420, 210, -980, 42],
-    [ 460, 200, -1020, 40],
-    [-80, 230, -900, 34],
-    [ 200, 215, -840, 32],
-    // Mid-island flanks (clear of castle / volcano / waterfall)
-    [-520, 210, -520, 44],
-    [ 540, 200, -480, 40],
-    [-620, 230, -220, 46],
-    [ 600, 220, -40, 42],
-    [ 420, 235, 200, 38],
-    [-780, 270, 420, 36],
-    // Far horizon banks
-    [-920, 280, 220, 44],
-    [ 740, 245, -40, 50],
-    [120, 320, 720, 48],
-    [ 480, 300, 640, 40],
-    // Slightly higher mid-south, still inside a 52deg FOV from the bay
-    [-540, 280, -780, 46],
-    [ 280, 270, -660, 44],
-    [ 280, 310, -420, 48],
+    // Higher, fewer mid-distance cumulus — leave blue sky at the zenith
+    // and keep banks off the top edge of the postcard.
+    [-380, 360, -780, 32],
+    [ 420, 340, -820, 30],
+    [-560, 390, -420, 34],
+    [ 580, 370, -360, 32],
+    [-700, 400, 80, 36],
+    [ 720, 380, 40, 34],
+    [-200, 430, 520, 30],
+    [ 260, 420, 480, 28],
+    [ 40, 460, -200, 26],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -103,10 +90,10 @@ export function createSkyProps(scene, quality = "medium") {
     const span = Math.max(0.001, ymax - ymin);
     for (let i = 0; i < pos.count; i++) {
       const k = (pos.getY(i) - ymin) / span;
-      // Bright white crown, only a light-blue wash at the base — not grey
-      const b = k * k; // more of the puff is white
-      col[i * 3] = 0.88 + 0.12 * b;
-      col[i * 3 + 1] = 0.91 + 0.09 * b;
+      // Bright white crown, soft cream/blue shadow only at the underside
+      const b = Math.pow(k, 0.65);
+      col[i * 3]     = 0.93 + 0.07 * b;
+      col[i * 3 + 1] = 0.94 + 0.06 * b;
       col[i * 3 + 2] = 0.96 + 0.04 * b;
     }
     cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
@@ -119,8 +106,8 @@ export function createSkyProps(scene, quality = "medium") {
     const r = 900 + (i * 97) % 800;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r * 0.85;
-    const y = 220 + (i * 11) % 80;
-    const s = 36 + (i * 13) % 24;
+    const y = 340 + (i * 13) % 90;
+    const s = 26 + (i * 11) % 16;
     dummy.position.set(x, y, z);
     dummy.scale.set(s, s * 0.88, s * 1.05);
     dummy.rotation.y = a;
@@ -140,11 +127,11 @@ export function createSkyProps(scene, quality = "medium") {
   group.add(cloudInst);
   // Ink outline hulls (back-face, slightly larger) so cumulus read as ligne-claire volumes
   const inkMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x4a5868,
+    color: 0x6a7a88,
     side: THREE.BackSide,
     fog: true,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.48,
   }));
   inkMat.userData.matId = MAT.CLOUD;
   const cloudInk = new THREE.InstancedMesh(cloudGeo, inkMat, nCloud + heroSpots.length);
@@ -152,7 +139,7 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < cloudInst.count; i++) {
     cloudInst.getMatrixAt(i, _m);
     _m.decompose(_p, _q, _s);
-    _s.multiplyScalar(1.022);
+    _s.multiplyScalar(1.014);
     _m.compose(_p, _q, _s);
     cloudInk.setMatrixAt(i, _m);
   }
@@ -236,8 +223,8 @@ export function createSkyProps(scene, quality = "medium") {
         if (blimp) blimp.visible = false;
       } else {
         cloudMat.color.setHex(0xfffdf8);
-        cloudMat.emissive.setHex(0xf0f4ff);
-        cloudMat.emissiveIntensity = 0.55;
+        cloudMat.emissive.setHex(0xfff6ea);
+        cloudMat.emissiveIntensity = 0.68;
         inkMat.color.setHex(0x4a5868);
         inkMat.opacity = 0.7;
         if (balloonInst) balloonInst.visible = true;
@@ -276,7 +263,7 @@ export function createSkyProps(scene, quality = "medium") {
         for (let i = 0; i < cloudInst.count; i++) {
           cloudInst.getMatrixAt(i, _m);
           _m.decompose(_p, _q, _s);
-          _s.multiplyScalar(1.022);
+          _s.multiplyScalar(1.014);
           _m.compose(_p, _q, _s);
           cloudInk.setMatrixAt(i, _m);
         }
@@ -447,7 +434,7 @@ export function createThermals(scene, fields) {
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     geo.setAttribute("aId", new THREE.BufferAttribute(id, 2));
     const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-      color: 0xffe0a0, size: 4, sizeAttenuation: true, transparent: true, opacity: 0.7, depthWrite: false,
+      color: 0xffe0a0, size: 4, sizeAttenuation: true, transparent: true, opacity: 0.48, depthWrite: false,
     }));
     group.add(pts);
     pieces.push({ pts, f, n, pos });
