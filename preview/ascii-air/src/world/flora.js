@@ -195,6 +195,105 @@ function tickLod(lod, cam, force) {
   lod.far.instanceMatrix.needsUpdate = true;
 }
 
+
+function grassCardGeo() {
+  // Two crossed cards, painterly greens, sunlit tips. Very cheap.
+  const w = 0.18, h = 1.05;
+  const pos = new Float32Array([
+    -w, 0, 0,  w, 0, 0,  0, h, 0,
+    0, 0, -w,  0, 0, w,  0, h, 0,
+  ]);
+  const col = new Float32Array([
+    0.18, 0.38, 0.12,  0.22, 0.42, 0.14,  0.55, 0.78, 0.22,
+    0.16, 0.36, 0.12,  0.24, 0.44, 0.14,  0.62, 0.82, 0.28,
+  ]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return retagGeometry(g, MAT.FOLIAGE);
+}
+
+function flowerCardGeo() {
+  const pos = new Float32Array([
+    -0.14, 0, 0,  0.14, 0, 0,  0, 0.55, 0,
+    0, 0, -0.14,  0, 0, 0.14,  0, 0.55, 0,
+  ]);
+  const col = new Float32Array([
+    0.22, 0.46, 0.14,  0.22, 0.46, 0.14,  0.90, 0.35, 0.40,
+    0.22, 0.46, 0.14,  0.22, 0.46, 0.14,  0.95, 0.78, 0.28,
+  ]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return retagGeometry(g, MAT.FOLIAGE);
+}
+
+function makeMeadow(terrain, quality) {
+  const q = QUALITY[quality] || QUALITY.medium;
+  const nGrass = quality === "low" ? 700 : quality === "high" ? 2400 : 1500;
+  const nFlower = Math.floor(nGrass * 0.18);
+  const radius = quality === "low" ? 42 : quality === "high" ? 88 : 64;
+  const grassMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    vertexColors: true, side: THREE.DoubleSide, flatShading: true,
+  }));
+  grassMat.userData.matId = MAT.FOLIAGE;
+  const grass = new THREE.InstancedMesh(grassCardGeo(), grassMat, nGrass);
+  grass.name = "meadow-grass";
+  grass.frustumCulled = false;
+  grass.count = 0;
+  const flower = new THREE.InstancedMesh(flowerCardGeo(), grassMat, nFlower);
+  flower.name = "meadow-flower";
+  flower.frustumCulled = false;
+  flower.count = 0;
+  const dummy = new THREE.Object3D();
+  const state = { x: 1e9, z: 1e9, acc: 0, dummy, radius, nGrass, nFlower, grass, flower, terrain };
+  function refill(cx, cz) {
+    const R = radius;
+    const H = terrain && terrain.heightAt;
+    const M = terrain && terrain.materialAt;
+    let ng = 0, nf = 0;
+    for (let i = 0; i < nGrass; i++) {
+      const a = i * 2.399963;
+      const r = Math.sqrt((i + 0.5) / nGrass) * R;
+      const x = cx + Math.cos(a) * r;
+      const z = cz + Math.sin(a) * r;
+      const h = H ? H(x, z) : 0;
+      if (!Number.isFinite(h) || h < 1.15 || h > 78) continue;
+      const mat = M ? M(x, z) : MAT.GRASS;
+      if (mat === MAT.SAND || mat === MAT.SEA || mat === MAT.WATER_DEEP || mat === MAT.RUNWAY || mat === MAT.ROCK) continue;
+      const s = 0.75 + ((i * 17) % 10) * 0.06;
+      dummy.position.set(x, h, z);
+      dummy.rotation.set(0, a, (i % 5 - 2) * 0.04);
+      dummy.scale.set(s, s * (0.85 + (i % 7) * 0.05), s);
+      dummy.updateMatrix();
+      grass.setMatrixAt(ng++, dummy.matrix);
+      if (i % 6 === 0 && nf < nFlower) {
+        dummy.position.set(x + 0.35, h, z + 0.2);
+        dummy.scale.setScalar(0.85 + (i % 4) * 0.08);
+        dummy.updateMatrix();
+        flower.setMatrixAt(nf++, dummy.matrix);
+      }
+    }
+    grass.count = ng;
+    flower.count = nf;
+    grass.instanceMatrix.needsUpdate = true;
+    flower.instanceMatrix.needsUpdate = true;
+    state.x = cx;
+    state.z = cz;
+  }
+  function update(cam, force) {
+    if (!cam) return;
+    state.acc++;
+    const dx = cam.position.x - state.x, dz = cam.position.z - state.z;
+    if (!force && state.acc < 10 && dx * dx + dz * dz < 64) return;
+    state.acc = 0;
+    refill(cam.position.x, cam.position.z);
+  }
+  return { grass, flower, update, refill, group: [grass, flower] };
+}
+
 function palmTrunkGeo() {
   return retagGeometry(new THREE.CylinderGeometry(0.16, 0.3, 7.6, 6), MAT.WOOD);
 }
@@ -411,16 +510,21 @@ export function createFlora(scene, terrain, quality = "medium") {
     lods.push(lod);
   }
 
+  const meadow = makeMeadow(terrain, quality);
+  group.add(meadow.grass, meadow.flower);
+
   scene.add(group);
   return {
     group, treeCount: allTrees.length, palmCount: maxP, blobCount: blobs.length,
     update(cam) {
       if (!cam) return;
       for (const lod of lods) tickLod(lod, cam, false);
+      meadow.update(cam, false);
     },
     refresh(cam) {
       if (!cam) return;
       for (const lod of lods) tickLod(lod, cam, true);
+      meadow.update(cam, true);
     },
   };
 }

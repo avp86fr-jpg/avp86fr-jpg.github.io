@@ -145,7 +145,7 @@ function rebuildPlane(id) {
 
 function applyVisualSettings() {
   look.uniforms.uContrast.value = settings.highContrast ? 1.12 : 1.04;
-  look.uniforms.uOutline.value = settings.highContrast ? 1.15 : 1.0;
+  look.uniforms.uOutline.value = settings.highContrast ? 0.85 : 0.42;
   look.uniforms.uBloom.value = (QUALITY[settings.quality] || QUALITY.medium).bloom ? 0.26 : 0.0;
   flyCam.state.comfort = !!settings.motionComfort;
   audio.setVolumes(settings);
@@ -183,7 +183,22 @@ function startFreeFlight() {
   currentMissionId = null;
   missions.clear();
   const id = save.unlocked[save.plane] ? save.plane : "trainer";
-  resetCraft(craft, SPAWN.airport, SPAWN.airport.heading, id);
+  const base = SPAWN.airport;
+  const x = base.x, z = base.z;
+  const heading = Number.isFinite(base.heading) ? base.heading : -Math.PI / 2;
+  const gear = (PLANES[id] && PLANES[id].gearHeight) || 1.15;
+  const ground = (island && typeof island.heightAt === "function") ? island.heightAt(x, z) : base.y;
+  const groundY = (Number.isFinite(ground) ? ground : 4.2) + gear + 0.12;
+  // Gentle airborne start over the mid-runway, looking out over the open bay.
+  const agl = 20;
+  const y = groundY + agl;
+  const spawn = { x, y, z, heading };
+  resetCraft(craft, spawn, heading, id);
+  craft.onGround = false;
+  craft.airspeed = 34;
+  craft.throttle = 0.62;
+  if (craft.verticalSpeed != null) craft.verticalSpeed = 0;
+  if (craft.pitch != null) craft.pitch = 0.02;
   rebuildPlane(craft.id);
   clock.frozen = false;
   if (clock.hour < 6 || clock.hour > 20) clock.set(10);
@@ -806,22 +821,18 @@ function heroShot(opts = {}) {
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
-  craft.roll = 0.32;
-  craft.pitch = -0.05;
+  craft.roll = 0.22;
+  craft.pitch = -0.04;
   flyCam.snap(craft, false);
   if (island.flora && island.flora.refresh) island.flora.refresh(camera);
   paused = true;
   if (opts.showcase !== false) showcaseRings("pro", 3, 12, 27.346, null);
   if (contrail) contrail.clear();
-  if (missions.spawnDemoChain) {
-    const chain = [];
-    // Fixed postcard rings: a clear 3-step sequence across the bay toward the castle.
-    chain.push(
-      { x: 4, y: 26, z: -1270, r: 12 },
-      { x: -70, y: 34, z: -1125, r: 10 },
-      { x: -150, y: 46, z: -980, r: 8 },
-    );
-    missions.spawnDemoChain(chain);
+  if (missions.spawnDemoRing) {
+    // One large mid-frame hoop ahead of the Courrier, facing the camera.
+    missions.spawnDemoRing(16, 27, -1358, 24, true);
+    missions.spawnDemoRing(-55, 42, -1140, 9, false);
+    missions.spawnDemoRing(-120, 54, -1000, 7, false);
   }
   // Park the liner in the postcard bay, under the Courrier's left wing.
   if (island && island.landmarks) {

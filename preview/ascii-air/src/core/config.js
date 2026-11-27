@@ -219,23 +219,24 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // Near-horizon postcard: camera 25–40 m behind and slightly above the
-  // Courrier, looking across the bay. Far shore is a band in the upper-middle;
-  // sky takes the top ~30%. No world-space `cam` — dist/height/side stay locked
-  // to the plane so the wingspan reads 35–40% of frame width.
+  // Behind/above the Courrier: 10–12 m up, ~26 m back, pitched 9° down so
+  // the upper-wing top and fuselage spine read, tail toward camera, centred.
   plane: { x: 16, y: 24, z: -1440 },
-  look:  { x: -10, y: 14, z: -880 },
-  dist: 24.5,
-  height: 7.2,
-  side: 3.6,
+  look:  { x: 16, y: 18, z: -860 },
+  dist: 26,
+  height: 11.5,
+  side: 0.2,
   fov: 52,
   shiftX: 0.0,
-  shiftY: 0.08,
-  planeScale: 1.14,
+  shiftY: 0.04,
+  planeScale: 1.28,
+  pitchDown: 9,
 };
 
 export const SPAWN = {
-  airport: { x: -280, y: 6, z: -1100, heading: 0 }, // heading 0 = +X (east) along runway
+  // Mid-runway, facing south over the open bay (heading -PI/2 = -Z).
+  // y is a fallback; startFreeFlight snaps to heightAt + gear.
+  airport: { x: 8, y: 6, z: -1100, heading: -Math.PI / 2 },
   lagoon: { x: -720, y: 4, z: -1080, heading: 0.4 },
   cliff: { x: -800, y: 96, z: 1100, heading: 2.4 },
 };
@@ -263,6 +264,9 @@ export const LANDMARKS = {
   grassStrip:   { x: -820, z: 1120,  name: "Ridge Strip" },
   palmIslet:    { x: 180,  z: -1880, name: "One-Palm Isle" },
   arch:         { x: -210, z: -1250, name: "Sea Arch" },
+  hangingKeep:  { x: 420,  z: -60,   name: "The Hanging Keep" },
+  eastCove:     { x: 520,  z: -1480, name: "East Cove" },
+  northGrove:   { x: -420, z:  520,  name: "Ridge Grove" },
 };
 
 export const AUDIO_FILES = [

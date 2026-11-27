@@ -30,9 +30,9 @@ export function paintWordmark() {
     ${pilotSvg()}
     <div class="title-copy">
       <h1 class="title-wordmark">${TITLE}</h1>
-      <p class="title-tag">Airmail planes over a sunlit island</p>
+      <p class="title-tag">Airmail over a sunlit island</p>
     </div>
-    <div class="speech-balloon title-balloon">Ready for takeoff!</div>
+    <div class="speech-balloon title-balloon">The sky is clear — take the mail out.</div>
   `;
   return el;
 }
@@ -98,8 +98,8 @@ export function createUI(root, hooks) {
   const overlay = document.createElement("div");
   overlay.id = "overlay";
   overlay.className = "hidden";
-  overlay.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);pointer-events:auto;";
-  overlay.innerHTML = `<div class="album-panel" id="overlay-panel" style="padding:16px 18px;max-width:92vw;max-height:86vh;overflow:auto;white-space:pre;"></div>`;
+  overlay.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;pointer-events:auto;";
+  overlay.innerHTML = `<div class="album-panel" id="overlay-panel"></div>`;
   wrap.appendChild(overlay);
 
   const mobile = createMobileLayer(wrap, hooks.input, {
@@ -126,6 +126,7 @@ export function createUI(root, hooks) {
     title.classList.add("hidden");
     hud.classList.add("hidden");
     overlay.classList.add("hidden");
+    document.body.classList.remove("menu-open");
   }
 
   function showTitle(save) {
@@ -240,6 +241,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   function openOverlay(html, interactive = true) {
     title.classList.add("hidden");
     overlay.classList.remove("hidden");
+    document.body.classList.add("menu-open");
     const p = overlay.querySelector("#overlay-panel");
     p.innerHTML = html;
     p.style.whiteSpace = interactive ? "normal" : "pre";
@@ -248,7 +250,11 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     p.style.minHeight = "0";
     return p;
   }
-  function closeOverlay() { overlay.classList.add("hidden"); state.menuItems = []; }
+  function closeOverlay() {
+    overlay.classList.add("hidden");
+    document.body.classList.remove("menu-open");
+    state.menuItems = [];
+  }
 
   const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail", storm: "Storm", night: "Night Mail", rescue: "Rescue" };
   const CLASS_FR = { beginner: "Beginner", pro: "Pro", ace: "Ace" };
@@ -458,17 +464,19 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   function showPause(save) {
     state.screen = "pause";
     state.optionsBack = "pause";
-    const gearLabel = hooks.gearDown?.() === false ? "Gear  (up)" : "Gear  (down)";
-    const p = openOverlay(`<div class="album-sheet"><h2>Pause</h2><div id="mlist" class="album-nav"></div></div>`);
+    const p = openOverlay(`<div class="album-sheet pause-sheet">
+      <h2>Paused</h2>
+      <p class="pause-sub">AEROPOSTALE AIR</p>
+      <div id="mlist" class="album-nav pause-nav"></div>
+    </div>`);
     renderMenu(p.querySelector("#mlist"), [
       { label: "Resume", primary: true, fn: () => { closeOverlay(); hooks.onResume?.(); } },
-      { label: "Fullscreen", fn: () => hooks.onFullscreen?.() },
-      { label: gearLabel, fn: () => { hooks.onGear?.(); showPause(save); } },
-      { label: "Camera", fn: () => hooks.onCamera?.() },
-      { label: "Options", fn: () => showOptions(save, "pause") },
       { label: "Restart", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
-      { label: "Menu", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
+      { label: "Settings", fn: () => showOptions(save, "pause") },
+      { label: "Quit", fn: () => { closeOverlay(); hooks.onQuit?.(); } },
     ], save);
+    const first = p.querySelector(".album-cta");
+    if (first && first.focus) first.focus({ preventScroll: true });
   }
 
   function showResult(save, result) {

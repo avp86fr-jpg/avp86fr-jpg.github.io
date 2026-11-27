@@ -93,8 +93,8 @@ export function computeHeight(x, z) {
   // Volcano — Mount Glyph at (0, 200)
   const vx = 0, vz = 200;
   const vd = dist2(x, z, vx, vz);
-  const cone = Math.pow(saturate(1 - vd / 470), 1.12) * 348;
-  const crater = smoothstep(120, 24, vd) * 102;
+  const cone = Math.pow(saturate(1 - vd / 500), 1.10) * 420;
+  const crater = smoothstep(130, 24, vd) * 112;
   let volc = cone - crater;
   // Rugged lava-rock shoulders and a broken lip
   volc += ridge(x * 0.0045, z * 0.0045, 4, 8) * 26 * smoothstep(500, 70, vd);
@@ -104,24 +104,24 @@ export function computeHeight(x, z) {
   // Rolling foothills between the south coast and the cone (keeps runway flat)
   if (z > -850 && z < 160 && Math.abs(x) < 900) {
     const fw = smoothstep(-850, -620, z) * smoothstep(160, 10, z) * smoothstep(900, 520, Math.abs(x));
-    h += fw * (18 + 32 * fbm(x * 0.0018, z * 0.0018, 4, 7) + 12 * ridge(x * 0.0055, z * 0.0055, 2, 3));
+    h += fw * (28 + 44 * fbm(x * 0.0018, z * 0.0018, 4, 7) + 16 * ridge(x * 0.0055, z * 0.0055, 2, 3));
   }
 
   // South-face swells visible in the hero (just north of the runway, not on it)
   if (z > -1040 && z < 280 && Math.abs(x) < 820) {
     const runway = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 58, Math.abs(x) / 400)), 1.35);
     const w = smoothstep(-1040, -900, z) * smoothstep(280, 40, z) * smoothstep(820, 480, Math.abs(x)) * runway;
-    h += w * (22 + 36 * fbm(x * 0.0017, z * 0.0016, 4, 11) + 14 * ridge((x + 90) * 0.0044, z * 0.0044, 2, 5));
+    h += w * (36 + 52 * fbm(x * 0.0017, z * 0.0016, 4, 11) + 18 * ridge((x + 90) * 0.0044, z * 0.0044, 2, 5));
   }
 
   // West mill hills
   const hd = dist2(x, z, LANDMARKS.windmills.x, LANDMARKS.windmills.z);
-  const hills = smoothstep(260, 50, hd) * (26 + 16 * fbm(x * 0.003, z * 0.003, 4, 21));
+  const hills = smoothstep(300, 50, hd) * (42 + 24 * fbm(x * 0.003, z * 0.003, 4, 21));
   h = Math.max(h, hills * mask);
 
   // Castle cliff plateau (east of the cone, visible in the hero vista)
-  const cd = dist2(x, z, -340, 80);
-  let plateau = smoothstep(360, 110, cd) * 96;
+  const cd = dist2(x, z, -300, 50);
+  let plateau = smoothstep(280, 70, cd) * 148;
   if (z > 860) plateau *= smoothstep(1040, 860, z);
   if (x > 420) plateau *= smoothstep(560, 420, x);
   h = Math.max(h, plateau * mask);
@@ -172,7 +172,7 @@ export function computeHeight(x, z) {
     const inlet = fbm(x * 0.0045, z * 0.0045, 3, 29);
     // Slight scallop only — never drop the coast below water (those cuts read as dark oval holes).
     const cut = smoothstep(0.70, 0.90, inlet) * 0.22;
-    const cliffH = 16 + 32 * fbm(x * 0.0032, z * 0.0032, 3, 17) + 10 * ridge(x * 0.012, z * 0.01, 2, 5);
+    const cliffH = 28 + 44 * fbm(x * 0.0032, z * 0.0032, 3, 17) + 16 * ridge(x * 0.012, z * 0.01, 2, 5);
     h = Math.max(h, cliffH * along * notAirport * (1 - cut));
   }
 
@@ -182,7 +182,7 @@ export function computeHeight(x, z) {
     const notAirport = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 50, Math.abs(x - 80) / 280)), 1.2);
     const inlet = fbm(x * 0.0042, z * 0.0042, 3, 29);
     const cut = smoothstep(0.74, 0.92, inlet) * 0.16;
-    const cliffH = 18 + 36 * fbm(x * 0.003, z * 0.003, 3, 17) + 12 * ridge(x * 0.011, z * 0.01, 2, 5);
+    const cliffH = 32 + 48 * fbm(x * 0.003, z * 0.003, 3, 17) + 16 * ridge(x * 0.011, z * 0.01, 2, 5);
     h = Math.max(h, cliffH * ring * notAirport * (1 - cut));
     // Never leave a below-water notch on the ringing coast (reads as a dark oval hole).
     if (ring * notAirport > 0.35 && h < 1.2) h = 1.2;
@@ -196,10 +196,20 @@ export function computeHeight(x, z) {
   const ap2 = Math.pow(saturate(ap), 1.35);
   h = flatten(h, 4.2, ap2);
 
-  // Town terrace slightly above airport
-  const td = dist2(x, z, 280, -980);
-  const townF = smoothstep(220, 60, td);
-  h = flatten(h, 8.5, townF * 0.85);
+  // Town sits on a raised hillside, climbing inland — not a flat 8 m apron.
+  const td = dist2(x, z, 260, -960);
+  const townF = smoothstep(260, 50, td);
+  const townH = 16 + 26 * saturate((z + 1090) / 180);
+  const notRwyTown = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 58, Math.abs(x) / 400)), 1.35);
+  h = flatten(h, townH, townF * 0.72 * notRwyTown);
+
+  // Steep cream-limestone wall dropping into the bay along the south waterline.
+  if (z < -1124 && z > -1260 && Math.abs(x) < 920) {
+    const notRwyC = 1 - Math.pow(saturate(1 - Math.max(Math.abs(z + 1100) / 42, Math.abs(x) / 390)), 1.4);
+    const face = smoothstep(-1260, -1208, z) * smoothstep(-1124, -1168, z) * notRwyC;
+    const cliffH = 26 + 30 * ridge(x * 0.011, z * 0.011, 3, 5);
+    h = Math.max(h, cliffH * face);
+  }
 
   // Lagoon basin — scooped below water, sandbar ring
   const lag = dist2(x, z, -740, -1120);
@@ -407,8 +417,10 @@ export function computeMaterial(x, z, h, slope) {
   if (h < 4.5 && dist2(x, z, LANDMARKS.lighthouse.x + 40, LANDMARKS.lighthouse.z + 40) < 80) return MAT.SAND;
   if (h < 1.15) return MAT.SAND;
   // Coastal cliffs only — steep faces near the water, not the whole south slope.
-  const nearCoast = h > 1.4 && h < 48 && (z < -1180 || dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z) < 180 || dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z) < 120);
-  if (nearCoast && slope > 0.22) return MAT.ROCK;
+  const nearCoast = h > 1.4 && h < 70 && (z < -1120 || dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z) < 180 || dist2(x, z, LANDMARKS.arch.x, LANDMARKS.arch.z) < 120);
+  if (nearCoast && slope > 0.18) return MAT.ROCK;
+  // Castle spur: rocky rather than a green pad
+  if (dist2(x, z, LANDMARKS.castle.x, LANDMARKS.castle.z) < 140 && (slope > 0.28 || h > 70)) return MAT.ROCK;
   // Inland hills: grass/scrub with scattered rock outcrops, not a mud slope.
   if (slope > 0.48 && h < 90 && !nearCoast) {
     const outcrop = fbm(x * 0.04, z * 0.04, 2, 23);
@@ -469,11 +481,11 @@ export function createTerrain(quality = "medium") {
       case MAT.GRASS: {
         const n2 = fbm(x * 0.007, z * 0.007, 3, 7);
         const terrace = Math.abs(Math.sin(h * 0.62 + x * 0.028 + z * 0.018)) < 0.07;
-        const ochre = [0.64 + n * 0.05, 0.52 + n * 0.03, 0.24];
-        const sage  = [0.48, 0.52, 0.32];
-        const olive = [0.40, 0.44, 0.20];
-        const pine  = [0.20, 0.34, 0.16];
-        const meadow= [0.38 + n * 0.04, 0.50 + n * 0.04, 0.22];
+        const ochre = [0.62 + n * 0.05, 0.50 + n * 0.03, 0.22];
+        const sage  = [0.36, 0.56, 0.26];
+        const olive = [0.28, 0.48, 0.16];
+        const pine  = [0.14, 0.38, 0.14];
+        const meadow= [0.32 + n * 0.05, 0.58 + n * 0.06, 0.18];
         let col;
         if (n2 < 0.38) {
           const k = Math.min(1, (0.38 - n2) / 0.14);

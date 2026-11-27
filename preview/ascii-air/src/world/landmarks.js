@@ -1028,6 +1028,100 @@ function makeRunwayLights(parent, x0, x1, z, y, H = null) {
   return g;
 }
 
+
+
+function makeHangingKeep() {
+  // Original airborne ruin: a wide terraced mesa, a collapsed keep,
+  // rim trees, and water falling off the rim. Not a copy of any filmed city.
+  const g = new THREE.Group();
+  g.name = "hanging-keep";
+  const lime = 0xc8b894, limeLt = 0xd8c8a4, limeDk = 0x8a7a5c, moss = 0x3a6a32;
+
+  const bodyGeo = new THREE.IcosahedronGeometry(1, 2);
+  const pos = bodyGeo.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const top = Math.max(0, y);
+    const bot = Math.max(0, -y);
+    // Wide platter (~95 x 80 m), thin living top, tapering roots beneath
+    const rx = 48 * (1 + bot * 0.12);
+    const rz = 40 * (1 + bot * 0.12);
+    const yOut = top * 8 - bot * 46;
+    x *= rx;
+    z *= rz;
+    y = yOut;
+    if (y > 6) y = 6 + (y - 6) * 0.12;
+    pos.setXYZ(i, x, y, z);
+    const mossK = Math.max(0, (y + 4) / 12);
+    const shade = 0.80 + 0.20 * Math.sin(x * 0.08 + z * 0.07);
+    col[i * 3]     = (0.74 * (1 - mossK) + 0.28 * mossK) * shade;
+    col[i * 3 + 1] = (0.68 * (1 - mossK) + 0.46 * mossK) * shade;
+    col[i * 3 + 2] = (0.52 * (1 - mossK) + 0.22 * mossK) * shade;
+  }
+  bodyGeo.computeVertexNormals();
+  retagGeometry(bodyGeo, MAT.ROCK, 0);
+  const body = new THREE.Mesh(bodyGeo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    vertexColors: true, flatShading: true,
+  })));
+  body.userData.matId = MAT.ROCK;
+  g.add(body);
+
+  for (const [x, z, s, h] of [[-10, 6, 9, 38], [12, -8, 8, 32], [4, 12, 7, 28], [-16, -10, 6, 24]]) {
+    const root = cone(s * 0.22, h, 6, limeDk, MAT.ROCK);
+    root.rotation.x = Math.PI;
+    root.position.set(x, -h * 0.35, z);
+    g.add(root);
+  }
+
+  add(g, box(42, 1.6, 30, lime, MAT.ROCK), 0, 7.4, 0);
+  add(g, box(16, 8.5, 13, limeLt, MAT.BUILDING), -6, 12.2, -2);
+  add(g, box(8.5, 14, 8.5, lime, MAT.BUILDING), 9, 15.0, 3);
+  add(g, box(3.4, 2.4, 8.5, limeDk, MAT.ROCK), 9, 22.6, 3);
+  add(g, box(11, 5.8, 2.4, lime, MAT.BUILDING), 0, 11.0, 9);
+  add(g, box(2.4, 7, 11, limeDk, MAT.BUILDING), -16, 11.6, 0);
+  add(g, box(1.8, 8, 1.8, limeDk, MAT.ROCK), -2, 12.0, 13);
+  add(g, box(1.8, 6, 1.8, lime, MAT.ROCK), 3.6, 11.0, 13);
+  add(g, box(7, 1.5, 2, limeLt, MAT.ROCK), 0.8, 16.4, 13);
+  const pool = box(11, 0.45, 9, 0x3aa0c8, MAT.WATER_DEEP);
+  pool.position.set(5, 8.25, -11);
+  g.add(pool);
+
+  for (const [x, z, s] of [
+    [-24, -8, 1.25], [-20, 12, 1.1], [-10, 18, 1.0], [8, 18, 1.15],
+    [22, 9, 1.3], [24, -6, 1.05], [16, -18, 1.2], [-8, -18, 0.95],
+    [2, 16, 0.8], [-18, 2, 0.9],
+  ]) {
+    const tr = cyl(0.32 * s, 0.46 * s, 5.0 * s, 5, 0x5a3a22, MAT.WOOD);
+    tr.position.set(x, 8.2 + 2.5 * s, z);
+    g.add(tr);
+    const leaf = mesh(new THREE.SphereGeometry(2.6 * s, 6, 5), moss, MAT.FOLIAGE);
+    leaf.position.set(x, 8.2 + 6.2 * s, z);
+    g.add(leaf);
+  }
+
+  const fallGeo = new THREE.PlaneGeometry(8.5, 90, 1, 20);
+  retagGeometry(fallGeo, MAT.WATERFALL, 1);
+  const sheets = [];
+  const s1 = new THREE.Mesh(fallGeo, makeFallsMat());
+  s1.name = "falls";
+  s1.position.set(5, 8.2 - 45, -16);
+  s1.rotation.y = Math.PI;
+  g.add(s1);
+  sheets.push(s1);
+  const s2 = new THREE.Mesh(fallGeo.clone(), makeFallsMat());
+  s2.name = "falls";
+  s2.position.set(26, 7.8 - 42, -2);
+  s2.rotation.y = Math.PI * 0.5;
+  s2.scale.set(0.75, 0.9, 1);
+  if (s2.material.uniforms && s1.material.uniforms) s2.material.uniforms.uTime = s1.material.uniforms.uTime;
+  g.add(s2);
+  sheets.push(s2);
+  g.userData.sheets = sheets;
+  g.userData.uTime = s1.material.uniforms && s1.material.uniforms.uTime;
+  return g;
+}
+
 function makeRoad(from, to, width = 8, H = null) {
   const dx = to.x - from.x, dz = to.z - from.z;
   const len = Math.hypot(dx, dz);
@@ -1612,6 +1706,76 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     group.add(winInst);
   }
 
+  // Lived-in yards: laundry lines, small gardens, a few sheds (instanced, one draw each)
+  if (spots.length) {
+    const nYard = Math.min(spots.length, 16);
+    const clothGeo = retagGeometry(new THREE.PlaneGeometry(1.15, 0.85), MAT.BUILDING, 0);
+    const clothMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+      color: 0xf4f0e6, side: THREE.DoubleSide, flatShading: true,
+    }));
+    clothMat.userData.matId = MAT.BUILDING;
+    const cloth = new THREE.InstancedMesh(clothGeo, clothMat, nYard * 3);
+    cloth.name = "laundry";
+    const lineGeo = retagGeometry(new THREE.BoxGeometry(4.6, 0.04, 0.04), MAT.METAL, 0);
+    const lineMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a342c }));
+    const lines = new THREE.InstancedMesh(lineGeo, lineMat, nYard);
+    lines.name = "laundry";
+    const bedGeo = retagGeometry(new THREE.BoxGeometry(2.6, 0.28, 1.8), MAT.FOLIAGE, 0);
+    const bedMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a6a28, flatShading: true }));
+    const beds = new THREE.InstancedMesh(bedGeo, bedMat, nYard);
+    beds.name = "garden";
+    const flGeo = retagGeometry(new THREE.SphereGeometry(0.16, 5, 4), MAT.FOLIAGE, 0);
+    const flMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: false, color: 0xe04870, flatShading: true }));
+    const flowers = new THREE.InstancedMesh(flGeo, flMat, nYard * 4);
+    flowers.name = "garden";
+    const d = new THREE.Object3D();
+    const clothCols = [0xf4f0e6, 0xc01418, 0x3a7eb8, 0xf2d24a, 0xe8e0d0];
+    let ci = 0, fi = 0;
+    for (let i = 0; i < nYard; i++) {
+      const p = spots[i];
+      const yaw = Math.PI + (i % 5) * 0.04;
+      const ca = Math.cos(yaw), sa = Math.sin(yaw);
+      const lx = p.x + ca * 4.2, lz = p.z + sa * 4.2;
+      const y = H(lx, lz) + 2.15;
+      d.position.set(lx, y, lz);
+      d.rotation.set(0, yaw, 0);
+      d.scale.set(1, 1, 1);
+      d.updateMatrix();
+      lines.setMatrixAt(i, d.matrix);
+      for (let k = 0; k < 3; k++) {
+        const off = (k - 1) * 1.2;
+        d.position.set(lx + sa * off, y - 0.55, lz - ca * off);
+        d.rotation.set(0.08 * ((k % 2) * 2 - 1), yaw, 0.12 * (k - 1));
+        d.scale.set(1, 1, 1);
+        d.updateMatrix();
+        cloth.setMatrixAt(ci++, d.matrix);
+      }
+      const gx = p.x - ca * 3.4, gz = p.z - sa * 3.4;
+      const gy = H(gx, gz) + 0.2;
+      d.position.set(gx, gy, gz);
+      d.rotation.set(0, yaw, 0);
+      d.scale.set(1, 1, 1);
+      d.updateMatrix();
+      beds.setMatrixAt(i, d.matrix);
+      for (let k = 0; k < 4; k++) {
+        d.position.set(gx + (k % 2 - 0.5) * 0.8, gy + 0.34, gz + (Math.floor(k / 2) - 0.5) * 0.6);
+        d.rotation.set(0, 0, 0);
+        d.scale.setScalar(0.8 + (k % 3) * 0.15);
+        d.updateMatrix();
+        flowers.setMatrixAt(fi++, d.matrix);
+      }
+    }
+    cloth.count = ci;
+    lines.count = nYard;
+    beds.count = nYard;
+    flowers.count = fi;
+    cloth.instanceMatrix.needsUpdate = true;
+    lines.instanceMatrix.needsUpdate = true;
+    beds.instanceMatrix.needsUpdate = true;
+    flowers.instanceMatrix.needsUpdate = true;
+    group.add(lines, cloth, beds, flowers);
+  }
+
   const church = makeChurch();
   church.scale.setScalar(0.78);
   // Higher on the hill so the bell tower reads over the terraces
@@ -1632,6 +1796,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     { x: 430, z: -720, yaw: 0.2 },
     { x: -80, z: -560, yaw: -0.3 },
     { x:  90, z: -380, yaw: 0.15 },
+    { x: 520, z: -500, yaw: -0.15 },
+    { x: -200, z: -720, yaw: 0.35 },
   ];
   for (const f of farms) {
     const y = H(f.x, f.z);
@@ -1814,6 +1980,30 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     6,
     H
   ));
+  group.add(makeRoad(
+    { x: LANDMARKS.town.x, y: 8.6, z: LANDMARKS.town.z },
+    { x: LANDMARKS.windmills.x, y: 12, z: LANDMARKS.windmills.z },
+    5.4,
+    H
+  ));
+  group.add(makeRoad(
+    { x: LANDMARKS.town.x, y: 8.6, z: LANDMARKS.town.z },
+    { x: 430, y: 10, z: -720 },
+    5.2,
+    H
+  ));
+  group.add(makeRoad(
+    { x: -80, y: 8, z: -1100 },
+    { x: LANDMARKS.lighthouse.x + 40, y: 8, z: LANDMARKS.lighthouse.z + 40 },
+    5.0,
+    H
+  ));
+
+  const hangingKeep = makeHangingKeep();
+  hangingKeep.position.set(LANDMARKS.hangingKeep.x, 368, LANDMARKS.hangingKeep.z);
+  hangingKeep.rotation.y = 0.35;
+  hangingKeep.scale.setScalar(1.0);
+  group.add(hangingKeep);
 
   // Town lamps
   for (const p of spots.slice(0, 10)) {
@@ -1829,13 +2019,13 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Collapse each boat/steamer to a handful of meshes so they can still
   // bob as groups without blowing the 150-draw cap.
   for (const b of boats) mergeStatic(b, new Set(["smoke"]));
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden"]));
   group.add(makeCoastalCliffs(H));
   // keep boat meshes (they bob)
   scene.add(group);
 
   return {
-    group, hangar, tower, church, light, pier, wreck, bridge, castle, mills, arch, cave, falls, boats, windsock, winInst, chimneys, flagPoles,
+    group, hangar, tower, church, light, pier, wreck, bridge, castle, mills, arch, cave, falls, hangingKeep, boats, windsock, winInst, chimneys, flagPoles,
     _windKt: 6,
     _storm: false,
     setWind(kt, storm) {
@@ -1925,6 +2115,13 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           if (arr[i + 1] < -36) arr[i + 1] = 36;
         }
         falls.userData.mist.geometry.attributes.position.needsUpdate = true;
+      }
+      if (hangingKeep && hangingKeep.userData.sheets) {
+        for (const sh of hangingKeep.userData.sheets) {
+          if (sh.material && sh.material.uniforms && sh.material.uniforms.uTime) {
+            sh.material.uniforms.uTime.value = time;
+          }
+        }
       }
       for (const a of anim) {
         if (!a.smoke) continue;

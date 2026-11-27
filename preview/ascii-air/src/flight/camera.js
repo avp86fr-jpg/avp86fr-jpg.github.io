@@ -230,9 +230,13 @@ export function createFlightCamera(camera) {
     if (hero) {
       const dist = HERO_VIEW.dist + (portrait ? 4 : 0);
       const height = HERO_VIEW.height + (portrait ? 1.6 : 0);
-      const side = HERO_VIEW.side;
+      const side = HERO_VIEW.side || 0;
+      const pitch = ((HERO_VIEW.pitchDown ?? 9) * Math.PI) / 180;
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
-      _look.set(HERO_VIEW.look.x, HERO_VIEW.look.y, HERO_VIEW.look.z);
+      // 8–10° down along heading, far enough to hold the island on the horizon band.
+      const lookDist = 720;
+      _look.copy(_pos).addScaledVector(_fwd, lookDist * Math.cos(pitch));
+      _look.y = _pos.y - lookDist * Math.sin(pitch);
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
@@ -274,19 +278,22 @@ export function createFlightCamera(camera) {
       const dx = look.x - p.x, dz = look.z - p.z;
       const len = Math.hypot(dx, dz) || 1;
       const fx = dx / len, fz = dz / len;
-      const dist = HERO_VIEW.dist || 28;
-      const height = HERO_VIEW.height || 7.5;
+      const dist = HERO_VIEW.dist || 26;
+      const height = HERO_VIEW.height || 11.5;
       const side = HERO_VIEW.side || 0;
-      // Match the hero rig: pos = plane - fwd*dist + up*height - right*side
-      // right xz = (fz, -fx)
+      const pitch = ((HERO_VIEW.pitchDown ?? 9) * Math.PI) / 180;
       const bx = p.x - fx * dist - fz * side;
       const bz = p.z - fz * dist + fx * side;
-      camera.position.set(
-        bx + Math.sin(t * 0.5) * 3.4,
-        p.y + height + Math.sin(t * 0.35) * 1.2,
-        bz + Math.cos(t * 0.5) * 2.6
+      const cx = bx + Math.sin(t * 0.5) * 2.2;
+      const cy = p.y + height + Math.sin(t * 0.35) * 0.8;
+      const cz = bz + Math.cos(t * 0.5) * 1.8;
+      camera.position.set(cx, cy, cz);
+      const lookDist = 720;
+      camera.lookAt(
+        cx + fx * lookDist * Math.cos(pitch),
+        cy - lookDist * Math.sin(pitch),
+        cz + fz * lookDist * Math.cos(pitch)
       );
-      camera.lookAt(look.x, (look.y || 16) + 2, look.z);
       camera.up.set(0, 1, 0);
       camera.updateProjectionMatrix();
       return;

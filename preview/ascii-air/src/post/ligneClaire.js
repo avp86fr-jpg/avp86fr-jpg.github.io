@@ -185,7 +185,7 @@ export function createLigneClaire() {
     uTime: { value: 0 },
     uExposure: { value: 1.08 },
     uSat: { value: 1.32 },
-    uOutline: { value: 1.15 },
+    uOutline: { value: 0.42 },
     uBloom: { value: 0.26 },
     uRain: { value: 0 },
     uFlash: { value: 0 },

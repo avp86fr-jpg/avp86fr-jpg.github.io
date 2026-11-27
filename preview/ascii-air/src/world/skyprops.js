@@ -20,6 +20,10 @@ function cloudPuff(mat) {
     [0.15, 1.95, 0.08, 1.0],
     [0.75, 1.6, 0.45, 0.72],
     [-0.65, 1.55, -0.3, 0.68],
+    [0.1, 2.75, 0.06, 0.88],
+    [0.4, 3.4, 0.12, 0.58],
+    [-0.28, 3.15, -0.16, 0.52],
+    [0.05, 3.9, 0.04, 0.38],
   ];
   for (const [x, y, z, s] of spots) {
     const m = new THREE.Mesh(geo, mat);
@@ -38,8 +42,8 @@ export function createSkyProps(scene, quality = "medium") {
   const cloudMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     color: 0xffffff,
     vertexColors: true,
-    emissive: 0xfff6ea,
-    emissiveIntensity: 0.68,
+    emissive: 0xfff3dc,
+    emissiveIntensity: 0.28,
     flatShading: false,
   }));
   const clouds = new THREE.Group();
@@ -67,15 +71,16 @@ export function createSkyProps(scene, quality = "medium") {
   const heroSpots = [
     // Higher, fewer mid-distance cumulus — leave blue sky at the zenith
     // and keep banks off the top edge of the postcard.
-    [-380, 360, -780, 32],
-    [ 420, 340, -820, 30],
-    [-560, 390, -420, 34],
-    [ 580, 370, -360, 32],
-    [-700, 400, 80, 36],
-    [ 720, 380, 40, 34],
-    [-200, 430, 520, 30],
-    [ 260, 420, 480, 28],
-    [ 40, 460, -200, 26],
+    [-380, 380, -780, 36],
+    [ 420, 360, -820, 34],
+    [-560, 410, -420, 38],
+    [ 580, 390, -360, 36],
+    [-700, 430, 80, 40],
+    [ 720, 400, 40, 38],
+    [-200, 460, 520, 34],
+    [ 260, 450, 480, 32],
+    [ 40, 500, -200, 30],
+    [ 180, 520, -640, 28],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -90,11 +95,11 @@ export function createSkyProps(scene, quality = "medium") {
     const span = Math.max(0.001, ymax - ymin);
     for (let i = 0; i < pos.count; i++) {
       const k = (pos.getY(i) - ymin) / span;
-      // Bright white crown, soft cream/blue shadow only at the underside
-      const b = Math.pow(k, 0.65);
-      col[i * 3]     = 0.93 + 0.07 * b;
-      col[i * 3 + 1] = 0.94 + 0.06 * b;
-      col[i * 3 + 2] = 0.96 + 0.04 * b;
+      // Sunlit cream-white crown, soft blue-violet undersides
+      const b = Math.pow(k, 0.85);
+      col[i * 3]     = 0.68 + 0.32 * b;
+      col[i * 3 + 1] = 0.78 + 0.20 * b;
+      col[i * 3 + 2] = 0.92 - 0.02 * b;
     }
     cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   }
@@ -109,7 +114,7 @@ export function createSkyProps(scene, quality = "medium") {
     const y = 340 + (i * 13) % 90;
     const s = 26 + (i * 11) % 16;
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 0.88, s * 1.05);
+    dummy.scale.set(s, s * 1.22, s * 1.05);
     dummy.rotation.y = a;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(i, dummy.matrix);
@@ -118,7 +123,7 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < heroSpots.length; i++) {
     const [x, y, z, s] = heroSpots[i];
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 0.86, s * 1.08);
+    dummy.scale.set(s, s * 1.26, s * 1.08);
     dummy.rotation.y = i * 0.7;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
@@ -127,11 +132,11 @@ export function createSkyProps(scene, quality = "medium") {
   group.add(cloudInst);
   // Ink outline hulls (back-face, slightly larger) so cumulus read as ligne-claire volumes
   const inkMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x6a7a88,
+    color: 0x7a92a8,
     side: THREE.BackSide,
     fog: true,
     transparent: true,
-    opacity: 0.48,
+    opacity: 0.16,
   }));
   inkMat.userData.matId = MAT.CLOUD;
   const cloudInk = new THREE.InstancedMesh(cloudGeo, inkMat, nCloud + heroSpots.length);
@@ -139,7 +144,7 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < cloudInst.count; i++) {
     cloudInst.getMatrixAt(i, _m);
     _m.decompose(_p, _q, _s);
-    _s.multiplyScalar(1.014);
+    _s.multiplyScalar(1.006);
     _m.compose(_p, _q, _s);
     cloudInk.setMatrixAt(i, _m);
   }
@@ -223,10 +228,10 @@ export function createSkyProps(scene, quality = "medium") {
         if (blimp) blimp.visible = false;
       } else {
         cloudMat.color.setHex(0xfffdf8);
-        cloudMat.emissive.setHex(0xfff6ea);
-        cloudMat.emissiveIntensity = 0.68;
-        inkMat.color.setHex(0x4a5868);
-        inkMat.opacity = 0.7;
+        cloudMat.emissive.setHex(0xfff3dc);
+        cloudMat.emissiveIntensity = 0.28;
+        inkMat.color.setHex(0x7a92a8);
+        inkMat.opacity = 0.16;
         if (balloonInst) balloonInst.visible = true;
         if (blimp) blimp.visible = true;
       }
@@ -263,7 +268,7 @@ export function createSkyProps(scene, quality = "medium") {
         for (let i = 0; i < cloudInst.count; i++) {
           cloudInst.getMatrixAt(i, _m);
           _m.decompose(_p, _q, _s);
-          _s.multiplyScalar(1.014);
+          _s.multiplyScalar(1.006);
           _m.compose(_p, _q, _s);
           cloudInk.setMatrixAt(i, _m);
         }
