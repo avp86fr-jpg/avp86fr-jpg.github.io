@@ -67,22 +67,41 @@ function gableRoofGeo(w, d, roofH) {
   return geo;
 }
 
-function house(w, d, h, roofH, wall, roofCol, detailed = true) {
+function house(w, d, h, roofH, wall, roofCol, detailed = true, style = 0) {
   const g = new THREE.Group();
   add(g, box(w, h, d, wall, MAT.BUILDING), 0, h / 2, 0);
+  // Two-storey string course
+  if (style === 2 || h > 5.7) {
+    add(g, box(w + 0.1, 0.22, d + 0.1, 0xc4a070, MAT.BUILDING), 0, h * 0.52, 0);
+  }
   const r = mesh(gableRoofGeo(w, d, roofH), roofCol, MAT.ROOF);
   r.position.y = h;
   g.add(r);
   if (detailed) {
-    add(g, box(Math.min(1.25, w * 0.30), h * 0.62, 0.18, 0x3a2a1a, MAT.WOOD), 0, h * 0.31, d / 2 + 0.06);
+    if (style === 1) {
+      // Arched doorway
+      add(g, box(Math.min(1.45, w * 0.34), h * 0.70, 0.20, 0x3a2a1a, MAT.WOOD), 0, h * 0.35, d / 2 + 0.06);
+      add(g, box(Math.min(1.9, w * 0.44), 0.22, 0.22, 0xd4c6a8, MAT.ROCK), 0, h * 0.72, d / 2 + 0.09);
+    } else {
+      add(g, box(Math.min(1.25, w * 0.30), h * 0.62, 0.18, 0x3a2a1a, MAT.WOOD), 0, h * 0.31, d / 2 + 0.06);
+    }
     const ww = Math.min(1.15, w * 0.26), wh = h * 0.34;
     add(g, box(ww, wh, 0.14, 0x2a3540, MAT.METAL), -w * 0.28, h * 0.64, d / 2 + 0.07);
     add(g, box(ww, wh, 0.14, 0x2a3540, MAT.METAL),  w * 0.28, h * 0.64, d / 2 + 0.07);
     add(g, box(0.14, wh, ww, 0x2a3540, MAT.METAL), w / 2 + 0.08, h * 0.60, 0);
     add(g, box(0.14, wh, ww, 0x2a3540, MAT.METAL), -w / 2 - 0.08, h * 0.60, 0);
+    if (style === 3) {
+      // Shallow loggia: two posts and a lintel
+      add(g, box(0.22, h * 0.78, 0.22, 0xefe6d2, MAT.BUILDING), -w * 0.28, h * 0.39, d / 2 + 0.55);
+      add(g, box(0.22, h * 0.78, 0.22, 0xefe6d2, MAT.BUILDING),  w * 0.28, h * 0.39, d / 2 + 0.55);
+      add(g, box(w * 0.72, 0.22, 0.28, 0xe8d8b0, MAT.BUILDING), 0, h * 0.80, d / 2 + 0.55);
+    }
     const cy = h + roofH * 0.38;
     add(g, box(0.7, roofH * 0.65, 0.7, 0x8a4a38, MAT.ROCK), w * 0.22, cy, -d * 0.18);
     add(g, box(0.88, 0.16, 0.88, 0x5a3028, MAT.ROCK), w * 0.22, cy + roofH * 0.36, -d * 0.18);
+    if (style === 2) {
+      add(g, box(0.55, roofH * 0.5, 0.55, 0x8a4a38, MAT.ROCK), -w * 0.28, cy - 0.1, d * 0.12);
+    }
   }
   return g;
 }
@@ -715,30 +734,44 @@ function makeFallsMat() {
     toneMapped: false,
     vertexShader: `
       varying vec2 vUv;
+      uniform float uTime;
       void main() {
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec3 p = position;
+        p.x += sin(uv.y * 9.0 - uTime * 2.4 + uv.x * 5.0) * 0.45;
+        p.z += cos(uv.y * 6.0 - uTime * 1.8) * 0.20;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
       }
     `,
     fragmentShader: `
       uniform float uTime;
       varying vec2 vUv;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p){
+        vec2 i = floor(p), f = fract(p);
+        float a = hash(i), b = hash(i + vec2(1.0, 0.0));
+        float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+      }
       void main() {
         float down = 1.0 - vUv.y;
-        vec3 deep = vec3(0.22, 0.48, 0.68);
-        vec3 mid  = vec3(0.48, 0.72, 0.86);
-        vec3 foam = vec3(0.72, 0.86, 0.94);
-        vec3 col = mix(deep, mid, smoothstep(0.0, 0.45, down));
-        col = mix(col, foam, smoothstep(0.62, 1.0, down));
-        // Soft scrolling streaks — no hard barcode bands, no square dots.
-        float sx = vUv.x * 7.0 + sin(vUv.y * 14.0 + uTime * 0.4) * 0.15;
-        float ribbon = smoothstep(0.22, 0.0, abs(fract(sx) - 0.5) - 0.28);
-        float flow = fract(vUv.y * 2.8 - uTime * 1.25 + sin(vUv.x * 16.0) * 0.05);
-        float streak = smoothstep(0.22, 0.0, abs(flow - 0.5) - 0.16);
-        col = mix(col, foam, (ribbon * 0.35 + streak * 0.50) * (0.45 + down * 0.4));
-        float edge = smoothstep(0.0, 0.07, vUv.x) * smoothstep(1.0, 0.93, vUv.x);
-        float a = 0.78 * edge;
-        gl_FragColor = vec4(col, a);
+        vec3 deep = vec3(0.28, 0.58, 0.78);
+        vec3 mid  = vec3(0.62, 0.84, 0.94);
+        vec3 foam = vec3(0.92, 0.96, 1.00);
+        vec3 col = mix(deep, mid, smoothstep(0.0, 0.4, down));
+        // Flowing veils
+        vec2 uvw = vec2(vUv.x * 3.4, vUv.y * 6.0 - uTime * 1.55);
+        float n = noise(uvw) * 0.55 + noise(uvw * 2.2 + vec2(0.0, -uTime * 0.8)) * 0.45;
+        float ribbon = smoothstep(0.35, 0.75, n);
+        float core = 1.0 - smoothstep(0.18, 0.48, abs(vUv.x - 0.5));
+        col = mix(col, foam, ribbon * (0.35 + down * 0.45) * (0.45 + core * 0.55));
+        col = mix(col, foam, smoothstep(0.72, 1.0, down) * 0.7);
+        // Soft side falloff, denser in the middle
+        float edge = smoothstep(0.0, 0.10, vUv.x) * smoothstep(1.0, 0.90, vUv.x);
+        float a = (0.42 + core * 0.48 + ribbon * 0.18) * edge;
+        a *= 0.55 + 0.45 * smoothstep(0.0, 0.12, down);
+        gl_FragColor = vec4(col, clamp(a, 0.0, 0.92));
       }
     `,
   });
@@ -1184,15 +1217,28 @@ function makeHangingKeep() {
     const totalW = n * aw;
     const shape = new THREE.Shape();
     shape.moveTo(-totalW / 2, 0);
-    shape.lineTo(-totalW / 2, wallH);
-    shape.lineTo(totalW / 2, wallH);
+    // Jagged ruined crown — no flat boxy back wall.
+    for (let i = 0; i <= n; i++) {
+      const x = -totalW / 2 + aw * i;
+      const broken = skip && (skip.has(i) || skip.has(i - 1));
+      let hh = broken
+        ? wallH * (0.38 + (i % 3) * 0.10)
+        : wallH * (0.78 + 0.16 * Math.sin(i * 1.7) + ((i === 0 || i === n) ? -0.20 : 0.06));
+      if (i > 0 && i < n && !broken) {
+        shape.lineTo(x - aw * 0.16, hh * 0.90);
+        shape.lineTo(x, hh);
+        shape.lineTo(x + aw * 0.16, hh * 0.88);
+      } else {
+        shape.lineTo(x, hh);
+      }
+    }
     shape.lineTo(totalW / 2, 0);
     shape.closePath();
     for (let i = 0; i < n; i++) {
       if (skip && skip.has(i)) continue;
       const cx = -totalW / 2 + aw * (i + 0.5);
       const hole = new THREE.Path();
-      const hw = aw * 0.32, hh = wallH * 0.62;
+      const hw = aw * 0.32, hh = wallH * 0.52;
       hole.moveTo(cx - hw, 1.1);
       hole.lineTo(cx - hw, 1.1 + hh * 0.48);
       hole.absarc(cx, 1.1 + hh * 0.48, hw, Math.PI, 0, true);
@@ -1210,14 +1256,18 @@ function makeHangingKeep() {
       color: c, flatShading: false,
     })));
   }
-  const col1 = colonnade(5, 6.4, 28, 4.4, stoneLt, new Set([3]));
+  const col1 = colonnade(6, 6.0, 26, 4.4, stoneLt, new Set([4]));
   col1.position.set(-2, 7.4, -8);
   col1.rotation.y = 0.12;
   g.add(col1);
-  const col2 = colonnade(3, 5.4, 20, 3.6, stone, new Set([1]));
-  col2.position.set(10, 7.4, 2);
+  const col2 = colonnade(4, 5.2, 18, 3.6, stone, new Set([1]));
+  col2.position.set(8, 7.4, 4);
   col2.rotation.y = 1.05;
   g.add(col2);
+  const col3 = colonnade(3, 4.6, 14, 3.0, stoneDk, new Set([2]));
+  col3.position.set(-8, 7.4, 6);
+  col3.rotation.y = -0.55;
+  g.add(col3);
   // Broken stumps and a fallen lintel
   add(g, box(7.5, 3.4, 2.0, stone, MAT.ROCK), 12, 9.2, -8, 0, 0.4, 0.15);
   add(g, box(2.4, 14, 2.4, stoneDk, MAT.ROCK), 14, 14.4, 2);
@@ -1923,8 +1973,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Street / terrace village: no overlapping footprints, consistent roof orientation.
   // Near the flight path (runway / hangar) = real houses with doors, windows, chimneys.
   // Further up the hill = denser instanced impostors so the postcard still reads as a town.
-  const houseColors = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
-  const roofColors = [0xc45a3a, 0xb4482e, 0xd26540, 0xa8422c, 0xc05638];
+  const houseColors = [0xfbf6ea, 0xf4e4c4, 0xe8d0a0, 0xfff8ec, 0xecd8b0, 0xf8f1dc, 0xe6c98a];
+  const roofColors = [0xc45a3a, 0xb4482e, 0xd26540, 0xa8422c, 0xc05638, 0x9a3a28, 0xcc6a44];
   const spots = [];
   const chimneys = [];
   const winData = [];
@@ -1980,8 +2030,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
         const hgt = H(jx, jz);
         const yaw = Math.PI + (rnd() - 0.5) * 0.08; // face south, almost aligned
         if (b.near) {
-          const w = 6.4 + rnd() * 1.8, d = 6.0 + rnd() * 1.2, hh = 4.2 + rnd() * 1.6, rh = 2.6 + rnd() * 0.8;
-          const h = house(w, d, hh, rh, houseColors[hi % 5], roofColors[hi % 5], true);
+          const w = 5.6 + rnd() * 3.4, d = 5.2 + rnd() * 2.2, hh = 3.6 + rnd() * 3.4, rh = 2.0 + rnd() * 1.6;
+          const h = house(w, d, hh, rh, houseColors[hi % 7], roofColors[hi % 7], true, hi % 4);
           h.position.set(jx, hgt, jz);
           h.rotation.y = yaw;
           group.add(h);
@@ -1996,7 +2046,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           });
           hi++;
         } else {
-          farList.push({ x: jx, y: hgt, z: jz, yaw, s: 0.88 + rnd() * 0.16 });
+          farList.push({ x: jx, y: hgt, z: jz, yaw, s: 0.82 + rnd() * 0.28, hs: 0.78 + rnd() * 0.7, wall: houseColors[hi % 7], roof: roofColors[hi % 7] });
         }
       }
     }
@@ -2013,18 +2063,26 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     farWalls.userData.matId = MAT.BUILDING;
     farRoofs.userData.matId = MAT.ROOF;
     const dummyF = new THREE.Object3D();
+    const wc = new THREE.Color();
+    const rc = new THREE.Color();
     farList.forEach((f, i) => {
-      dummyF.position.set(f.x, f.y + 2.3 * f.s, f.z);
+      const hs = f.hs || 1;
+      dummyF.position.set(f.x, f.y + 2.3 * f.s * hs, f.z);
       dummyF.rotation.set(0, f.yaw, 0);
-      dummyF.scale.setScalar(f.s);
+      dummyF.scale.set(f.s, f.s * hs, f.s);
       dummyF.updateMatrix();
       farWalls.setMatrixAt(i, dummyF.matrix);
-      dummyF.position.set(f.x, f.y + 4.6 * f.s, f.z);
+      dummyF.position.set(f.x, f.y + 4.6 * f.s * hs, f.z);
+      dummyF.scale.set(f.s, f.s, f.s);
       dummyF.updateMatrix();
       farRoofs.setMatrixAt(i, dummyF.matrix);
+      farWalls.setColorAt(i, wc.setHex(f.wall || 0xf6efe0));
+      farRoofs.setColorAt(i, rc.setHex(f.roof || 0xb85a3c));
     });
     farWalls.instanceMatrix.needsUpdate = true;
     farRoofs.instanceMatrix.needsUpdate = true;
+    if (farWalls.instanceColor) farWalls.instanceColor.needsUpdate = true;
+    if (farRoofs.instanceColor) farRoofs.instanceColor.needsUpdate = true;
     group.add(farWalls, farRoofs);
   }
 
@@ -2340,9 +2398,9 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   const hangingKeep = makeHangingKeep();
   hangingKeep.name = "hanging-keep";
-  hangingKeep.position.set(LANDMARKS.hangingKeep.x, 368, LANDMARKS.hangingKeep.z);
-  hangingKeep.rotation.y = 0.18;
-  hangingKeep.scale.setScalar(1.0);
+  hangingKeep.position.set(LANDMARKS.hangingKeep.x, 280, LANDMARKS.hangingKeep.z);
+  hangingKeep.rotation.y = 0.22;
+  hangingKeep.scale.setScalar(2.15);
   mergeVertexColors(hangingKeep, new Set(["falls", "mist"]));
   group.add(hangingKeep);
 
@@ -2362,8 +2420,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   for (const b of boats) mergeStatic(b, new Set(["smoke"]));
   // Terraced cream-stone / terracotta village on the west cape, like the cover.
   {
-    const walls = [0xfbf6ea, 0xfffaf2, 0xf4eee0, 0xf8f1dc, 0xfff8ec];
-    const roofs = [0xc45a3a, 0xb4482e, 0xd26540, 0xa8422c, 0xc05638];
+    const walls = [0xfbf6ea, 0xf4e4c4, 0xe8d0a0, 0xfff8ec, 0xecd8b0, 0xe6c98a];
+    const roofs = [0xc45a3a, 0xb4482e, 0xd26540, 0xa8422c, 0x9a3a28, 0xcc6a44];
     const bands = [
       { z: -1172, x0: -230, x1: -90, plot: 9.2, near: true },
       { z: -1196, x0: -240, x1: -100, plot: 8.6, near: true },
@@ -2383,9 +2441,9 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
         const jz = b.z + ((hi * 9) % 5) * 0.16 - 0.3;
         if (blockedCape(jx, jz)) { hi++; continue; }
         const hgt = H(jx, jz);
-        const w = 5.6 + (hi % 5) * 0.35, d = 5.2 + (hi % 3) * 0.3;
-        const hh = 3.8 + (hi % 4) * 0.35, rh = 2.2 + (hi % 3) * 0.2;
-        const hs = house(w, d, hh, rh, walls[hi % 5], roofs[hi % 5], b.near && (hi % 2 === 0));
+        const w = 5.0 + (hi % 7) * 0.55, d = 4.8 + (hi % 5) * 0.45;
+        const hh = 3.4 + (hi % 6) * 0.7, rh = 1.9 + (hi % 4) * 0.35;
+        const hs = house(w, d, hh, rh, walls[hi % 6], roofs[hi % 6], b.near || (hi % 3 === 0), hi % 4);
         hs.position.set(jx, hgt, jz);
         hs.rotation.y = Math.PI + ((hi % 5) - 2) * 0.04;
         group.add(hs);

@@ -266,7 +266,7 @@ export const LANDMARKS = {
   grassStrip:   { x: -820, z: 1120,  name: "Ridge Strip" },
   palmIslet:    { x: 180,  z: -1880, name: "One-Palm Isle" },
   arch:         { x: -210, z: -1250, name: "Sea Arch" },
-  hangingKeep:  { x: 420,  z: -60,   name: "The Hanging Keep" },
+  hangingKeep:  { x: 440,  z: -280,  name: "The Hanging Keep" },
   eastCove:     { x: 520,  z: -1480, name: "East Cove" },
   northGrove:   { x: -420, z:  520,  name: "Ridge Grove" },
 };

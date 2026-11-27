@@ -3,51 +3,161 @@ import { MAT, QUALITY, LANDMARKS } from "../core/config.js";
 import { retagGeometry, tagMesh, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { TAU } from "../core/utils.js";
 
-function cloudPuff(mat) {
-  const g = new THREE.Group();
-  const geo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
-  // Stacked cumulus cluster — enough vertical overlap that a chase view
-  // never collapses the puff into a flat ellipse / UFO disc.
-  const spots = [
-    [0, 0, 0, 1.9],
-    [1.85, 0.2, 0.4, 1.5],
-    [-1.75, 0.16, -0.35, 1.45],
-    [0.55, 0.22, 1.45, 1.25],
-    [-0.65, 0.16, -1.3, 1.2],
-    [1.2, 1.15, 1.0, 1.15],
-    [-1.15, 1.05, -0.9, 1.1],
-    [0.25, 1.35, 0.18, 1.45],
-    [1.25, 1.15, -0.5, 1.05],
-    [-1.15, 1.2, 0.45, 1.05],
-    [0.2, 2.25, 0.1, 1.15],
-    [0.9, 1.9, 0.5, 0.85],
-    [-0.8, 1.85, -0.35, 0.82],
-    [0.15, 3.15, 0.08, 0.95],
-    [0.45, 3.7, 0.14, 0.62],
-    [-0.32, 3.45, -0.16, 0.56],
-    [0.06, 4.2, 0.05, 0.42],
-  ];
-  for (const [x, y, z, s] of spots) {
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    m.scale.setScalar(s);
-    g.add(m);
+function paintCloudAtlas() {
+  const S = 1024;
+  const cnv = document.createElement("canvas");
+  cnv.width = S;
+  cnv.height = S;
+  const ctx = cnv.getContext("2d");
+  ctx.clearRect(0, 0, S, S);
+
+  function blob(cx, cy, rx, ry, rgb, a0) {
+    const g = ctx.createRadialGradient(cx, cy - ry * 0.28, Math.max(2, rx * 0.06), cx, cy + ry * 0.1, Math.max(rx, ry));
+    const [r, gv, b] = rgb;
+    g.addColorStop(0, "rgba(" + r + "," + gv + "," + b + "," + a0 + ")");
+    g.addColorStop(0.55, "rgba(" + r + "," + gv + "," + b + "," + (a0 * 0.62).toFixed(3) + ")");
+    g.addColorStop(1, "rgba(" + r + "," + gv + "," + b + ",0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
-  return g;
+
+  function tile(ix, iy, kind) {
+    const x0 = ix * 512, y0 = iy * 512;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0 + 4, y0 + 4, 504, 504);
+    ctx.clip();
+    const sun = [255, 250, 238];
+    const mid = [236, 230, 224];
+    const shade = [186, 198, 220];
+    const lav = [168, 176, 210];
+    // kind 0 wide bank, 1 tall tower, 2 mid puff, 3 anvil
+    const stacks = {
+      0: [
+        [256, 340, 200, 90, lav, 0.75],
+        [160, 310, 130, 80, shade, 0.8],
+        [360, 315, 140, 78, shade, 0.78],
+        [256, 250, 180, 100, mid, 0.88],
+        [150, 230, 110, 80, mid, 0.82],
+        [370, 235, 120, 84, mid, 0.82],
+        [256, 180, 150, 90, sun, 0.92],
+        [190, 165, 90, 70, sun, 0.85],
+        [330, 160, 95, 68, sun, 0.85],
+        [256, 120, 90, 62, sun, 0.8],
+      ],
+      1: [
+        [256, 390, 160, 80, lav, 0.7],
+        [180, 350, 110, 80, shade, 0.78],
+        [340, 355, 115, 78, shade, 0.78],
+        [256, 300, 140, 95, mid, 0.85],
+        [200, 250, 100, 80, mid, 0.8],
+        [320, 245, 105, 82, mid, 0.8],
+        [256, 190, 120, 90, sun, 0.9],
+        [210, 150, 80, 70, sun, 0.84],
+        [310, 145, 85, 68, sun, 0.84],
+        [256, 100, 90, 70, sun, 0.88],
+        [256, 60, 60, 46, sun, 0.75],
+      ],
+      2: [
+        [256, 330, 170, 95, lav, 0.72],
+        [170, 300, 110, 80, shade, 0.8],
+        [350, 305, 115, 78, shade, 0.78],
+        [256, 240, 150, 100, mid, 0.88],
+        [180, 210, 95, 75, mid, 0.8],
+        [340, 205, 100, 76, mid, 0.8],
+        [256, 160, 120, 85, sun, 0.9],
+        [220, 125, 75, 58, sun, 0.82],
+        [300, 120, 78, 56, sun, 0.82],
+      ],
+      3: [
+        [256, 360, 210, 80, lav, 0.7],
+        [140, 330, 120, 70, shade, 0.78],
+        [380, 335, 125, 70, shade, 0.76],
+        [256, 270, 180, 90, mid, 0.85],
+        [120, 250, 110, 70, mid, 0.78],
+        [400, 248, 115, 70, mid, 0.78],
+        [256, 190, 150, 85, sun, 0.9],
+        [180, 160, 100, 65, sun, 0.82],
+        [340, 155, 105, 64, sun, 0.82],
+        [256, 110, 80, 55, sun, 0.8],
+      ],
+    };
+    for (const [x, y, rx, ry, rgb, a] of stacks[kind]) {
+      blob(x0 + x, y0 + y, rx, ry, rgb, a);
+    }
+    // A few smaller highlight dabs on the sunlit crown
+    for (let k = 0; k < 8; k++) {
+      const px = x0 + 200 + (k * 37) % 140;
+      const py = y0 + 90 + (k * 19) % 50;
+      blob(px, py, 22 + (k % 3) * 8, 16 + (k % 2) * 6, sun, 0.35);
+    }
+    ctx.restore();
+  }
+  tile(0, 0, 0);
+  tile(1, 0, 1);
+  tile(0, 1, 2);
+  tile(1, 1, 3);
+  const tex = new THREE.CanvasTexture(cnv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  tex.anisotropy = 4;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+  return tex;
 }
 
-
-function makeCloudMaterial() {
-  // Lambert (not a custom ShaderMaterial) so InstancedMesh instanceMatrix is
-  // applied by Three's built-in shader. Soft dither edges were losing the
-  // banks entirely because the custom vertex shader ignored instancing.
-  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
-    vertexColors: true,
-    emissive: 0xfff6ea,
-    emissiveIntensity: 0.32,
-    flatShading: false,
-    fog: true,
-  }));
+function makeCloudMaterial(tex) {
+  // Billboard ShaderMaterial. USE_INSTANCING is defined so instanceMatrix is
+  // provided by the renderer — do not redeclare the attribute.
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uMap: { value: tex },
+      uStorm: { value: 0 },
+    },
+    defines: { USE_INSTANCING: "" },
+    transparent: false,
+    depthWrite: true,
+    side: THREE.DoubleSide,
+    fog: false,
+    toneMapped: true,
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      attribute float aTile;
+      void main() {
+        float col = mod(aTile, 2.0);
+        float row = floor(aTile / 2.0);
+        // Atlas: tile 0 top-left of canvas = uv y 0.5-1 with default flipY.
+        vec2 uv0 = uv * 0.96 + 0.02;
+        vUv = vec2(uv0.x * 0.5 + col * 0.5, uv0.y * 0.5 + (1.0 - row) * 0.5);
+        mat4 im = instanceMatrix;
+        vec3 ipos = im[3].xyz;
+        float sx = length(im[0].xyz);
+        float sy = length(im[1].xyz);
+        vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+        vec3 up = vec3(0.0, 1.0, 0.0);
+        vec3 wp = ipos + right * position.x * sx + up * position.y * sy;
+        gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D uMap;
+      uniform float uStorm;
+      varying vec2 vUv;
+      void main() {
+        vec4 t = texture2D(uMap, vUv);
+        float a = t.a;
+        if (a < 0.08) discard;
+        float dith = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        if (a < 0.48 && dith > a * 1.12) discard;
+        vec3 col = t.rgb;
+        col = mix(col, col * vec3(0.55, 0.60, 0.70), uStorm);
+        gl_FragColor = vec4(col, 7.0 / 255.0);
+      }
+    `,
+  });
   mat.userData.matId = MAT.CLOUD;
   return mat;
 }
@@ -57,164 +167,70 @@ export function createSkyProps(scene, quality = "medium") {
   const group = new THREE.Group();
   group.name = "skyprops";
 
-  const cloudMat = makeCloudMaterial();
+  const cloudTex = paintCloudAtlas();
+  const cloudMat = makeCloudMaterial(cloudTex);
   const clouds = new THREE.Group();
   const nCloud = Math.floor(4 * q.clouds);
-  const puff = cloudPuff(cloudMat);
-  puff.updateMatrixWorld(true);
-  // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
-  // To keep draw calls down, merge one puff and instance it.
-  const merged = new THREE.BufferGeometry();
-  const geos = [];
-  puff.traverse((o) => {
-    if (!o.isMesh) return;
-    const g = o.geometry.clone();
-    g.applyMatrix4(o.matrixWorld);
-    geos.push(g);
-  });
-  let cloudGeo;
-  if (THREE.BufferGeometryUtils) {
-    cloudGeo = THREE.BufferGeometryUtils.mergeGeometries(geos);
-  } else {
-    // manual merge of positions
-    cloudGeo = mergeSimple(geos, MAT.CLOUD);
-  }
-  // Horizon banks behind the island + a few large high clouds. Not a cluttered field.
+  // Frame left/right of the postcard; stay off the hoop (16,27,-1358) and Courrier.
   const heroSpots = [
-    // Frame left/right of the postcard; stay off the hoop (16,27,-1358) and Courrier.
-    [  300,  42, -1310, 12],
-    [  400,  58, -1260, 14],
-    [  220,  78, -1335, 10],
-    [ -260,  40, -1310, 12],
-    [ -380,  56, -1260, 14],
-    [ -200,  76, -1335, 10],
-    [  520,  70, -1220, 16],
-    [ -500,  68, -1220, 16],
+    [  300,  52, -1310, 160,  80, 0],
+    [  420,  70, -1250, 200, 100, 2],
+    [  210,  90, -1330, 130,  70, 2],
+    [ -260,  50, -1310, 160,  80, 0],
+    [ -400,  68, -1250, 200, 100, 2],
+    [ -200,  88, -1330, 130,  70, 2],
+    [  540,  82, -1200, 220, 110, 3],
+    [ -530,  80, -1200, 220, 110, 3],
     // Far banks beside the keep / flanks
-    [  500,  90,  -200, 36],
-    [ -280,  80,    40, 32],
-    [  280,  95,   140, 30],
+    [  520, 110,  -220, 320, 170, 1],
+    [ -300, 100,    20, 300, 160, 1],
+    [  280, 120,   120, 280, 150, 0],
   ];
-  // White tops, soft blue undersides — album cumulus, not grey blobs
-  {
-    const pos = cloudGeo.getAttribute("position");
-    const col = new Float32Array(pos.count * 3);
-    let ymin = Infinity, ymax = -Infinity;
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i);
-      if (y < ymin) ymin = y;
-      if (y > ymax) ymax = y;
-    }
-    const span = Math.max(0.001, ymax - ymin);
-    for (let i = 0; i < pos.count; i++) {
-      const k = (pos.getY(i) - ymin) / span;
-      // Warm-lit white crowns, soft lavender-blue undersides — not grey
-      const b = Math.pow(k, 0.65);
-      col[i * 3]     = 0.70 + 0.30 * b;
-      col[i * 3 + 1] = 0.74 + 0.24 * b;
-      col[i * 3 + 2] = 0.88 + 0.10 * b;
-    }
-    cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  }
-  const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nCloud + heroSpots.length);
+  const towerSpots = [
+    [ 900,  90, -200, 420, 280, 1],
+    [-880, 100,  -80, 400, 270, 1],
+  ];
+  const nHero = heroSpots.length;
+  const nTower = towerSpots.length;
+  const nTotal = nCloud + nHero + nTower;
+  const cloudGeo = retagGeometry(new THREE.PlaneGeometry(1, 1), MAT.CLOUD);
+  const tileArr = new Float32Array(nTotal);
+  const cloudInst = new THREE.InstancedMesh(cloudGeo, cloudMat, nTotal);
+  cloudInst.name = "clouds";
   const dummy = new THREE.Object3D();
   const cloudData = [];
+  function placeCloud(i, x, y, z, sx, sy, tile) {
+    dummy.position.set(x, y, z);
+    dummy.scale.set(sx, sy, 1);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    cloudInst.setMatrixAt(i, dummy.matrix);
+    tileArr[i] = tile;
+  }
   for (let i = 0; i < nCloud; i++) {
-    const a = (i / nCloud) * TAU + 0.3;
+    const a = (i / Math.max(1, nCloud)) * TAU + 0.3;
     const r = 900 + (i * 97) % 800;
     const x = Math.cos(a) * r;
     const z = Math.sin(a) * r * 0.85;
     const y = 340 + (i * 13) % 90;
-    const s = 26 + (i * 11) % 16;
-    dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 1.22, s * 1.05);
-    dummy.rotation.y = a;
-    dummy.updateMatrix();
-    cloudInst.setMatrixAt(i, dummy.matrix);
-    cloudData.push({ x, y, z, s, a, r, speed: 2 + (i % 5), baseY: y, baseS: s });
+    const sx = 180 + (i * 23) % 120;
+    const sy = sx * (0.48 + (i % 5) * 0.06);
+    const tile = i % 4;
+    placeCloud(i, x, y, z, sx, sy, tile);
+    cloudData.push({ x, y, z, sx, sy, a, r, speed: 2 + (i % 5), baseY: y, baseSx: sx, baseSy: sy, tile });
   }
-  for (let i = 0; i < heroSpots.length; i++) {
-    const [x, y, z, s] = heroSpots[i];
-    dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 1.05, s * 1.08);
-    dummy.rotation.y = i * 0.7;
-    dummy.updateMatrix();
-    cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
+  for (let i = 0; i < nHero; i++) {
+    const [x, y, z, sx, sy, tile] = heroSpots[i];
+    placeCloud(nCloud + i, x, y, z, sx, sy, tile);
   }
-  cloudInst.count = nCloud + heroSpots.length;
+  for (let i = 0; i < nTower; i++) {
+    const [x, y, z, sx, sy, tile] = towerSpots[i];
+    placeCloud(nCloud + nHero + i, x, y, z, sx, sy, tile);
+  }
+  cloudGeo.setAttribute("aTile", new THREE.InstancedBufferAttribute(tileArr, 1));
+  cloudInst.count = nTotal;
   cloudInst.frustumCulled = false;
-
   group.add(cloudInst);
-
-  // Two colossal horizon thunderheads — many soft volumes, one draw
-  function towerPuff(mat) {
-    const tg = new THREE.Group();
-    const geo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD);
-    const spots = [];
-    // Wide base, stacked body, anvil top
-    for (let k = 0; k < 14; k++) {
-      const yy = k * 0.42;
-      const rad = k < 14 ? 1.5 + k * 0.08 : 2.4 - (k - 14) * 0.12;
-      const anvil = k > 16 ? 1.0 + (k - 16) * 0.35 : 1.0;
-      const a = k * 2.2;
-      spots.push([Math.cos(a) * rad * 0.55 * anvil, yy, Math.sin(a) * rad * 0.45 * anvil, rad * 0.7]);
-    }
-    spots.push([0, 9.4, 0, 2.1], [1.8, 9.0, 0.6, 1.6], [-1.6, 8.9, -0.5, 1.5], [0.4, 10.0, 0.2, 1.2]);
-    for (const [x, y, z, s] of spots) {
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(x, y, z);
-      m.scale.set(s * 1.15, s * 0.85, s * 1.05);
-      tg.add(m);
-    }
-    return tg;
-  }
-  const towerSrc = towerPuff(cloudMat);
-  towerSrc.updateMatrixWorld(true);
-  const tgeos = [];
-  towerSrc.traverse((o) => {
-    if (!o.isMesh) return;
-    const g2 = o.geometry.clone();
-    g2.applyMatrix4(o.matrixWorld);
-    tgeos.push(g2);
-  });
-  const towerGeo = mergeSimple(tgeos, MAT.CLOUD);
-  {
-    const pos = towerGeo.getAttribute("position");
-    const col = new Float32Array(pos.count * 3);
-    let ymin = Infinity, ymax = -Infinity;
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i);
-      if (y < ymin) ymin = y;
-      if (y > ymax) ymax = y;
-    }
-    const span = Math.max(0.001, ymax - ymin);
-    for (let i = 0; i < pos.count; i++) {
-      const b = Math.pow((pos.getY(i) - ymin) / span, 0.65);
-      col[i * 3]     = 0.68 + 0.32 * b;
-      col[i * 3 + 1] = 0.73 + 0.25 * b;
-      col[i * 3 + 2] = 0.88 + 0.10 * b;
-    }
-    towerGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  }
-  const towers = new THREE.InstancedMesh(towerGeo, cloudMat, 2);
-  towers.name = "cloud-towers";
-  const tdummy = new THREE.Object3D();
-  // East (left of postcard) and west (right) horizon walls
-  const towerSpots = [
-    [ 900, 70, -200, 40],
-    [-880, 80,  -80, 38],
-  ];
-  towerSpots.forEach((s, i) => {
-    tdummy.position.set(s[0], s[1], s[2]);
-    tdummy.scale.set(s[3], s[3] * 1.35, s[3] * 1.05);
-    tdummy.rotation.y = i * 0.8;
-    tdummy.updateMatrix();
-    towers.setMatrixAt(i, tdummy.matrix);
-  });
-  towers.instanceMatrix.needsUpdate = true;
-  towers.count = 2;
-  towers.frustumCulled = false;
-  group.add(towers);
 
   // Balloons — one instanced mesh (ambient; mission balloons stay separate)
   const balloonProto = makeBalloon(0xe06a4f);
@@ -339,16 +355,13 @@ export function createSkyProps(scene, quality = "medium") {
       on = !!on;
       if (on === stormOn) return;
       stormOn = on;
+      if (cloudMat.uniforms && cloudMat.uniforms.uStorm) {
+        cloudMat.uniforms.uStorm.value = on ? 1 : 0;
+      }
       if (on) {
-        cloudMat.color.setHex(0x9aa8b8);
-        cloudMat.emissive.setHex(0x3a4a58);
-        cloudMat.emissiveIntensity = 0.10;
         if (balloonInst) balloonInst.visible = false;
         if (blimp) blimp.visible = false;
       } else {
-        cloudMat.color.setHex(0xffffff);
-        cloudMat.emissive.setHex(0xfff6ea);
-        cloudMat.emissiveIntensity = 0.32;
         if (balloonInst) balloonInst.visible = true;
         if (blimp) blimp.visible = true;
       }
@@ -362,23 +375,28 @@ export function createSkyProps(scene, quality = "medium") {
         c.x = Math.cos(c.a) * c.r;
         c.z = Math.sin(c.a) * c.r * 0.8;
         const y = stormOn ? 85 + ((c.baseY || c.y) - 220) * 0.18 + (i % 5) * 8 : (c.baseY || c.y);
-        const s = stormOn ? (c.baseS || c.s) * 1.28 : (c.baseS || c.s);
+        const sx = stormOn ? (c.baseSx || c.sx) * 1.15 : (c.baseSx || c.sx);
+        const sy = stormOn ? (c.baseSy || c.sy) * 0.95 : (c.baseSy || c.sy);
         c.y = y;
         dummy.position.set(c.x, y, c.z);
-        dummy.scale.set(s * (stormOn ? 1.15 : 1), s * (stormOn ? 0.92 : 1.18), s * (stormOn ? 1.35 : 1.05));
-        dummy.rotation.y = c.a;
+        dummy.scale.set(sx, sy, 1);
         dummy.updateMatrix();
         cloudInst.setMatrixAt(i, dummy.matrix);
       }
       for (let i = 0; i < heroSpots.length; i++) {
-        const [x, y, z, s] = heroSpots[i];
+        const [x, y, z, sx, sy] = heroSpots[i];
         const yy = stormOn ? 70 + y * 0.22 : y;
-        const ss = stormOn ? s * 1.45 : s;
         dummy.position.set(x, yy, z);
-        dummy.scale.set(ss * (stormOn ? 1.2 : 1), ss * (stormOn ? 0.9 : 1.05), ss * (stormOn ? 1.4 : 1.08));
-        dummy.rotation.y = i * 0.7;
+        dummy.scale.set(stormOn ? sx * 1.2 : sx, stormOn ? sy * 0.9 : sy, 1);
         dummy.updateMatrix();
         cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
+      }
+      for (let i = 0; i < towerSpots.length; i++) {
+        const [x, y, z, sx, sy] = towerSpots[i];
+        dummy.position.set(x, stormOn ? y * 0.6 : y, z);
+        dummy.scale.set(sx, sy, 1);
+        dummy.updateMatrix();
+        cloudInst.setMatrixAt(nCloud + heroSpots.length + i, dummy.matrix);
       }
       cloudInst.instanceMatrix.needsUpdate = true;
 

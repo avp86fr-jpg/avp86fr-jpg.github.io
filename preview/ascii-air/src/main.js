@@ -145,7 +145,7 @@ function rebuildPlane(id) {
 
 function applyVisualSettings() {
   look.uniforms.uContrast.value = settings.highContrast ? 1.12 : 1.04;
-  look.uniforms.uOutline.value = settings.highContrast ? 0.85 : 0.42;
+  look.uniforms.uOutline.value = settings.highContrast ? 0.72 : 0.26;
   look.uniforms.uBloom.value = (QUALITY[settings.quality] || QUALITY.medium).bloom ? 0.26 : 0.0;
   flyCam.state.comfort = !!settings.motionComfort;
   audio.setVolumes(settings);
@@ -547,7 +547,7 @@ function renderFrame(time, camDt = 1 / 60) {
     camera.getWorldDirection(_fwd);
     let into = 0;
     if (_sun) into = Math.max(0, _fwd.dot(_sun));
-    look.uniforms.uExposure.value = 1.08 - into * 0.24;
+    look.uniforms.uExposure.value = 1.05 - into * 0.24;
     if (useBloom) look.uniforms.uBloom.value = Math.max(0.08, 0.26 - into * 0.18);
   }
 

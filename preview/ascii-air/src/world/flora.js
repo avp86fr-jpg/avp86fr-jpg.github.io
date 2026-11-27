@@ -62,12 +62,12 @@ function treePrototype(kind) {
     if (r < 0.62 && y < 4.4) return 0x5a3a22;
     if (kind === "broad") {
       // Light sunlit top, cool shaded bottom
-      if (y > 6.6) return 0x6cc85a;
-      if (y < 4.8) return 0x1e6a32;
-      if (x > 1.0) return 0x48b048;
-      return 0x2e9440;
+      if (y > 6.6) return 0x6a8a48;
+      if (y < 4.8) return 0x1e4a28;
+      if (x > 1.0) return 0x4a7a38;
+      return 0x2e6a32;
     }
-    return y > 7.6 ? 0x3a8a3a : 0x1a5224;
+    return y > 7.6 ? 0x3a6e30 : 0x1a4a22;
   });
   return geo;
 }
@@ -80,7 +80,7 @@ function bushPrototype() {
     parts.push(retagGeometry(s, MAT.FOLIAGE));
   }
   const geo = mergeGeos(parts, MAT.FOLIAGE);
-  paintColors(geo, (x, y) => (x > 0.4 ? 0x3aa83a : x < -0.3 ? 0x1f6e2c : 0x2c8a32));
+  paintColors(geo, (x, y) => (x > 0.4 ? 0x3a7a32 : x < -0.3 ? 0x1e5a24 : 0x2c6a2c));
   return geo;
 }
 function foliageMat() {
@@ -123,9 +123,9 @@ function farPrototype(kind) {
   paintColors(geo, (x, y, z) => {
     const r = Math.hypot(x, z);
     if (kind !== "bush" && r < 0.55 && y < 3.6) return 0x5a3a22;
-    if (kind === "broad") return y > 5.4 ? 0x58c05a : 0x2a7a38;
-    if (kind === "bush") return y > 0.6 ? 0x4aaa40 : 0x2c7a32;
-    return y > 6.5 ? 0x3a8a3a : 0x1a5224;
+    if (kind === "broad") return y > 5.4 ? 0x5a8a48 : 0x2a5a30;
+    if (kind === "bush") return y > 0.6 ? 0x4a7a38 : 0x2c5a28;
+    return y > 6.5 ? 0x3a6e30 : 0x1a4a22;
   });
   return geo;
 }

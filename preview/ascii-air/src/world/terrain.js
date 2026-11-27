@@ -308,6 +308,13 @@ export function computeHeight(x, z) {
   // Inland cape shelf: a gently rolling terrace, not a ridged khaki dome.
   const capeInland = smoothstep(LANDMARKS.arch.z - 2, LANDMARKS.lighthouse.z + 10, z);
   h = Math.max(h, (28 + 5 * fbm(x * 0.03, z * 0.03, 2, 5)) * beachCape2 * capeInland);
+  // SE apron of the west cape (toward the runway): a grassy shelf, not a tan facet.
+  if (x > -90 && x < 90 && z < -1160 && z > -1280) {
+    const apron = smoothstep(-90, -20, x) * smoothstep(90, 20, x)
+      * smoothstep(-1160, -1190, z) * smoothstep(-1280, -1230, z);
+    const notCove = 1 - smoothstep(40, 16, dist2(x, z, 40, -1220));
+    h = flatten(h, 16 + 5 * fbm(x * 0.03, z * 0.03, 2, 6), apron * notCove * 0.78);
+  }
 
   // South-east ochre sea-cliffs
   if (x > 280 && x < 1000 && z < -680 && z > -1400) {
@@ -394,13 +401,16 @@ export function computeMaterial(x, z, h, slope) {
   if (h < -1.2) return MAT.WATER_DEEP;
   if (h < 0.45) return MAT.SEA;
   // foam / wet sand near water (east beaches only — west cape stays limestone)
-  const westCape = x < 10 && z < -1140;
+  const westCape = x < 50 && z < -1140;
   if (h < 1.6 && !westCape) return MAT.SAND;
   if (westCape) {
     if (h > 14 && slope < 0.52) return MAT.GRASS;
     if (slope > 0.28 || h < 7) return MAT.ROCK;
     return MAT.GRASS;
   }
+  // SE apron of the west cape — keep it green scrub, not tan rock.
+  if (x > -90 && x < 90 && z < -1165 && z > -1280 && h > 6 && slope < 0.62) return MAT.GRASS;
+
   const vd = dist2(x, z, 0, 200);
   const wd = dist2(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
   if (wd < 150 && vd > 280) return MAT.GRASS;
@@ -424,7 +434,7 @@ export function computeMaterial(x, z, h, slope) {
   // East-coast headland: sand at the water, rock on the face, pines/grass only on top
   if (x > 70 && x < 280 && z > -1340 && z < -1175) {
     if (h < 2.4) return MAT.SAND;
-    if (slope > 0.32 || h < 8) return MAT.ROCK;
+    if (slope > 0.48 || h < 5.5) return MAT.ROCK;
     return MAT.GRASS;
   }
   {
@@ -502,16 +512,16 @@ export function createTerrain(quality = "medium") {
       case MAT.GRASS: {
         const onCape = Math.hypot(x + 170, z + 1190) < 220 || Math.hypot(x + 210, z + 1250) < 160;
         if (onCape) {
-          const g = 0.08 * fbm(x * 0.04, z * 0.04, 2, 9);
-          return [0.36 + g, 0.58 + g * 0.8, 0.26];
+          const g = 0.07 * fbm(x * 0.04, z * 0.04, 2, 9);
+          return [0.34 + g, 0.46 + g * 0.55, 0.24 + g * 0.1];
         }
         const n2 = fbm(x * 0.007, z * 0.007, 3, 7);
         const terrace = Math.abs(Math.sin(h * 0.62 + x * 0.028 + z * 0.018)) < 0.07;
         const ochre = [0.62 + n * 0.05, 0.54 + n * 0.04, 0.22];
-        const sage  = [0.40, 0.62, 0.30];
-        const olive = [0.32, 0.54, 0.20];
-        const pine  = [0.18, 0.42, 0.16];
-        const meadow= [0.38 + n * 0.06, 0.64 + n * 0.07, 0.22];
+        const sage  = [0.38, 0.50, 0.30];
+        const olive = [0.32, 0.44, 0.22];
+        const pine  = [0.20, 0.34, 0.16];
+        const meadow= [0.36 + n * 0.04, 0.50 + n * 0.04, 0.24];
         let col;
         if (n2 < 0.38) {
           const k = Math.min(1, (0.38 - n2) / 0.14);
@@ -530,7 +540,7 @@ export function createTerrain(quality = "medium") {
         col = [col[0] * (0.90 + n3 * 0.18), col[1] * (0.90 + n3 * 0.16), col[2] * (0.90 + n3 * 0.12)];
         return col;
       }
-      case MAT.FOREST: return [0.22 + n * 0.05, 0.36 + n * 0.08, 0.18];
+      case MAT.FOREST: return [0.22 + n * 0.04, 0.34 + n * 0.05, 0.16];
       case MAT.ROCK: {
         const vd = Math.hypot(x, z - 200);
         // Dark crater rim and a little lava in the bowl; brown/red-ochre cone.

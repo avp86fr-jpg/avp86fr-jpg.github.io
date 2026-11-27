@@ -70,7 +70,20 @@ void main() {
   // glancing angle must not draw as a black ink line across the frame.
   float isRoad = min(1.0, step(8.5, matId) * step(matId, 9.5) + step(22.5, matId) * step(matId, 23.5));
   float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
-  col = mix(col, floor(col * 5.0 + dither * 0.25 + 0.5) / 5.0, 0.28 * (1.0 - isWater) * (1.0 - isSky) * (1.0 - isRing));
+  // Soft painterly banding (not hard posterization).
+  col = mix(col, floor(col * 6.0 + dither * 0.18 + 0.5) / 6.0, 0.16 * (1.0 - isWater) * (1.0 - isSky) * (1.0 - isRing));
+
+  // Pull neon mid-greens toward the cover's olive / sage mix.
+  float greenness = col.g - max(col.r, col.b);
+  float greenMask = smoothstep(0.03, 0.16, greenness) * (1.0 - isWater) * (1.0 - isSky) * (1.0 - isRing);
+  col = mix(col, vec3(col.r * 0.96 + 0.02, col.g * 0.84, col.b * 0.78 + 0.04), greenMask * 0.70);
+
+  // Toon / ramp: soft warm key on lit faces, cool bounce in shade.
+  float ramp = smoothstep(0.16, 0.30, L) * 0.34 + smoothstep(0.42, 0.56, L) * 0.36 + smoothstep(0.66, 0.80, L) * 0.30;
+  vec3 warm = col * vec3(1.07, 1.02, 0.93);
+  vec3 cool = col * vec3(0.88, 0.93, 1.08) + vec3(0.015, 0.025, 0.05);
+  vec3 ramped = mix(cool, warm, ramp);
+  col = mix(col, ramped, 0.52 * (1.0 - isWater * 0.6) * (1.0 - isSky * 0.35));
 
   float d  = linDepth(texture2D(tDepth, vUv).r);
   vec2 o1 = px * 1.6;
@@ -123,8 +136,14 @@ void main() {
   silFar *= 1.0 - isSky;
   colEdge *= 1.0 - isSky;
   float ink = max(sil, colEdge);
-  vec3 inkCol = vec3(0.09, 0.07, 0.05);
-  col = mix(col, inkCol, ink * mix(0.94, 0.86, isPlane));
+  // Subtle warm umber outlines — soft, not hard ink.
+  vec3 inkCol = vec3(0.22, 0.16, 0.10);
+  col = mix(col, inkCol, ink * mix(0.42, 0.34, isPlane));
+
+  // Atmospheric aerial perspective: blue haze with distance.
+  float haze = smoothstep(380.0, 2600.0, d) * (1.0 - isSky * 0.25);
+  vec3 hazeCol = vec3(0.62, 0.75, 0.90);
+  col = mix(col, hazeCol, haze * 0.46);
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;
@@ -187,9 +206,9 @@ export function createLigneClaire() {
     uRes: { value: new THREE.Vector2(1920, 1080) },
     uNearFar: { value: new THREE.Vector2(0.8, 6200) },
     uTime: { value: 0 },
-    uExposure: { value: 1.08 },
-    uSat: { value: 1.32 },
-    uOutline: { value: 0.42 },
+    uExposure: { value: 1.05 },
+    uSat: { value: 1.08 },
+    uOutline: { value: 0.26 },
     uBloom: { value: 0.26 },
     uRain: { value: 0 },
     uFlash: { value: 0 },
