@@ -38082,7 +38082,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const o = bObs.o;
       if (o && o.holder && o.alive && o.def?.look) {
         const L = o.def.look, dist = Math.round(G.camera.position.distanceTo(o.pos));
-        const bw = 178, ph = G.quality?.mobile, bx = ph ? W - bw - 14 : Math.min(W - bw - 12, cX + H * 0.12), by = ph ? 82 : cY - 60, bh = 40 + traits.length * 15;
+        const bw = 178, ph = !!(G.quality?.mobile || document.body.classList.contains("touch")), bx = ph ? W - bw - 14 : Math.min(W - bw - 12, cX + H * 0.12), by = ph ? 82 : cY - 60, bh = 40 + traits.length * 15;
         cx.fillStyle = "rgba(6,9,12,0.72)";
         cx.fillRect(bx, by, bw, bh);
         cx.strokeStyle = "rgba(255,222,112,0.6)";
@@ -43944,7 +43944,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (M2.kind === "range") $("rBest").innerHTML = "<b>Range leaderboard</b>" + s.range.slice(0, 5).map((e, i) => `<div>${i + 1}. ${e.score} <i>${e.date}</i></div>`).join("");
     else $("rBest").innerHTML = `Best ${rec?.best || 0} ${rec?.rank ? "\xB7 " + rec.rank : ""}`;
     $("rChk").innerHTML = M2.kind === "range" ? "" : M2.def.challenges.map((c) => `<div class="${res.ch?.[c.id] ? "ok" : ""}">${res.ch?.[c.id] ? "\u2605" : "\u2606"} ${esc(c.text)}</div>`).join("") + M2.def.objectives.secondary.map((c) => `<div class="${res.sec?.[c.id] ? "ok" : ""}">${res.sec?.[c.id] ? "\u2713" : "\u25CB"} ${esc(c.text)}</div>`).join("");
-    const id = M2.kind === "range" ? "RNG" : "M" + M2.def.num;
+    const id = M2.kind === "range" ? "RANGE" : String(M2.def.id || "CONTRACT").toUpperCase();
     const str = `${id}-${res.total}-${(res.rank || "").slice(0, 3)}`;
     let h = 0;
     for (const ch of str) h = h * 31 + ch.charCodeAt(0) >>> 0;
@@ -45747,6 +45747,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           const M2 = G.mission;
           const dir = this.aimDir();
           const proj = this.makeProjectile();
+          proj.mission = G.mission;
           const q = { p: proj.p.clone(), v: proj.v.clone(), k: proj.k, age: 0, right: proj.right };
           const o = G.camera.position, rel = new Vector3();
           while (q.age < 5) {
@@ -45854,6 +45855,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           this.boltReady = false;
           this.boltT = this.rifle.bolt;
           const proj = this.makeProjectile();
+          proj.mission = G.mission;
           proj.aimed = this.aimedThing();
           const pred = this.predict(proj);
           proj.pred = pred;
@@ -45948,6 +45950,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].done) this.projectiles.splice(i, 1);
         }
         resolveHit(pr, h) {
+          if (pr.mission && pr.mission !== G.mission) return;
           const M2 = G.mission;
           const dist = h.point.distanceTo(pr.start);
           const dirFlat = new Vector3(pr.v.x, 0, pr.v.z).normalize();
@@ -45984,7 +45987,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           }
           G.save.records.shots++;
           if (res.killed) G.save.records.hits++;
-          emit("hitConfirm", { killed: res.killed, zone: h.zone, kind, dist: R, tof: pr.age, miss: !res.killed && !res.text && kind !== "plate", plate: kind === "plate" || !!res.ok });
+          emit("hitConfirm", { mission: M2, killed: res.killed, zone: h.zone, kind, dist: R, tof: pr.age, miss: !res.killed && !res.text && kind !== "plate", plate: kind === "plate" || !!res.ok });
         }
       };
     }
@@ -46396,6 +46399,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           if (r.hint) showHint(r.hint);
         });
         on("hitConfirm", (e) => {
+          if (G.mode !== "play" || e.mission && e.mission !== G.mission) return;
           const mk = $2("hMark"), kl = $2("hKill");
           const retrig = (el2) => {
             el2.classList.remove("on");
@@ -46614,7 +46618,21 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         document.body.classList.toggle("has-therm", !!M2.world.night);
         document.body.classList.toggle("has-spot", !!M2.world.spotter);
         document.body.classList.toggle("has-detect", !!M2.def.detect);
-        for (const id of ["hKill", "hMark"]) $2(id)?.classList.remove("on");
+        for (const id of ["hKill", "hMark"]) {
+          const el2 = $2(id);
+          if (el2) {
+            el2.classList.remove("on", "bad");
+            el2.style.opacity = "";
+          }
+        }
+        {
+          const kl = $2("hKill");
+          if (kl) {
+            kl.querySelector("b").textContent = "";
+            kl.querySelector("span").textContent = "";
+          }
+        }
+        G._missionT0 = performance.now();
         G.mode = "play";
         paused = false;
         intelOpen = false;
@@ -47083,12 +47101,15 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         const view = G.mode === "play" ? G.view : "eye";
         {
           const bc = view === "bulletcam";
-          if (bc !== G._bcRim && G.mission?.npcs) {
+          if (bc !== G._bcRim) {
             G._bcRim = bc;
             if (bc) duck?.(0.3, 2.8);
-            for (const n of G.mission.npcs) {
-              const rim = n.tagged && n.holder?.userData?.rim;
-              if (rim) rim.amount.value = bc ? 0.1 : 0.9;
+          }
+          if (G.mission?.npcs && G.camera) for (const n of G.mission.npcs) {
+            const rim = n.tagged && n.holder?.userData?.rim;
+            if (rim) {
+              const d = G.camera.position.distanceTo(n.pos);
+              rim.amount.value = 0.9 * Math.min(1, Math.max(0, (d - 40) / 110));
             }
           }
         }
