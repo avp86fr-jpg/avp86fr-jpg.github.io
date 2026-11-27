@@ -147,7 +147,7 @@ export function computeHeight(x, z) {
       const edgeJitter = 11 * (fbm(x * 0.028, 3.1, 3, 17) - 0.5) + 7 * Math.sin(x * 0.065);
       const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter;
       if (z < edgeZ) {
-        const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
+        const faceDepth = 10 + 6 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
         const toe = Math.max(1.2, 1.2 + 3.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
         if (drop < 0.98) {
@@ -305,9 +305,9 @@ export function computeHeight(x, z) {
   h = flatten(h, 4.2, Math.pow(saturate(airportPad2), 1.15));
   h = flatten(h, 90, Math.pow(saturate(grassPad2), 1.2) * 0.95);
   h = flatten(h, 1.8, cove2 * 0.9);
-  // Only raise the inland cape shelf — do not rebuild a sand dome south of the arch
+  // Inland cape shelf: a gently rolling terrace, not a ridged khaki dome.
   const capeInland = smoothstep(LANDMARKS.arch.z - 2, LANDMARKS.lighthouse.z + 10, z);
-  h = Math.max(h, (22 + 18 * ridge(x * 0.02, z * 0.02, 2, 4)) * beachCape2 * capeInland);
+  h = Math.max(h, (28 + 5 * fbm(x * 0.03, z * 0.03, 2, 5)) * beachCape2 * capeInland);
 
   // South-east ochre sea-cliffs
   if (x > 280 && x < 1000 && z < -680 && z > -1400) {
@@ -322,8 +322,9 @@ export function computeHeight(x, z) {
     h = Math.max(h, cliffH * band);
   }
 
-  // Soft terraces on inland rolling ground
-  if (h > 10 && h < 88 && Math.abs(z + 1100) > 200 && dist2(x, z, 0, 200) > 250) {
+  // Soft terraces on inland rolling ground (not the west limestone cape)
+  if (h > 10 && h < 88 && Math.abs(z + 1100) > 200 && dist2(x, z, 0, 200) > 250
+      && !(x < -20 && z < -1140)) {
     const stepH = 7;
     const terr = Math.round(h / stepH) * stepH;
     h = lerp(h, terr, 0.52);
@@ -343,7 +344,7 @@ export function computeHeight(x, z) {
       const edgeJitter = 11 * (fbm(x * 0.028, 3.1, 3, 17) - 0.5) + 7 * Math.sin(x * 0.065);
       const edgeZ = LANDMARKS.arch.z - 8 + edgeJitter;
       if (z < edgeZ) {
-        const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
+        const faceDepth = 10 + 6 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
         const toe = Math.max(1.2, 1.2 + 3.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
         if (drop < 0.98) {
@@ -374,6 +375,17 @@ export function computeHeight(x, z) {
     h = Math.max(h, lerp(h, top, shelf * 0.88));
   }
 
+
+  // Flatten the west-cape CROWN to a gently rolling green terrace.
+  {
+    const d = dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z);
+    if (d < 210 && z > LANDMARKS.arch.z + 2 && x < 20) {
+      const k = smoothstep(210, 50, d);
+      const crown = 31 + 1.6 * fbm(x * 0.02, z * 0.02, 2, 5);
+      h = lerp(h, crown, k * 0.94);
+    }
+  }
+
   return h;
 }
 
@@ -382,10 +394,11 @@ export function computeMaterial(x, z, h, slope) {
   if (h < -1.2) return MAT.WATER_DEEP;
   if (h < 0.45) return MAT.SEA;
   // foam / wet sand near water (east beaches only — west cape stays limestone)
-  const westCape = x < -40 && z < -1180;
+  const westCape = x < 10 && z < -1140;
   if (h < 1.6 && !westCape) return MAT.SAND;
   if (westCape) {
-    if (slope > 0.30 || h < 7) return MAT.ROCK;
+    if (h > 14 && slope < 0.52) return MAT.GRASS;
+    if (slope > 0.28 || h < 7) return MAT.ROCK;
     return MAT.GRASS;
   }
   const vd = dist2(x, z, 0, 200);
@@ -577,17 +590,35 @@ export function createTerrain(quality = "medium") {
       aid[o * 2 + 1] = (isDirtField || isOchreGrass) ? 2 : 0;
     }
   }
-  // normals
+  // normals — slightly wider stencil so steep cells shade more smoothly
+  const tmpN = new Float32Array(verts * verts * 3);
   for (let j = 0; j < verts; j++) {
     for (let i = 0; i < verts; i++) {
-      const il = Math.max(0, i - 1), ir = Math.min(N, i + 1);
-      const jd = Math.max(0, j - 1), ju = Math.min(N, j + 1);
+      const il = Math.max(0, i - 2), ir = Math.min(N, i + 2);
+      const jd = Math.max(0, j - 2), ju = Math.min(N, j + 2);
       const dx = (hx(ir, j) - hx(il, j));
       const dz = (hx(i, ju) - hx(i, jd));
       const sx = (ir - il) * step;
       const sz = (ju - jd) * step;
-      // normal from (-dh/dx, 1, -dh/dz)
       let nx = -dx / sx, ny = 1, nz = -dz / sz;
+      const len = Math.hypot(nx, ny, nz) || 1;
+      const o = (j * verts + i) * 3;
+      tmpN[o] = nx / len; tmpN[o + 1] = ny / len; tmpN[o + 2] = nz / len;
+    }
+  }
+  for (let j = 0; j < verts; j++) {
+    for (let i = 0; i < verts; i++) {
+      let nx = 0, ny = 0, nz = 0, wsum = 0;
+      for (let dj = -1; dj <= 1; dj++) {
+        for (let di = -1; di <= 1; di++) {
+          const ii = Math.max(0, Math.min(N, i + di));
+          const jj = Math.max(0, Math.min(N, j + dj));
+          const o = (jj * verts + ii) * 3;
+          const w = (di === 0 && dj === 0) ? 2 : 1;
+          nx += tmpN[o] * w; ny += tmpN[o + 1] * w; nz += tmpN[o + 2] * w;
+          wsum += w;
+        }
+      }
       const len = Math.hypot(nx, ny, nz) || 1;
       const o = (j * verts + i) * 3;
       nrm[o] = nx / len; nrm[o + 1] = ny / len; nrm[o + 2] = nz / len;

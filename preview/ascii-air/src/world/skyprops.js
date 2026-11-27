@@ -38,70 +38,17 @@ function cloudPuff(mat) {
 
 
 function makeCloudMaterial() {
-  // Custom shader so we can pack matId in alpha AND soften rims with dither
-  // (patchMaterialIdAlpha would overwrite a true soft-alpha edge).
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uSun: { value: new THREE.Vector3(0.42, 0.82, 0.28) },
-      uTint: { value: new THREE.Color(0xffffff) },
-      uEmissive: { value: new THREE.Color(0xfff4e4) },
-      uEmit: { value: 0.28 },
-      fogColor: { value: new THREE.Color(0xb8d6ea) },
-      fogNear: { value: 800 },
-      fogFar: { value: 5200 },
-    },
+  // Lambert (not a custom ShaderMaterial) so InstancedMesh instanceMatrix is
+  // applied by Three's built-in shader. Soft dither edges were losing the
+  // banks entirely because the custom vertex shader ignored instancing.
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     vertexColors: true,
-    transparent: false,
-    depthWrite: true,
-    side: THREE.FrontSide,
-    vertexShader: /* glsl */ `
-      attribute vec3 color;
-      varying vec3 vCol;
-      varying vec3 vN;
-      varying vec3 vW;
-      varying float vFog;
-      void main() {
-        vCol = color;
-        vN = normalize(normalMatrix * normal);
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vW = wp.xyz;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_Position = projectionMatrix * mv;
-        vFog = -mv.z;
-      }
-    `,
-    fragmentShader: /* glsl */ `
-      uniform vec3 uSun;
-      uniform vec3 uTint;
-      uniform vec3 uEmissive;
-      uniform float uEmit;
-      uniform vec3 fogColor;
-      uniform float fogNear;
-      uniform float fogFar;
-      varying vec3 vCol;
-      varying vec3 vN;
-      varying vec3 vW;
-      varying float vFog;
-      void main() {
-        vec3 n = normalize(vN);
-        vec3 v = normalize(cameraPosition - vW);
-        float ndv = abs(dot(n, v));
-        float fres = pow(1.0 - ndv, 2.4);
-        float lit = 0.62 + 0.50 * max(0.0, dot(n, normalize(uSun)));
-        vec3 col = vCol * uTint * lit + uEmissive * uEmit;
-        // Warm bright rim, so the volume never reads as a grey rock
-        col = mix(col, vec3(1.0, 0.98, 0.94), fres * 0.62);
-        // Soft silhouette: screen-door the glancing edge instead of a hard outline
-        float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-        float keep = smoothstep(0.04, 0.32, ndv);
-        if (keep < 0.12 && dither > keep + 0.15) discard;
-        float fg = smoothstep(fogNear, fogFar, vFog);
-        col = mix(col, fogColor, fg * 0.55);
-        gl_FragColor = vec4(col, 7.0 / 255.0);
-      }
-    `,
-  });
-  mat.userData.matId = 7; // MAT.CLOUD
+    emissive: 0xfff6ea,
+    emissiveIntensity: 0.32,
+    flatShading: false,
+    fog: true,
+  }));
+  mat.userData.matId = MAT.CLOUD;
   return mat;
 }
 
@@ -134,12 +81,19 @@ export function createSkyProps(scene, quality = "medium") {
   }
   // Horizon banks behind the island + a few large high clouds. Not a cluttered field.
   const heroSpots = [
-    // Large sunlit banks in the postcard sky (south bay looks north)
-    [  40, 200, -620, 88],
-    [-280, 190, -780, 76],
-    [ 300, 185, -800, 74],
-    [-720, 240, 80, 64],
-    [ 760, 230, 40, 62],
+    // Frame left/right of the postcard; stay off the hoop (16,27,-1358) and Courrier.
+    [  300,  42, -1310, 12],
+    [  400,  58, -1260, 14],
+    [  220,  78, -1335, 10],
+    [ -260,  40, -1310, 12],
+    [ -380,  56, -1260, 14],
+    [ -200,  76, -1335, 10],
+    [  520,  70, -1220, 16],
+    [ -500,  68, -1220, 16],
+    // Far banks beside the keep / flanks
+    [  500,  90,  -200, 36],
+    [ -280,  80,    40, 32],
+    [  280,  95,   140, 30],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {
@@ -182,12 +136,13 @@ export function createSkyProps(scene, quality = "medium") {
   for (let i = 0; i < heroSpots.length; i++) {
     const [x, y, z, s] = heroSpots[i];
     dummy.position.set(x, y, z);
-    dummy.scale.set(s, s * 1.26, s * 1.08);
+    dummy.scale.set(s, s * 1.05, s * 1.08);
     dummy.rotation.y = i * 0.7;
     dummy.updateMatrix();
     cloudInst.setMatrixAt(nCloud + i, dummy.matrix);
   }
   cloudInst.count = nCloud + heroSpots.length;
+  cloudInst.frustumCulled = false;
 
   group.add(cloudInst);
 
@@ -246,8 +201,8 @@ export function createSkyProps(scene, quality = "medium") {
   const tdummy = new THREE.Object3D();
   // East (left of postcard) and west (right) horizon walls
   const towerSpots = [
-    [ 820, 80,  40, 36],
-    [-800, 90, 120, 34],
+    [ 900, 70, -200, 40],
+    [-880, 80,  -80, 38],
   ];
   towerSpots.forEach((s, i) => {
     tdummy.position.set(s[0], s[1], s[2]);
@@ -258,6 +213,7 @@ export function createSkyProps(scene, quality = "medium") {
   });
   towers.instanceMatrix.needsUpdate = true;
   towers.count = 2;
+  towers.frustumCulled = false;
   group.add(towers);
 
   // Balloons — one instanced mesh (ambient; mission balloons stay separate)
@@ -316,6 +272,63 @@ export function createSkyProps(scene, quality = "medium") {
   const birds = makeBirdFlock(36);
   group.add(birds.group);
 
+  // Distant blue mountain ranges on the horizon (in front of the sky far-plane).
+  {
+    const positions = [], colors = [], indices = [];
+    function ridge(cx, cz, len, halfW, peakH, segs, seed, yaw) {
+      const ca = Math.cos(yaw), sa = Math.sin(yaw);
+      const spine = [];
+      for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const along = (t - 0.5) * len;
+        const env = Math.sin(t * Math.PI);
+        const jag = 0.75 + 0.25 * Math.sin(t * 7 + seed) + 0.12 * Math.sin(t * 13 + seed * 2);
+        const y = Math.max(12, peakH * env * jag);
+        const x = cx + ca * along, z = cz + sa * along;
+        spine.push({ x, y, z, t });
+      }
+      for (let i = 0; i < spine.length; i++) {
+        const p = spine[i];
+        const px = -sa * halfW, pz = ca * halfW;
+        const sh = 0.78 + 0.16 * Math.sin(p.t * 6 + seed);
+        const c = [0.40 * sh, 0.51 * sh, 0.61 * sh];
+        const base = positions.length / 3;
+        positions.push(p.x, p.y, p.z); colors.push(c[0], c[1], c[2]);
+        positions.push(p.x + px, -10, p.z + pz); colors.push(c[0]*0.9, c[1]*0.9, c[2]*0.9);
+        positions.push(p.x - px, -10, p.z - pz); colors.push(c[0]*0.9, c[1]*0.9, c[2]*0.9);
+        if (i < spine.length - 1) {
+          const n = base + 3;
+          indices.push(base, n, base + 1, base + 1, n, n + 1);
+          indices.push(base, base + 2, n, n, base + 2, n + 2);
+        }
+      }
+    }
+    const ranges = [
+      [  200, 2150, 900, 180, 170, 10, 1.1, 0.15],
+      [  800, 2000, 700, 160, 140, 8, 2.4, -0.4],
+      [ -650, 2050, 800, 170, 155, 9, 3.2, 0.5],
+      [ 1400, 1500, 750, 160, 130, 8, 4.0, 0.9],
+      [-1400, 1480, 750, 160, 135, 8, 5.1, -0.8],
+      [ 1750,  700, 800, 170, 145, 8, 6.3, 1.4],
+      [-1750,  650, 800, 170, 150, 8, 7.2, 1.7],
+      [  400, 2350, 1100, 200, 190, 12, 8.0, 0.05],
+    ];
+    for (const r of ranges) ridge(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    retagGeometry(geo, MAT.ROCK, 0);
+    const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+      vertexColors: true, flatShading: false, fog: true,
+    }));
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.name = "horizon-ranges";
+    mesh.frustumCulled = false;
+    group.add(mesh);
+  }
+
   scene.add(group);
 
   group.traverse((o) => { if (o.material) patchMaterialIdAlpha(o.material); });
@@ -327,19 +340,15 @@ export function createSkyProps(scene, quality = "medium") {
       if (on === stormOn) return;
       stormOn = on;
       if (on) {
-        if (cloudMat.uniforms && cloudMat.uniforms.uTint) {
-          cloudMat.uniforms.uTint.value.setHex(0x9aa8b8);
-          cloudMat.uniforms.uEmissive.value.setHex(0x3a4a58);
-          cloudMat.uniforms.uEmit.value = 0.10;
-        }
+        cloudMat.color.setHex(0x9aa8b8);
+        cloudMat.emissive.setHex(0x3a4a58);
+        cloudMat.emissiveIntensity = 0.10;
         if (balloonInst) balloonInst.visible = false;
         if (blimp) blimp.visible = false;
       } else {
-        if (cloudMat.uniforms && cloudMat.uniforms.uTint) {
-          cloudMat.uniforms.uTint.value.setHex(0xffffff);
-          cloudMat.uniforms.uEmissive.value.setHex(0xfff4e4);
-          cloudMat.uniforms.uEmit.value = 0.28;
-        }
+        cloudMat.color.setHex(0xffffff);
+        cloudMat.emissive.setHex(0xfff6ea);
+        cloudMat.emissiveIntensity = 0.32;
         if (balloonInst) balloonInst.visible = true;
         if (blimp) blimp.visible = true;
       }
@@ -366,7 +375,7 @@ export function createSkyProps(scene, quality = "medium") {
         const yy = stormOn ? 70 + y * 0.22 : y;
         const ss = stormOn ? s * 1.45 : s;
         dummy.position.set(x, yy, z);
-        dummy.scale.set(ss * (stormOn ? 1.2 : 1), ss * (stormOn ? 0.9 : 1.22), ss * (stormOn ? 1.4 : 1.08));
+        dummy.scale.set(ss * (stormOn ? 1.2 : 1), ss * (stormOn ? 0.9 : 1.05), ss * (stormOn ? 1.4 : 1.08));
         dummy.rotation.y = i * 0.7;
         dummy.updateMatrix();
         cloudInst.setMatrixAt(nCloud + i, dummy.matrix);

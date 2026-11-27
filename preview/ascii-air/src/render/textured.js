@@ -132,17 +132,28 @@ uniform sampler2D uTexSand;`
       hook + `
       {
         vec3 n = normalize(vWorldN);
-        vec3 b = pow(abs(n), vec3(4.0));
+        vec3 b = pow(abs(n), vec3(3.0));
         b /= max(b.x + b.y + b.z, 0.0001);
-        vec3 tpG = vWorldPos * 0.11;
-        vec3 tpR = vWorldPos * 0.05;
+        vec3 tpG = vWorldPos * 0.08;
+        vec3 tpGd = vWorldPos * 0.23;
+        vec3 tpR = vWorldPos * 0.045;
+        vec3 tpRd = vWorldPos * 0.13;
         vec3 tpS = vWorldPos * 0.09;
-        vec3 grassT = texture2D(uTexGrass, tpG.yz).rgb * b.x + texture2D(uTexGrass, tpG.xz).rgb * b.y + texture2D(uTexGrass, tpG.xy).rgb * b.z;
-        vec3 rockT  = texture2D(uTexRock,  tpR.yz).rgb * b.x + texture2D(uTexRock,  tpR.xz).rgb * b.y + texture2D(uTexRock,  tpR.xy).rgb * b.z;
+        vec3 grassA = texture2D(uTexGrass, tpG.yz).rgb * b.x + texture2D(uTexGrass, tpG.xz).rgb * b.y + texture2D(uTexGrass, tpG.xy).rgb * b.z;
+        vec3 grassB = texture2D(uTexGrass, tpGd.yz).rgb * b.x + texture2D(uTexGrass, tpGd.xz).rgb * b.y + texture2D(uTexGrass, tpGd.xy).rgb * b.z;
+        vec3 grassT = mix(grassA, grassB, 0.42);
+        vec3 rockA  = texture2D(uTexRock,  tpR.yz).rgb * b.x + texture2D(uTexRock,  tpR.xz).rgb * b.y + texture2D(uTexRock,  tpR.xy).rgb * b.z;
+        vec3 rockB  = texture2D(uTexRock,  tpRd.yz).rgb * b.x + texture2D(uTexRock,  tpRd.xz).rgb * b.y + texture2D(uTexRock,  tpRd.xy).rgb * b.z;
+        vec3 rockT  = mix(rockA, rockB, 0.40);
         vec3 sandT  = texture2D(uTexSand,  tpS.yz).rgb * b.x + texture2D(uTexSand,  tpS.xz).rgb * b.y + texture2D(uTexSand,  tpS.xy).rgb * b.z;
         float mid = vId.x;
         vec3 tex = grassT;
-        if (mid > 4.5 && mid < 6.5) tex = rockT;
+        // Coastal limestone: cream-grey, less of the atlas showing through
+        float coastal = step(vWorldPos.z, -1080.0) + step(length(vWorldPos.xz - vec2(-170.0, -1190.0)), 230.0);
+        coastal = clamp(coastal, 0.0, 1.0);
+        if (mid > 4.5 && mid < 6.5) {
+          tex = mix(rockT, vec3(0.86, 0.80, 0.66), coastal * 0.55);
+        }
         else if (mid > 1.5 && mid < 2.5) tex = sandT;
         else if (mid > 22.5 && mid < 23.5) tex = sandT; // runway
         else if (mid > 21.5 && mid < 22.5) tex = sandT; // dirt / apron, may be overwritten by crops
@@ -187,7 +198,7 @@ uniform sampler2D uTexSand;`
     );
   };
   const prevKey = mat.customProgramCacheKey.bind(mat);
-  mat.customProgramCacheKey = () => prevKey() + "|terrain-tri-v3-grass";
+  mat.customProgramCacheKey = () => prevKey() + "|terrain-tri-v4-paint";
   mat.needsUpdate = true;
   return mat;
 }
