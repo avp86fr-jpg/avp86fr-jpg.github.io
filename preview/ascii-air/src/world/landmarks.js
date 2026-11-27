@@ -1076,7 +1076,7 @@ function makeHangingKeep() {
   // tall ruined colonnade, waterfalls between tiers into mist.
   const g = new THREE.Group();
   g.name = "hanging-keep";
-  const stoneLt = 0xd4c6a8, stone = 0xc4b496, stoneDk = 0x8a7a62;
+  const stoneLt = 0xf2ebe0, stone = 0xe4ddd0, stoneDk = 0xc8c2b6;
   const moss = 0x3a6e32, grass = 0x4a8a3a, vine = 0x2a5428, earth = 0x5a4632;
 
   function cragGeo({ rx, rz, top, depth, segs = 40, rings = 22, seed = 1 }) {
@@ -1175,8 +1175,9 @@ function makeHangingKeep() {
     [-10, 8, 6.2], [8, -5, 5.4], [16, 7, 4.6], [-14, -8, 5.0],
     [2, 2, 7.0], [18, -2, 4.2], [-18, 2, 4.8], [6, 14, 4.0],
     [12, 12, 3.6], [-6, -14, 4.4], [20, 6, 3.2], [-20, -6, 3.4],
-    // spill over the south rim
     [4, -18, 3.8], [-8, -16, 3.4], [14, -12, 3.0],
+    [-24, 4, 4.0], [24, 2, 3.8], [0, 18, 5.2], [10, -20, 4.2],
+    [-12, 16, 4.4], [22, -10, 3.6], [-22, -12, 3.8], [28, 0, 3.0],
   ], sage);
   turf(6.9, [
     [-4, 6, 2.4], [10, 2, 2.2], [-16, 10, 2.0], [16, -8, 1.8], [0, -10, 2.1],
@@ -1459,10 +1460,12 @@ function makeHangingKeep() {
     g.add(leaf);
   }
   for (const [x, z, s, y] of [
-    [16, 8, 1.15, 6.8], [20, -4, 1.0, 6.8], [4, -16, 0.95, 6.8],
-    [-22, 6, 1.0, 6.8], [-8, 16, 0.9, 6.8], [10, 14, 0.85, 6.8],
-    [-18, -8, 0.9, 6.8], [8, -18, 0.8, 6.8],
-    [0, -28, 0.8, -30 + 4.0], [-16, -34, 0.95, -30 + 4.0], [-8, -20, 0.7, -30 + 4.0],
+    [16, 8, 1.35, 6.8], [20, -4, 1.2, 6.8], [4, -16, 1.15, 6.8],
+    [-22, 6, 1.2, 6.8], [-8, 16, 1.15, 6.8], [10, 14, 1.1, 6.8],
+    [-18, -8, 1.1, 6.8], [8, -18, 1.0, 6.8],
+    [26, 4, 1.05, 6.8], [-26, 0, 1.05, 6.8], [0, 20, 1.2, 6.8],
+    [14, 18, 1.0, 6.8], [-14, 18, 1.0, 6.8], [22, -14, 0.95, 6.8],
+    [0, -28, 0.95, -30 + 4.0], [-16, -34, 1.1, -30 + 4.0], [-8, -20, 0.9, -30 + 4.0],
   ]) {
     const t2 = cyl(0.22 * s, 0.36 * s, 4.6 * s, 5, 0x5a3a22, MAT.WOOD);
     t2.position.set(x, y + 2.2 * s, z);
@@ -1473,13 +1476,29 @@ function makeHangingKeep() {
   }
   // Ivy draping the left turret and facade piers
   for (const [x, y, z, s] of [
-    [-20, 14, -6, 1.1], [-19, 11, -6.5, 0.9], [-21, 9, -7, 0.8],
-    [-8, 12, -12, 1.0], [6, 11, -12, 0.9], [-2, 20, -11, 0.85],
-    [4, 24, -10, 0.8], [-14, 10, -10, 0.9],
+    [-20, 14, -6, 1.3], [-19, 11, -6.5, 1.1], [-21, 9, -7, 1.0],
+    [-8, 12, -12, 1.2], [6, 11, -12, 1.1], [-2, 20, -11, 1.05],
+    [4, 24, -10, 1.0], [-14, 10, -10, 1.1],
+    [16, 12, -7, 1.15], [12, 16, -9, 1.0], [-6, 18, -10, 1.05],
+    [8, 22, -10, 0.95], [-16, 16, -8, 1.0], [2, 28, -9, 0.9],
+    [-18, 8, -8, 1.2], [18, 9, -6, 1.1], [0, 8, -16, 1.3],
+    [10, 8, 8, 1.15], [-12, 8, 10, 1.1], [22, 10, 0, 1.0],
   ]) {
     const iv = leafMass(s, 0x2a5428);
     iv.position.set(x, y, z);
     g.add(iv);
+  }
+  // Hanging masses on the south and side faces — a leafier silhouette
+  for (const [x, y, z, s] of [
+    [0, 2, -28, 2.6], [8, 0, -26, 2.2], [-8, 1, -27, 2.3],
+    [16, 3, -22, 2.0], [-16, 2, -22, 2.0], [4, -8, -24, 1.9],
+    [-20, 4, -18, 1.8], [22, 4, -16, 1.8], [10, -4, -20, 2.1],
+    [-6, -10, -22, 2.0], [0, 5, 22, 2.2], [12, 1, 18, 1.8],
+    [-12, 1, 18, 1.8], [18, -6, -14, 1.6], [-18, -6, -14, 1.6],
+  ]) {
+    const hv = leafMass(s, 0x3a6e32);
+    hv.position.set(x, y, z);
+    g.add(hv);
   }
 
   const poolU = box(7, 0.3, 5, 0x2e8aaa, MAT.WATER_DEEP);
@@ -1660,7 +1679,7 @@ function keepRockMat() {
   const mat = triplanarLambert({
     map: loadTex("keep_rock.png"),
     scale: 0.065,
-    color: 0xfff3e4,
+    color: 0xf7f2ea,
     vertexColors: true,
     flatShading: false,
     matId: MAT.ROCK,
@@ -2323,7 +2342,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           });
           hi++;
         } else {
-          if (rnd() < 0.38) { farList.push({ kind: "gap", x: jx, y: hgt, z: jz }); hi++; continue; }
+          if (rnd() < 0.50) { farList.push({ kind: "gap", x: jx, y: hgt, z: jz }); hi++; continue; }
           const wallsFar = [0xfbf6ea, 0xf0d8a8, 0xe2c07a, 0xfff8ec, 0xd4b07c, 0xe8d0a0, 0xf6e6c8];
           const roofsFar = [0xc45a3a, 0xa8422c, 0xd26540, 0x8a3a22, 0xcc6a44, 0xb45630, 0x9a4a28];
           farList.push({ x: jx, y: hgt, z: jz, yaw, s: 0.78 + rnd() * 0.34, hs: 0.72 + rnd() * 0.85, wall: wallsFar[hi % 7], roof: roofsFar[hi % 7], hip: (hi % 3 === 0) });
@@ -2390,39 +2409,83 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     group.add(farWalls, farRoofs, farHips);
     // Trees and garden bushes in the gaps, following the terraces
     if (gaps.length) {
-      const treeParts = [
-        retagGeometry((() => { const c = new THREE.CylinderGeometry(0.18, 0.28, 3.4, 5); c.translate(0, 1.7, 0); return c; })(), MAT.WOOD),
-        retagGeometry((() => { const c = new THREE.ConeGeometry(1.35, 5.2, 7); c.translate(0, 4.6, 0); return c; })(), MAT.FOLIAGE),
-      ];
-      // mergeSimple may not be in this file — use a simple cone+trunk group instanced as one geo
-      const trunk = new THREE.CylinderGeometry(0.18, 0.28, 3.4, 5);
-      trunk.translate(0, 1.7, 0);
-      const canopy = new THREE.ConeGeometry(1.35, 5.2, 7);
-      canopy.translate(0, 4.6, 0);
-      const tgeo = mergeGeos([retagGeometry(trunk, MAT.FOLIAGE), retagGeometry(canopy, MAT.FOLIAGE)], MAT.FOLIAGE);
-      const tmat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a5a2c, flatShading: true }));
+      function farCanopy(kind) {
+        const trunk = new THREE.CylinderGeometry(0.18, 0.28, 3.4, 5);
+        trunk.translate(0, 1.7, 0);
+        const parts = [retagGeometry(trunk, MAT.WOOD)];
+        if (kind === "umbrella") {
+          const a = new THREE.SphereGeometry(1.7, 6, 5);
+          a.scale(1.35, 0.4, 1.35);
+          a.translate(0, 5.2, 0);
+          const b = new THREE.SphereGeometry(0.9, 5, 4);
+          b.scale(1.1, 0.38, 1.1);
+          b.translate(1.1, 5.15, 0.25);
+          parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
+        } else if (kind === "olive") {
+          const a = new THREE.SphereGeometry(1.15, 6, 5);
+          a.scale(1.15, 0.7, 1.1);
+          a.translate(0, 4.2, 0);
+          const b = new THREE.SphereGeometry(0.8, 5, 4);
+          b.scale(1.1, 0.62, 1.0);
+          b.translate(0.85, 4.1, 0.35);
+          parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
+        } else {
+          const c = new THREE.ConeGeometry(0.95, 3.6, 7);
+          c.translate(0, 3.6, 0);
+          const d = new THREE.ConeGeometry(0.65, 2.8, 7);
+          d.translate(0, 5.8, 0);
+          const e = new THREE.ConeGeometry(0.32, 1.8, 6);
+          e.translate(0, 7.4, 0);
+          parts.push(retagGeometry(c, MAT.FOLIAGE), retagGeometry(d, MAT.FOLIAGE), retagGeometry(e, MAT.FOLIAGE));
+        }
+        return mergeGeos(parts, MAT.FOLIAGE);
+      }
+      const cypressGaps = gaps.filter((_, i) => i % 3 === 0);
+      const umbGaps = gaps.filter((_, i) => i % 3 === 1);
+      const olvGaps = gaps.filter((_, i) => i % 3 === 2);
+      const tmat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a6a30, flatShading: false, vertexColors: false }));
       tmat.userData.matId = MAT.FOLIAGE;
-      const farTrees = new THREE.InstancedMesh(tgeo, tmat, gaps.length);
-      farTrees.name = "far-house";
-      const bgeo = retagGeometry(new THREE.SphereGeometry(1.1, 6, 5), MAT.FOLIAGE);
-      const bmat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2c4a24, flatShading: true }));
+      function placeTrees(geo, list, sx, sy, sz) {
+        if (!list.length) return null;
+        const inst = new THREE.InstancedMesh(geo, tmat, list.length);
+        inst.name = "far-house";
+        inst.userData.matId = MAT.FOLIAGE;
+        list.forEach((f, i) => {
+          dummyF.position.set(f.x, f.y, f.z);
+          dummyF.rotation.set(0, f.yaw || 0, 0);
+          const s = 1.45 + (i % 5) * 0.2;
+          dummyF.scale.set(s * sx, s * sy, s * sz);
+          dummyF.updateMatrix();
+          inst.setMatrixAt(i, dummyF.matrix);
+        });
+        inst.instanceMatrix.needsUpdate = true;
+        group.add(inst);
+        return inst;
+      }
+      placeTrees(farCanopy("cone"), cypressGaps, 0.7, 1.25, 0.7);
+      placeTrees(farCanopy("umbrella"), umbGaps, 1.15, 1.0, 1.15);
+      placeTrees(farCanopy("olive"), olvGaps, 1.05, 0.95, 1.05);
+      const bparts = [];
+      for (const [ox, oy, oz, k] of [[0, 0.3, 0, 1], [0.55, 0.2, 0.25, 0.7], [-0.45, 0.15, -0.2, 0.65]]) {
+        const sg = new THREE.SphereGeometry(1.0 * k, 6, 5);
+        sg.scale(1.2, 0.55, 1.1);
+        sg.translate(ox, oy, oz);
+        bparts.push(retagGeometry(sg, MAT.FOLIAGE));
+      }
+      const bgeo = mergeGeos(bparts, MAT.FOLIAGE);
+      const bmat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3a5a28, flatShading: false }));
       bmat.userData.matId = MAT.FOLIAGE;
       const farBush = new THREE.InstancedMesh(bgeo, bmat, gaps.length);
       farBush.name = "far-house";
       gaps.forEach((f, i) => {
-        dummyF.position.set(f.x, f.y, f.z);
-        dummyF.rotation.set(0, f.yaw || 0, 0);
-        dummyF.scale.setScalar(1.55 + (i % 5) * 0.22);
-        dummyF.updateMatrix();
-        farTrees.setMatrixAt(i, dummyF.matrix);
         dummyF.position.set(f.x + 2.2, f.y + 0.4, f.z + 1.4);
-        dummyF.scale.set(1.4, 0.7, 1.3);
+        dummyF.rotation.set(0, f.yaw || 0, 0);
+        dummyF.scale.set(1.4, 0.85, 1.3);
         dummyF.updateMatrix();
         farBush.setMatrixAt(i, dummyF.matrix);
       });
-      farTrees.instanceMatrix.needsUpdate = true;
       farBush.instanceMatrix.needsUpdate = true;
-      group.add(farTrees, farBush);
+      group.add(farBush);
     }
   }
 
@@ -2820,9 +2883,15 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       const y = H(x, z);
       if (y < 6) continue;
       add(group, cyl(0.22, 0.32, 2.4, 5, 0x5a3a22, MAT.WOOD), x, y + 1.2, z);
-      const canopy = mesh(new THREE.SphereGeometry(2.15, 6, 5), (i % 2) ? 0x3a6a30 : 0x4a7a34, MAT.FOLIAGE);
-      canopy.scale.set(1.2, 0.7, 1.1);
-      canopy.position.set(x, y + 3.1, z);
+      const oparts = [];
+      for (const [ox, oy, oz, k] of [[0, 0, 0, 1], [0.7, 0.05, 0.3, 0.72], [-0.6, 0.08, -0.25, 0.68], [0.15, 0.35, -0.55, 0.6]]) {
+        const sg = new THREE.SphereGeometry(1.55 * k, 6, 5);
+        sg.scale(1.15, 0.7, 1.1);
+        sg.translate(ox * 1.55, oy * 1.55, oz * 1.55);
+        oparts.push(retagGeometry(sg, MAT.FOLIAGE));
+      }
+      const canopy = mesh(mergeGeos(oparts, MAT.FOLIAGE), (i % 2) ? 0x6a7a44 : 0x5a6a38, MAT.FOLIAGE);
+      canopy.position.set(x, y + 3.15, z);
       group.add(canopy);
     }
   }

@@ -15,7 +15,8 @@ function paintCloudAtlas() {
     const g = ctx.createRadialGradient(cx, cy - ry * 0.28, Math.max(2, rx * 0.06), cx, cy + ry * 0.1, Math.max(rx, ry));
     const [r, gv, b] = rgb;
     g.addColorStop(0, "rgba(" + r + "," + gv + "," + b + "," + a0 + ")");
-    g.addColorStop(0.55, "rgba(" + r + "," + gv + "," + b + "," + (a0 * 0.62).toFixed(3) + ")");
+    g.addColorStop(0.42, "rgba(" + r + "," + gv + "," + b + "," + (a0 * 0.92).toFixed(3) + ")");
+    g.addColorStop(0.78, "rgba(" + r + "," + gv + "," + b + "," + (a0 * 0.38).toFixed(3) + ")");
     g.addColorStop(1, "rgba(" + r + "," + gv + "," + b + ",0)");
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -29,10 +30,10 @@ function paintCloudAtlas() {
     ctx.beginPath();
     ctx.rect(x0 + 4, y0 + 4, 504, 504);
     ctx.clip();
-    const sun = [255, 250, 238];
-    const mid = [236, 230, 224];
-    const shade = [186, 198, 220];
-    const lav = [168, 176, 210];
+    const sun = [255, 252, 245];
+    const mid = [248, 244, 236];
+    const shade = [222, 230, 242];
+    const lav = [214, 222, 236];
     // kind 0 wide bank, 1 tall tower, 2 mid puff, 3 anvil
     const stacks = {
       0: [
@@ -103,7 +104,7 @@ function paintCloudAtlas() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   tex.anisotropy = 4;
-  tex.premultiplyAlpha = true;
+  tex.premultiplyAlpha = false;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.magFilter = THREE.LinearFilter;
   tex.generateMipmaps = true;
@@ -124,7 +125,7 @@ function makeCloudMaterial(tex) {
     depthTest: true,
     side: THREE.DoubleSide,
     fog: false,
-    toneMapped: true,
+    toneMapped: false,
     blending: THREE.CustomBlending,
     blendEquation: THREE.AddEquation,
     blendSrc: THREE.OneFactor,
@@ -156,11 +157,14 @@ function makeCloudMaterial(tex) {
       varying vec2 vUv;
       void main() {
         vec4 t = texture2D(uMap, vUv);
-        float a = smoothstep(0.04, 0.72, t.a);
-        if (a < 0.015) discard;
+        float a = smoothstep(0.06, 0.40, t.a);
+        if (a < 0.02) discard;
         vec3 col = t.rgb;
-        col = mix(col, col * vec3(0.55, 0.60, 0.70), uStorm);
-        // Premultiplied RGB; dest alpha (matId) is preserved so outlines stay off.
+        // Keep cores sunlit cream; allow pale lavender in the shade, never dirty grey.
+        col = max(col, vec3(0.82, 0.86, 0.92));
+        col = mix(vec3(0.99, 0.98, 0.95), col, 0.90);
+        col = mix(col, col * vec3(0.72, 0.76, 0.84), uStorm);
+        // Premultiply once in the shader; dest matId is preserved by CustomBlending.
         gl_FragColor = vec4(col * a, a);
       }
     `,

@@ -23,7 +23,7 @@ export function loadTex(name) {
 }
 
 export function texturesReady() {
-  const names = ["rock.png", "grass.png", "plaster.png", "roof.png", "sand.png", "stone.png", "water.png", "backdrop.png", "corrugate.png", "crops.png", "keep_rock.png"];
+  const names = ["rock.png", "grass.png", "plaster.png", "roof.png", "sand.png", "stone.png", "water.png", "backdrop.png", "corrugate.png", "crops.png", "keep_rock.png", "leaf.png"];
   for (const n of names) loadTex(n);
   return Promise.all(Object.values(ready));
 }

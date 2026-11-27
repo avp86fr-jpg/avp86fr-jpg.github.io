@@ -149,8 +149,8 @@ void main() {
   col += bloom * uBloom;
   // Soft-knee highlight compress so sky, clouds and sun-facing shots don't blow out.
   float Lh = luma(col);
-  float knee = smoothstep(0.78, 1.08, Lh);
-  col = mix(col, col * (0.78 / max(Lh, 0.001)), knee * 0.72);
+  float knee = smoothstep(0.86, 1.12, Lh);
+  col = mix(col, col * (0.88 / max(Lh, 0.001)), knee * 0.45 * (1.0 - isSky * 0.92));
   col = clamp(col, 0.0, 1.0);
 
   if (uRain > 0.04) {

@@ -401,6 +401,16 @@ export function computeHeight(x, z) {
       h = lerp(h, crown, k * 0.94);
     }
   }
+  // Stepped limestone terraces on the cape village (flat green treads, short rock risers)
+  if (x > -280 && x < 50 && z > -1236 && z < -1120 && h > 7) {
+    const d = dist2(x, z, LANDMARKS.lighthouse.x, LANDMARKS.lighthouse.z);
+    if (d < 250) {
+      const stepH = 5.2;
+      const terr = Math.round(h / stepH) * stepH;
+      const k = smoothstep(7, 16, h) * smoothstep(250, 70, d);
+      h = lerp(h, terr, 0.78 * k);
+    }
+  }
 
   return h;
 }
@@ -413,8 +423,8 @@ export function computeMaterial(x, z, h, slope) {
   const westCape = x < 50 && z < -1140;
   if (h < 1.6 && !westCape) return MAT.SAND;
   if (westCape) {
-    if (h > 14 && slope < 0.52) return MAT.GRASS;
-    if (slope > 0.28 || h < 7) return MAT.ROCK;
+    if (h > 10 && slope < 0.58) return MAT.GRASS;
+    if (slope > 0.42 || h < 6) return MAT.ROCK;
     return MAT.GRASS;
   }
   // SE apron of the west cape — keep it green scrub, not tan rock.

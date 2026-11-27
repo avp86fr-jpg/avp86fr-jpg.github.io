@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { MAT, QUALITY } from "../core/config.js";
+import { MAT, QUALITY, LANDMARKS } from "../core/config.js";
 import { retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
+import { triplanarLambert, loadTex } from "../render/textured.js";
 import { fbm } from "./noise.js";
 
 const GREENS = [0x3a5228, 0x2a4324, 0x4a5a32, 0x1e3a22, 0x3d4f2c];
@@ -29,29 +30,69 @@ function treePrototype(kind) {
   const tg = trunkGeo();
   tg.translate(0, 2.2, 0);
   const parts = [tg];
-  if (kind === "broad") {
+  if (kind === "umbrella") {
+    // Umbrella pine: tall stem, flat wide crown
     const blobs = [
-      [0, 5.7, 0, 1.95],
-      [2.05, 5.25, 0.7, 1.6],
-      [-1.95, 5.35, -0.65, 1.55],
-      [0.4, 6.6, -1.1, 1.25],
-      [-0.6, 6.4, 1.0, 1.2],
+      [0, 7.2, 0, 2.6, 0.55, 2.6],
+      [1.8, 7.15, 0.5, 1.7, 0.45, 1.7],
+      [-1.7, 7.2, -0.4, 1.65, 0.44, 1.65],
+      [0.3, 7.25, 1.7, 1.5, 0.42, 1.5],
+      [-0.4, 7.2, -1.6, 1.45, 0.42, 1.45],
+      [1.1, 7.55, -1.0, 1.1, 0.38, 1.1],
+      [-1.0, 7.5, 1.05, 1.05, 0.36, 1.05],
     ];
-    for (const [x, y, z, r] of blobs) {
-      const s = new THREE.SphereGeometry(r, 7, 6);
-      s.scale(1.08, 0.92, 1.08);
+    for (const [x, y, z, sx, sy, sz] of blobs) {
+      const s = new THREE.SphereGeometry(1, 6, 5);
+      s.scale(sx, sy, sz);
+      s.translate(x, y, z);
+      parts.push(retagGeometry(s, MAT.FOLIAGE));
+    }
+  } else if (kind === "olive") {
+    const blobs = [
+      [0, 4.6, 0, 1.35, 0.85, 1.3],
+      [1.15, 4.35, 0.45, 1.05, 0.7, 1.0],
+      [-1.05, 4.5, -0.5, 1.0, 0.68, 0.95],
+      [0.35, 5.35, -0.9, 0.85, 0.62, 0.85],
+      [-0.55, 5.2, 0.85, 0.8, 0.6, 0.8],
+      [0.9, 5.0, 0.95, 0.7, 0.52, 0.7],
+      [-0.95, 4.15, 0.2, 0.72, 0.5, 0.68],
+    ];
+    for (const [x, y, z, sx, sy, sz] of blobs) {
+      const s = new THREE.SphereGeometry(1, 6, 5);
+      s.scale(sx, sy, sz);
+      s.rotateY(x * 0.2);
+      s.translate(x, y, z);
+      parts.push(retagGeometry(s, MAT.FOLIAGE));
+    }
+  } else if (kind === "broad") {
+    const blobs = [
+      [0, 5.5, 0, 1.7, 1.05, 1.65],
+      [1.85, 5.15, 0.7, 1.35, 0.85, 1.3],
+      [-1.8, 5.25, -0.6, 1.3, 0.82, 1.25],
+      [0.45, 6.55, -1.15, 1.1, 0.75, 1.1],
+      [-0.7, 6.4, 1.1, 1.05, 0.72, 1.05],
+      [1.15, 6.2, 1.15, 0.9, 0.62, 0.9],
+      [-1.2, 4.85, 0.85, 0.95, 0.65, 0.9],
+      [0.2, 7.15, 0.2, 0.85, 0.7, 0.85],
+    ];
+    for (const [x, y, z, sx, sy, sz] of blobs) {
+      const s = new THREE.SphereGeometry(1, 6, 5);
+      s.scale(sx, sy, sz);
+      s.rotateZ(x * 0.08);
       s.translate(x, y, z);
       parts.push(retagGeometry(s, MAT.FOLIAGE));
     }
   } else {
-    // Pine / cypress: 3 stacked cones (cypress instances get a tall thin scale)
+    // Cypress / pine: stacked irregular tapers, not one cone
     const cones = [
-      [0, 3.7, 0, 1.85, 4.2],
-      [0.12, 6.3, 0.08, 1.35, 3.5],
-      [-0.06, 8.6, 0, 0.78, 2.5],
+      [0, 3.4, 0, 1.55, 3.6],
+      [0.08, 5.6, 0.06, 1.25, 3.2],
+      [-0.05, 7.6, -0.04, 0.95, 2.8],
+      [0.04, 9.4, 0.02, 0.62, 2.2],
+      [0, 10.8, 0, 0.32, 1.4],
     ];
     for (const [x, y, z, r, h] of cones) {
-      const c = new THREE.ConeGeometry(r, h, 8);
+      const c = new THREE.ConeGeometry(r, h, 7);
       c.translate(x, y, z);
       parts.push(retagGeometry(c, MAT.FOLIAGE));
     }
@@ -60,72 +101,108 @@ function treePrototype(kind) {
   paintColors(geo, (x, y, z) => {
     const r = Math.hypot(x, z);
     if (r < 0.62 && y < 4.4) return 0x5a3a22;
-    if (kind === "broad") {
-      // Light sunlit top, cool shaded bottom
-      if (y > 6.6) return 0x6a8a48;
-      if (y < 4.8) return 0x1e4a28;
-      if (x > 1.0) return 0x4a7a38;
-      return 0x2e6a32;
+    if (kind === "umbrella") {
+      if (y > 7.4) return 0x7aaa48;
+      if (x > 1.2) return 0x5a8a38;
+      return 0x2e5a28;
     }
-    return y > 7.6 ? 0x3a6e30 : 0x1a4a22;
+    if (kind === "olive") {
+      if (y > 5.2 || x > 0.8) return 0x8a9a58;
+      if (y < 4.2) return 0x4a5a30;
+      return 0x6a7a44;
+    }
+    if (kind === "broad") {
+      if (y > 6.6 || x > 1.2) return 0x7aaa48;
+      if (y < 4.8) return 0x1e4a28;
+      return 0x3a7a32;
+    }
+    return y > 9.0 ? 0x4a7a34 : 0x1a4a22;
   });
   return geo;
 }
 function bushPrototype() {
   const parts = [];
-  const blobs = [[0, 0.2, 0, 1.15], [0.85, 0.05, 0.35, 0.85], [-0.7, 0.0, -0.3, 0.8]];
-  for (const [x, y, z, r] of blobs) {
-    const s = new THREE.SphereGeometry(r, 5, 4);
+  const blobs = [[0, 0.25, 0, 1.15, 0.7, 1.1], [0.85, 0.15, 0.35, 0.85, 0.55, 0.8], [-0.7, 0.1, -0.3, 0.8, 0.5, 0.78], [0.15, 0.45, -0.7, 0.7, 0.48, 0.7]];
+  for (const [x, y, z, sx, sy, sz] of blobs) {
+    const s = new THREE.SphereGeometry(1, 6, 5);
+    s.scale(sx, sy, sz);
     s.translate(x, y, z);
     parts.push(retagGeometry(s, MAT.FOLIAGE));
   }
   const geo = mergeGeos(parts, MAT.FOLIAGE);
-  paintColors(geo, (x, y) => (x > 0.4 ? 0x3a7a32 : x < -0.3 ? 0x1e5a24 : 0x2c6a2c));
+  paintColors(geo, (x, y) => (y > 0.45 || x > 0.5 ? 0x6a9a40 : 0x2c5a28));
   return geo;
 }
 function foliageMat() {
-  const m = new THREE.MeshLambertMaterial({
+  const m = triplanarLambert({
+    map: loadTex("leaf.png"),
+    scale: 0.28,
     color: 0xffffff,
     vertexColors: true,
     flatShading: false,
-    emissive: 0x163018,
-    emissiveIntensity: 0.12,
+    matId: MAT.FOLIAGE,
   });
-  m.userData.matId = MAT.FOLIAGE;
-  patchMaterialIdAlpha(m);
+  m.emissive = new THREE.Color(0x142814);
+  m.emissiveIntensity = 0.08;
   return m;
 }
 function farPrototype(kind) {
-  // Very low-poly stand-in (a few dozen tris). Reads as a tree past ~100 m.
   const tg = new THREE.CylinderGeometry(0.22, 0.38, 3.8, 3);
   tg.translate(0, 1.9, 0);
   const parts = [retagGeometry(tg, MAT.WOOD)];
-  if (kind === "broad") {
+  if (kind === "umbrella") {
+    const a = new THREE.SphereGeometry(2.15, 6, 5);
+    a.scale(1.35, 0.42, 1.35);
+    a.translate(0, 5.6, 0);
+    const b = new THREE.SphereGeometry(1.2, 5, 4);
+    b.scale(1.1, 0.4, 1.1);
+    b.translate(1.3, 5.55, 0.3);
+    parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
+  } else if (kind === "olive") {
+    const a = new THREE.SphereGeometry(1.4, 6, 5);
+    a.scale(1.15, 0.8, 1.1);
+    a.translate(0, 4.3, 0);
+    const b = new THREE.SphereGeometry(0.95, 5, 4);
+    b.scale(1.1, 0.7, 1.05);
+    b.translate(1.0, 4.2, 0.4);
+    parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
+  } else if (kind === "broad") {
     const a = new THREE.SphereGeometry(1.85, 6, 5);
     a.scale(1.18, 0.92, 1.18);
     a.translate(0, 4.7, 0);
     const b = new THREE.SphereGeometry(1.15, 5, 4);
     b.scale(1.1, 0.9, 1.1);
     b.translate(1.15, 4.6, 0.25);
-    parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
+    const c = new THREE.SphereGeometry(0.95, 5, 4);
+    c.translate(-0.9, 5.1, -0.3);
+    parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE), retagGeometry(c, MAT.FOLIAGE));
   } else if (kind === "bush") {
     const a = new THREE.SphereGeometry(1.2, 6, 5);
-    a.scale(1.4, 0.85, 1.3);
+    a.scale(1.4, 0.7, 1.3);
     a.translate(0, 0.4, 0);
+    const b = new THREE.SphereGeometry(0.75, 5, 4);
+    b.scale(1.1, 0.6, 1.05);
+    b.translate(0.7, 0.35, 0.3);
     parts.length = 0;
-    parts.push(retagGeometry(a, MAT.FOLIAGE));
+    parts.push(retagGeometry(a, MAT.FOLIAGE), retagGeometry(b, MAT.FOLIAGE));
   } else {
-    const c = new THREE.ConeGeometry(1.55, 6.8, 7);
-    c.translate(0, 5.4, 0);
-    parts.push(retagGeometry(c, MAT.FOLIAGE));
+    const c = new THREE.ConeGeometry(1.15, 4.2, 7);
+    c.translate(0, 3.6, 0);
+    const d = new THREE.ConeGeometry(0.75, 3.2, 7);
+    d.translate(0, 6.2, 0);
+    const e = new THREE.ConeGeometry(0.4, 2.0, 6);
+    e.translate(0, 8.2, 0);
+    parts.push(retagGeometry(c, MAT.FOLIAGE), retagGeometry(d, MAT.FOLIAGE), retagGeometry(e, MAT.FOLIAGE));
   }
   const geo = mergeGeos(parts, MAT.FOLIAGE);
   paintColors(geo, (x, y, z) => {
     const r = Math.hypot(x, z);
     if (kind !== "bush" && r < 0.55 && y < 3.6) return 0x5a3a22;
-    if (kind === "broad") return y > 5.4 ? 0x5a8a48 : 0x2a5a30;
-    if (kind === "bush") return y > 0.6 ? 0x4a7a38 : 0x2c5a28;
-    return y > 6.5 ? 0x3a6e30 : 0x1a4a22;
+    if (kind === "umbrella") return y > 5.7 ? 0x6a9a48 : 0x2a5a28;
+    if (kind === "olive") return y > 4.5 || x > 0.6 ? 0x8a9a58 : 0x4a5a30;
+    if (kind === "broad") return y > 5.4 ? 0x6a9a48 : 0x2a5a30;
+    if (kind === "bush") return y > 0.5 ? 0x5a8a38 : 0x2c5a28;
+    return y > 7.2 ? 0x4a7a34 : 0x1a4a22;
   });
   return geo;
 }
@@ -484,6 +561,8 @@ export function createFlora(scene, terrain, quality = "medium") {
       if (inCove && h >= 3.2 && h < 9 && n > 0.35 && jz > -1240) {
         palms.push({ x: jx, y: h, z: jz, s: 0.9 + n * 0.45, r: n * 6 });
       } else if (m === MAT.FOREST || (m === MAT.GRASS && n > (z < -200 && z > -1000 ? 0.18 : 0.26) && h > 5)) {
+        if (Math.hypot(jx - LANDMARKS.harbor.x, jz - LANDMARKS.harbor.z) < 70) continue;
+        if (Math.hypot(jx - LANDMARKS.pier.x, jz - LANDMARKS.pier.z) < 48) continue;
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
         const eastHead = jx > 40 && jz < -1180;
         trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: eastHead ? n > 0.20 : n > 0.34 });
@@ -513,6 +592,8 @@ export function createFlora(scene, terrain, quality = "medium") {
       const z = gz + Math.sin(a) * r * 0.8;
       const h = plantOk(terrain, x, z, 5, 150, 0.9);
       if (h == null) continue;
+      if (Math.hypot(x - LANDMARKS.harbor.x, z - LANDMARKS.harbor.z) < 70) continue;
+      if (Math.hypot(x - LANDMARKS.pier.x, z - LANDMARKS.pier.z) < 48) continue;
       if (z < -1180 && h < 10 && x < 40) continue;
       if (Math.abs(z + 1100) < 95 && Math.abs(x) < 520) continue;
       // On the hero-left headland, plant pines / cypress — not a lawn of green blobs
@@ -532,30 +613,34 @@ export function createFlora(scene, terrain, quality = "medium") {
 
   const allTrees = [];
   trees.forEach((list, i) => { for (let k = 0; k < caps[i]; k++) allTrees.push(list[k]); });
-  const broads = allTrees.filter((p) => !p.cone);
+  const leafy = allTrees.filter((p) => !p.cone);
+  const umbrellas = leafy.filter((p) => p.z < -960 || (p.x > 40 && p.z < -1100));
+  const umbSet = new Set(umbrellas);
+  const olives = leafy.filter((p) => !umbSet.has(p) && p.z > -900 && p.z < -200);
+  const olvSet = new Set(olives);
+  const broads = leafy.filter((p) => !umbSet.has(p) && !olvSet.has(p));
   const conifers = allTrees.filter((p) => p.cone).map((p) => {
-    // Cypress: tall thin; pine: regular stacked cones
     const cypress = ((Math.abs((p.x * 11 + p.z * 5) | 0) % 3) === 0) || p.z < -1180;
     if (cypress) {
       const s = p.s;
-      return { ...p, sx: s * 0.52, sy: s * 1.22, sz: s * 0.52 };
+      return { ...p, sx: s * 0.48, sy: s * 1.35, sz: s * 0.48 };
     }
-    return p;
+    return { ...p, sx: p.s * 0.9, sy: p.s * 1.05, sz: p.s * 0.9 };
   });
   const nearR = quality === "low" ? 88 : quality === "high" ? 155 : 118;
   const lods = [];
   const matNear = foliageMat();
   const matFar = foliageMat();
-  if (broads.length) {
-    const lod = instanceLod(treePrototype("broad"), farPrototype("broad"), matNear, broads, broads.length, nearR);
+  function addLod(kind, list) {
+    if (!list.length) return;
+    const lod = instanceLod(treePrototype(kind), farPrototype(kind), matNear, list, list.length, nearR);
     group.add(lod.near, lod.far);
     lods.push(lod);
   }
-  if (conifers.length) {
-    const lod = instanceLod(treePrototype("cone"), farPrototype("cone"), matNear, conifers, conifers.length, nearR);
-    group.add(lod.near, lod.far);
-    lods.push(lod);
-  }
+  addLod("broad", broads);
+  addLod("umbrella", umbrellas);
+  addLod("olive", olives);
+  addLod("cone", conifers);
 
   for (const p of palms.slice(0, maxP)) {
     blobs.push({ x: p.x, y: p.y + 3.2, z: p.z, s: 1.3 + p.s * 0.4, r: p.r });
