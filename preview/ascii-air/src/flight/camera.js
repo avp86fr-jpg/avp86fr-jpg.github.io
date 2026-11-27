@@ -47,12 +47,22 @@ export function createFlightCamera(camera) {
     state.colliders = (meshes || []).filter((m) => m && m.isObject3D);
   }
 
+  function maxTerrain(world, x, z) {
+    if (!world || typeof world.heightAt !== "function") return 0;
+    let h = world.heightAt(x, z);
+    for (const [dx, dz] of [[6, 0], [-6, 0], [0, 6], [0, -6], [4, 4], [-4, 4], [4, -4], [-4, -4]]) {
+      const hh = world.heightAt(x + dx, z + dz);
+      if (hh > h) h = hh;
+    }
+    return h;
+  }
+
   function collide(pos, look) {
     if (state.hero || state.mode === "title" || state.mode === "cockpit") return;
     const world = state.world;
     if (world && typeof world.heightAt === "function") {
-      const h = world.heightAt(pos.x, pos.z);
-      if (Number.isFinite(h) && pos.y < h + 4.5) pos.y = h + 4.5;
+      const h = maxTerrain(world, pos.x, pos.z);
+      if (Number.isFinite(h) && pos.y < h + 8) pos.y = h + 8;
     }
     const meshes = state.colliders;
     if (!meshes.length) return;
@@ -99,8 +109,8 @@ export function createFlightCamera(camera) {
       }
     }
     if (world && typeof world.heightAt === "function") {
-      const h = world.heightAt(pos.x, pos.z);
-      if (Number.isFinite(h) && pos.y < h + 4.5) pos.y = h + 4.5;
+      const h = maxTerrain(world, pos.x, pos.z);
+      if (Number.isFinite(h) && pos.y < h + 8) pos.y = h + 8;
     }
   }
 

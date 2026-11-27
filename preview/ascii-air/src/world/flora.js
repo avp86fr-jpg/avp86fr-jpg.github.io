@@ -68,7 +68,7 @@ function flatMat(color, matId) {
     color,
     flatShading: true,
     emissive: color,
-    emissiveIntensity: 0.58,
+    emissiveIntensity: 0.16,
   });
   m.userData.matId = matId;
   patchMaterialIdAlpha(m);
@@ -91,7 +91,31 @@ function instance(geo, material, placements, cap) {
   inst.instanceMatrix.needsUpdate = true;
   inst.count = cap;
   inst.frustumCulled = true;
+  // InstancedMesh culls against the prototype sphere at the origin unless we
+  // enclose every instance; otherwise far groves pop or (worse) a stale sphere
+  // can show a lone cluster in mid-air.
+  let maxR = 12;
+  for (let i = 0; i < cap; i++) {
+    const p = placements[i];
+    const r = Math.hypot(p.x, p.y, p.z) + 10 * (p.s || 1);
+    if (r > maxR) maxR = r;
+  }
+  inst.geometry.computeBoundingSphere();
+  inst.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), maxR);
+  inst.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), maxR);
   return inst;
+}
+
+function plantOk(terrain, x, z, minH = 5, maxH = 145, maxSlope = 0.9) {
+  const h = terrain.heightAt(x, z);
+  if (!(h >= minH && h <= maxH)) return null;
+  const m = terrain.materialAt(x, z);
+  if (m === MAT.SEA || m === MAT.WATER_DEEP || m === MAT.RUNWAY || m === MAT.ROAD) return null;
+  const d = 3.5;
+  const hx = terrain.heightAt(x + d, z) - terrain.heightAt(x - d, z);
+  const hz = terrain.heightAt(x, z + d) - terrain.heightAt(x, z - d);
+  if (Math.hypot(hx, hz) / (2 * d) > maxSlope) return null;
+  return h;
 }
 
 export function createFlora(scene, terrain, quality = "medium") {
@@ -108,11 +132,11 @@ export function createFlora(scene, terrain, quality = "medium") {
     for (let z = -SIZE + ((x / step) % 2) * step * 0.5; z < SIZE; z += step) {
       const jx = x + ((Math.sin(x * 0.11 + z * 0.07) * 6) | 0);
       const jz = z + ((Math.cos(x * 0.09 + z * 0.13) * 6) | 0);
-      const h = terrain.heightAt(jx, jz);
+      const h = plantOk(terrain, jx, jz, 5, 145, 0.9);
+      if (h == null) continue;
       const m = terrain.materialAt(jx, jz);
-      if (h < 4.5 || h > 145) continue;
       if (jz < -1180 && h < 10 && jx < 40) continue;
-      if (m === MAT.RUNWAY || m === MAT.ROAD || m === MAT.DIRT) continue;
+      if (m === MAT.DIRT) continue;
       if (Math.abs(jz + 1100) < 95 && Math.abs(jx) < 520) continue;
       if (Math.abs(jz - 1120) < 32 && Math.abs(jx + 820) < 170) continue;
       const n = fbm(jx * 0.004, jz * 0.004, 3, 77);
@@ -148,8 +172,8 @@ export function createFlora(scene, terrain, quality = "medium") {
       const r = 8 + (i % 5) * 5 + seed * 10;
       const x = gx + Math.cos(a) * r;
       const z = gz + Math.sin(a) * r * 0.8;
-      const h = terrain.heightAt(x, z);
-      if (h < 4.5 || h > 150) continue;
+      const h = plantOk(terrain, x, z, 5, 150, 0.9);
+      if (h == null) continue;
       if (z < -1180 && h < 10 && x < 40) continue;
       if (Math.abs(z + 1100) < 95 && Math.abs(x) < 520) continue;
       // On the hero-left headland, plant pines / cypress — not a lawn of green blobs

@@ -28,8 +28,15 @@ function box(w, h, d, color, matId, hero = 0) {
 // the strip cannot rasterise a glancing black edge across the frame.
 function slab(w, d, color, matId, hero = 0) {
   const m = mesh(new THREE.PlaneGeometry(w, d), color, matId, hero);
-  m.rotation.x = -Math.PI / 2;
+  orientHorizontal(m, 0);
   return m;
+}
+
+// Yaw first, then pitch the plane flat. Euler XYZ with x=-90 gimbal-locks
+// and turns a yawed road into a near-vertical black slab.
+function orientHorizontal(m, yaw = 0) {
+  m.rotation.order = "YXZ";
+  m.rotation.set(-Math.PI / 2, yaw, 0);
 }
 
 function cyl(rTop, rBot, h, segs, color, matId, hero = 0) {
@@ -141,7 +148,7 @@ function makeHangar() {
   add(g, box(0.2, 4.2, 0.45, 0x1a140c, MAT.METAL), 0, 16.2, 15.2);
   add(g, box(4.4, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 17.6, 15.2, 0, 0, 0.55);
   add(g, box(4.4, 0.2, 0.45, 0x1a140c, MAT.METAL), 0, 17.6, 15.2, 0, 0, -0.55);
-  add(g, slab(38, 26, 0x3a3a3a, MAT.ROAD), 0, 0.2, 0, -Math.PI / 2);
+  add(g, slab(22, 16, 0xd8d1c4, MAT.ROAD), 0, 0.12, 2, -Math.PI / 2);
   return g;
 }
 
@@ -668,7 +675,7 @@ function chevronPair(g, x, y, z, dir, scale = 1) {
   g.add(L, R);
 }
 
-function makeRunwayLights(parent, x0, x1, z, y) {
+function makeRunwayLights(parent, x0, x1, z, y, H = null) {
   const g = new THREE.Group();
   const len = Math.abs(x1 - x0);
   const wide = len > 500; // main runway
@@ -676,7 +683,12 @@ function makeRunwayLights(parent, x0, x1, z, y) {
   const step = wide ? 20 : 28;
   const positions = [];
   for (let x = x0; x <= x1; x += step) {
-    for (const s of [-edge, edge]) positions.push([x, z + s]);
+    for (const s of [-edge, edge]) {
+      const zz = z + s;
+      const hy = H ? H(x, zz) : y;
+      if (hy < 2.8) continue;
+      positions.push([x, hy, zz]);
+    }
   }
   const nL = positions.length;
   const poleGeo = retagGeometry(new THREE.CylinderGeometry(wide ? 0.13 : 0.1, wide ? 0.16 : 0.12, wide ? 2.2 : 1.7, 6), MAT.METAL, 0);
@@ -701,15 +713,15 @@ function makeRunwayLights(parent, x0, x1, z, y) {
   const dummyL = new THREE.Object3D();
   const poleH = wide ? 2.2 : 1.7;
   positions.forEach((p, i) => {
-    dummyL.position.set(p[0], y + poleH * 0.5, p[1]);
+    dummyL.position.set(p[0], p[1] + poleH * 0.5, p[2]);
     dummyL.scale.set(1, 1, 1);
     dummyL.rotation.set(0, 0, 0);
     dummyL.updateMatrix();
     poles.setMatrixAt(i, dummyL.matrix);
-    dummyL.position.y = y + poleH + 0.05;
+    dummyL.position.y = p[1] + poleH + 0.05;
     dummyL.updateMatrix();
     heads.setMatrixAt(i, dummyL.matrix);
-    dummyL.position.y = y + poleH;
+    dummyL.position.y = p[1] + poleH;
     dummyL.scale.set(1, 0.65, 1);
     dummyL.updateMatrix();
     glows.setMatrixAt(i, dummyL.matrix);
@@ -745,12 +757,12 @@ function makeRunwayLights(parent, x0, x1, z, y) {
   return g;
 }
 
-function makeRoad(from, to, width = 8) {
+function makeRoad(from, to, width = 8, H = null) {
   const dx = to.x - from.x, dz = to.z - from.z;
   const len = Math.hypot(dx, dz);
   const yaw = -Math.atan2(dz, dx);
-  // Short segments: one 400 m x 0.4 m slab seen end-on interpolates depth
-  // into mid-air and inks a black line across the chase camera.
+  // Short segments snapped to terrain. Yaw uses YXZ so the slab stays horizontal
+  // (Euler XYZ + x=-90 used to gimbal-lock and stand the road up as a black wall).
   const g = new THREE.Group();
   g.name = "road";
   const seg = 16;
@@ -760,10 +772,12 @@ function makeRoad(from, to, width = 8) {
     const mid = t + Math.min(seg, len - t) * 0.5;
     const x = from.x + nx * mid;
     const z = from.z + nz * mid;
-    const y = from.y + (to.y - from.y) * (mid / (len || 1)) + 0.08;
-    const m = slab(w, width, 0x3a3a3a, MAT.ROAD);
+    const h = H ? H(x, z) : (from.y + (to.y - from.y) * (mid / (len || 1)));
+    if (h < 2.4) continue;
+    const y = h + 0.08;
+    const m = slab(w, width, 0xcfc8bc, MAT.ROAD);
     m.position.set(x, y, z);
-    m.rotation.set(-Math.PI / 2, yaw, 0);
+    orientHorizontal(m, yaw);
     g.add(m);
   }
   return g;
@@ -808,14 +822,14 @@ function bucketOf(o, mid) {
   if (mid === MAT.ROOF) return "roof";
   if (mid === MAT.BUILDING) return "plaster";
   if (mid === MAT.ROCK) return "stone";
-  if (mid === MAT.RUNWAY || mid === MAT.ROAD) {
+  if (mid === MAT.RUNWAY) {
     // Keep the airport ribbon (y~4) off the ridge strip (y~90) so a merge
     // can never form a long sliver through mid-air.
-    let y = 0;
     o.updateWorldMatrix(true, false);
-    y = o.matrixWorld.elements[13];
+    const y = o.matrixWorld.elements[13];
     return y > 40 ? "runwayHi" : "runway";
   }
+  if (mid === MAT.ROAD) return "road";
   return "plain";
 }
 
@@ -843,8 +857,10 @@ function mergeBucket(items, name, kind) {
   else if (kind === "plaster") mat = triplanarLambert({ map: loadTex("plaster.png"), scale: 0.08, vertexColors: true, flatShading: true, matId: MAT.BUILDING });
   else if (kind === "roof") mat = triplanarLambert({ map: loadTex("roof.png"), scale: 0.12, vertexColors: true, flatShading: true, matId: MAT.ROOF });
   else if (kind === "runway" || kind === "runwayHi") mat = patchMaterialIdAlpha(patchGlanceDiscard(new THREE.MeshBasicMaterial({ vertexColors: true, matId: MAT.RUNWAY, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })));
+  else if (kind === "road") mat = patchMaterialIdAlpha(patchGlanceDiscard(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, matId: MAT.ROAD, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
   else mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
   if (kind === "runway" || kind === "runwayHi") retagGeometry(geo, MAT.RUNWAY, 0);
+  if (kind === "road") retagGeometry(geo, MAT.ROAD, 0);
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = name;
   mesh.userData.matId = (kind === "runway" || kind === "runwayHi") ? MAT.RUNWAY : mesh.userData.matId;
@@ -853,7 +869,7 @@ function mergeBucket(items, name, kind) {
 }
 
 function mergeStatic(group, skipNames = new Set()) {
-  const buckets = { rock: [], stone: [], plaster: [], roof: [], runway: [], runwayHi: [], plain: [] };
+  const buckets = { rock: [], stone: [], plaster: [], roof: [], road: [], runway: [], runwayHi: [], plain: [] };
   const toRemove = [];
   group.updateMatrixWorld(true);
   // Bake into the root group's local space (not world), so a positioned
@@ -897,7 +913,7 @@ function mergeStatic(group, skipNames = new Set()) {
     if (o.parent) o.parent.remove(o);
   }
   let main = null;
-  for (const kind of ["plain", "plaster", "stone", "rock", "roof", "runway", "runwayHi"]) {
+  for (const kind of ["plain", "plaster", "stone", "rock", "roof", "road", "runway", "runwayHi"]) {
     const mesh = mergeBucket(buckets[kind], main ? "landmarks-merged-" + kind : "landmarks-merged", kind);
     if (!mesh) continue;
     if (!main) main = mesh;
@@ -972,7 +988,7 @@ function makeCoastalCliffs(H) {
         let zx = zLand - 1.2, hx = Math.min(Math.max(h, hMin), hMax);
         if (R.x0 === -480) {
           const n = Math.sin(x * 0.07) * 0.5 + Math.sin(x * 0.19) * 0.3;
-          zx += n * 14;
+          zx += n * 4;
           hx = Math.min(hMax, Math.max(8, hx * (0.65 + 0.55 * (0.5 + 0.5 * Math.sin(x * 0.11)))));
           // Leave the arch window open; do not punch regular coves (they read as black holes)
           if (Math.abs(x - LANDMARKS.arch.x) < 12) continue;
@@ -1002,8 +1018,8 @@ function makeCoastalCliffs(H) {
     if (Math.hypot(b.x - a.x, b.z - a.z) > 36) continue;
     const west = a.band === -480;
     const y0 = 0.25;
-    const jA = west ? 3.5 * Math.sin(a.x * 0.21) : 0;
-    const jB = west ? 3.5 * Math.sin(b.x * 0.21) : 0;
+    const jA = west ? 1.15 * Math.sin(a.x * 0.21) : 0;
+    const jB = west ? 1.15 * Math.sin(b.x * 0.21) : 0;
     const midF = west ? 0.40 + 0.18 * (0.5 + 0.5 * Math.sin(a.x * 0.13)) : 0.48;
     const topF = west ? 0.74 + 0.16 * (0.5 + 0.5 * Math.sin(a.x * 0.09)) : 0.82;
     // Lower dark shelf
@@ -1024,7 +1040,11 @@ function makeCoastalCliffs(H) {
     const i10 = vert(b.x, b.h * topF, b.z + 5 + jB * 1.4, false);
     const i11 = vert(b.x, b.h * (0.92 + 0.08 * Math.sin(b.x * 0.3)), b.z + 9 + jB, false);
     indices.push(i8, i10, i9, i9, i10, i11);
-    if ((i % 2) === 0) bushPts.push({ x: (a.x + b.x) * 0.5, y: (a.h + b.h) * 0.5, z: (a.z + b.z) * 0.5 + 8 });
+    if ((i % 2) === 0 && !west) {
+      const bx = (a.x + b.x) * 0.5, bz = (a.z + b.z) * 0.5 + 6;
+      const bh = H(bx, bz);
+      if (bh > 8) bushPts.push({ x: bx, y: bh + 1.15, z: bz, band: a.band });
+    }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
@@ -1039,19 +1059,21 @@ function makeCoastalCliffs(H) {
   const group = new THREE.Group();
   group.name = "cliffs";
   group.add(mesh);
-  // Vegetation tufts along the lip (one instanced draw)
-  if (bushPts.length) {
+  // Vegetation tufts along the lip (one instanced draw). Skip the west cape —
+  // dark spheres there punched circular ink holes in the lighthouse plateau.
+  const lipBushes = bushPts.filter((p) => p.band !== -480 && p.y > 8);
+  if (lipBushes.length) {
     const inst = new THREE.InstancedMesh(
-      retagGeometry(new THREE.SphereGeometry(2.1, 6, 5), MAT.FOLIAGE, 0),
-      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2a4a28, flatShading: true })),
-      bushPts.length
+      retagGeometry(new THREE.SphereGeometry(1.6, 6, 5), MAT.FOLIAGE, 0),
+      patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x3d6a34, flatShading: true })),
+      lipBushes.length
     );
     inst.userData.matId = MAT.FOLIAGE;
     const dummy = new THREE.Object3D();
-    bushPts.forEach((p, i) => {
+    lipBushes.forEach((p, i) => {
       dummy.position.set(p.x, p.y, p.z);
-      const s = 1.1 + (i % 5) * 0.25;
-      dummy.scale.set(s, s * (0.8 + (i % 3) * 0.15), s);
+      const s = 0.85 + (i % 5) * 0.18;
+      dummy.scale.set(s, s * 0.45, s);
       dummy.updateMatrix();
       inst.setMatrixAt(i, dummy.matrix);
     });
@@ -1072,8 +1094,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
 
   // Runway lights & marks (lamp posts; glow toggled at night)
   const rwyGlows = [];
-  rwyGlows.push(makeRunwayLights(group, -400, 400, -1100, 4.4).userData.glow);
-  rwyGlows.push(makeRunwayLights(group, -930, -710, 1120, 90.3).userData.glow);
+  rwyGlows.push(makeRunwayLights(group, -400, 400, -1100, 4.4, H).userData.glow);
+  rwyGlows.push(makeRunwayLights(group, -930, -710, 1120, 90.3, H).userData.glow);
 
   // Hangar
   const hangar = makeHangar();
@@ -1474,12 +1496,14 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   group.add(makeRoad(
     { x: -80, y: 4.4, z: -1100 },
     { x: LANDMARKS.town.x, y: 8.6, z: LANDMARKS.town.z },
-    7
+    7,
+    H
   ));
   group.add(makeRoad(
     { x: LANDMARKS.town.x, y: 8.6, z: LANDMARKS.town.z },
     { x: LANDMARKS.harbor.x, y: 1.4, z: LANDMARKS.harbor.z },
-    6
+    6,
+    H
   ));
 
   // Town lamps

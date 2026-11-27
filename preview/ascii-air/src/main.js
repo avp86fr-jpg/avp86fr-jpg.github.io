@@ -456,7 +456,16 @@ function renderFrame(time, camDt = 1 / 60) {
   const portrait = cssH > cssW;
 
   if (camOverride) {
-    camera.position.copy(camOverride.pos);
+    const p = camOverride.pos;
+    if (island && typeof island.heightAt === "function") {
+      let h = island.heightAt(p.x, p.z);
+      for (const [dx, dz] of [[8, 0], [-8, 0], [0, 8], [0, -8], [6, 6], [-6, 6]]) {
+        const hh = island.heightAt(p.x + dx, p.z + dz);
+        if (hh > h) h = hh;
+      }
+      if (Number.isFinite(h) && p.y < h + 8) p.y = h + 8;
+    }
+    camera.position.copy(p);
     camera.up.set(0, 1, 0);
     camera.lookAt(camOverride.look);
     camera.updateProjectionMatrix();
@@ -900,6 +909,16 @@ function exposeAPI() {
     setPlane: (id) => { rebuildPlane(id); resetCraft(craft, craft.spawn, craft.spawn?.heading, id); },
     teleport: (x, y, z) => { craft.pos.set(x, y, z); craft.prevPos.copy(craft.pos); },
     lookFrom(x, y, z, lx, ly, lz) {
+      if (island && typeof island.heightAt === "function") {
+        let h = island.heightAt(x, z);
+        for (const [dx, dz] of [[8, 0], [-8, 0], [0, 8], [0, -8], [6, 6], [-6, 6]]) {
+          const hh = island.heightAt(x + dx, z + dz);
+          if (hh > h) h = hh;
+        }
+        if (Number.isFinite(h) && y < h + 8) y = h + 8;
+        const hl = island.heightAt(lx, lz);
+        if (Number.isFinite(hl) && ly < hl + 2) ly = hl + 2;
+      }
       camOverride = {
         pos: new THREE.Vector3(x, y, z),
         look: new THREE.Vector3(lx, ly, lz),

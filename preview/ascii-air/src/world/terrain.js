@@ -149,8 +149,9 @@ export function computeHeight(x, z) {
       if (z < edgeZ) {
         const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
-        const toe = -0.3 + 4.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop);
+        const toe = Math.max(1.2, 1.2 + 3.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
         h = lerp(h, toe, drop * drop);
+        if (h < 1.2) h = 1.2;
       }
     }
   }
@@ -329,8 +330,9 @@ export function computeHeight(x, z) {
       if (z < edgeZ) {
         const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
-        const toe = -0.3 + 4.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop);
+        const toe = Math.max(1.2, 1.2 + 3.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
         h = lerp(h, toe, drop * drop);
+        if (h < 1.2) h = 1.2;
       }
     }
   }
@@ -461,6 +463,8 @@ export function createTerrain(quality = "medium") {
         else if (n2 > 0.82) col = pine;
         else col = meadow;
         if (terrace) col = [col[0] * 0.88, col[1] * 0.86, col[2] * 0.84];
+        const n3 = fbm(x * 0.05, z * 0.05, 2, 13);
+        col = [col[0] * (0.90 + n3 * 0.18), col[1] * (0.90 + n3 * 0.16), col[2] * (0.90 + n3 * 0.12)];
         return col;
       }
       case MAT.FOREST: return [0.22 + n * 0.05, 0.36 + n * 0.08, 0.18];
