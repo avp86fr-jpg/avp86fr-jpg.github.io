@@ -33813,7 +33813,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (G.mode !== "play" || IN.touch) return;
       if (!IN.locked) {
         G.suppressPause = true;
-        canvas.requestPointerLock?.();
+        {
+          try {
+            canvas.requestPointerLock?.()?.catch?.(() => {
+            });
+          } catch {
+          }
+        }
       }
       if (e.button === 0) press("fire");
       if (e.button === 2) press("scope");
@@ -46520,7 +46526,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         alarmSiren(false);
         clearPressed();
         G.suppressPause = true;
-        if (!IN.touch) $2("gl").requestPointerLock?.();
+        if (!IN.touch) {
+          try {
+            $2("gl").requestPointerLock?.()?.catch?.(() => {
+            });
+          } catch {
+          }
+        }
         if (G.settings.gyro && IN.touch) enableGyro();
         if (G.settings.intro !== false) startIntro(M2);
       }
@@ -46569,7 +46581,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           }
         } else if (!IN.touch && G.mode === "play") {
           G.suppressPause = true;
-          $2("gl").requestPointerLock?.();
+          {
+            try {
+              $2("gl").requestPointerLock?.()?.catch?.(() => {
+              });
+            } catch {
+            }
+          }
         }
       }
       function toggleIntel(v3) {
