@@ -76,9 +76,9 @@ export const GRID_CAPS = {
 };
 
 export const QUALITY = {
-  low:    { trees: 0.40, clouds: 0.45, houses: 0.40, bloom: false, shadows: false, particles: 0.3, resScale: 0.75, terrainN: 192 },
-  medium: { trees: 0.85, clouds: 0.90, houses: 0.85, bloom: true,  shadows: false, particles: 0.7, resScale: 1,    terrainN: 256 },
-  high:   { trees: 1,    clouds: 1,    houses: 1,    bloom: true,  shadows: true,  particles: 1,   resScale: 1,    terrainN: 256 },
+  low:    { trees: 0.40, clouds: 0.45, houses: 0.40, bloom: false, shadows: false, particles: 0.3, life: 0.35, resScale: 0.75, terrainN: 192 },
+  medium: { trees: 0.85, clouds: 0.90, houses: 0.85, bloom: true,  shadows: false, particles: 0.7, life: 0.8,  resScale: 1,    terrainN: 256 },
+  high:   { trees: 1,    clouds: 1,    houses: 1,    bloom: true,  shadows: true,  particles: 1,   life: 1,    resScale: 1,    terrainN: 256 },
 };
 
 export const STAR_UNLOCKS = {

@@ -232,6 +232,13 @@ export function createWater() {
       // When leaving a storm, do not snap back to day cyan — update() applies the
       // time-of-day (incl. moonlit navy) palette on the next tick.
     },
+    setBoats(list) {
+      const u = [mat.uniforms.uBoat0, mat.uniforms.uBoat1, mat.uniforms.uBoat2, mat.uniforms.uBoat3];
+      if (!list) return;
+      for (let i = 0; i < 4 && i < list.length; i++) {
+        if (list[i] && u[i]) u[i].value.set(list[i].x, list[i].z);
+      }
+    },
     update(t, sky) {
       mat.uniforms.uTime.value = t;
       lakeMat.uniforms.uTime.value = t;

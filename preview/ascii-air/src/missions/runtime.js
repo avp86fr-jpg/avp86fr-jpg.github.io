@@ -45,6 +45,38 @@ function markerPole(color = 0xffee88) { // color passed to MeshBasic
   return g;
 }
 
+function makeRivalCraft() {
+  const g = new THREE.Group();
+  g.name = "rival";
+  const fuse = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(1.15, 1.05, 6.4), MAT.PLANE, 0),
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x1e3a6a, flatShading: true }))
+  );
+  const wing = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(9.6, 0.16, 1.5), MAT.PLANE, 0),
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xf4efe4, flatShading: true }))
+  );
+  wing.position.y = 0.45;
+  const stripe = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(9.6, 0.05, 0.22), MAT.PLANE, 0),
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xc01418, flatShading: true }))
+  );
+  stripe.position.set(0, 0.55, 0.15);
+  const fin = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(0.12, 1.5, 1.05), MAT.PLANE, 0),
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xf4efe4, flatShading: true }))
+  );
+  fin.position.set(0, 1.15, -2.7);
+  const stab = new THREE.Mesh(
+    retagGeometry(new THREE.BoxGeometry(2.6, 0.1, 0.7), MAT.PLANE, 0),
+    patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xf4efe4, flatShading: true }))
+  );
+  stab.position.set(0, 0.7, -2.7);
+  g.add(fuse, wing, stripe, fin, stab);
+  g.scale.setScalar(1.45);
+  return g;
+}
+
 export function createMissionSystem(scene, world, audio) {
   const group = new THREE.Group();
   group.name = "missions";
@@ -138,9 +170,91 @@ export function createMissionSystem(scene, world, audio) {
     state.starsAwarded = 0;
     state.mailStops = [];
     state.mailHasBag = false;
+    state.rival = null;
+    state.rivalDelta = 0;
   }
 
   function add(o) { group.add(o); state.objects.push(o); return o; }
+
+  function plantFlares(m) {
+    let cx, cz;
+    if (m.flareAt) { cx = m.flareAt.x; cz = m.flareAt.z; }
+    else {
+      const s = (m.stops || []).find((st) => st.type === "raft" || st.type === "mark") || (m.stops || [])[0];
+      if (!s) return;
+      cx = s.x; cz = s.z;
+    }
+    const n = m.flareCount || 8;
+    const rad = m.flareR || 28;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const x = cx + Math.cos(a) * rad;
+      const z = cz + Math.sin(a) * rad;
+      const p = markerPole(i % 2 ? 0xffee88 : 0xff4a2a);
+      p.position.set(x, world.heightAt(x, z) + 1, z);
+      add(p);
+    }
+  }
+
+  function followMoving(mesh) {
+    if (!mesh) return;
+    const s = mesh.userData.stop || mesh.userData.base;
+    if (!s || !s.moving) return;
+    if (s.moving === "steamer") {
+      const boats = world.landmarks && world.landmarks.boats;
+      const st = boats && boats.find((b) => b.name === "steamer");
+      if (st) {
+        mesh.position.x = st.position.x;
+        mesh.position.z = st.position.z;
+        mesh.position.y = s.y != null ? s.y : (st.position.y + 16);
+        if (mesh.userData.stop) {
+          mesh.userData.stop.x = st.position.x;
+          mesh.userData.stop.z = st.position.z;
+        }
+      }
+    }
+  }
+
+  function setupRival(m) {
+    const start = m.start || { x: 0, y: 40, z: 0 };
+    const pts = [new THREE.Vector3(start.x, start.y, start.z)];
+    (m.rings || []).forEach((r) => pts.push(new THREE.Vector3(r.x, r.y, r.z)));
+    let plen = 0;
+    for (let i = 1; i < pts.length; i++) plen += pts[i].distanceTo(pts[i - 1]);
+    const dur = (m.timeLimits && m.timeLimits[1]) || 80;
+    const mesh = makeRivalCraft();
+    mesh.position.copy(pts[0]);
+    add(mesh);
+    state.rival = { mesh, pts, plen, dur, t: 1.2, finished: false, finishTime: dur };
+    state.rivalDelta = 0;
+  }
+
+  function tickRival(dt, time) {
+    const r = state.rival;
+    if (!r) return;
+    if (!r.finished) {
+      r.t += dt;
+      const u = Math.min(0.999, r.t / r.dur);
+      let dist = u * r.plen;
+      let i = 0;
+      while (i < r.pts.length - 2) {
+        const seg = r.pts[i + 1].distanceTo(r.pts[i]);
+        if (dist <= seg) break;
+        dist -= seg;
+        i++;
+      }
+      const a = r.pts[i], b = r.pts[Math.min(i + 1, r.pts.length - 1)];
+      const seg = Math.max(0.001, b.distanceTo(a));
+      const f = dist / seg;
+      r.mesh.position.lerpVectors(a, b, f);
+      r.mesh.lookAt(b.x, b.y, b.z);
+      if (r.t >= r.dur) {
+        r.finished = true;
+        r.finishTime = r.dur;
+        r.mesh.position.copy(r.pts[r.pts.length - 1]);
+      }
+    }
+  }
 
   function start(id, craft) {
     clear();
@@ -185,6 +299,7 @@ export function createMissionSystem(scene, world, audio) {
       }
       add(mesh);
     });
+    if (m.rival) setupRival(m);
   }
 
   function setupLanding(m) {
@@ -244,6 +359,12 @@ export function createMissionSystem(scene, world, audio) {
   }
 
   function setupStorm(m) {
+    if (m.mode === "rescue") {
+      setupRescue(m);
+      if (m.target) setupLanding(m);
+      if (m.flares) plantFlares(m);
+      return;
+    }
     state.mailHasBag = false;
     state.mailStops = [];
     (m.stops || []).forEach((s, i) => {
@@ -264,6 +385,7 @@ export function createMissionSystem(scene, world, audio) {
       add(pole);
     });
     if (m.target) setupLanding(m);
+    if (m.flares) plantFlares(m);
   }
 
   function setupMail(m) {
@@ -290,9 +412,11 @@ export function createMissionSystem(scene, world, audio) {
   }
 
   function setupNight(m) {
-    if (m.stops) setupMail(m);
+    if (m.mode === "rescue" || (m.stops && m.stops.some((s) => s.type === "raft" || s.type === "mark"))) setupRescue(m);
+    else if (m.stops) setupMail(m);
     if (m.target) setupLanding(m);
     if (m.subject) setupPhoto(m);
+    if (m.flares && !m.target) plantFlares(m);
   }
 
   function makeRaft() {
@@ -475,9 +599,29 @@ export function createMissionSystem(scene, world, audio) {
           cur.visible = false;
           cur.userData._forceHidden = true;
           if (state.next >= meshes.length) {
-            const stars = starsFromTime(m, state.t);
-            finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });
+            if (m.rival && state.rival) {
+              const beat = state.t < state.rival.finishTime;
+              const margin = state.rival.finishTime - state.t;
+              let stars = starsFromTime(m, state.t);
+              if (beat && margin >= 2 && state.t <= ((m.timeLimits && m.timeLimits[2]) || state.t)) stars = 3;
+              else if (beat) stars = Math.max(stars, 2);
+              else if (stars >= 3) stars = 2;
+              finish(stars, { line: beat ? ("BEAT RIVAL  " + formatTime(Math.abs(margin))) : ("RIVAL +" + formatTime(Math.abs(margin))) });
+            } else {
+              const stars = starsFromTime(m, state.t);
+              finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });
+            }
           }
+        }
+      }
+      if (m.rival) {
+        tickRival(dt, time);
+        const r = state.rival;
+        if (r) {
+          let L = 0;
+          const end = Math.min(state.next + 1, r.pts.length - 1);
+          for (let i = 0; i < end; i++) L += r.pts[i + 1].distanceTo(r.pts[i]);
+          state.rivalDelta = (L / Math.max(1, r.plen)) * r.dur - state.t;
         }
       }
       // timeout
@@ -526,6 +670,7 @@ export function createMissionSystem(scene, world, audio) {
     if (m.activity === "mail" || m.activity === "storm" || m.activity === "rescue" || (m.activity === "night" && m.stops)) {
       const cur = state.mailStops[state.next];
       if (cur) {
+        followMoving(cur);
         cur.rotation.z = time * 0.55;
         const stop = cur.userData.stop;
         const d = craft.pos.distanceTo(cur.position);

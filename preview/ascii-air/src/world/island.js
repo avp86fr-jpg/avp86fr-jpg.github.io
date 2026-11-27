@@ -6,6 +6,7 @@ import { createSky } from "./sky.js";
 import { createLandmarks } from "./landmarks.js";
 import { createFlora } from "./flora.js";
 import { createSkyProps, createThermals } from "./skyprops.js";
+import { createLife } from "./life.js";
 import { makeBackdrop } from "../render/textured.js";
 
 export const THERMAL_FIELDS = [
@@ -27,6 +28,7 @@ export function createIsland(scene, quality = "medium") {
 
   const landmarks = createLandmarks(scene, terrain, sky, quality);
   const flora = createFlora(scene, terrain, quality);
+  const life = createLife(scene, terrain, landmarks, quality);
   const skyprops = createSkyProps(scene, quality);
   const backdrop = makeBackdrop();
   scene.add(backdrop);
@@ -81,6 +83,11 @@ export function createIsland(scene, quality = "medium") {
     if (typeof sky.tickStars === "function") sky.tickStars(time);
     water.update(time, sky);
     landmarks.update(dt, time, hour, sky.night);
+    if (life && life.update) life.update(dt, time);
+    if (water.setBoats && landmarks && landmarks.boats) {
+      const list = landmarks.boats.filter((b) => b && (b.name === "steamer" || b.name === "boat")).map((b) => ({ x: b.position.x, z: b.position.z }));
+      water.setBoats(list);
+    }
     skyprops.update(dt, time);
     thermals.update(dt);
     if (backdrop && backdrop.material) {
@@ -101,7 +108,7 @@ export function createIsland(scene, quality = "medium") {
   }
 
   return {
-    terrain, sky, water, landmarks, flora, skyprops, thermals,
+    terrain, sky, water, landmarks, flora, life, skyprops, thermals,
     heightAt, materialAt, normalAt, isWater, landingSurface, thermalAt,
     update, setStorm, LANDMARKS,
   };

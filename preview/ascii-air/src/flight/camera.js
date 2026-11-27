@@ -40,6 +40,12 @@ export function createFlightCamera(camera) {
     world: null,
     colliders: [],
     hasPose: false,
+    intro: false,
+    introT: 0,
+    introDur: 2.5,
+    outro: false,
+    outroT: 0,
+    outroDur: 2.4,
   };
 
   function setWorld(world, meshes) {
@@ -278,8 +284,33 @@ export function createFlightCamera(camera) {
       return;
     }
 
+    if (state.intro) {
+      state.introT += dt;
+      const u = Math.min(1, state.introT / Math.max(0.05, state.introDur));
+      const e = u * u * (3 - 2 * u);
+      state.orbitYaw = (1 - e) * 0.55;
+      state.orbitPitch = 0.32 * (1 - e) + 0.22 * e;
+      if (u >= 1) {
+        state.intro = false;
+        state.orbitYaw = 0;
+        state.orbitPitch = 0.22;
+        state.orbitHold = 8;
+      }
+    }
+    if (state.outro) {
+      state.outroT += dt;
+      state.orbitActive = true;
+      state.orbitYaw = 0.25 + state.outroT * 1.15;
+      state.orbitPitch = 0.30 + Math.sin(state.outroT * 1.3) * 0.07;
+      if (state.outroT >= state.outroDur) {
+        state.outro = false;
+        state.orbitActive = false;
+        state.orbitHold = 8;
+      }
+    }
+
     // Ease back to chase 1.5 s after the player releases the orbit drag.
-    if (!state.orbitActive && !state.lockView && !state.lookBack) {
+    if (!state.orbitActive && !state.lockView && !state.lookBack && !state.intro && !state.outro) {
       state.orbitHold += dt;
       if (state.orbitHold > 1.5) {
         const e = 1 - Math.exp(-4.2 * dt);
@@ -351,5 +382,33 @@ export function createFlightCamera(camera) {
     state.hasPose = true;
   }
 
-  return { state, update, cycle, bump, snap, hardSnap, setWorld, camera, orbitDrag, orbitRelease, orbitReset, setLookBack };
+  function playIntro(dur = 2.5) {
+    if (state.hero || state.mode === "title") return;
+    state.intro = true;
+    state.introT = 0;
+    state.introDur = dur;
+    state.outro = false;
+    state.orbitYaw = 0.55;
+    state.orbitPitch = 0.32;
+    state.orbitActive = false;
+    state.lockView = null;
+    state.orbitHold = 99;
+    state.hasPose = false;
+  }
+
+  function playOutro(dur = 2.4) {
+    if (state.hero || state.mode === "title") return;
+    state.intro = false;
+    state.outro = true;
+    state.outroT = 0;
+    state.outroDur = dur;
+    state.orbitActive = true;
+    state.lockView = null;
+    state.orbitYaw = 0.25;
+    state.orbitPitch = 0.30;
+    state.orbitHold = 0;
+  }
+
+  return { state, update, cycle, bump, snap, hardSnap, setWorld, camera, orbitDrag, orbitRelease, orbitReset, setLookBack, playIntro, playOutro };
 }
+

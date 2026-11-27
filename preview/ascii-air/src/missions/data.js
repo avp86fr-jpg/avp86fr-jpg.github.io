@@ -89,7 +89,8 @@ export const MISSIONS = [
     timeLimits: [100, 80, 64],
     rings: pathRings([
       [60, 130, -280, 12], [50, 110, -400, 11], [40, 90, -520, 12],
-      [10, 55, -610, 12], [-40, 40, -700, 12], [-20, 40, -860, 13],
+      [10, 55, -610, 12], [-40, 42, -760, 12], [-20, 42, -900, 11],
+      [-40, 38, -960, 9], [-86, 40, -1004, 11],
     ], 12),
   },
   {
@@ -326,7 +327,8 @@ export const MISSIONS = [
     timeLimits: [95, 75, 60],
     rings: pathRings([
       [340, 140, 80, 12], [280, 110, -200, 12], [260, 90, -520, 11],
-      [200, 50, -700, 11], [80, 45, -900, 12], [20, 40, -1200, 12],
+      [200, 50, -700, 11], [80, 46, -880, 11], [-40, 38, -960, 9],
+      [-40, 42, -1100, 12],
     ], 11),
   },
   {
@@ -656,7 +658,7 @@ export const MISSIONS = [
     start: { x: -200, y: 70, z: -800, heading: 0.4, speed: 46 },
     timeLimits: [110, 88, 68],
     stops: [
-      { type: "pylon", name: "Viaduct", x: L.bridge.x, z: L.bridge.z, r: 20 },
+      { type: "pylon", name: "Under the Viaduct", x: L.bridge.x, z: L.bridge.z, y: 38, r: 14 },
       { type: "pylon", name: "Mistfall", x: L.waterfall.x, z: L.waterfall.z, r: 20 },
       { type: "pylon", name: "Harbor Town", x: L.town.x, z: L.town.z, r: 20 },
       { type: "pylon", name: "Mill Hills", x: L.windmills.x, z: L.windmills.z, r: 20 },
@@ -674,6 +676,66 @@ export const MISSIONS = [
       { type: "pylon", name: "Volcano Shoulder", x: 80, z: 200, r: 24 },
       { type: "pylon", name: "Viaduct", x: L.bridge.x, z: L.bridge.z, r: 22 },
       { type: "pylon", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 22 },
+    ],
+  },
+
+  // ---------- ITERATE 16 STANDOUTS ----------
+  {
+    id: "rings-p5", activity: "rings", klass: "pro", title: "Viaduct Crawl",
+    brief: "A low canyon run through the stone viaduct arches. Keep the wings level and thread every span.",
+    hour: 9.5, plane: "trainer",
+    start: { x: 230, y: 54, z: -1040, heading: Math.PI + 0.28, speed: 46 },
+    timeLimits: [70, 52, 40],
+    rings: pathRings([
+      [160, 48, -1010, 12], [80, 44, -980, 11], [8, 40, -968, 10],
+      [-40, 37, -960, 8], [-86, 37, -964, 8], [-170, 48, -990, 12],
+    ], 10),
+  },
+  {
+    id: "rings-p6", activity: "rings", klass: "pro", title: "Rival Run",
+    brief: "Race the red Courrier around Harbor Airport. Beat her to the last ring — three stars if you finish first and under the ★3 time.",
+    hour: 11, plane: "trainer", rival: true,
+    start: { x: -240, y: 48, z: -1100, heading: 0, speed: 48 },
+    timeLimits: [88, 70, 56],
+    rings: pathRings([
+      [40, 42, -1100, 14], [200, 50, -1000, 13], [80, 55, -860, 13],
+      [-160, 50, -900, 13], [-240, 45, -1100, 13], [-80, 42, -1240, 13],
+      [80, 42, -1220, 14],
+    ], 13),
+  },
+  {
+    id: "mail-p5", activity: "mail", klass: "pro", title: "Ship Drop",
+    brief: "Pick up the bag at the hangar and drop it onto the moving steamer in the bay. Stay with her wake.",
+    hour: 10.5, plane: "trainer",
+    start: { x: 40, y: 42, z: -1100, heading: 0, speed: 42 },
+    timeLimits: [110, 85, 68],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 18 },
+      { type: "drop", name: "Steamer", moving: "steamer", x: 18, z: -1268, y: 16, r: 22 },
+    ],
+  },
+  {
+    id: "storm-p4", activity: "storm", klass: "pro", title: "Gale Rescue",
+    brief: "A wreck is adrift in the gale. Follow the flare ring, mark the site, then drop a raft in the swell.",
+    hour: 16, plane: "trainer", weather: "storm", mode: "rescue", flares: true,
+    start: { x: -560, y: 50, z: -1520, heading: Math.atan2(L.wreck.z + 1520, L.wreck.x + 560), speed: 46 },
+    timeLimits: [130, 100, 78],
+    flareAt: { x: L.wreck.x, z: L.wreck.z },
+    stops: [
+      { type: "mark", name: "Flare Ring", x: L.wreck.x, z: L.wreck.z, r: 22 },
+      { type: "raft", name: "Wreck Raft", x: L.wreck.x + 40, z: L.wreck.z - 20, r: 20 },
+    ],
+  },
+  {
+    id: "night-p4", activity: "night", klass: "pro", title: "Night Flare Rescue",
+    brief: "The wreck is lit only by flares. Mark it, drop a raft, and get clear in the dark.",
+    hour: 21.2, plane: "trainer", mode: "rescue", flares: true,
+    start: { x: -560, y: 50, z: -1520, heading: Math.atan2(L.wreck.z + 1520, L.wreck.x + 560), speed: 44 },
+    timeLimits: [140, 108, 85],
+    flareAt: { x: L.wreck.x, z: L.wreck.z },
+    stops: [
+      { type: "mark", name: "Flare Ring", x: L.wreck.x, z: L.wreck.z, r: 22 },
+      { type: "raft", name: "Night Raft", x: L.wreck.x + 36, z: L.wreck.z - 18, r: 20 },
     ],
   },
 ];

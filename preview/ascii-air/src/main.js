@@ -227,6 +227,7 @@ function startMission(id) {
   markLast("mission", id);
   input.resetThrottleLever?.(0.75);
   flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
+  if (flyCam.playIntro) flyCam.playIntro(2.5);
   ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
 }
@@ -646,7 +647,13 @@ function step(now) {
             savePhoto(save, { id: st.active.id, title: st.result.subject || st.active.title, data, when: Date.now() });
           } catch {}
         }
-        setTimeout(() => ui.showResult(save, pendingResult), 700);
+        if (st.result.stars > 0 && flyCam.playOutro) flyCam.playOutro(2.4);
+        const res = st.result;
+        const delay = res.stars > 0 ? 2400 : 700;
+        setTimeout(() => {
+          if (pendingResult !== res) return;
+          ui.showResult(save, res);
+        }, delay);
       }
       if (inp.actionPressed && craft.id === "glider" && craft.onGround && !currentMissionId) {
         startTow(craft);

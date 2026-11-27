@@ -377,15 +377,18 @@ function makeBirdFlock(n) {
   v.setAttribute("position", new THREE.BufferAttribute(vp, 3));
   v.setIndex([0, 1, 3, 1, 2, 3, 3, 1, 5]);
   retagGeometry(v, MAT.ROCK, 0);
-  const inst = new THREE.InstancedMesh(v, new THREE.MeshBasicMaterial({ color: 0x222220, side: THREE.DoubleSide }), n);
+  const inst = new THREE.InstancedMesh(v, new THREE.MeshBasicMaterial({ color: 0xece6dc, side: THREE.DoubleSide }), n);
+  inst.name = "seagulls";
   const dummy = new THREE.Object3D();
   const data = [];
   for (let i = 0; i < n; i++) {
     data.push({
       a: (i / n) * TAU,
-      r: 200 + i * 20,
-      y: 80 + (i % 7) * 10,
-      s: 1.2,
+      r: 70 + (i % 8) * 16,
+      y: 14 + (i % 6) * 3.5,
+      s: 1.0 + (i % 3) * 0.15,
+      cx: LANDMARKS.beach.x + (i % 5 - 2) * 18,
+      cz: LANDMARKS.beach.z - 20 - (i % 4) * 10,
     });
   }
   return {
@@ -393,13 +396,13 @@ function makeBirdFlock(n) {
     update(dt, time) {
       for (let i = 0; i < n; i++) {
         const d = data[i];
-        d.a += dt * 0.4;
-        const x = Math.cos(d.a) * d.r + LANDMARKS.beach.x;
-        const z = Math.sin(d.a) * d.r * 0.4 + LANDMARKS.beach.z;
-        const y = d.y + Math.sin(time * 3 + i) * 2;
+        d.a += dt * (0.55 + (i % 4) * 0.08);
+        const x = Math.cos(d.a) * d.r + d.cx;
+        const z = Math.sin(d.a) * d.r * 0.55 + d.cz;
+        const y = d.y + Math.sin(time * 3.4 + i) * 1.6;
         dummy.position.set(x, y, z);
-        dummy.rotation.set(0, -d.a, Math.sin(time * 8 + i) * 0.4);
-        dummy.scale.setScalar(1.6);
+        dummy.rotation.set(0, -d.a + Math.PI / 2, Math.sin(time * 9 + i) * 0.45);
+        dummy.scale.setScalar(2.1 * d.s);
         dummy.updateMatrix();
         inst.setMatrixAt(i, dummy.matrix);
       }

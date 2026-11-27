@@ -610,7 +610,13 @@ time  ${formatTime(result.time || 0)}
         lines.push("> Fly the " + m.rings.length + " rings");
         lines.push("> Rings: " + mission.ringsPassed + " / " + m.rings.length);
         lines.push("> Time: " + formatTime(mission.t));
-        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
+        else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        if (m.rival) {
+          const d = mission.rivalDelta || 0;
+          const ahead = d >= 0;
+          lines.push("> RIVAL " + (ahead ? "−" : "+") + formatTime(Math.abs(d)) + (ahead ? "  (ahead)" : "  (behind)"));
+        }
         const best = (save.best && save.best[m.id]) ? formatTime(save.best[m.id]) : "—";
         lines.push("> Best: " + best);
         lines.push("> Wind: " + windLine);
@@ -629,6 +635,16 @@ time  ${formatTime(result.time || 0)}
       } else if (m.activity === "photo" || (m.activity === "night" && m.subject)) {
         lines.push(m.title);
         lines.push(mission.photoReady ? "> IN FRAME — ACTION" : "> find the framing ring");
+      } else if (m.activity === "night" && m.mode === "rescue") {
+        const stops = m.stops || [];
+        const cur = stops[mission.next];
+        const done = mission.next || 0;
+        lines.push("NIGHT RESCUE  (" + (klass || "PRO") + ")");
+        if (cur) lines.push("> " + (cur.type === "raft" ? "Drop a raft at " : (m.flares ? "Follow the flares to " : "Mark ")) + cur.name);
+        lines.push("> Marks: " + done + " / " + stops.length);
+        lines.push("> Time: " + formatTime(mission.t));
+        if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
+        lines.push("> Wind: " + windLine);
       } else if (m.activity === "mail" || m.activity === "night" && m.stops) {
         const stops = m.stops || [];
         const cur = stops[mission.next] || stops[stops.length - 1];
@@ -637,23 +653,28 @@ time  ${formatTime(result.time || 0)}
         lines.push((m.activity === "night" ? "NIGHT MAIL" : "MAIL LINE") + "  (" + (klass || "PRO") + ")");
         if (!mission.mailHasBag && cur && cur.type === "pickup") {
           lines.push("> Pick up the bag at the " + cur.name);
+        } else if (cur && cur.moving === "steamer") {
+          lines.push("> Drop the bag on the moving steamer");
         } else if (cur) {
           lines.push("> Drop at " + cur.name);
         }
         lines.push("> Drops: " + Math.max(0, done) + " / " + drops);
         lines.push("> Time: " + formatTime(mission.t));
-        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
+        else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
       } else if (m.activity === "storm") {
         const stops = m.stops || [];
         const cur = stops[mission.next];
         const done = mission.next || 0;
-        lines.push("STORM CROSSING  (" + (klass || "PRO") + ")");
-        if (cur) lines.push("> Beacon: " + cur.name);
+        lines.push((m.mode === "rescue" ? "STORM RESCUE" : "STORM CROSSING") + "  (" + (klass || "PRO") + ")");
+        if (m.mode === "rescue" && cur) lines.push("> " + (cur.type === "raft" ? "Drop a raft at " : (m.flares ? "Follow the flares to " : "Mark ")) + cur.name);
+        else if (cur) lines.push("> Beacon: " + cur.name);
         else if (m.target) lines.push("> Land on the ridge strip");
-        lines.push("> Beacons: " + done + " / " + stops.length);
+        lines.push((m.mode === "rescue" ? "> Marks: " : "> Beacons: ") + done + " / " + stops.length);
         lines.push("> Time: " + formatTime(mission.t));
-        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
+        else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
         lines.push("> Weather: STORM");
       } else if (m.activity === "rescue") {
@@ -664,23 +685,35 @@ time  ${formatTime(result.time || 0)}
         if (cur) lines.push("> " + (cur.type === "raft" ? "Drop a raft at " : "Pylon: ") + cur.name);
         lines.push("> Marks: " + done + " / " + stops.length);
         lines.push("> Time: " + formatTime(mission.t));
-        if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
+        if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
+        else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
       } else {
         lines.push(m.title);
       }
       if (touch) {
-        if (m.activity === "rings") miss.textContent = "Rings " + mission.ringsPassed + "/" + m.rings.length;
+        if (m.activity === "rings") {
+          let t = "Rings " + mission.ringsPassed + "/" + m.rings.length;
+          if (m.rival) {
+            const d = mission.rivalDelta || 0;
+            t += "  RIVAL " + (d >= 0 ? "−" : "+") + formatTime(Math.abs(d));
+          }
+          miss.textContent = t;
+        }
         else if (m.activity === "landing" || (m.activity === "night" && m.target && !m.stops)) miss.textContent = "Landing";
         else if (m.activity === "balloons") miss.textContent = (m.title || "Balloons") + "  " + mission.popped + "/" + (mission.balloons && mission.balloons.length || 0);
+        else if (m.activity === "night" && m.mode === "rescue") {
+          const cur = (m.stops || [])[mission.next];
+          miss.textContent = cur ? ((cur.type === "raft" ? "Raft: " : "Mark: ") + cur.name) : "Night rescue";
+        }
         else if (m.activity === "mail" || (m.activity === "night" && m.stops)) {
           const stops = m.stops || [];
           const cur = stops[mission.next];
-          miss.textContent = cur ? ((cur.type === "pickup" ? "Pick up: " : "Drop: ") + cur.name) : "Mail";
+          miss.textContent = cur ? ((cur.type === "pickup" ? "Pick up: " : (cur.moving === "steamer" ? "Drop: moving steamer" : "Drop: ")) + (cur.moving === "steamer" ? "" : cur.name)) : "Mail";
         }
         else if (m.activity === "storm") {
           const cur = (m.stops || [])[mission.next];
-          miss.textContent = cur ? ("Beacon: " + cur.name) : (m.target ? "Land: Ridge" : "Storm");
+          miss.textContent = cur ? ((m.mode === "rescue" ? (cur.type === "raft" ? "Raft: " : "Mark: ") : "Beacon: ") + cur.name) : (m.target ? "Land: Ridge" : "Storm");
         }
         else if (m.activity === "rescue") {
           const cur = (m.stops || [])[mission.next];
