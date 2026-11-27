@@ -465,3 +465,13 @@ body.touch.short:not(.portrait) .bark, body.comic.touch.short:not(.portrait) .ba
 @media (min-aspect-ratio: 17/9) { #loading { background-position: center 12%; } }
 @media (orientation: portrait) { #loading { background-image: url(art/cover_2x3_720.webp); background-position: center top; } }
 @media (prefers-reduced-motion: reduce) { #loading.ka b { animation: none; } }
+/* ===== pass 18: album caption boxes — zone cards + intro narration as pale-yellow panel captions (hand-lettered caps) ===== */
+body.comic #zone .zc { left: 3.5%; right: auto; top: 11%; text-align: left; max-width: min(78vw, 520px); padding: 10px 20px 10px 16px; background: #fff2a6; border: 3px solid var(--ink); border-radius: 2px; box-shadow: 6px 6px 0 var(--ink); animation: capIn 3.6s ease-out both; }
+body.comic #zone .zl { display: none; }
+body.comic #zone .zk { font-family: 'Bangers', sans-serif; letter-spacing: 2px; color: var(--cr); font-size: min(4vw, 17px); }
+body.comic #zone .zn { font-family: 'Bangers', sans-serif; font-weight: 400; letter-spacing: 2px; color: var(--ink); text-shadow: none; font-size: min(7vw, 44px); line-height: 1; }
+body.comic #zone .zs { font-family: 'ComicNeue', sans-serif; font-weight: 700; font-style: normal; text-transform: uppercase; letter-spacing: .5px; color: var(--ink); text-shadow: none; font-size: min(3.4vw, 15px); }
+body.comic #zone .zch { color: var(--cr); }
+body.comic #cine .cap { position: absolute; left: 3.5%; top: 9%; padding: 8px 16px; background: #fff2a6; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); color: var(--ink); font-family: 'ComicNeue', sans-serif; font-weight: 700; text-transform: uppercase; font-size: min(3.6vw, 17px); letter-spacing: .5px; animation: capIn 1.2s ease-out both; }
+@keyframes capIn { 0% { opacity: 0; transform: translateX(-24px) rotate(-1.5deg); } 12% { opacity: 1; transform: translateX(0) rotate(-0.6deg); } 88% { opacity: 1; } 100% { opacity: 0; } }
+body.comic #cine .cap { animation-name: capIn2; } @keyframes capIn2 { 0% { opacity: 0; transform: translateX(-24px) rotate(-1.5deg); } 100% { opacity: 1; transform: rotate(-0.6deg); } }
