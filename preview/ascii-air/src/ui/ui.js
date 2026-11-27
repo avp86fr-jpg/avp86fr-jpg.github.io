@@ -486,10 +486,14 @@ time  ${formatTime(result.time || 0)}
     ], save);
   }
 
+  let flyHudAt = 0;
   function showHUD() {
     hideAll();
     hud.classList.remove("hidden");
     state.screen = "fly";
+    flyHudAt = performance.now();
+    const statsEl = hud.querySelector("#hud-stats");
+    if (statsEl) statsEl.classList.remove("is-settled");
     closeOverlay();
     mobile.layout(isPortrait(), true);
     maybeFlyHint();
@@ -589,11 +593,14 @@ time  ${formatTime(result.time || 0)}
     if (touch) {
       stats.innerHTML = '<div class="stat-pill">' + ico("star") + " " + stars + "　" + ico("gem") + " " + photos + "</div>";
     } else {
-      stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR  v1.0</span>' + ico("mail") + "</div>"
+      stats.innerHTML = '<div class="stats-banner"><span class="stats-title">AEROPOSTALE AIR</span>' + ico("mail") + "</div>"
         + '<div class="stat-row">' + ico("star") + " " + String(stars).padStart(3) + " / " + starMax + " " + sbar(stars, starMax) + "</div>"
-        + '<div class="stat-row">' + ico("gem") + " " + String(photos).padStart(2) + " / 50 (Treasures) " + sbar(photos, 50) + "</div>"
-        + '<div class="stat-row">' + ico("plane") + " " + planeName + "  Lvl.2</div>";
+        + '<div class="stat-row">' + ico("gem") + " " + String(photos).padStart(2) + " / 50 " + sbar(photos, 50) + "</div>"
+        + '<div class="stat-row">' + ico("plane") + " " + planeName + "</div>";
     }
+    const freeFlight = !(mission && mission.active && !mission.result);
+    const settled = freeFlight && flyHudAt && (performance.now() - flyHudAt > 4500);
+    stats.classList.toggle("is-settled", !!settled);
     paintCompassTape(craft.heading);
 
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";

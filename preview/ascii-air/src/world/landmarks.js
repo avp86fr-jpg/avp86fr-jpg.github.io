@@ -325,38 +325,48 @@ function makeSailboat(color = 0xc8b48a) {
   return g;
 }
 
-function makeSteamer(color = 0x2a2e36) {
+function makeSteamer(color = 0x1e4a78) {
   const g = new THREE.Group();
   g.name = "steamer";
-  // Long low liner: hull ~32 long, funnel top ~8 → length about 4× height.
-  add(g, box(5.2, 1.7, 24, color, MAT.METAL), 0, 1.05, -1.2);
-  // Tapered bow (south, +Z in local after cruise yaw) and rounded stern
-  add(g, box(4.0, 1.55, 4.8, color, MAT.METAL), 0, 0.98, 12.8);
-  add(g, box(2.6, 1.25, 3.4, color, MAT.METAL), 0, 0.88, 16.0);
-  add(g, box(1.5, 0.95, 2.4, color, MAT.METAL), 0, 0.78, 18.2);
-  add(g, box(4.4, 1.45, 3.4, color, MAT.METAL), 0, 0.95, -14.8);
-  add(g, box(3.2, 1.15, 2.2, color, MAT.METAL), 0, 0.85, -17.0);
-  // Portholes along the hull so it doesn't read as a black slab
+  const navy = color || 0x1e4a78;
+  const white = 0xf6f2ea;
+  // Navy lower hull (never black) + tapered bow/stern
+  add(g, box(5.2, 1.15, 24, navy, MAT.METAL), 0, 0.72, -1.2);
+  add(g, box(4.0, 1.05, 4.8, navy, MAT.METAL), 0, 0.68, 12.8);
+  add(g, box(2.6, 0.90, 3.4, navy, MAT.METAL), 0, 0.62, 16.0);
+  add(g, box(1.5, 0.72, 2.4, navy, MAT.METAL), 0, 0.56, 18.2);
+  add(g, box(4.4, 1.00, 3.4, navy, MAT.METAL), 0, 0.66, -14.8);
+  add(g, box(3.2, 0.82, 2.2, navy, MAT.METAL), 0, 0.58, -17.0);
+  // White topsides sitting on the navy
+  add(g, box(5.28, 0.78, 24.2, white, MAT.BUILDING), 0, 1.62, -1.2);
+  add(g, box(4.05, 0.70, 4.9, white, MAT.BUILDING), 0, 1.52, 12.8);
+  add(g, box(2.65, 0.58, 3.4, white, MAT.BUILDING), 0, 1.38, 16.0);
+  add(g, box(1.55, 0.48, 2.4, white, MAT.BUILDING), 0, 1.22, 18.2);
+  add(g, box(4.45, 0.65, 3.5, white, MAT.BUILDING), 0, 1.48, -14.8);
+  add(g, box(3.25, 0.52, 2.2, white, MAT.BUILDING), 0, 1.32, -17.0);
+  // Portholes on the white band
   for (const z of [-10, -7, -4, -1, 2, 5, 8, 11]) {
-    add(g, cyl(0.16, 0.16, 0.12, 6, 0xc8d4dc, MAT.METAL), 2.62, 1.25, z, 0, 0, Math.PI / 2);
-    add(g, cyl(0.16, 0.16, 0.12, 6, 0xc8d4dc, MAT.METAL), -2.62, 1.25, z, 0, 0, Math.PI / 2);
+    add(g, cyl(0.16, 0.16, 0.12, 6, 0x7aa0b8, MAT.METAL), 2.66, 1.58, z, 0, 0, Math.PI / 2);
+    add(g, cyl(0.16, 0.16, 0.12, 6, 0x7aa0b8, MAT.METAL), -2.66, 1.58, z, 0, 0, Math.PI / 2);
   }
-  // Red waterline + dark boot topping
-  add(g, box(5.45, 0.38, 32.2, 0xc01418, MAT.ROOF), 0, 0.38, -0.2);
-  add(g, box(5.3, 0.18, 32.4, 0x1a1816, MAT.METAL), 0, 0.14, -0.2);
-  // Cream superstructure sits low along the midships — not a tower
-  add(g, box(4.4, 1.45, 14.5, 0xf7f1e2, MAT.BUILDING), 0, 2.55, -1.6);
-  add(g, box(3.6, 1.15, 6.2, 0xfff8ec, MAT.BUILDING), 0, 3.85, -0.8);
-  add(g, box(3.1, 0.7, 3.0, 0xf7f1e2, MAT.BUILDING), 0, 4.75, 0.6);
-  // Bridge windows
-  add(g, box(3.2, 0.45, 0.2, 0x1a2230, MAT.METAL), 0, 3.9, 2.35);
-  add(g, box(0.2, 0.4, 4.4, 0x1a2230, MAT.METAL), 1.85, 2.55, -1.4);
-  // Funnel: modest stack, red stripe, black cap
-  add(g, cyl(0.85, 0.95, 3.4, 10, 0x2a2a2c, MAT.METAL), 0, 6.2, 0.4);
-  add(g, cyl(1.02, 1.02, 1.05, 10, 0xc01418, MAT.ROOF), 0, 5.85, 0.4);
-  add(g, cyl(0.78, 0.88, 0.45, 10, 0x1a1a1a, MAT.METAL), 0, 7.95, 0.4);
-  add(g, cyl(0.08, 0.08, 6.4, 6, 0x333333, MAT.METAL), 0, 5.0, -8.4);
-  add(g, cyl(0.08, 0.08, 5.2, 6, 0x333333, MAT.METAL), 0, 4.4, 8.8);
+  // Red waterline (no black boot)
+  add(g, box(5.50, 0.42, 32.4, 0xc01418, MAT.ROOF), 0, 0.28, -0.2);
+  // White superstructure
+  add(g, box(4.4, 1.45, 14.5, 0xfffaf2, MAT.BUILDING), 0, 2.70, -1.6);
+  add(g, box(3.6, 1.15, 6.2, 0xffffff, MAT.BUILDING), 0, 4.00, -0.8);
+  add(g, box(3.1, 0.7, 3.0, 0xfffaf2, MAT.BUILDING), 0, 4.90, 0.6);
+  // Bridge windows (navy, not black)
+  add(g, box(3.2, 0.45, 0.2, 0x1e3a62, MAT.METAL), 0, 4.05, 2.35);
+  add(g, box(0.2, 0.4, 4.4, 0x1e3a62, MAT.METAL), 1.85, 2.70, -1.4);
+  // Two buff funnels with a red band — black only as a thin cap ring
+  const funnels = [-2.2, 2.4];
+  for (const fz of funnels) {
+    add(g, cyl(0.78, 0.88, 3.2, 10, 0xf0d8a8, MAT.BUILDING), 0, 6.35, fz);
+    add(g, cyl(0.94, 0.94, 0.85, 10, 0xc01418, MAT.ROOF), 0, 5.95, fz);
+    add(g, cyl(0.72, 0.80, 0.28, 10, 0x3a342e, MAT.METAL), 0, 7.95, fz);
+  }
+  add(g, cyl(0.08, 0.08, 6.4, 6, 0x6a645c, MAT.METAL), 0, 5.0, -8.4);
+  add(g, cyl(0.08, 0.08, 5.2, 6, 0x6a645c, MAT.METAL), 0, 4.4, 8.8);
   // Deck rails along both sides of the midships
   for (const side of [-1, 1]) {
     for (let i = -6; i <= 5; i++) {
@@ -607,47 +617,63 @@ function makeWindmill() {
 function makeArch() {
   const g = new THREE.Group();
   g.name = "arch";
-  // Irregular rocky headland, tall narrow window, attached to the cape.
+  // Rough natural limestone arch: jagged silhouette, irregular opening.
   const shape = new THREE.Shape();
   const pts = [
-    [-18, 0], [-22, 6], [-20, 14], [-24, 22], [-18, 34], [-16, 46],
-    [-10, 56], [-2, 62], [6, 60], [12, 52], [16, 40], [20, 28],
-    [18, 16], [22, 8], [16, 0],
+    [-16, 0], [-21, 4], [-19, 9], [-24, 13], [-20, 19], [-25, 25],
+    [-19, 32], [-22, 40], [-16, 48], [-12, 56], [-6, 61], [1, 64],
+    [8, 61], [13, 55], [11, 47], [16, 40], [13, 32], [18, 24],
+    [15, 17], [19, 11], [14, 6], [16, 0],
   ];
   shape.moveTo(pts[0][0], pts[0][1]);
   for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
   shape.closePath();
   const hole = new THREE.Path();
-  // Narrower, taller window like the master (not a round hole in a box)
-  hole.absellipse(0, 22, 3.15, 15.5, 0, Math.PI * 2, true);
+  // Irregular opening — not a clean ellipse in a slab
+  const holePts = [
+    [-3.4, 10], [-4.6, 16], [-3.8, 24], [-2.6, 32], [-0.4, 38],
+    [2.2, 36], [3.6, 28], [3.2, 20], [2.0, 13], [-0.6, 9],
+  ];
+  hole.moveTo(holePts[0][0], holePts[0][1]);
+  for (let i = 1; i < holePts.length; i++) hole.lineTo(holePts[i][0], holePts[i][1]);
+  hole.closePath();
   shape.holes.push(hole);
   const geo = new THREE.ExtrudeGeometry(shape, {
-    depth: 18, bevelEnabled: true, bevelThickness: 2.8, bevelSize: 2.2, bevelSegments: 3, curveSegments: 24,
+    depth: 14, bevelEnabled: true, bevelThickness: 2.2, bevelSize: 1.8, bevelSegments: 3, curveSegments: 8,
   });
-  geo.translate(0, 0, -9);
+  geo.translate(0, 0, -7);
+  // Nibble the surface so the mass is not a flat extruded wall
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const stripe = Math.sin(x * 0.28 + y * 0.55) + 0.55 * Math.sin((x - y) * 0.9 + z * 0.2);
-    const hatch = stripe > 0.45 ? 0.62 : stripe > 0.05 ? 0.78 : stripe > -0.35 ? 0.9 : 1;
-    const crevice = (Math.sin(x * 0.7 + z * 0.4) * Math.sin(y * 0.45)) > 0.55 ? 0.62 : 1;
-    const shadeAmt = (z > 6 ? 0.88 : 1) * (y < 5 ? 0.9 : 1) * crevice;
-    col[i * 3] = 0.78 * hatch * shadeAmt;
-    col[i * 3 + 1] = 0.70 * hatch * shadeAmt;
-    col[i * 3 + 2] = 0.52 * hatch * shadeAmt;
+    let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const nibble = 0.55 * Math.sin(x * 0.55 + y * 0.31) + 0.4 * Math.sin(y * 0.7 + z * 0.45) + 0.25 * Math.sin((x + z) * 0.9);
+    if (y > 2 && y < 62) {
+      pos.setX(i, x + nibble * 0.7);
+      pos.setZ(i, z + nibble * 0.5);
+    }
+    x = pos.getX(i); z = pos.getZ(i);
+    const stripe = Math.sin(x * 0.35 + y * 0.48) + 0.5 * Math.sin((x - y) * 0.8 + z * 0.25);
+    const hatch = stripe > 0.45 ? 0.62 : stripe > 0.05 ? 0.76 : stripe > -0.35 ? 0.88 : 1;
+    const crevice = (Math.sin(x * 0.8 + z * 0.45) * Math.sin(y * 0.5)) > 0.55 ? 0.58 : 1;
+    const shadeAmt = (z > 5 ? 0.86 : 1) * (y < 5 ? 0.88 : 1) * crevice;
+    // Grey limestone, not beige
+    col[i * 3] = 0.58 * hatch * shadeAmt;
+    col[i * 3 + 1] = 0.56 * hatch * shadeAmt;
+    col[i * 3 + 2] = 0.50 * hatch * shadeAmt;
   }
-  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  pos.needsUpdate = true;
   geo.computeVertexNormals();
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   retagGeometry(geo, MAT.ROCK, 0);
   const mesh = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
   mesh.userData.matId = MAT.ROCK;
   g.add(mesh);
-  // Irregular toes / spine attaching the mass to the cape (north, +Z)
-  add(g, box(14, 16, 20, 0xc4b48c, MAT.ROCK), -12, 8, 12, 0.08, 0.25, 0.12);
-  add(g, box(12, 14, 18, 0xb8a878, MAT.ROCK), 11, 7, 14, -0.1, -0.2, -0.1);
-  add(g, box(16, 12, 24, 0xc8b890, MAT.ROCK), 1, 6, 22, 0.05, 0.12, 0);
-  add(g, box(10, 18, 14, 0xb0a070, MAT.ROCK), -6, 9, 28, 0.1, 0.2, 0.08);
+  // Rocky toes in the same grey limestone (not beige slabs)
+  add(g, box(11, 12, 16, 0x8a867a, MAT.ROCK), -11, 6, 11, 0.10, 0.28, 0.14);
+  add(g, box(9, 10, 14, 0x7a766c, MAT.ROCK), 10, 5, 13, -0.12, -0.22, -0.10);
+  add(g, box(13, 9, 18, 0x918c80, MAT.ROCK), 1, 4.5, 20, 0.06, 0.16, 0.04);
+  add(g, box(8, 14, 11, 0x6e6a62, MAT.ROCK), -5, 7, 26, 0.12, 0.22, 0.08);
   // Vegetation on the crown
   const bushMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x2a4a28, flatShading: true }));
   bushMat.userData.matId = MAT.FOLIAGE;
@@ -1639,7 +1665,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   }
 
   // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
-  const steamer = makeSteamer(0x2a2e36);
+  const steamer = makeSteamer(0x1e4a78);
   // Mid-bay, farther into the scene, hull broadside so it reads as a long low ship
   steamer.position.set(10, 0.22, -1340);
   steamer.rotation.y = 1.05;

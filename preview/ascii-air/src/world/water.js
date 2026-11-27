@@ -72,27 +72,30 @@ void main() {
   float ndl = sat(dot(N, normalize(uSunDir)));
   float day = 1.0 - sat(uNight);
 
-  // Shore proximity (turquoise only in a tight coastal band)
-  float radial = length(vWorld.xz - vec2(0.0, -200.0));
-  float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 160.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
-  float capeShore = sat(1.0 - length(vWorld.xz - vec2(-150.0, -1270.0)) / 220.0);
-  float eastShore = sat(1.0 - length(vWorld.xz - vec2(140.0, -1280.0)) / 200.0);
-  float beach = sat(1.0 - length(vWorld.xz - vec2(40.0, -1220.0)) / 140.0);
+  // Island ellipse SDF: 0 at the shore, +ve offshore, -ve in lagoons.
+  vec2 qIsle = (vWorld.xz - vec2(0.0, -200.0)) / vec2(1120.0, 1320.0);
+  float sd = length(qIsle) - 1.0;
+  float off = sd * 1200.0; // metres-ish
+  float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 200.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
+  float capeShore = sat(1.0 - length(vWorld.xz - vec2(-150.0, -1270.0)) / 260.0);
+  float eastShore = sat(1.0 - length(vWorld.xz - vec2(140.0, -1280.0)) / 240.0);
+  float beach = sat(1.0 - length(vWorld.xz - vec2(40.0, -1220.0)) / 180.0);
   float foamZone = max(max(southShore * 0.85, capeShore), max(eastShore, beach));
-  float nearIsle = sat(1.0 - (radial - 900.0) / 800.0);
+  // Shallow turquoise: lagoons + ~280m off the coast. Deep navy only further out.
+  float shallow = sat(1.0 - off / 280.0);
+  float midAmt = sat(1.0 - (off - 80.0) / 700.0);
 
-  // Depth colours: near-shore turquoise, mid blue, deep navy. Not a flat cyan sheet.
   vec3 turq = uShallow;
-  vec3 midB = mix(uDeep, uShallow, 0.38);
-  vec3 deepB = uDeep * vec3(0.70, 0.75, 0.90);
-  float shore = sat(foamZone * 1.6);
-  vec3 water = mix(deepB, midB, sat(nearIsle * 0.65 + 0.15 * ndl));
-  water = mix(water, turq, shore * 0.85);
+  vec3 midB = mix(uDeep, uShallow, 0.42);
+  vec3 deepB = uDeep * vec3(0.62, 0.70, 0.88);
+  float shore = max(sat(foamZone * 1.2), shallow);
+  vec3 water = mix(deepB, midB, midAmt);
+  water = mix(water, turq, shallow * 0.92);
 
-  // Darker in the foreground (near the camera), mid-blue further out.
   float distCam = length(vWorld.xz - cameraPosition.xz);
-  float fg = sat(1.0 - distCam / 520.0);
-  water = mix(water, water * vec3(0.42, 0.52, 0.78), fg * 0.62);
+  float fg = sat(1.0 - distCam / 640.0);
+  // Keep a light foreground cool, but don't crush the sea into a flat navy sheet.
+  water = mix(water, water * vec3(0.82, 0.90, 0.98), fg * 0.18);
 
   // Sky reflection + a warm sun lane. In storm (uChop > 1.6) kill the bright
   // radial disc under the plane — keep only a faint slate sheen.
@@ -125,13 +128,16 @@ void main() {
   vec2 uv1 = rot2(vWorld.xz * 0.0038, 0.72) + vec2(uTime * 0.006, uTime * 0.0028) + vec2(nA - 0.5) * 0.55 + vec2(nC - 0.5) * 0.35;
   vec2 uv2 = rot2(vWorld.xz * 0.0095, -1.15) + vec2(-uTime * 0.0042, uTime * 0.005) + vec2(nB - 0.5) * 0.40;
   vec3 waveTex = mix(texture2D(uWaveTex, uv1).rgb, texture2D(uWaveTex, uv2).rgb, 0.5 + 0.15 * (nC - 0.5));
-  // Keep the atlas quiet in open water (where tiling would read); stronger only near the shore.
-  float texAmt = (0.10 + 0.28 * shore + 0.10 * fg) * day;
-  water *= mix(vec3(1.0), waveTex * 1.04, texAmt);
-  // Sparse irregular ink ticks near the coast only — never a regular open-water hatch
-  float tick = abs(fract(vWorld.x * 0.021 + vWorld.z * 0.017 + nA * 1.4 + uTime * 0.02) - 0.5);
-  float inkLine = (1.0 - smoothstep(0.0, 0.03, tick)) * shore * 0.35 * (0.4 + 0.6 * nB);
-  water = mix(water, vec3(0.06, 0.14, 0.32), inkLine);
+  // Wave atlas: gentle everywhere, a little stronger in the shallows.
+  float texAmt = (0.16 + 0.28 * shallow + 0.08 * fg) * day;
+  water *= mix(vec3(1.0), waveTex * 1.06, texAmt);
+  // Sparse short ink strokes (irregular, never a regular hatch) + sparkle glints.
+  float tick = abs(fract(vWorld.x * 0.016 + vWorld.z * 0.013 + nA * 1.8 + uTime * 0.03) - 0.5);
+  float shortStroke = step(0.58, nB) * step(0.32, nC);
+  float inkLine = (1.0 - smoothstep(0.0, 0.022, tick)) * shortStroke * (0.12 + 0.28 * shallow) * day;
+  water = mix(water, vec3(0.10, 0.26, 0.48), inkLine);
+  float spark = step(0.935, n2(vWorld.xz * 0.42 + vec2(uTime * 0.85, uTime * 0.31)));
+  water += vec3(0.92, 0.97, 1.0) * spark * 0.40 * day * (0.25 + 0.75 * shallow);
 
   // No open-water crest dashes — they read as glitchy white curved bands
   // in the foreground. Foam only in a tight strip at the actual shore
@@ -141,10 +147,11 @@ void main() {
   boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat1) / 6.0));
   boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat2) / 6.5));
   boatFoam = max(boatFoam, sat(1.0 - length(vWorld.xz - uBoat3) / 8.0));
-  // Tight shoreline only (foamZone close to 1), never a mid-bay isoline
-  float shoreFoam = sat(foamZone * 1.8 - 1.15) * (0.5 + 0.5 * nB);
-  float foam = max(shoreFoam * 0.55, boatFoam * 0.70) * (0.40 + 0.60 * day);
-  water = mix(water, vec3(0.93, 0.96, 0.98), foam * 0.85);
+  // White foam line tight to the actual shore (sd ~ 0), plus the named beaches.
+  float ringFoam = sat(1.0 - abs(off - 4.0) / 22.0);
+  float shoreFoam = max(sat(foamZone * 1.35 - 0.55), ringFoam) * (0.7 + 0.3 * nB);
+  float foam = max(shoreFoam * 1.0, boatFoam * 0.75) * (0.55 + 0.45 * day);
+  water = mix(water, vec3(0.97, 0.99, 1.0), foam);
 
   if (uChop > 1.6) {
     // Tiny, sparse whitecaps — high-frequency noise only. Never use the
@@ -170,8 +177,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x0a3888) },
-      uShallow: { value: new THREE.Color(0x3ec8c0) },
+      uDeep: { value: new THREE.Color(0x0a2f7a) },
+      uShallow: { value: new THREE.Color(0x4ad4c6) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },

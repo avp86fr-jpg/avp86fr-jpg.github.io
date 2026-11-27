@@ -26,7 +26,12 @@ uniform float uNight;
 void main() {
   vec3 d = normalize(vDir);
   float h = d.y;
-  vec3 col = mix(uHorizon, uZenith, smoothstep(-0.05, 0.85, h));
+  // Soft gradient: pale haze at the sea line, richer blue only high up.
+  float hz = smoothstep(-0.04, 0.20, h);
+  float up = smoothstep(0.16, 1.05, h);
+  vec3 haze = mix(uHorizon, uZenith, 0.16);
+  vec3 col = mix(uHorizon, haze, hz);
+  col = mix(col, uZenith, up * 0.90);
   col = mix(uGround, col, smoothstep(-0.25, 0.05, h));
   // sun disk
   float sk = dot(d, normalize(uSunDir));

@@ -43,7 +43,7 @@ export function createSkyProps(scene, quality = "medium") {
     flatShading: false,
   }));
   const clouds = new THREE.Group();
-  const nCloud = Math.floor(10 * q.clouds);
+  const nCloud = Math.floor(16 * q.clouds);
   const puff = cloudPuff(cloudMat);
   puff.updateMatrixWorld(true);
   // instance each sub-sphere of a puff? Simpler: clone groups (few dozen is ok-ish)
@@ -65,14 +65,30 @@ export function createSkyProps(scene, quality = "medium") {
   }
   // Horizon banks behind the island + a few large high clouds. Not a cluttered field.
   const heroSpots = [
-    // left horizon bank
-    [-520, 245, -200, 52], [-380, 230, -80, 44], [-240, 250, 40, 48],
-    // right horizon bank
-    [280, 240, 60, 50], [440, 255, -80, 46], [580, 235, -220, 40],
-    // far mid skyline, just above the volcano
-    [-40, 280, 200, 56], [120, 270, 160, 42],
-    // a few large high ones
-    [-180, 430, -600, 58], [260, 450, -500, 54], [40, 470, -200, 62],
+    // Mid-distance postcard banks: sit in the upper half of a slightly
+    // downward chase/hero frame, offset so they don't swallow landmarks.
+    [-260, 195, -1080, 38],
+    [ 300, 185, -1120, 36],
+    [-420, 210, -980, 42],
+    [ 460, 200, -1020, 40],
+    [-80, 230, -900, 34],
+    [ 200, 215, -840, 32],
+    // Mid-island flanks (clear of castle / volcano / waterfall)
+    [-520, 210, -520, 44],
+    [ 540, 200, -480, 40],
+    [-620, 230, -220, 46],
+    [ 600, 220, -40, 42],
+    [ 420, 235, 200, 38],
+    [-780, 270, 420, 36],
+    // Far horizon banks
+    [-920, 280, 220, 44],
+    [ 740, 245, -40, 50],
+    [120, 320, 720, 48],
+    [ 480, 300, 640, 40],
+    // Slightly higher mid-south, still inside a 52deg FOV from the bay
+    [-540, 280, -780, 46],
+    [ 280, 270, -660, 44],
+    [ 280, 310, -420, 48],
   ];
   // White tops, soft blue undersides — album cumulus, not grey blobs
   {

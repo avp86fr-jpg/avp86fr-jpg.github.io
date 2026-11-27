@@ -13,6 +13,86 @@ function canopyGeo(kind) {
   const g = retagGeometry(new THREE.SphereGeometry(2.35, 7, 5), MAT.FOLIAGE);
   return g;
 }
+function paintColors(geo, fn) {
+  const pos = geo.getAttribute("position");
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const c = fn(pos.getX(i), pos.getY(i), pos.getZ(i));
+    col[i * 3] = ((c >> 16) & 255) / 255;
+    col[i * 3 + 1] = ((c >> 8) & 255) / 255;
+    col[i * 3 + 2] = (c & 255) / 255;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  return geo;
+}
+function treePrototype(kind) {
+  const tg = trunkGeo();
+  tg.translate(0, 2.2, 0);
+  const parts = [tg];
+  if (kind === "broad") {
+    const blobs = [
+      [0, 5.7, 0, 1.85],
+      [2.05, 5.15, 0.7, 1.55],
+      [-1.95, 5.25, -0.65, 1.5],
+      [0.35, 6.85, 0.25, 1.25],
+    ];
+    for (const [x, y, z, r] of blobs) {
+      const s = new THREE.SphereGeometry(r, 7, 5);
+      s.scale(1, 0.82, 1);
+      s.translate(x, y, z);
+      parts.push(retagGeometry(s, MAT.FOLIAGE));
+    }
+  } else {
+    // Pine / cypress: 3 stacked cones (cypress instances get a tall thin scale)
+    const cones = [
+      [0, 3.7, 0, 1.85, 4.2],
+      [0.12, 6.3, 0.08, 1.35, 3.5],
+      [-0.06, 8.6, 0, 0.78, 2.5],
+    ];
+    for (const [x, y, z, r, h] of cones) {
+      const c = new THREE.ConeGeometry(r, h, 7);
+      c.translate(x, y, z);
+      parts.push(retagGeometry(c, MAT.FOLIAGE));
+    }
+  }
+  const geo = mergeGeos(parts, MAT.FOLIAGE);
+  paintColors(geo, (x, y, z) => {
+    const r = Math.hypot(x, z);
+    if (r < 0.62 && y < 4.4) return 0x5a3a22;
+    if (kind === "broad") {
+      if (x > 0.9) return 0x3cb03a;
+      if (x < -0.8) return 0x1e7a30;
+      if (y > 6.4) return 0x4cbc48;
+      return 0x2d9a32;
+    }
+    return y > 7.6 ? 0x2a6a2c : 0x1a5224;
+  });
+  return geo;
+}
+function bushPrototype() {
+  const parts = [];
+  const blobs = [[0, 0.2, 0, 1.15], [0.85, 0.05, 0.35, 0.85], [-0.7, 0.0, -0.3, 0.8]];
+  for (const [x, y, z, r] of blobs) {
+    const s = new THREE.SphereGeometry(r, 6, 5);
+    s.translate(x, y, z);
+    parts.push(retagGeometry(s, MAT.FOLIAGE));
+  }
+  const geo = mergeGeos(parts, MAT.FOLIAGE);
+  paintColors(geo, (x, y) => (x > 0.4 ? 0x3aa83a : x < -0.3 ? 0x1f6e2c : 0x2c8a32));
+  return geo;
+}
+function foliageMat() {
+  const m = new THREE.MeshLambertMaterial({
+    color: 0xffffff,
+    vertexColors: true,
+    flatShading: true,
+    emissive: 0x142814,
+    emissiveIntensity: 0.10,
+  });
+  m.userData.matId = MAT.FOLIAGE;
+  patchMaterialIdAlpha(m);
+  return m;
+}
 function palmTrunkGeo() {
   return retagGeometry(new THREE.CylinderGeometry(0.16, 0.3, 7.6, 6), MAT.WOOD);
 }
@@ -84,7 +164,8 @@ function instance(geo, material, placements, cap) {
     const p = placements[i];
     dummy.position.set(p.x, p.y, p.z);
     dummy.rotation.set(0, p.r, 0);
-    dummy.scale.setScalar(p.s);
+    if (p.sx != null) dummy.scale.set(p.sx, p.sy, p.sz);
+    else dummy.scale.setScalar(p.s);
     dummy.updateMatrix();
     inst.setMatrixAt(i, dummy.matrix);
   }
@@ -147,7 +228,7 @@ export function createFlora(scene, terrain, quality = "medium") {
       } else if (m === MAT.FOREST || (m === MAT.GRASS && n > (z < -200 && z > -1000 ? 0.18 : 0.26) && h > 5)) {
         const bucket = (Math.abs((jx * 13 + jz * 7) | 0) % 3);
         const eastHead = jx > 40 && jz < -1180;
-        trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: eastHead ? n > 0.28 : n > 0.48 });
+        trees[bucket].push({ x: jx, y: h, z: jz, s: 0.75 + n * 0.7, r: n * 8, cone: eastHead ? n > 0.20 : n > 0.34 });
       }
     }
   }
@@ -193,23 +274,21 @@ export function createFlora(scene, terrain, quality = "medium") {
 
   const allTrees = [];
   trees.forEach((list, i) => { for (let k = 0; k < caps[i]; k++) allTrees.push(list[k]); });
-  const pines = allTrees.filter((p) => !p.cone);
-  const cypress = allTrees.filter((p) => p.cone);
-  if (pines.length) {
-    const tg = trunkGeo();
-    tg.translate(0, 2.2, 0);
-    const cg = canopyGeo("sphere");
-    cg.translate(0, 5.4, 0);
-    const treeG = mergeGeos([tg, cg], MAT.FOLIAGE);
-    group.add(instance(treeG, flatMat(0x2c9a2e, MAT.FOLIAGE), pines, pines.length));
+  const broads = allTrees.filter((p) => !p.cone);
+  const conifers = allTrees.filter((p) => p.cone).map((p) => {
+    // Cypress: tall thin; pine: regular stacked cones
+    const cypress = ((Math.abs((p.x * 11 + p.z * 5) | 0) % 3) === 0) || p.z < -1180;
+    if (cypress) {
+      const s = p.s;
+      return { ...p, sx: s * 0.52, sy: s * 1.22, sz: s * 0.52 };
+    }
+    return p;
+  });
+  if (broads.length) {
+    group.add(instance(treePrototype("broad"), foliageMat(), broads, broads.length));
   }
-  if (cypress.length) {
-    const tg = trunkGeo();
-    tg.translate(0, 2.4, 0);
-    const cg = canopyGeo("cone");
-    cg.translate(0, 6.6, 0);
-    const treeG = mergeGeos([tg, cg], MAT.FOLIAGE);
-    group.add(instance(treeG, flatMat(0x1e7a32, MAT.FOLIAGE), cypress, cypress.length));
+  if (conifers.length) {
+    group.add(instance(treePrototype("cone"), foliageMat(), conifers, conifers.length));
   }
 
   // Palms share the foliage-blob instance so flora stays at two draws (trees + blobs).
@@ -218,9 +297,7 @@ export function createFlora(scene, terrain, quality = "medium") {
     blobs.push({ x: p.x, y: p.y + 6.4, z: p.z, s: 0.9 + p.s * 0.25, r: p.r + 1 });
   }
   if (blobs.length) {
-    const bg = canopyGeo("sphere");
-    bg.scale(1.8, 1.15, 1.8);
-    group.add(instance(bg, flatMat(0x2f8a38, MAT.FOLIAGE), blobs, blobs.length));
+    group.add(instance(bushPrototype(), foliageMat(), blobs, blobs.length));
   }
 
   scene.add(group);

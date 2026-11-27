@@ -481,8 +481,13 @@ function renderFrame(time, camDt = 1 / 60) {
 
   look.uniforms.uTime.value = time;
   if (look.uniforms.uSpeed) {
-    const k = Math.max(0, Math.min(1, ((craft.airspeed || 0) - 34) / 36));
+    const k = Math.max(0, Math.min(1, ((craft.airspeed || 0) - 28) / 32));
     look.uniforms.uSpeed.value = (mode === "fly" && !paused && !flyCam.state.hero && !camOverride) ? k : 0;
+  }
+  if (look.uniforms.uBoost) {
+    const on = (mode === "fly" && !paused && !flyCam.state.hero && !camOverride && input && input.state && input.state.boost) ? 1 : 0;
+    const cur = look.uniforms.uBoost.value || 0;
+    look.uniforms.uBoost.value = on ? 1 : Math.max(0, cur - camDt * 2.4);
   }
 
   renderer.setRenderTarget(colorRT);

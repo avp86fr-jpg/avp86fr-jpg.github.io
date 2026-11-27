@@ -25,6 +25,7 @@ uniform float uRain;
 uniform float uFlash;
 uniform float uContrast;
 uniform float uSpeed;
+uniform float uBoost;
 
 float linDepth(float d) {
   float zN = uNearFar.x;
@@ -149,16 +150,22 @@ void main() {
     float Lr = dot(col, vec3(0.2126, 0.7152, 0.0722));
     col = mix(col, vec3(Lr), 0.16 * uRain * offPlane * (1.0 - isWater * 0.4) * (1.0 - isSky));
   }
-  if (uSpeed > 0.12) {
-    vec2 ruv = vUv * uRes;
-    float axis = ruv.x * 0.18 + ruv.y;
-    float id = floor(axis / 19.0);
-    float phase = fract(axis / 19.0);
-    float dash = fract(ruv.y * 0.02 + uTime * (1.4 + uSpeed * 2.2) + id * 0.37);
-    float line = step(phase, 0.045 + 0.04 * uSpeed) * step(0.35, dash) * step(dash, 0.92);
-    // Keep streaks out of the very center so the plane stays clean.
-    float rim = smoothstep(0.18, 0.55, distance(vUv, vec2(0.5, 0.52)));
-    col = mix(col, vec3(0.95, 0.96, 0.92), line * rim * 0.62 * uSpeed);
+  if (uSpeed > 0.08) {
+    // Thin white streaks, screen edges only (stronger on boost).
+    vec2 from = vUv - vec2(0.5, 0.48);
+    float ang = atan(from.y, from.x);
+    float rad = length(from);
+    float id = floor((ang + 4.0) / 0.14);
+    float phase = fract((ang + 4.0) / 0.14);
+    float dash = fract(rad * 8.0 - uTime * (2.2 + uSpeed * 4.0) + id * 0.37);
+    float line = step(phase, 0.045 + 0.035 * uSpeed) * step(0.14, dash) * step(dash, 0.52);
+    float lineWide = step(phase, 0.09 + 0.05 * uSpeed) * step(0.10, dash) * step(dash, 0.56);
+    float sides = max(smoothstep(0.13, 0.0, vUv.x), smoothstep(0.87, 1.0, vUv.x));
+    sides = max(sides, smoothstep(0.11, 0.0, vUv.y));
+    sides = max(sides, smoothstep(0.89, 1.0, vUv.y));
+    float amt = (0.62 + 0.38 * uBoost) * (0.70 + 0.30 * uSpeed);
+    col = mix(col, vec3(0.10, 0.12, 0.16), lineWide * sides * 0.40 * amt);
+    col = mix(col, vec3(1.0, 1.0, 0.97), line * sides * amt);
   }
   // Lightning: a readable pulse on sky + terrain, not a white-out
   col *= 1.0 + uFlash * 0.32;
@@ -184,6 +191,7 @@ export function createLigneClaire() {
     uFlash: { value: 0 },
     uContrast: { value: 1.12 },
     uSpeed: { value: 0 },
+    uBoost: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms,
