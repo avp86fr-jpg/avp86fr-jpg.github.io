@@ -1444,9 +1444,18 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     }));
     inkMat.userData.matId = MAT.CLOUD;
     const puffGeo = retagGeometry(new THREE.SphereGeometry(1, 8, 6), MAT.CLOUD, 0);
+    // Long wind-drifted column: up, then trailing west (−X, image-right) into the sky.
     const spots = [
-      [0, 8, -22, 36], [8, 32, -42, 48], [-10, 60, -62, 56],
-      [8, 90, -80, 52], [-4, 118, -94, 46], [2, 146, -104, 38],
+      [0, 10, -10, 28],
+      [-8, 36, -18, 36],
+      [-22, 68, -26, 44],
+      [-40, 104, -32, 50],
+      [-62, 146, -36, 52],
+      [-88, 190, -38, 48],
+      [-116, 232, -34, 42],
+      [-146, 270, -28, 36],
+      [-176, 302, -20, 30],
+      [-208, 328, -10, 24],
     ];
     const inst = new THREE.InstancedMesh(puffGeo, puffMat, spots.length);
     inst.name = "smoke";
@@ -1486,8 +1495,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const houseFrac = (q && q.houses != null) ? q.houses : 1;
   const cX = LANDMARKS.church.x - 10, cZ = LANDMARKS.church.z + 80;
   const blocked = (x, z) => {
-    if (Math.abs(z + 1100) < 70) return true;
-    if (Math.hypot(x - LANDMARKS.hangar.x, z - LANDMARKS.hangar.z) < 58) return true;
+    if (Math.abs(z + 1100) < 38) return true;
+    if (Math.hypot(x - LANDMARKS.hangar.x, z - LANDMARKS.hangar.z) < 48) return true;
     if (Math.hypot(x - LANDMARKS.tower.x, z - LANDMARKS.tower.z) < 22) return true;
     if (Math.hypot(x - cX, z - cZ) < 36) return true;
     if (Math.hypot(x - LANDMARKS.market.x, z - LANDMARKS.market.z) < 16) return true;
@@ -1496,14 +1505,16 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
     return false;
   };
   const bands = [
-    { z0: -1072, z1: -1052, x0: 150, x1: 312, near: true,  plot: 12.2, gap: 3.4 },
-    { z0: -1050, z1: -1030, x0: 156, x1: 328, near: true,  plot: 12.0, gap: 3.2 },
-    { z0: -1028, z1: -1008, x0: 150, x1: 342, near: true,  plot: 11.6, gap: 3.0 },
-    { z0: -1006, z1: -986,  x0: 148, x1: 355, near: true,  plot: 11.2, gap: 2.8 },
-    { z0: -984,  z1: -964,  x0: 160, x1: 372, near: false, plot: 9.2,  gap: 2.3 },
-    { z0: -962,  z1: -942,  x0: 168, x1: 380, near: false, plot: 8.8,  gap: 2.1 },
-    { z0: -940,  z1: -922,  x0: 175, x1: 368, near: false, plot: 8.6,  gap: 2.0 },
-    { z0: -920,  z1: -904,  x0: 185, x1: 348, near: false, plot: 8.2,  gap: 1.9 },
+    { z0: -1088, z1: -1068, x0: 128, x1: 300, near: true,  plot: 11.0, gap: 2.6 },
+    { z0: -1066, z1: -1046, x0: 136, x1: 318, near: true,  plot: 10.8, gap: 2.5 },
+    { z0: -1044, z1: -1024, x0: 142, x1: 336, near: true,  plot: 10.6, gap: 2.4 },
+    { z0: -1022, z1: -1002, x0: 140, x1: 350, near: true,  plot: 10.4, gap: 2.3 },
+    { z0: -1000, z1: -980,  x0: 138, x1: 362, near: true,  plot: 10.2, gap: 2.2 },
+    { z0: -978,  z1: -958,  x0: 150, x1: 378, near: false, plot: 8.0,  gap: 1.7 },
+    { z0: -956,  z1: -936,  x0: 158, x1: 388, near: false, plot: 7.6,  gap: 1.6 },
+    { z0: -934,  z1: -916,  x0: 166, x1: 380, near: false, plot: 7.4,  gap: 1.5 },
+    { z0: -914,  z1: -898,  x0: 174, x1: 360, near: false, plot: 7.2,  gap: 1.5 },
+    { z0: -896,  z1: -882,  x0: 186, x1: 340, near: false, plot: 7.0,  gap: 1.4 },
   ];
   const farList = [];
   let hi = 0;
@@ -1527,7 +1538,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
         const jx = x + (rnd() - 0.5) * Math.min(1.15, b.gap * 0.35);
         const jz = zMid + (rnd() - 0.5) * 0.9;
         if (blocked(jx, jz)) continue;
-        if (!b.near && rnd() > Math.max(0.45, houseFrac)) continue;
+        if (!b.near && rnd() > Math.max(0.72, Math.min(1, houseFrac + 0.15))) continue;
         const hgt = H(jx, jz);
         const yaw = Math.PI + (rnd() - 0.5) * 0.08; // face south, almost aligned
         if (b.near) {
@@ -1683,14 +1694,14 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   // Postcard-bay traffic (looking north: left = east/+X, right = west/−X)
   const steamer = makeSteamer(0x1e4a78);
   // Mid-bay, farther into the scene, hull broadside so it reads as a long low ship
-  steamer.position.set(10, 0.22, -1340);
+  steamer.position.set(-36, 0.22, -1330);
   steamer.rotation.y = 1.05;
   steamer.scale.setScalar(2.35);
-  steamer.userData.cruise = { cx: 10, cz: -1340, rx: 50, rz: 36, a: 2.4, spd: 0.055 };
+  steamer.userData.cruise = { cx: -36, cz: -1330, rx: 40, rz: 28, a: 2.4, spd: 0.055 };
   group.add(steamer);
   boats.push(steamer);
   const coastal = [
-    [155, -1425, 0xf4efe4, 0.8], [35, -1348, 0xf0e6d0, 2.1], [-90, -1295, 0xe8dcc0, 4.0],
+    [70, -1390, 0xf4efe4, 0.8], [20, -1335, 0xf0e6d0, 2.1], [-150, -1310, 0xe8dcc0, 4.0],
   ];
   for (const [x, z, col, a0] of coastal) {
     const b = makeSailboat(col);

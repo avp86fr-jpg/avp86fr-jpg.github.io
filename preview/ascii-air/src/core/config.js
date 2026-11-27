@@ -219,20 +219,19 @@ export const KEYS = {
 };
 
 export const HERO_VIEW = {
-  // Elevated 3/4 postcard: camera high over the water, bay in the middle,
-  // island spread left-to-right, plane large in the lower centre.
-  // cam is a world-space postcard camera (hero + title); dist/height/side
-  // remain as a fallback if cam is missing.
-  plane: { x: -4, y: 112, z: -1368 },
-  look:  { x: 20, y: 46, z: -780 },
-  cam:   { x: 18, y: 176, z: -1548 },
-  dist: 200,
-  height: 160,
-  side: 28,
-  fov: 47,
-  shiftX: 0.02,
-  shiftY: 0.05,
-  planeScale: 2.35,
+  // Near-horizon postcard: camera 25–40 m behind and slightly above the
+  // Courrier, looking across the bay. Far shore is a band in the upper-middle;
+  // sky takes the top ~30%. No world-space `cam` — dist/height/side stay locked
+  // to the plane so the wingspan reads 35–40% of frame width.
+  plane: { x: 16, y: 24, z: -1440 },
+  look:  { x: -10, y: 14, z: -880 },
+  dist: 24.5,
+  height: 7.2,
+  side: 3.6,
+  fov: 52,
+  shiftX: 0.0,
+  shiftY: 0.08,
+  planeScale: 1.14,
 };
 
 export const SPAWN = {

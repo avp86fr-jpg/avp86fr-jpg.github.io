@@ -228,14 +228,8 @@ export function createFlightCamera(camera) {
       return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
     }
     if (hero) {
-      if (HERO_VIEW.cam) {
-        const c = HERO_VIEW.cam;
-        _pos.set(c.x, c.y + (portrait ? 16 : 0), c.z);
-        _look.set(HERO_VIEW.look.x, HERO_VIEW.look.y, HERO_VIEW.look.z);
-        return { pos: _pos, look: _look, up: new THREE.Vector3(0, 1, 0) };
-      }
-      const dist = HERO_VIEW.dist + (portrait ? 6 : 0);
-      const height = HERO_VIEW.height + (portrait ? 2.4 : 0);
+      const dist = HERO_VIEW.dist + (portrait ? 4 : 0);
+      const height = HERO_VIEW.height + (portrait ? 1.6 : 0);
       const side = HERO_VIEW.side;
       _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -side);
       _look.set(HERO_VIEW.look.x, HERO_VIEW.look.y, HERO_VIEW.look.z);
@@ -275,14 +269,24 @@ export function createFlightCamera(camera) {
     if (state.mode === "title") {
       state.titleOrbit += dt * 0.04;
       const t = state.titleOrbit;
-      // Same elevated postcard as the hero, with a slow drift.
-      const C = HERO_VIEW.cam || { x: 56, y: 305, z: -1688 };
+      const p = HERO_VIEW.plane;
+      const look = HERO_VIEW.look;
+      const dx = look.x - p.x, dz = look.z - p.z;
+      const len = Math.hypot(dx, dz) || 1;
+      const fx = dx / len, fz = dz / len;
+      const dist = HERO_VIEW.dist || 28;
+      const height = HERO_VIEW.height || 7.5;
+      const side = HERO_VIEW.side || 0;
+      // Match the hero rig: pos = plane - fwd*dist + up*height - right*side
+      // right xz = (fz, -fx)
+      const bx = p.x - fx * dist - fz * side;
+      const bz = p.z - fz * dist + fx * side;
       camera.position.set(
-        C.x + Math.sin(t * 0.5) * 28,
-        C.y + Math.sin(t * 0.35) * 10,
-        C.z + Math.cos(t * 0.5) * 22
+        bx + Math.sin(t * 0.5) * 3.4,
+        p.y + height + Math.sin(t * 0.35) * 1.2,
+        bz + Math.cos(t * 0.5) * 2.6
       );
-      camera.lookAt(HERO_VIEW.look.x, (HERO_VIEW.look.y || 42) + 8, HERO_VIEW.look.z);
+      camera.lookAt(look.x, (look.y || 16) + 2, look.z);
       camera.up.set(0, 1, 0);
       camera.updateProjectionMatrix();
       return;

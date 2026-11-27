@@ -264,7 +264,7 @@ function backToTitle() {
   resetCraft(craft, { x: hx, y: hy, z: hz, heading: hdg }, hdg, save.plane || "trainer");
   launchCraft(craft, 46, 0);
   const vis = planeMesh && planeMesh.getObjectByName("plane-visual");
-  if (vis) vis.scale.setScalar(1.15 * (HERO_VIEW.planeScale || 1));
+  if (vis) vis.scale.setScalar(1.32 * (HERO_VIEW.planeScale || 1));
   autoPilotOn = true;
   autoPilotTarget = { x: HERO_VIEW.look.x, y: (HERO_VIEW.look.y || 50) + 20, z: HERO_VIEW.look.z };
   autoPilotOpts = { speed: 44 };
@@ -806,8 +806,8 @@ function heroShot(opts = {}) {
   flyCam.state.mode = "chase";
   flyCam.state.hero = true;
   craft.angVel.set(0, 0, 0);
-  craft.roll = 0.22;
-  craft.pitch = -0.04;
+  craft.roll = 0.32;
+  craft.pitch = -0.05;
   flyCam.snap(craft, false);
   if (island.flora && island.flora.refresh) island.flora.refresh(camera);
   paused = true;
@@ -815,15 +815,12 @@ function heroShot(opts = {}) {
   if (contrail) contrail.clear();
   if (missions.spawnDemoChain) {
     const chain = [];
-    for (let i = 0; i < 3; i++) {
-      const t = 0.20 + i * 0.16;
-      chain.push({
-        x: x + (tx - x) * t - 6,
-        y: y - 6 - i * 8,
-        z: z + (tz - z) * t,
-        r: 9 - i * 1.0,
-      });
-    }
+    // Fixed postcard rings: a clear 3-step sequence across the bay toward the castle.
+    chain.push(
+      { x: 4, y: 26, z: -1270, r: 12 },
+      { x: -70, y: 34, z: -1125, r: 10 },
+      { x: -150, y: 46, z: -980, r: 8 },
+    );
     missions.spawnDemoChain(chain);
   }
   // Park the liner in the postcard bay, under the Courrier's left wing.
@@ -831,7 +828,7 @@ function heroShot(opts = {}) {
     const boats = island.landmarks.boats || [];
     for (const b of boats) {
       if (b && b.name === "steamer") {
-        b.position.set(-8, 0.45, -1230);
+        b.position.set(-36, 0.45, -1330);
         b.rotation.y = 1.05;
       }
     }

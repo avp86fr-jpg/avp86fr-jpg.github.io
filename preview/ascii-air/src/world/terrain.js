@@ -80,8 +80,8 @@ export function computeHeight(x, z) {
     mask *= 1 - open * 0.96;
   }
   // Central postcard bay — water reaches toward the viaduct, splitting airfield (east) from the cape (west).
-  const postcardBay = smoothstep(150, 28, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1600, -1360, z);
-  mask *= 1 - postcardBay * 0.92;
+  const postcardBay = smoothstep(420, 50, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1680, -1320, z);
+  mask *= 1 - postcardBay * 0.96;
 
   // Seabed
   const bed = -8 - 26 * (1 - smoothstep(r - 40, r + 700, dist)) - 4 * fbm(x * 0.002, z * 0.002, 3, 3);
@@ -93,8 +93,8 @@ export function computeHeight(x, z) {
   // Volcano — Mount Glyph at (0, 200)
   const vx = 0, vz = 200;
   const vd = dist2(x, z, vx, vz);
-  const cone = Math.pow(saturate(1 - vd / 520), 1.08) * 318;
-  const crater = smoothstep(135, 28, vd) * 96;
+  const cone = Math.pow(saturate(1 - vd / 470), 1.12) * 348;
+  const crater = smoothstep(120, 24, vd) * 102;
   let volc = cone - crater;
   // Rugged lava-rock shoulders and a broken lip
   volc += ridge(x * 0.0045, z * 0.0045, 4, 8) * 26 * smoothstep(500, 70, vd);
@@ -150,8 +150,13 @@ export function computeHeight(x, z) {
         const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
         const toe = Math.max(1.2, 1.2 + 3.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
-        h = lerp(h, toe, drop * drop);
-        if (h < 1.2) h = 1.2;
+        if (drop < 0.98) {
+          h = lerp(h, toe, drop * drop);
+          if (h < 1.2 && drop > 0.12) h = 1.2;
+        } else {
+          // Past the rocky toe, the bay is water — never pave a sand shelf south of the cape.
+          h = Math.min(h, bed);
+        }
       }
     }
   }
@@ -317,7 +322,7 @@ export function computeHeight(x, z) {
   // Never leave a y=0 sea sheet — it z-fights the water and reads as a pale patch.
   const nearLag = dist2(x, z, -740, -1120) < 280;
   const nearCove = dist2(x, z, 40, -1220) < 120;
-  const bayCut = smoothstep(150, 28, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1600, -1360, z);
+  const bayCut = smoothstep(420, 50, Math.abs(x - 10)) * smoothstep(-1160, -1240, z) * smoothstep(-1680, -1320, z);
   h = lerp(h, Math.min(h, -6), bayCut * 0.95);
   if (h < 0.45 && !nearLag && !nearCove && mask < 0.55) h = Math.min(h, bed);
 
@@ -331,10 +336,21 @@ export function computeHeight(x, z) {
         const faceDepth = 16 + 12 * fbm(x * 0.05, 1.7, 2, 11);
         const drop = saturate((edgeZ - z) / faceDepth);
         const toe = Math.max(1.2, 1.2 + 3.0 * fbm(x * 0.08, z * 0.08, 2, 5) * (1 - drop));
-        h = lerp(h, toe, drop * drop);
-        if (h < 1.2) h = 1.2;
+        if (drop < 0.98) {
+          h = lerp(h, toe, drop * drop);
+          if (h < 1.2 && drop > 0.12) h = 1.2;
+        } else {
+          // Past the rocky toe, the bay is water — never pave a sand shelf south of the cape.
+          h = Math.min(h, bed);
+        }
       }
     }
+  }
+
+  // South of the west headland: open bay, no sand apron under the postcard camera.
+  if (x < 20 && z < LANDMARKS.arch.z - 36) {
+    const away = saturate((LANDMARKS.arch.z - 36 - z) / 28);
+    h = lerp(h, Math.min(h, bed), away);
   }
 
   // East cape: a tighter limestone headland with a vegetated top — not a long sandbar.
@@ -363,14 +379,14 @@ export function computeMaterial(x, z, h, slope) {
     return MAT.GRASS;
   }
   const vd = dist2(x, z, 0, 200);
-  if (vd < 80 && h > 210) return MAT.SNOW;
   const wd = dist2(x, z, LANDMARKS.waterfall.x, LANDMARKS.waterfall.z);
-  if (wd < 150) return MAT.GRASS;
-  // Only the steep upper cone stays bare rock; mid-flanks are grass/scrub with outcrops.
-  if (vd < 160 && h > 185) return MAT.ROCK;
-  if (vd < 420 && h > 40 && h < 200 && slope < 0.68) {
+  if (wd < 150 && vd > 280) return MAT.GRASS;
+  // Rocky ochre cone: bare rock down to the lower slopes, grass only at the foot.
+  if (vd < 310 && h > 78) return MAT.ROCK;
+  if (vd < 380 && h > 52 && slope > 0.32) return MAT.ROCK;
+  if (vd < 430 && h > 40 && h < 200 && slope < 0.68) {
     const outcrop = fbm(x * 0.03, z * 0.03, 3, 19);
-    if (slope > 0.58 && outcrop > 0.72) return MAT.ROCK;
+    if (slope > 0.50 && outcrop > 0.62) return MAT.ROCK;
     return (h > 130 ? MAT.FOREST : MAT.GRASS);
   }
   if (slope > 0.78) return MAT.ROCK;
@@ -479,12 +495,21 @@ export function createTerrain(quality = "medium") {
       case MAT.FOREST: return [0.22 + n * 0.05, 0.36 + n * 0.08, 0.18];
       case MAT.ROCK: {
         const vd = Math.hypot(x, z - 200);
-        // Crater glow only at the lip — the cone itself is brown/grey rock
-        if (vd < 90 && h > 200) {
+        // Dark crater rim and a little lava in the bowl; brown/red-ochre cone.
+        if (vd < 58 && h > 188) {
+          const rim = vd > 20 && vd < 52;
+          if (rim) return [0.16 + n * 0.03, 0.09, 0.06];
           const lava = (Math.sin(x * 0.18 + z * 0.14) * Math.sin(h * 0.1)) > 0.35;
-          return lava ? [0.95, 0.28, 0.08] : [0.55, 0.32, 0.22];
+          return lava ? [0.92, 0.24, 0.07] : [0.22, 0.10, 0.07];
         }
-        if (vd < 280 && h > 170) return [0.46 + n * 0.06, 0.42 + n * 0.04, 0.38];
+        if (vd < 320 && h > 70) {
+          const k = Math.max(0, Math.min(1, (h - 70) / 150));
+          return [
+            0.50 + 0.18 * k + n * 0.05,
+            0.22 + 0.08 * k + n * 0.03,
+            0.11 + 0.04 * k + n * 0.02,
+          ];
+        }
         // Coastal / cape rock: warm cream limestone, not khaki or cold grey
         const coastal = z < -1080 || (x > 40 && z < -1100) || Math.hypot(x + 170, z + 1190) < 220 || Math.hypot(x + 210, z + 1250) < 140;
         const crevice = (Math.sin(x * 0.35 + z * 0.22) * Math.sin(x * 0.17 - z * 0.31)) > 0.45;

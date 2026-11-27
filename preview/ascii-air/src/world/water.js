@@ -81,13 +81,13 @@ void main() {
   float eastShore = sat(1.0 - length(vWorld.xz - vec2(140.0, -1280.0)) / 240.0);
   float beach = sat(1.0 - length(vWorld.xz - vec2(40.0, -1220.0)) / 180.0);
   float foamZone = max(max(southShore * 0.85, capeShore), max(eastShore, beach));
-  // Shallow turquoise: lagoons + ~280m off the coast. Deep navy only further out.
-  float shallow = sat(1.0 - off / 280.0);
-  float midAmt = sat(1.0 - (off - 80.0) / 700.0);
+  // Shallow turquoise only in a tight band off the shore. Mid-bay is saturated cobalt.
+  float shallow = sat(1.0 - off / 80.0);
+  float midAmt = sat(1.0 - (off - 40.0) / 520.0);
 
   vec3 turq = uShallow;
-  vec3 midB = mix(uDeep, uShallow, 0.42);
-  vec3 deepB = uDeep * vec3(0.62, 0.70, 0.88);
+  vec3 midB = mix(uDeep, uShallow, 0.10);
+  vec3 deepB = uDeep * vec3(0.88, 0.92, 1.0);
   float shore = max(sat(foamZone * 1.2), shallow);
   vec3 water = mix(deepB, midB, midAmt);
   water = mix(water, turq, shallow * 0.92);
@@ -95,14 +95,16 @@ void main() {
   float distCam = length(vWorld.xz - cameraPosition.xz);
   float fg = sat(1.0 - distCam / 640.0);
   // Keep a light foreground cool, but don't crush the sea into a flat navy sheet.
-  water = mix(water, water * vec3(0.82, 0.90, 0.98), fg * 0.18);
+  water = mix(water, water * vec3(0.92, 0.96, 1.0), fg * 0.08);
 
   // Sky reflection + a warm sun lane. In storm (uChop > 1.6) kill the bright
   // radial disc under the plane — keep only a faint slate sheen.
   vec3 R = reflect(-V, N);
   float storm = sat((uChop - 1.0) / 1.8);
-  float skyAmt = fres * 0.42 * day * (1.0 - storm * 0.70);
-  water = mix(water, uSky, skyAmt);
+  // Keep grazing shots cobalt — a heavy sky fresnel washed the bay to pale grey.
+  float skyAmt = fres * 0.14 * day * (1.0 - storm * 0.70);
+  vec3 reflex = mix(uDeep * 1.18, uSky, 0.28);
+  water = mix(water, reflex, skyAmt);
   float sunLane = pow(sat(dot(R, normalize(uSunDir))), 10.0);
   float farW = sat((length(vWorld.xz - cameraPosition.xz) - 200.0) / 900.0);
   water += uSunCol * sunLane * mix(0.28, 0.10, farW) * day * (1.0 - storm * 0.88);
@@ -177,8 +179,8 @@ export function createWater() {
   const mat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uDeep: { value: new THREE.Color(0x0a2f7a) },
-      uShallow: { value: new THREE.Color(0x4ad4c6) },
+      uDeep: { value: new THREE.Color(0x0b4e9c) },
+      uShallow: { value: new THREE.Color(0x2ec8c4) },
       uSunDir: { value: new THREE.Vector3(0.3, 0.8, 0.2) },
       uSunCol: { value: new THREE.Color(0xfff0c8) },
       uSky: { value: new THREE.Color(0x2a5a90) },
@@ -257,8 +259,8 @@ export function createWater() {
         lakeMat.uniforms.uSunCol.value.copy(sky.sunColor);
         const night = sky.night || 0;
         if (!this._deepDay) {
-          this._deepDay = new THREE.Color(0x0a3888);
-          this._shalDay = new THREE.Color(0x3ec8c0);
+          this._deepDay = new THREE.Color(0x0b4e9c);
+          this._shalDay = new THREE.Color(0x2ec8c4);
           this._deepNight = new THREE.Color(0x1c4a78);
           this._shalNight = new THREE.Color(0x2a6a8e);
         }
