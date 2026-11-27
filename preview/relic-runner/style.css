@@ -449,3 +449,4 @@ body.portrait #title .t14 .exps { position: relative; }
   .quip { margin: 0 auto 4px; } .quip canvas { width: 40px; height: 40px; } .quip p { font-size: .85rem; padding: 4px 10px; }
 }
 body.portrait #results .panel > .row:last-child { bottom: -16px; margin: 8px -14px -16px; }
+body.portrait #title .t14 .exps { justify-content: flex-start; } /* pass 14: overflowing strip must start at the left (centre made M1 unreachable) */
