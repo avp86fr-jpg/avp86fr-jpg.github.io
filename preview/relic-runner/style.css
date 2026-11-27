@@ -499,3 +499,9 @@ body.short #cine .strip { top: 8px; font-size: min(1.6vw, 12px); } body.short #c
 .storyP p { margin: 4px 0; text-transform: none; }
 .storyP .reward { margin-top: 6px; padding: 5px 10px; background: #fbf5e6; border: 2px solid #1d1612; display: inline-block; font-family: 'Bangers', sans-serif; letter-spacing: .05em; color: #2f6a2a; }
 .storyP .tbc { text-align: right; font-family: 'Bangers', sans-serif; letter-spacing: .08em; color: #8a4a1c; }
+
+/* pass 22: comic speed lines (ink streaks from the vanishing point; only opacity changes at runtime) + relic word */
+#speedL { position: fixed; inset: -30%; pointer-events: none; z-index: 2; opacity: 0; background: repeating-conic-gradient(from 2deg at 50% 52%, rgba(29,22,18,0) 0deg 5deg, rgba(29,22,18,.6) 5deg 5.5deg, rgba(29,22,18,0) 5.5deg 8deg, rgba(251,246,234,.55) 8deg 8.4deg, rgba(29,22,18,0) 8.4deg 13deg);
+  -webkit-mask-image: radial-gradient(ellipse 42% 40% at 50% 52%, transparent 55%, #000 100%); mask-image: radial-gradient(ellipse 42% 40% at 50% 52%, transparent 55%, #000 100%); animation: slJ .14s steps(2) infinite; will-change: transform, opacity; }
+@keyframes slJ { 0% { transform: rotate(0deg); } 100% { transform: rotate(1.6deg); } }
+.sfxw.gold { color: #ffd23a; }
