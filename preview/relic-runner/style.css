@@ -475,3 +475,8 @@ body.comic #zone .zch { color: var(--cr); }
 body.comic #cine .cap { position: absolute; left: 3.5%; top: 9%; padding: 8px 16px; background: #fff2a6; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); color: var(--ink); font-family: 'ComicNeue', sans-serif; font-weight: 700; text-transform: uppercase; font-size: min(3.6vw, 17px); letter-spacing: .5px; animation: capIn 1.2s ease-out both; }
 @keyframes capIn { 0% { opacity: 0; transform: translateX(-24px) rotate(-1.5deg); } 12% { opacity: 1; transform: translateX(0) rotate(-0.6deg); } 88% { opacity: 1; } 100% { opacity: 0; } }
 body.comic #cine .cap { animation-name: capIn2; } @keyframes capIn2 { 0% { opacity: 0; transform: translateX(-24px) rotate(-1.5deg); } 100% { opacity: 1; transform: rotate(-0.6deg); } }
+
+/* pass 19: never a black canvas — paper-sky under the canvas, and a comic card while the GPU context is restored */
+canvas#game { background: #e6eeea; }
+body.glLost::after { content: 'One moment… redrawing the panel!'; position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(-1.5deg); z-index: 99; background: #fff2a6; color: #1a140c; border: 3px solid #1a140c; box-shadow: 4px 4px 0 #1a140c; padding: .6em 1.1em; font: 1.4em 'Bangers', 'Comic Neue', sans-serif; letter-spacing: .04em; }
+body.glLost canvas#game { visibility: hidden; } body.glLost { background: #e6eeea; }
