@@ -451,3 +451,17 @@ body.portrait #title .t14 .exps { position: relative; }
 body.portrait #results .panel > .row:last-child { bottom: -16px; margin: 8px -14px -16px; }
 body.portrait #title .t14 .exps { justify-content: flex-start; } /* pass 14: overflowing strip must start at the left (centre made M1 unreachable) */
 body.touch.short:not(.portrait) .bark, body.comic.touch.short:not(.portrait) .bark { font-size: .94em; line-height: 1.15; } /* pass 14: legible bark on landscape phones */
+/* pass 15: official cover art — loading backdrop + key-art splash (2x3 on portrait) */
+#loading { background: #120c06 url(art/cover_16x9.webp) center / cover no-repeat; display: flex; justify-content: flex-end; align-items: center; padding-bottom: max(5vh, 22px); color: #fff3c8; text-shadow: 0 2px 0 #1d1612, 0 0 10px rgba(0,0,0,.8); font-size: clamp(13px, 2.4vh, 20px); }
+#loading.ka::before { display: none; }
+#loading::before { top: auto; bottom: max(5vh, 22px); margin-bottom: -16px; }
+#loading::after { color: #ffe9a8; text-shadow: 0 1px 0 #1d1612, 0 0 8px rgba(0,0,0,.9); }
+#loading > i { position: absolute; inset: auto 0 0 0; height: 30%; background: linear-gradient(180deg, transparent, rgba(18,12,6,.82)); z-index: -1; }
+#loading { isolation: isolate; }
+#loading.ka { cursor: pointer; }
+#loading.ka b { display: inline-block; padding: 10px 26px; border: 3px solid #1d1612; border-radius: 10px; background: #ffd23a; color: #1d1612; font: 900 clamp(15px, 2.8vh, 24px)/1 'ComicNeue', 'Oswald', sans-serif; letter-spacing: 2px; text-shadow: none; box-shadow: 0 4px 0 #1d1612; animation: kaPulse 1.3s ease-in-out infinite; }
+@keyframes kaPulse { 50% { transform: scale(1.06); } }
+@media (max-width: 1000px) { #loading { background-image: url(art/cover_16x9_1280.webp); } }
+@media (min-aspect-ratio: 17/9) { #loading { background-position: center 12%; } }
+@media (orientation: portrait) { #loading { background-image: url(art/cover_2x3_720.webp); background-position: center top; } }
+@media (prefers-reduced-motion: reduce) { #loading.ka b { animation: none; } }
