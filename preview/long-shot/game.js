@@ -33292,6 +33292,7 @@ void main() {
       uWindX: { value: 0 },
       uMir: { value: 0 },
       uAA: { value: 1 },
+      uSharp: { value: 0.3 },
       uLift: { value: new Vector3() },
       uGain: { value: new Vector3(1, 1, 1) },
       uSat: { value: 1 },
@@ -33326,7 +33327,7 @@ void main() {
         /* glsl */
         `
       precision highp float;
-      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold, uTherm, uThermMode; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uWindX, uMir; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
+      uniform sampler2D tScene; uniform sampler2D tBloom; uniform float uAA; uniform float uBloom, uRays, uFocus, uCold, uTherm, uThermMode; uniform vec2 uSunPos; uniform vec2 uRes; uniform int uMode; uniform float uWindX, uMir, uSharp; uniform float uTime, uScopeR, uFull, uHeat, uZoom, uSat, uContrast, uExpo, uFlash, uBlur, uFade, uDust, uGrain, uVig, uHdr, uScopeBlur, uRedTint;
       uniform vec2 uOffset; uniform vec3 uBH; uniform vec3 uLift, uGain, uSun, uDustCol;
       varying vec2 vUv;
       float hh(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
@@ -33336,11 +33337,12 @@ void main() {
       float lumaA(vec3 c){ float l = dot(c, vec3(0.299, 0.587, 0.114)); return l / (1.0 + l); }
       // FXAA (3.11 "quality-lite"): finds the local edge from a 3x3 luma neighbourhood and blends along it. Cheap on phones, used when there's no MSAA.
       vec3 fxaa(vec2 uv){
-        vec3 cM = sampleC(uv); if (uAA < 0.5) return cM;
-        vec2 px = 1.0 / uRes;
+        vec3 cM = sampleC(uv); vec2 px = 1.0 / uRes;
+        if (uAA < 0.5) { if (uSharp <= 0.0) return cM; float m0 = lumaA(cM), s4 = lumaA(sampleC(uv + vec2(0.0, px.y))) + lumaA(sampleC(uv - vec2(0.0, px.y))) + lumaA(sampleC(uv + vec2(px.x, 0.0))) + lumaA(sampleC(uv - vec2(px.x, 0.0)));
+          return cM * (1.0 + uSharp * clamp(4.0 * m0 - s4, -0.12, 0.12) / max(m0, 0.03)); }
         float lM = lumaA(cM), lN = lumaA(sampleC(uv + vec2(0.0, px.y))), lS = lumaA(sampleC(uv - vec2(0.0, px.y))), lE = lumaA(sampleC(uv + vec2(px.x, 0.0))), lW = lumaA(sampleC(uv - vec2(px.x, 0.0)));
         float mn = min(lM, min(min(lN, lS), min(lE, lW))), mx = max(lM, max(max(lN, lS), max(lE, lW))), rng = mx - mn;
-        if (rng < max(0.04, mx * 0.12)) return cM;
+        if (rng < max(0.04, mx * 0.12)) return cM * (1.0 + uSharp * clamp(4.0 * lM - (lN + lS + lE + lW), -0.12, 0.12) / max(lM, 0.03)); // light unsharp mask where FXAA leaves the pixel alone
         float lNE = lumaA(sampleC(uv + px)), lNW = lumaA(sampleC(uv + vec2(-px.x, px.y))), lSE = lumaA(sampleC(uv + vec2(px.x, -px.y))), lSW = lumaA(sampleC(uv - px));
         float eH = abs(lNW + lNE - 2.0 * lN) + 2.0 * abs(lW + lE - 2.0 * lM) + abs(lSW + lSE - 2.0 * lS);
         float eV = abs(lNW + lSW - 2.0 * lW) + 2.0 * abs(lN + lS - 2.0 * lM) + abs(lNE + lSE - 2.0 * lE);
@@ -34355,6 +34357,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     ambNodes = [];
     A.envKind = kind || A.envKind;
     if (!kind) return;
+    envLayers(kind);
     const lk = "loop_" + (kind === "desert" ? "desert" : "mountain");
     if (BANK[lk]) {
       const s = ctx.createBufferSource();
@@ -34491,7 +34494,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     A.windGain.gain.setTargetAtTime((0.1 + Math.min(1, windSpeed / 8) * 0.25 + storm * 0.35) * (A.windMul || 1), now(), 0.5);
     A.windBp.Q.setTargetAtTime(0.6 - storm * 0.3, now(), 0.5);
     A.birdTimer = (A.birdTimer ?? 9) - dt;
-    if (A.envKind !== "desert" && A.birdTimer < 0) {
+    if ((A.envKind === "mountain" || A.envKind === "valley") && A.birdTimer < 0) {
       A.birdTimer = 8 + Math.random() * 14;
       bird();
     }
@@ -34500,6 +34503,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (A.clinkTimer < 0) {
         A.clinkTimer = 2 + Math.random() * 6;
         clink();
+      }
+    }
+    if (A.hornTimer != null) {
+      A.hornTimer -= dt;
+      if (A.hornTimer < 0) {
+        A.hornTimer = A.envKind === "city" ? 7 + Math.random() * 12 : 25 + Math.random() * 25;
+        horn(A.envKind);
       }
     }
     if (A.envKind === "desert") {
@@ -34523,6 +34533,78 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         o.stop(t + 0.35);
       }
     }
+  }
+  function envLayers(kind) {
+    const rainy = kind === "city" || kind === "harbour";
+    if (rainy) {
+      const r = noiseSrc(true), hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 2400;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 9e3;
+      const g = ctx.createGain();
+      g.gain.value = PHONE ? 0.07 : 0.09;
+      r.connect(hp);
+      hp.connect(lp);
+      lp.connect(g);
+      g.connect(amb);
+      r.start();
+      const r2 = noiseSrc(true), bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 420;
+      bp.Q.value = 0.8;
+      const g22 = ctx.createGain();
+      g22.gain.value = 0.05;
+      r2.connect(bp);
+      bp.connect(g22);
+      g22.connect(amb);
+      r2.start();
+      ambNodes.push(r, g, r2, g22);
+    }
+    if (kind === "city" || kind === "harbour") {
+      const n = noiseSrc(true), lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = kind === "city" ? 170 : 260;
+      const g = ctx.createGain();
+      g.gain.value = kind === "city" ? 0.07 : 0;
+      const l = ctx.createOscillator();
+      l.frequency.value = kind === "city" ? 0.05 : 0.33;
+      const lg = ctx.createGain();
+      lg.gain.value = kind === "city" ? 0.03 : 0.06;
+      l.connect(lg);
+      lg.connect(g.gain);
+      l.start();
+      if (kind === "harbour") g.gain.value = 0.06;
+      n.connect(lp);
+      lp.connect(g);
+      g.connect(amb);
+      n.start();
+      ambNodes.push(n, l, g);
+    }
+    A.hornTimer = kind === "city" ? 6 : kind === "harbour" ? 14 : null;
+  }
+  function horn(kind) {
+    const t = now(), city = kind === "city", dur = city ? 0.35 + Math.random() * 0.3 : 2.6;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = city ? 900 : 320;
+    const g = ctx.createGain();
+    env(g, t, city ? 0.02 : 0.4, city ? 0.012 : 0.035, dur);
+    const p = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+    if (p.pan) p.pan.value = Math.random() * 1.6 - 0.8;
+    for (const f of city ? [330 + Math.random() * 60, 415 + Math.random() * 60] : [98, 147]) {
+      const o = ctx.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.value = f;
+      o.connect(lp);
+      o.start(t);
+      o.stop(t + dur + 0.6);
+    }
+    lp.connect(g);
+    g.connect(p);
+    p.connect(amb);
+    g.connect(verb);
   }
   function clink() {
     if (play("amb_clink", { bus: amb, gain: 0.8, pan: Math.random() - 0.5, rate: 0.9 + Math.random() * 0.2 })) return;
@@ -34577,12 +34659,35 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     o.start(t);
     o.stop(t + 0.7);
   }
+  function echoTaps(list, k) {
+    const t = now();
+    for (const [d, a, lpf, pan] of list) {
+      const e = noiseSrc();
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = lpf;
+      const p = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+      if (p.pan) p.pan.value = pan;
+      const eg = ctx.createGain();
+      env(eg, t + d, 0.01, a * k, 0.35 + d * 0.3);
+      e.connect(lp);
+      lp.connect(eg);
+      eg.connect(p);
+      p.connect(sfx);
+      eg.connect(verb);
+      e.start(t + d);
+      e.stop(t + d + 1.4);
+    }
+  }
   function shot(range = 700) {
     if (!ctx) return;
     const t = now();
     const sup = !!G.settings.suppressor;
     duck(0.35, 1.6);
-    if (play((sup ? "shotsup_" : "shot_") + (ECHO[A.envKind] ? A.envKind : "mountain"), { gain: 1, rate: 0.97 + Math.random() * 0.06 })) return;
+    if (play((sup ? "shotsup_" : "shot_") + (SHOT_SAMPLE[A.envKind] || "mountain"), { gain: 1, rate: 0.97 + Math.random() * 0.06 })) {
+      if (A.envKind === "city" || A.envKind === "harbour" || A.envKind === "valley") echoTaps(ECHO[A.envKind], (sup ? 0.3 : 1) * 0.55);
+      return;
+    }
     const out = ctx.createGain();
     out.gain.value = 1;
     out.connect(sfx);
@@ -35072,7 +35177,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   }
   function sampledMusic() {
     const key = themeKey(M.theme);
-    if (M.cur === key) return true;
+    const mk = key + "|" + (M.themeId || M.theme);
+    if (M.cur === mk) return true;
     if (!BANK["mus_" + key + "_alarm"]) {
       loadTheme(key);
       return !!M.layers;
@@ -35093,6 +35199,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const s = ctx.createBufferSource();
       s.buffer = BANK["mus_" + key + "_" + n];
       s.loop = true;
+      s.playbackRate.value = MUS_RATE[M.themeId] || 1;
       s.loopEnd = dur;
       const g = ctx.createGain();
       g.gain.value = 0;
@@ -35101,7 +35208,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       s.start(t);
       return { n, s, g };
     });
-    M.cur = key;
+    M.cur = mk;
     if (!M.sampled) {
       M.sampled = true;
       for (const v3 of M.pad) {
@@ -35286,6 +35393,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (ctx) loadTheme(themeKey(name));
   }
   function setMusicTheme(name) {
+    M.themeId = name;
     if (THEMES[name]) M.theme = name;
     else if (THEMES[THEME_ALIAS[name]]) M.theme = THEME_ALIAS[name];
   }
@@ -35416,7 +35524,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       o.stop(t + d + 0.2);
     }
   }
-  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, heartT, THEMES, M, mtof, THEME_ALIAS, themeKey, siren;
+  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, MUS_RATE, THEME_ALIAS, themeKey, siren;
   var init_audio = __esm({
     "src/audio/audio.js"() {
       init_state();
@@ -35444,8 +35552,13 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         // per-environment reflections: [delay s, gain, lowpass Hz, pan]
         mountain: [[0.42, 0.32, 1400, -0.6], [0.95, 0.24, 1e3, 0.7], [1.6, 0.17, 800, -0.3], [2.5, 0.11, 600, 0.5], [3.6, 0.06, 450, -0.7]],
         desert: [[0.28, 0.14, 1600, 0.4], [1.1, 0.09, 500, -0.5]],
-        range: [[0.33, 0.2, 1500, 0.5], [0.8, 0.13, 1e3, -0.5], [1.5, 0.07, 700, 0.2]]
+        range: [[0.33, 0.2, 1500, 0.5], [0.8, 0.13, 1e3, -0.5], [1.5, 0.07, 700, 0.2]],
+        city: [[0.09, 0.3, 2600, 0.6], [0.21, 0.24, 2e3, -0.6], [0.38, 0.17, 1500, 0.3], [0.7, 0.11, 1e3, -0.4], [1.2, 0.06, 700, 0.5]],
+        harbour: [[0.25, 0.22, 1800, -0.5], [0.6, 0.16, 1200, 0.6], [1.3, 0.09, 700, -0.2]],
+        snow: [[0.6, 0.16, 900, -0.5], [1.4, 0.1, 650, 0.6], [2.6, 0.05, 450, -0.3]],
+        valley: [[0.5, 0.3, 1300, -0.6], [1.2, 0.22, 950, 0.7], [2.1, 0.15, 750, -0.3], [3.2, 0.09, 520, 0.5], [4.6, 0.05, 400, -0.6]]
       };
+      SHOT_SAMPLE = { mountain: "mountain", desert: "desert", range: "range", city: "desert", harbour: "desert", snow: "mountain", valley: "mountain" };
       heartT = 0;
       THEMES = {
         menu: { bpm: 84, root: 38, prog: [[0, 3, 7, 10], [-4, 0, 3, 7], [-2, 2, 5, 9], [-5, -1, 2, 7]], scale: [0, 2, 3, 5, 7, 8, 10], motif: "bell", perc: "soft", arp: [0, 7, 12, 7, 15, 12, 7, 3] },
@@ -35455,6 +35568,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       };
       M = { theme: "menu", I: 0, It: 0, step: 0, next: 0, timer: null, bus: null, stems: {}, pad: [], duck: null };
       mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+      MUS_RATE = { harbour: 0.95, pass: 1.04, neon: 0.93, dam: 0.89 };
       THEME_ALIAS = { harbour: "villa", pass: "villa", neon: "refinery", dam: "villa" };
       themeKey = (th) => th === "villa" || th === "refinery" ? th : THEME_ALIAS[th] || "menu";
       siren = null;
@@ -38799,19 +38913,19 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     roadY[0] = PAD_Y + 0.1;
     roadY[1] = PAD_Y + 0.4;
     const w = baseWorld({
-      haze: "#7a84a8",
-      sunHaze: "#ffa060",
-      hazeDensity: 9e-5,
-      hazeHeight: 1100,
+      haze: "#7f8aa8",
+      sunHaze: "#ff8a40",
+      hazeDensity: 16e-5,
+      hazeHeight: 300,
       hazeBase: 0,
       sunEl: 4.5,
       sunAz: 38,
       sunColor: "#ffb27a",
       sunI: 3.2,
-      hemiSky: "#8fa4d4",
-      hemiGround: "#4a3e4a",
-      hemiI: 0.7,
-      sky: { zenith: "#2c3f6e", horizon: "#f2a070", ground: "#8a8aa0", sunColor: "#ffb070", cloudColor: "#f3c7a7", cloudShade: "#6a5878", cloudCover: 0.5, glow: 1.15, horizonHaze: 0.55 }
+      hemiSky: "#7f96c8",
+      hemiGround: "#3a3440",
+      hemiI: 0.62,
+      sky: { zenith: "#26365e", horizon: "#ff9a58", ground: "#8a8aa0", sunColor: "#ffb070", cloudColor: "#ffb27e", cloudShade: "#5a4a6a", cloudCover: 0.6, glow: 1.35, horizonHaze: 0.6 }
     });
     w.height = height;
     w.roadAt = (x, z) => roadInfo(x, z).y;
@@ -40315,7 +40429,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         place: "Port Veyra container terminal",
         time: "Night \xB7 23:10 \xB7 rain, onshore wind",
         build: buildHarbour,
-        ambience: "mountain",
+        ambience: "harbour",
         musicTheme: "harbour",
         clockStart: 23 * 3600 + 10 * 60,
         clockRate: 6,
@@ -40750,7 +40864,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         place: "Sarne high pass, shelf road",
         time: "Day \xB7 11:40 \xB7 \u22129 \xB0C, light snow",
         build: buildPass,
-        ambience: "mountain",
+        ambience: "snow",
         musicTheme: "pass",
         clockStart: 11 * 3600 + 40 * 60,
         clockRate: 4,
@@ -41341,7 +41455,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         place: "Varo old city, penthouse terrace",
         time: "Blue hour \xB7 19:05 \xB7 rain, river breeze",
         build: buildNeon,
-        ambience: "mountain",
+        ambience: "city",
         musicTheme: "neon",
         clockStart: 19 * 3600 + 5 * 60,
         clockRate: 4,
@@ -41789,7 +41903,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         place: "Sarne reservoir, the dam",
         time: "Dawn \xB7 06:40 \xB7 valley fog lifting",
         build: buildDam,
-        ambience: "mountain",
+        ambience: "valley",
         musicTheme: "dam",
         clockStart: 6 * 3600 + 40 * 60,
         clockRate: 4,
@@ -46521,7 +46635,8 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         if (G.mode === "play") playFrame(dt);
         else titleFrame(dt);
         const _t1 = performance.now();
-        render(dt);
+        const keyArt = G.mode !== "play" && !$2("title").classList.contains("hidden") && !document.getElementById("story");
+        if (!keyArt || frameN % 30 === 0) render(dt);
         const _t2 = performance.now(), st = G.stats;
         st.simMs = (st.simMs || 0) * 0.95 + (_t1 - _t0) * 0.05;
         st.renderMs = (st.renderMs || 0) * 0.95 + (_t2 - _t1) * 0.05;
@@ -46857,6 +46972,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         L.uContrast.value = tint.contrast ?? 1;
         L.uExpo.value = (tint.expo ?? 1) * (G.quality.hdr ? 1 : 1.25);
         L.uHeat.value = (w.heat || 0) * (1 - (G.mission?.storm || 0));
+        L.uSharp.value = G.quality.mobile ? G.quality.name === "low" ? 0.45 : 0.35 : 0.28;
         L.uWindX.value = G.hudCross || 0;
         L.uMir.value = w.night || w.rain || w.snow ? 0.4 : 1;
         L.uDust.value = (G.mission?.storm || 0) * (view === "scope" ? 0.1 : 0.32);
