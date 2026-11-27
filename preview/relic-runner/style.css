@@ -450,3 +450,4 @@ body.portrait #title .t14 .exps { position: relative; }
 }
 body.portrait #results .panel > .row:last-child { bottom: -16px; margin: 8px -14px -16px; }
 body.portrait #title .t14 .exps { justify-content: flex-start; } /* pass 14: overflowing strip must start at the left (centre made M1 unreachable) */
+body.touch.short:not(.portrait) .bark, body.comic.touch.short:not(.portrait) .bark { font-size: .94em; line-height: 1.15; } /* pass 14: legible bark on landscape phones */
