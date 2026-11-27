@@ -11,7 +11,7 @@ function ringMesh(radius = 14) {
   const tube = 1.2;
   const core = new THREE.Mesh(
     retagGeometry(new THREE.TorusGeometry(radius, tube, 10, 32), MAT.RING, 1),
-    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xfff25a, toneMapped: false }))
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xffc20a, toneMapped: false }))
   );
   const rim = new THREE.Mesh(
     retagGeometry(new THREE.TorusGeometry(radius, tube * 1.28, 8, 32), MAT.RING, 1),
@@ -20,7 +20,7 @@ function ringMesh(radius = 14) {
   const glow = new THREE.Mesh(
     retagGeometry(new THREE.TorusGeometry(radius, tube * 2.15, 8, 24), MAT.RING, 1),
     patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-      color: 0xfff4a8, toneMapped: false, transparent: true, opacity: 0.38,
+      color: 0xffe07a, toneMapped: false, transparent: true, opacity: 0.55,
       depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
     }))
   );
@@ -70,25 +70,28 @@ export function createMissionSystem(scene, world, audio) {
     }
     if (mesh.userData._forceHidden) { mesh.visible = false; return; }
     mesh.visible = true;
-    // Fade by how close the torus is to the camera (gap = d - radius).
-    // Full when the nearest point is ~150 m out; nearly gone under ~50 m;
-    // hidden inside the radius. Stops a mid-field gate reading as a gold banana.
+    // The ring AHEAD stays a solid saturated gold with a glow. Later rings
+    // stay gold too, just dimmer — never a grey/white hoop. Only fade the
+    // current ring when it is about to clip the lens.
     const fade = Math.max(0, Math.min(1, (gap - 48) / 90));
-    let vis = highlight ? (edgeOn > 0.55 ? Math.pow(fade, 0.8) : Math.max(0.8, fade)) : fade * 0.30;
+    const GOLD = 0xffc20a, GOLD_FAR = 0xe0a410, GLOW = 0xffe07a, GLOW_FAR = 0xe8c050;
+    let vis;
+    if (highlight) vis = (gap < 58 || edgeOn > 0.7) ? Math.max(0.88, fade) : 1;
+    else vis = Math.max(0.62, 0.55 + fade * 0.35);
     const core = mesh.userData.core, rim = mesh.userData.rim, glow = mesh.userData.glow;
     if (core && core.material) {
+      core.material.color.setHex(highlight ? GOLD : GOLD_FAR);
       core.material.transparent = vis < 0.98;
       core.material.opacity = vis;
       core.material.depthWrite = vis > 0.55;
     }
     if (rim && rim.material) {
       if (rim.userData.baseOp == null) rim.userData.baseOp = rim.material.opacity || 0.75;
-      rim.material.opacity = rim.userData.baseOp * vis;
+      rim.material.opacity = rim.userData.baseOp * (highlight ? Math.max(0.7, vis) : vis * 0.7);
     }
     if (glow && glow.material) {
-      if (glow.userData.baseOp == null) glow.userData.baseOp = 0.38;
-      // Glow dies sooner so a near ring doesn't smear a huge gold banana.
-      glow.material.opacity = vis < 0.45 ? 0 : glow.userData.baseOp * vis * (highlight ? 0.7 : 0.25);
+      glow.material.color.setHex(highlight ? GLOW : GLOW_FAR);
+      glow.material.opacity = highlight ? 0.55 * vis : 0.20 * vis;
     }
   }
 
@@ -620,11 +623,11 @@ export function createMissionSystem(scene, world, audio) {
         rim.userData.baseOp = rim.material.opacity;
       }
       if (core && core.material) {
-        core.material.color.setHex(dark ? 0xfff6a0 : 0xfff25a);
+        core.material.color.setHex(dark ? 0xffd24a : 0xffc20a);
       }
       const glow = o.userData.glow;
       if (glow && glow.material) {
-        glow.material.color.setHex(dark ? 0xfff8c0 : 0xfff4a8);
+        glow.material.color.setHex(dark ? 0xffe07a : 0xffe07a);
         glow.material.opacity = dark ? 0.48 : 0.38;
         glow.userData.baseOp = glow.material.opacity;
       }

@@ -23,7 +23,7 @@ export function loadTex(name) {
 }
 
 export function texturesReady() {
-  const names = ["rock.png", "grass.png", "plaster.png", "roof.png", "sand.png", "stone.png", "water.png", "backdrop.png"];
+  const names = ["rock.png", "grass.png", "plaster.png", "roof.png", "sand.png", "stone.png", "water.png", "backdrop.png", "corrugate.png", "crops.png"];
   for (const n of names) loadTex(n);
   return Promise.all(Object.values(ready));
 }
@@ -144,8 +144,30 @@ uniform sampler2D uTexSand;`
         vec3 tex = grassT;
         if (mid > 4.5 && mid < 6.5) tex = rockT;
         else if (mid > 1.5 && mid < 2.5) tex = sandT;
-        else if (mid > 21.5 && mid < 23.5) tex = sandT; // dirt / runway
+        else if (mid > 22.5 && mid < 23.5) tex = sandT; // runway
+        else if (mid > 21.5 && mid < 22.5) tex = sandT; // dirt / apron, may be overwritten by crops
         else if (mid > 3.5 && mid < 4.5) tex = mix(grassT, rockT * vec3(0.45, 0.7, 0.35), 0.35); // forest
+        // Crop rows on fields (DIRT, and grass tagged aId.y = 2). Skip the airport apron.
+        float isField = (mid > 21.5 && mid < 22.5 ? 1.0 : 0.0) + (vId.y > 1.5 ? 1.0 : 0.0);
+        float apron = step(abs(vWorldPos.z + 1100.0), 100.0) * step(abs(vWorldPos.x), 520.0);
+        isField *= (1.0 - apron);
+        if (isField > 0.5) {
+          float hash = fract(sin(floor(vWorldPos.x * 0.028) * 127.1 + floor(vWorldPos.z * 0.028) * 311.7) * 43758.5);
+          float ang = hash * 3.14159;
+          float ca = cos(ang), sa = sin(ang);
+          float u = vWorldPos.x * ca + vWorldPos.z * sa;
+          float v = -vWorldPos.x * sa + vWorldPos.z * ca;
+          float row = 0.5 + 0.5 * sin(u * 2.05);
+          float furrow = smoothstep(0.82, 0.98, abs(sin(u * 2.05)));
+          vec3 cropA = vec3(0.72, 0.60, 0.28);
+          vec3 cropB = vec3(0.46, 0.50, 0.22);
+          vec3 crop = mix(cropB, cropA, row);
+          crop = mix(crop, crop * 0.70, furrow);
+          // Soft plot breaks / hedge hints every ~24 m
+          float plot = smoothstep(0.88, 0.98, abs(sin(v * 0.26)));
+          crop = mix(crop, crop * vec3(0.55, 0.64, 0.38), plot * 0.55);
+          tex = crop;
+        }
         // Steeper faces lean toward rock even on grass ids
         float slope = 1.0 - clamp(n.y, 0.0, 1.0);
         tex = mix(tex, rockT, smoothstep(0.4, 0.75, slope) * 0.85);
@@ -155,7 +177,7 @@ uniform sampler2D uTexSand;`
     );
   };
   const prevKey = mat.customProgramCacheKey.bind(mat);
-  mat.customProgramCacheKey = () => prevKey() + "|terrain-tri-v1";
+  mat.customProgramCacheKey = () => prevKey() + "|terrain-tri-v2-crops";
   mat.needsUpdate = true;
   return mat;
 }

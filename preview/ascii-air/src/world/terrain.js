@@ -442,12 +442,24 @@ export function createTerrain(quality = "medium") {
       case MAT.GRASS: {
         const n2 = fbm(x * 0.007, z * 0.007, 3, 7);
         const terrace = Math.abs(Math.sin(h * 0.62 + x * 0.028 + z * 0.018)) < 0.07;
+        const ochre = [0.64 + n * 0.05, 0.52 + n * 0.03, 0.24];
+        const sage  = [0.48, 0.52, 0.32];
+        const olive = [0.40, 0.44, 0.20];
+        const pine  = [0.20, 0.34, 0.16];
+        const meadow= [0.38 + n * 0.04, 0.50 + n * 0.04, 0.22];
         let col;
-        if (n2 < 0.30) col = [0.64 + n * 0.05, 0.52 + n * 0.03, 0.24];       // ochre field
-        else if (n2 < 0.48) col = [0.48, 0.52, 0.32];                       // sage
-        else if (n2 < 0.66) col = [0.40, 0.44, 0.20];                       // olive
-        else if (n2 > 0.82) col = [0.20, 0.34, 0.16];                       // deep pine lawn
-        else col = [0.38 + n * 0.04, 0.50 + n * 0.04, 0.22];                // muted meadow, never lime
+        if (n2 < 0.38) {
+          const k = Math.min(1, (0.38 - n2) / 0.14);
+          const base = n2 < 0.18 ? ochre : sage;
+          col = [
+            meadow[0] + (base[0] - meadow[0]) * k,
+            meadow[1] + (base[1] - meadow[1]) * k,
+            meadow[2] + (base[2] - meadow[2]) * k,
+          ];
+        } else if (n2 < 0.48) col = sage;
+        else if (n2 < 0.66) col = olive;
+        else if (n2 > 0.82) col = pine;
+        else col = meadow;
         if (terrace) col = [col[0] * 0.88, col[1] * 0.86, col[2] * 0.84];
         return col;
       }
@@ -467,7 +479,13 @@ export function createTerrain(quality = "medium") {
         return crevice ? [base[0] * 0.88, base[1] * 0.86, base[2] * 0.84] : base;
       }
       case MAT.SNOW: return [0.90, 0.92, 0.95];
-      case MAT.DIRT: return [0.66, 0.52, 0.30];
+      case MAT.DIRT: {
+        const apron = Math.abs(z + 1100) < 100 && Math.abs(x) < 520;
+        if (apron) return [0.66, 0.52, 0.30];
+        const plot = fbm(x * 0.004, z * 0.004, 2, 8);
+        if (plot > 0.55) return [0.46 + n * 0.05, 0.50 + n * 0.05, 0.24]; // sage crop
+        return [0.68 + n * 0.04, 0.56 + n * 0.03, 0.28]; // ochre wheat
+      }
       case MAT.RUNWAY: return [0.22, 0.23, 0.26];
       default: return [0.48, 0.62, 0.32];
     }
@@ -487,7 +505,11 @@ export function createTerrain(quality = "medium") {
       const c = matColor(mats[o], h, x, z);
       col[o * 3] = c[0]; col[o * 3 + 1] = c[1]; col[o * 3 + 2] = c[2];
       aid[o * 2] = mats[o];
-      aid[o * 2 + 1] = 0;
+      // aId.y = 2 marks a crop field (for the terrain shader). Not the airport apron.
+      const apron = Math.abs(z + 1100) < 100 && Math.abs(x) < 520;
+      const isDirtField = mats[o] === MAT.DIRT && !apron;
+      const isOchreGrass = mats[o] === MAT.GRASS && fbm(x * 0.007, z * 0.007, 3, 7) < 0.34;
+      aid[o * 2 + 1] = (isDirtField || isOchreGrass) ? 2 : 0;
     }
   }
   // normals
