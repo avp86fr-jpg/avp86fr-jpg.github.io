@@ -225,7 +225,8 @@ export function createFlightCamera(camera) {
     const dist = CAM.chaseDist + (portrait ? 3 : 0);
     const height = CAM.chaseHeight + (portrait ? 2 : 0);
     _pos.copy(craft.pos).addScaledVector(_fwd, -dist).add(new THREE.Vector3(0, height, 0)).addScaledVector(_right, -2.4);
-    _look.copy(craft.pos).addScaledVector(_fwd, 18).add(new THREE.Vector3(0, 0.2, 0));
+    // Look farther ahead so the horizon and the next target stay in frame, especially on a short mobile landscape.
+    _look.copy(craft.pos).addScaledVector(_fwd, 28).add(new THREE.Vector3(0, 1.4, 0));
     const up = new THREE.Vector3(Math.sin((craft.roll || 0) * 0.18), 1, 0).normalize();
     return { pos: _pos, look: _look, up };
   }
@@ -243,7 +244,12 @@ export function createFlightCamera(camera) {
     const baseFov = portrait ? CAM.fovPortrait : CAM.fov;
     if (state.hero) camera.fov = HERO_VIEW.fov;
     else if (state.mode === "title") camera.fov = HERO_VIEW.fov;
-    else camera.fov = baseFov + k * 8;
+    else {
+      let fov = baseFov + k * 8;
+      const aspect = (typeof window !== "undefined" && window.innerHeight) ? (window.innerWidth / window.innerHeight) : 1.78;
+      if (aspect > 1.9) fov += 3;
+      camera.fov = fov;
+    }
     camera.near = CAM.near;
     camera.far = CAM.far;
 

@@ -752,6 +752,7 @@ function heroShot(opts = {}) {
   if (typeof island.setStorm === "function") island.setStorm((opts.weather || "clear") === "storm", weather && weather.state.windKt);
   clock.set(opts.hour ?? 11);
   island.sky.setHour(opts.hour ?? 11);
+  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour);
   camOverride = null;
   const hdg = headingFromXZ(tx - x, tz - z);
   resetCraft(craft, { x, y, z, heading: hdg }, hdg, "trainer");
@@ -821,6 +822,7 @@ function landingShot(opts = {}) {
   if (weather) weather.set("clear", { windDeg: 310, windKt: 8 });
   clock.set(opts.hour ?? 11);
   island.sky.setHour(opts.hour ?? 11);
+  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour);
   camOverride = null;
   const x = opts.x ?? 500;
   const y = opts.y ?? 22;
@@ -870,6 +872,7 @@ function stormShot(opts = {}) {
   }
   if (island.sky && typeof island.sky.applyFlash === "function") island.sky.applyFlash(0.62);
   weather.state.flash = 0.62;
+  if (typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour);
   hudShot();
   return pose;
 }
@@ -890,7 +893,7 @@ function exposeAPI() {
     startMission, startFreeFlight, backToTitle, heroShot, landingShot, stormShot,
     get planeMesh() { return planeMesh; },
     setWeather: (id, opts) => weather && weather.set(id, opts),
-    setTime: (h) => { clock.set(h); island.sky.setHour(h); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },
+    setTime: (h) => { clock.set(h); island.sky.setHour(h); if (typeof island.update === "function") island.update(0, performance.now() / 1000, h); if (missions.applyRingNight) missions.applyRingNight(island.sky.night || 0); },
     setDisplayMode: () => {},
     setCharSize: () => {},
     setQuality: (q) => { settings.quality = q; applyVisualSettings(); },

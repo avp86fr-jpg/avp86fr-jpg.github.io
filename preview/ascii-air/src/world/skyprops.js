@@ -199,10 +199,10 @@ export function createSkyProps(scene, quality = "medium") {
       if (on === stormOn) return;
       stormOn = on;
       if (on) {
-        cloudMat.color.setHex(0x3a4450);
-        cloudMat.emissive.setHex(0x1a222c);
+        cloudMat.color.setHex(0x6a7a8a);
+        cloudMat.emissive.setHex(0x3a4a58);
         cloudMat.emissiveIntensity = 0.12;
-        inkMat.color.setHex(0x12161c);
+        inkMat.color.setHex(0x2a3440);
         inkMat.opacity = 0.85;
         if (balloonInst) balloonInst.visible = false;
         if (blimp) blimp.visible = false;

@@ -8,19 +8,28 @@ import { resetCraft, launchCraft } from "../flight/physics.js";
 
 function ringMesh(radius = 14) {
   const g = new THREE.Group();
-  const tube = 1.15;
+  const tube = 1.2;
   const core = new THREE.Mesh(
     retagGeometry(new THREE.TorusGeometry(radius, tube, 10, 32), MAT.RING, 1),
-    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xffe14a, toneMapped: false }))
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xfff25a, toneMapped: false }))
   );
   const rim = new THREE.Mesh(
     retagGeometry(new THREE.TorusGeometry(radius, tube * 1.28, 8, 32), MAT.RING, 1),
-    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0x4a3218, toneMapped: false, transparent: true, opacity: 0.7, side: THREE.BackSide }))
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0x6a4810, toneMapped: false, transparent: true, opacity: 0.75, side: THREE.BackSide }))
   );
-  g.add(rim, core);
+  const glow = new THREE.Mesh(
+    retagGeometry(new THREE.TorusGeometry(radius, tube * 2.15, 8, 24), MAT.RING, 1),
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+      color: 0xfff4a8, toneMapped: false, transparent: true, opacity: 0.38,
+      depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+    }))
+  );
+  glow.renderOrder = 2;
+  g.add(rim, core, glow);
   g.userData.hero = 1;
   g.userData.core = core;
   g.userData.rim = rim;
+  g.userData.glow = glow;
   return g;
 }
 
@@ -47,17 +56,22 @@ export function createMissionSystem(scene, world, audio) {
     if (!mesh || !cam) return;
     const rad = (mesh.userData.base && mesh.userData.base.r) || 16;
     const d = cam.position.distanceTo(mesh.position);
-    // Fade before the torus clips the near plane / becomes a broken screen-space arc
-    const fade = Math.max(0, Math.min(1, (d - 8) / Math.max(16, rad * 1.35)));
-    const core = mesh.userData.core, rim = mesh.userData.rim;
+    // Stay bright until the torus is about to clip; never drop below a readable floor until very close.
+    const fade = Math.max(0, Math.min(1, (d - rad * 0.8) / (rad * 0.9 + 8)));
+    const vis = fade < 0.25 ? fade * 2.2 : Math.max(0.7, fade);
+    const core = mesh.userData.core, rim = mesh.userData.rim, glow = mesh.userData.glow;
     if (core && core.material) {
-      core.material.transparent = true;
-      core.material.opacity = fade;
-      core.material.depthWrite = fade > 0.6;
+      core.material.transparent = vis < 0.98;
+      core.material.opacity = vis;
+      core.material.depthWrite = vis > 0.6;
     }
     if (rim && rim.material) {
-      if (rim.userData.baseOp == null) rim.userData.baseOp = rim.material.opacity || 0.7;
-      rim.material.opacity = rim.userData.baseOp * fade;
+      if (rim.userData.baseOp == null) rim.userData.baseOp = rim.material.opacity || 0.75;
+      rim.material.opacity = rim.userData.baseOp * vis;
+    }
+    if (glow && glow.material) {
+      if (glow.userData.baseOp == null) glow.userData.baseOp = 0.38;
+      glow.material.opacity = glow.userData.baseOp * vis;
     }
   }
 
@@ -577,12 +591,18 @@ export function createMissionSystem(scene, world, audio) {
       const rim = o.userData && o.userData.rim;
       const core = o.userData && o.userData.core;
       if (rim && rim.material) {
-        rim.material.color.setHex(dark ? 0xc4a04a : 0x4a3218);
-        rim.material.opacity = dark ? 0.5 : 0.7;
+        rim.material.color.setHex(dark ? 0xd4a84a : 0x6a4810);
+        rim.material.opacity = dark ? 0.65 : 0.75;
         rim.userData.baseOp = rim.material.opacity;
       }
       if (core && core.material) {
-        core.material.color.setHex(dark ? 0xffe07a : 0xffe14a);
+        core.material.color.setHex(dark ? 0xfff6a0 : 0xfff25a);
+      }
+      const glow = o.userData.glow;
+      if (glow && glow.material) {
+        glow.material.color.setHex(dark ? 0xfff8c0 : 0xfff4a8);
+        glow.material.opacity = dark ? 0.48 : 0.38;
+        glow.userData.baseOp = glow.material.opacity;
       }
     });
   }

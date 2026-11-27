@@ -62,8 +62,9 @@ void main() {
   // gradient — posterizing them makes regular open-water stripes.
   float isWater = min(1.0, step(0.5, matId) * step(matId, 1.5) + step(15.5, matId) * step(matId, 17.5));
   float isSky = step(20.5, matId) * step(matId, 21.5) + step(6.5, matId) * step(matId, 7.5);
+  float isRing = step(19.5, matId) * step(matId, 20.5);
   float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
-  col = mix(col, floor(col * 5.0 + dither * 0.25 + 0.5) / 5.0, 0.28 * (1.0 - isWater) * (1.0 - isSky));
+  col = mix(col, floor(col * 5.0 + dither * 0.25 + 0.5) / 5.0, 0.28 * (1.0 - isWater) * (1.0 - isSky) * (1.0 - isRing));
 
   float d  = linDepth(texture2D(tDepth, vUv).r);
   vec2 o1 = px * 1.6;
@@ -88,8 +89,8 @@ void main() {
   float farCut = uNearFar.y * 0.96;
   float notSky = step(d, farCut);
   // Cap outline thickness on the plane so a rounded tail never becomes a black ring.
-  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.38, isPlane);
-  float onNear = step(d - dMin, expected * 0.45 + mix(1.2, 0.35, isPlane));
+  float expected = (0.018 * d + 0.75) * uOutline * mix(1.0, 0.62, isPlane);
+  float onNear = step(d - dMin, expected * 0.45 + mix(1.2, 0.45, isPlane));
   float sil = step(expected, jump) * onNear * notSky;
   float onNear2 = step(d - dMin2, expected * 0.5 + 1.6);
   float silFar = step(expected * 1.2, jump2) * onNear2 * notSky * step(180.0, d) * (1.0 - isPlane);
@@ -102,7 +103,7 @@ void main() {
   float gCol = max(max(abs(luma(cL) - L), abs(luma(cR) - L)), max(abs(luma(cU) - L), abs(luma(cD) - L)));
   float minN = min(min(abs(luma(cL) - L), abs(luma(cR) - L)), min(abs(luma(cU) - L), abs(luma(cD) - L)));
   // Colour edges are too thick on the near plane (red/cream bands, tail cap).
-  float colEdge = step(mix(0.20, 0.38, isPlane), gCol) * step(minN, mix(0.14, 0.08, isPlane)) * notSky * mix(1.0, 0.35, isPlane);
+  float colEdge = step(mix(0.20, 0.32, isPlane), gCol) * step(minN, mix(0.14, 0.10, isPlane)) * notSky * mix(1.0, 0.55, isPlane) * (1.0 - isRing);
 
   // Don't ink-hatch the water surface — grazing waves otherwise become regular stripes.
   sil *= 1.0 - isWater * 0.92;
@@ -110,33 +111,30 @@ void main() {
   colEdge *= 1.0 - isWater;
   float ink = max(sil, colEdge);
   vec3 inkCol = vec3(0.09, 0.07, 0.05);
-  col = mix(col, inkCol, ink * mix(0.94, 0.70, isPlane));
+  col = mix(col, inkCol, ink * mix(0.94, 0.86, isPlane));
 
   vec3 bloom = texture2D(tBloom, vUv).rgb;
   col += bloom * uBloom;
 
   if (uRain > 0.04) {
-    // Heavier slashes, denser toward the top of the frame (near the cloud ceiling)
+    // Sparse, long, slightly translucent streaks — never a full-screen hatch.
+    // Keep the plane and the ring clear so the player can always read them.
     vec2 ruv = vUv * uRes;
-    float skyAmt = smoothstep(0.28, 0.88, vUv.y);
-    float dens = 0.75 + 0.55 * skyAmt;
-    vec2 ruv2 = ruv;
-    float axis = ruv2.x * 0.70 + ruv2.y;
-    float id = floor(axis / 10.0);
-    float phase = fract(axis / 10.0);
-    float drop = fract(ruv2.y * 0.045 - uTime * 2.4 + id * 0.41);
-    float line = step(phase, 0.10 * dens);
-    float dash = step(0.22, drop) * step(drop, 0.94);
-    col = mix(col, vec3(0.72, 0.78, 0.84), line * dash * 0.72 * uRain * dens);
-    // A second, sparser layer at a different angle so it doesn't read as one texture
-    float axisB = ruv2.x * 0.38 + ruv2.y * 1.15;
-    float idB = floor(axisB / 17.0);
-    float phaseB = fract(axisB / 17.0);
-    float dropB = fract(ruv2.y * 0.03 - uTime * 1.6 + idB * 0.27);
-    float lineB = step(phaseB, 0.055 * dens);
-    float dashB = step(0.30, dropB) * step(dropB, 0.9);
-    col = mix(col, vec3(0.68, 0.74, 0.80), lineB * dashB * 0.45 * uRain);
-    col *= 1.0 - 0.16 * uRain;
+    float axis = ruv.x * 0.48 + ruv.y;
+    float id = floor(axis / 52.0);
+    float phase = fract(axis / 52.0);
+    float drop = fract(ruv.y * 0.010 - uTime * 1.55 + id * 0.31);
+    float line = 1.0 - smoothstep(0.0, 0.022, phase);
+    float dash = smoothstep(0.08, 0.16, drop) * (1.0 - smoothstep(0.82, 0.94, drop));
+    float keep = step(0.42, fract(id * 0.173 + 0.11));
+    float offPlane = 1.0 - isPlane;
+    float offRing = 1.0 - isRing;
+    float mid = smoothstep(0.10, 0.28, distance(vUv, vec2(0.5, 0.52)));
+    float rainAmt = line * dash * keep * offPlane * offRing * mid * uRain;
+    col = mix(col, vec3(0.86, 0.90, 0.94), rainAmt * 0.48);
+    // Mild desat on land only, no global exposure crush
+    float Lr = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(col, vec3(Lr), 0.16 * uRain * offPlane * (1.0 - isWater * 0.4) * (1.0 - isSky));
   }
   if (uSpeed > 0.12) {
     vec2 ruv = vUv * uRes;

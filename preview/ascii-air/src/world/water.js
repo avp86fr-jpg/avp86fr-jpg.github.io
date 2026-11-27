@@ -104,6 +104,18 @@ void main() {
   water += uSunCol * sunLane * mix(0.28, 0.10, farW) * day;
   float sp = pow(sat(dot(R, normalize(uSunDir))), 48.0);
   water += uSunCol * sp * 0.22 * (1.0 - farW) * day;
+  // Night sea: uniforms already carry a moonlit navy. Keep a readable floor, add
+  // a soft horizon sheen and a moon path — never a black sheet.
+  if (uNight > 0.25) {
+    water = max(water, vec3(0.07, 0.16, 0.30) * uNight);
+    float horz = sat((distCam - 280.0) / 1600.0);
+    water = mix(water, mix(water, uSky * 0.62, 0.50), horz * uNight * 0.70);
+    vec3 moonDir = normalize(vec3(-uSunDir.x, max(0.25, -uSunDir.y), -uSunDir.z));
+    float moonLane = pow(sat(dot(R, moonDir)), 14.0);
+    float moonSp = pow(sat(dot(R, moonDir)), 40.0);
+    water += vec3(0.55, 0.66, 0.82) * moonLane * 0.32 * uNight;
+    water += vec3(0.75, 0.82, 0.95) * moonSp * 0.22 * uNight;
+  }
 
   // Wave-stroke atlas: two rotated, differently scaled layers, strongly warped so open water does not stripe.
   float nA = n2(vWorld.xz * 0.0036);
@@ -211,14 +223,12 @@ export function createWater() {
       mat.uniforms.uChop.value = chop;
       if (lakeMat.uniforms.uChop) lakeMat.uniforms.uChop.value = on ? 1.8 : 1.0;
       if (on) {
-        mat.uniforms.uDeep.value.setHex(0x16383a);
-        mat.uniforms.uShallow.value.setHex(0x3a5a52);
-        mat.uniforms.uSky.value.setHex(0x3a4a54);
-      } else {
-        mat.uniforms.uDeep.value.setHex(0x0a3888);
-        mat.uniforms.uShallow.value.setHex(0x3ec8c0);
-        mat.uniforms.uSky.value.setHex(0xa8e0f4);
+        mat.uniforms.uDeep.value.setHex(0x1e4458);
+        mat.uniforms.uShallow.value.setHex(0x3a6274);
+        mat.uniforms.uSky.value.setHex(0x5e7588);
       }
+      // When leaving a storm, do not snap back to day cyan — update() applies the
+      // time-of-day (incl. moonlit navy) palette on the next tick.
     },
     update(t, sky) {
       mat.uniforms.uTime.value = t;
@@ -233,8 +243,8 @@ export function createWater() {
         if (!this._deepDay) {
           this._deepDay = new THREE.Color(0x0a3888);
           this._shalDay = new THREE.Color(0x3ec8c0);
-          this._deepNight = new THREE.Color(0x061828);
-          this._shalNight = new THREE.Color(0x163048);
+          this._deepNight = new THREE.Color(0x1c4a78);
+          this._shalNight = new THREE.Color(0x2a6a8e);
         }
         mat.uniforms.uDeep.value.copy(this._deepDay).lerp(this._deepNight, night);
         mat.uniforms.uShallow.value.copy(this._shalDay).lerp(this._shalNight, night);

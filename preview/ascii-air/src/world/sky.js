@@ -186,15 +186,15 @@ export function createSky(scene) {
     const h = ((hour % 24) + 24) % 24;
     // keyframes: 0 night, 5 pre-dawn, 6.5 sunrise, 9 morning, 12 noon, 17 golden, 19 dusk, 21 night
     const keys = [
-      { t: 0,  z: 0x0a1430, ho: 0x1a2a48, g: 0x101820, s: 0xc8d8ff, i: 0.16, si: 0.0, hc: 0x2a3850, ac: 0x1a2030, fog: 0x101828 },
-      { t: 5,  z: 0x121838, ho: 0x3a2860, g: 0x141020, s: 0xffc8a0, i: 0.2,  si: 0.05, hc: 0x3a2858, ac: 0x1a1428, fog: 0x1a1430 },
+      { t: 0,  z: 0x1a305c, ho: 0x3a5a88, g: 0x1a2838, s: 0xd0dcff, i: 0.32, si: 0.10, hc: 0x7a98c0, ac: 0x1a2838, fog: 0x1e3a58 },
+      { t: 5,  z: 0x1c2860, ho: 0x4a3a78, g: 0x1a1828, s: 0xffc8a0, i: 0.34, si: 0.12, hc: 0x6a5a90, ac: 0x1a1830, fog: 0x2a2848 },
       { t: 6.5,z: 0x3a6aaa, ho: 0xff9a62, g: 0x8a4a40, s: 0xffd0a0, i: 0.5,  si: 0.6,  hc: 0xffb080, ac: 0x403020, fog: 0xeeac88 },
       { t: 9,  z: 0x4ab8ff, ho: 0xd2f0ff, g: 0x86d070, s: 0xfff8dc, i: 1.32, si: 0.8,  hc: 0xe8f6ff, ac: 0x6ab050, fog: 0xb8d8f0 },
       { t: 12, z: 0x4eb8ff, ho: 0xd8f4ff, g: 0x8cd478, s: 0xfffae0, i: 1.38, si: 0.85, hc: 0xeef8ff, ac: 0x6ab050, fog: 0xb8d8f0 },
       { t: 16.5,z:0x3a88c8, ho: 0xf0c88a, g: 0x8a7050, s: 0xffd08a, i: 0.7,  si: 1.0,  hc: 0xffc888, ac: 0x5a4030, fog: 0xe8c090 },
       { t: 18.5,z:0x1a2a68, ho: 0xff7a4a, g: 0x4a2030, s: 0xffa060, i: 0.35, si: 0.45, hc: 0xff9060, ac: 0x2a1020, fog: 0x8a4060 },
-      { t: 20.5,z:0x050818, ho: 0x14182c, g: 0x08060c, s: 0xc0d0ff, i: 0.08, si: 0.02, hc: 0x1a2238, ac: 0x0a0c18, fog: 0x0c101c },
-      { t: 24, z: 0x04061a, ho: 0x12182c, g: 0x0c1018, s: 0xb0c4ff, i: 0.08, si: 0.0, hc: 0x222a3c, ac: 0x12141e, fog: 0x0c1220 },
+      { t: 20.5,z:0x162a54, ho: 0x2e4e7a, g: 0x152030, s: 0xc8d6ff, i: 0.30, si: 0.08, hc: 0x6a88b8, ac: 0x162030, fog: 0x1a3450 },
+      { t: 24, z: 0x1a305c, ho: 0x3a5a88, g: 0x1a2838, s: 0xd0dcff, i: 0.32, si: 0.10, hc: 0x7a98c0, ac: 0x1a2838, fog: 0x1e3a58 },
     ];
     let a = keys[0], b = keys[1];
     for (let i = 0; i < keys.length - 1; i++) {
@@ -242,18 +242,18 @@ export function createSky(scene) {
     hemi.color.copy(pal.hemi);
     hemi.groundColor.copy(pal.hemiG);
     // Moonlight fill so the land stays readable at night
-    if (night > 0.25) hemi.color.lerp(new THREE.Color(0x9aacc8), night * 0.5);
-    hemi.intensity = pal.hemiInt + night * 0.42;
+    if (night > 0.25) hemi.color.lerp(new THREE.Color(0xb0c4e0), night * 0.55);
+    hemi.intensity = pal.hemiInt + night * 0.50;
     sun.color.copy(pal.sun);
     sun.intensity = pal.sunInt;
-    amb.intensity = 0.50 + (1 - night) * 0.38 + night * 0.32;
+    amb.intensity = 0.50 + (1 - night) * 0.38 + night * 0.38;
     moonLit.position.copy(moon.position);
-    moonLit.intensity = night * 0.62;
-    moonLit.color.set(0xc8d4ee);
+    moonLit.intensity = night * 0.88;
+    moonLit.color.set(0xd4e0f4);
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 1200 : 2000;
-    fog.far = night > 0.6 ? 4400 : 5600;
+    fog.near = night > 0.6 ? 1600 : 2000;
+    fog.far = night > 0.6 ? 5000 : 5600;
     scene.fog = fog;
 
     stars.material.opacity = saturate((night - 0.2) * 1.8);
@@ -272,31 +272,31 @@ export function createSky(scene) {
   }
 
   function applyStormLook() {
-    // Dark slate, low ceiling — not a bright afternoon blue
-    skyMat.uniforms.uZenith.value.setHex(0x151c28);
-    skyMat.uniforms.uHorizon.value.setHex(0x3a4654);
-    skyMat.uniforms.uGround.value.setHex(0x2a3238);
-    skyMat.uniforms.uSunCol.value.setHex(0xb0b8c4);
-    skyMat.uniforms.uNight.value = 0.38;
-    state.sunColor.setHex(0xb0b8c4);
-    state.horizonColor.setHex(0x3a4654);
-    state.zenithColor.setHex(0x151c28);
-    state.fogColor.setHex(0x3a4650);
-    hemi.color.setHex(0x6a7888);
-    hemi.groundColor.setHex(0x2a302c);
-    hemi.intensity = 0.52;
-    sun.color.setHex(0xb0b8c4);
-    sun.intensity = 0.14;
-    amb.intensity = 0.34;
-    fog.color.setHex(0x3a4650);
-    fog.near = 600;
-    fog.far = 2600;
+    // Moody slate-blue/grey at ~60% of day exposure — readable ligne-claire, not black.
+    skyMat.uniforms.uZenith.value.setHex(0x3a5068);
+    skyMat.uniforms.uHorizon.value.setHex(0x5e7588);
+    skyMat.uniforms.uGround.value.setHex(0x4a5a64);
+    skyMat.uniforms.uSunCol.value.setHex(0xd0d8e0);
+    skyMat.uniforms.uNight.value = 0.0;
+    state.sunColor.setHex(0xd0d8e0);
+    state.horizonColor.setHex(0x5e7588);
+    state.zenithColor.setHex(0x3a5068);
+    state.fogColor.setHex(0x5a7284);
+    hemi.color.setHex(0xa8b8c8);
+    hemi.groundColor.setHex(0x4a5850);
+    hemi.intensity = 0.80;
+    sun.color.setHex(0xd0d8e0);
+    sun.intensity = 0.42;
+    amb.intensity = 0.50;
+    fog.color.setHex(0x5a7284);
+    fog.near = 1400;
+    fog.far = 4200;
     stars.material.opacity = 0;
     stars.visible = false;
     moon.visible = false;
     moonLit.intensity = 0;
     for (const L of state.lights) {
-      L.intensity = L.userData.baseInt * (L.userData.always ? 1 : 0.55);
+      L.intensity = L.userData.baseInt * (L.userData.always ? 1 : 0.85);
     }
   }
 
@@ -349,12 +349,12 @@ export function createSky(scene) {
       captureLit();
       _lit.flashing = true;
     }
-    amb.intensity = _lit.amb + f * 0.55;
-    hemi.intensity = _lit.hemi + f * 0.70;
-    sun.intensity = _lit.sun + f * 0.85;
-    skyMat.uniforms.uZenith.value.copy(_lit.zenith).lerp(_flashWhite, f * 0.28);
-    skyMat.uniforms.uHorizon.value.copy(_lit.horizon).lerp(_flashWhite, f * 0.36);
-    fog.color.copy(_lit.fog).lerp(_flashFog, f * 0.22);
+    amb.intensity = _lit.amb + f * 0.90;
+    hemi.intensity = _lit.hemi + f * 1.05;
+    sun.intensity = _lit.sun + f * 1.15;
+    skyMat.uniforms.uZenith.value.copy(_lit.zenith).lerp(_flashWhite, f * 0.42);
+    skyMat.uniforms.uHorizon.value.copy(_lit.horizon).lerp(_flashWhite, f * 0.52);
+    fog.color.copy(_lit.fog).lerp(_flashFog, f * 0.32);
   }
 
   function tickStars(time) {

@@ -23,12 +23,12 @@ export const PHYS = {
 };
 
 export const CAM = {
-  fov: 55,
+  fov: 56,
   fovPortrait: 62,
   near: 0.8,
   far: 6200,
-  chaseDist: 26,
-  chaseHeight: 9.5,
+  chaseDist: 28,
+  chaseHeight: 10.8,
   chaseLag: 4.2,
 };
 
