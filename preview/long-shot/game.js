@@ -34685,12 +34685,41 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       e.stop(t + d + 1.4);
     }
   }
+  function shotLayers(t, sup) {
+    const out = ctx.createGain();
+    out.gain.value = sup ? 0.35 : 1;
+    out.connect(sfx);
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(PHONE ? 150 : 120, t);
+    o.frequency.exponentialRampToValueAtTime(PHONE ? 80 : 38, t + 0.28);
+    const og = ctx.createGain();
+    env(og, t, 4e-3, PHONE ? 0.32 : 0.45, 0.42);
+    o.connect(og);
+    og.connect(out);
+    o.start(t);
+    o.stop(t + 0.6);
+    const n = noiseSrc();
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 2600;
+    const g = ctx.createGain();
+    env(g, t, 8e-4, 0.3, 0.035);
+    n.connect(hp);
+    hp.connect(g);
+    g.connect(out);
+    n.start(t);
+    n.stop(t + 0.12);
+    if (A.envKind === "mountain" || A.envKind === "snow" || !A.envKind) echoTaps(ECHO[A.envKind] || ECHO.mountain, (sup ? 0.3 : 1) * 0.4);
+  }
   function shot(range = 700) {
     if (!ctx) return;
     const t = now();
     const sup = !!G.settings.suppressor;
     duck(0.35, 1.6);
-    if (play((sup ? "shotsup_" : "shot_") + (SHOT_SAMPLE[A.envKind] || "mountain"), { gain: 1, rate: 0.97 + Math.random() * 0.06 })) {
+    const sk2 = SHOT_SAMPLE[A.envKind] || "mountain";
+    if (play((sup ? "shotsup_" : "shot_") + sk2, { gain: sk2 === "mountain" ? 1.25 : 1, rate: 0.97 + Math.random() * 0.06 })) {
+      shotLayers(t, sup);
       if (A.envKind === "city" || A.envKind === "harbour" || A.envKind === "valley") echoTaps(ECHO[A.envKind], (sup ? 0.3 : 1) * 0.55);
       return;
     }
@@ -35212,7 +35241,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       s.connect(g);
       g.connect(M.duck);
       s.start(t);
-      return { n, s, g };
+      return { n, s, g, trim: (STEM_TRIM[key] || {})[n] || 1 };
     });
     M.cur = mk;
     if (!M.sampled) {
@@ -35238,7 +35267,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     if (sampledMusic()) {
       M.I += (M.It - M.I) * 0.04;
       const I2 = M.I, t02 = now();
-      if (M.cur && M.layers) for (const l of M.layers) l.g.gain.setTargetAtTime(l.n === "calm" ? 0.95 - I2 * 0.45 : l.n === "tension" ? Math.max(0, Math.min(1, (I2 - 0.12) * 2.2)) * 0.9 : Math.max(0, Math.min(1, (I2 - 0.55) * 2.4)) * 0.85, t02, 0.8);
+      if (M.cur && M.layers) for (const l of M.layers) l.g.gain.setTargetAtTime(l.trim * (l.n === "calm" ? 0.95 - I2 * 0.45 : l.n === "tension" ? Math.max(0, Math.min(1, (I2 - 0.12) * 2.2)) * 0.9 : Math.max(0, Math.min(1, (I2 - 0.55) * 2.4)) * 0.85), t02, 0.8);
       return;
     }
     const T2 = THEMES[M.theme], spb = 60 / T2.bpm / 4;
@@ -35530,7 +35559,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       o.stop(t + d + 0.2);
     }
   }
-  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, MUS_RATE, THEME_ALIAS, themeKey, siren;
+  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, STEM_TRIM, MUS_RATE, THEME_ALIAS, themeKey, siren;
   var init_audio = __esm({
     "src/audio/audio.js"() {
       init_state();
@@ -35574,6 +35603,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       };
       M = { theme: "menu", I: 0, It: 0, step: 0, next: 0, timer: null, bus: null, stems: {}, pad: [], duck: null };
       mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+      STEM_TRIM = { menu: { calm: 0.72, tension: 0.91, alarm: 1.07 }, villa: { calm: 0.83, tension: 0.95, alarm: 1.12 }, refinery: { calm: 0.65, tension: 0.88, alarm: 1.11 } };
       MUS_RATE = { harbour: 0.95, pass: 1.04, neon: 0.93, dam: 0.89 };
       THEME_ALIAS = { harbour: "villa", pass: "villa", neon: "refinery", dam: "villa" };
       themeKey = (th) => th === "villa" || th === "refinery" ? th : THEME_ALIAS[th] || "menu";
@@ -37931,7 +37961,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const crack = n3(p.getX(i) * 9, y2 * 9, p.getZ(i) * 9, seed + 11);
       const cr = crack > 0.78 ? 0.55 : 1;
       const top = o.topTint && up > 0.55 ? 1 : 0;
-      const v3 = ao * base * st * cr;
+      const v3 = ao * base * st * cr * (o.rockDark ?? 1);
       if (top) {
         const t = o.topTint, m = Math.min(1, (up - 0.55) * 3) * (0.6 + 0.4 * n3(p.getX(i) * 4, 0, p.getZ(i) * 4, seed));
         tint[i * 3] = v3 * (1 - m) + t[0] * m;
@@ -38364,21 +38394,22 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
   function spawnFX(kind, pos, o = {}) {
     const scene = G.world?.scene;
     if (!scene) return;
-    const n = { dust: 9, snow: 10, spark: 8, flash: 1, fire: 14, muzzle: 1, paper: 12, smoke: 10 }[kind] || 6;
+    const n = { dust: 9, snow: 10, spark: 8, flash: 1, fire: 14, muzzle: 1, paper: 12, smoke: 10, trace: 1 }[kind] || 6;
     const parts = [];
     for (let i = 0; i < n; i++) {
       let s;
       if (kind === "dust" || kind === "snow" || kind === "smoke") s = sprite(puffTexture(), new Color(o.color || (kind === "snow" ? "#f4f7ff" : kind === "smoke" ? "#3a3633" : "#c9a77c")), false, 0.9);
       else if (kind === "paper") s = sprite(glowTexture(), new Color("#fffaf0"), false, 1);
+      else if (kind === "trace") s = sprite(glowTexture(), new Color("#d6deec").multiplyScalar(0.55), true, 0.4);
       else s = sprite(glowTexture(), new Color(kind === "spark" ? "#ffd080" : kind === "fire" ? "#ff8a2a" : "#ffffff").multiplyScalar(kind === "flash" ? 3 : 2), true, 1);
       s.position.copy(pos);
       const sc = o.scale || 1;
       const v3 = new Vector3(Math.random() - 0.5, Math.random() * 0.9 + 0.2, Math.random() - 0.5).multiplyScalar((kind === "spark" ? 9 : kind === "fire" ? 7 : kind === "paper" ? 3 : 1.6) * sc);
-      if (kind === "flash") v3.set(0, 0, 0);
-      const size = { dust: 1.1, snow: 1, spark: 0.18, flash: 2.2, fire: 6, muzzle: 0.8, paper: 0.12, smoke: 7 }[kind] * sc;
+      if (kind === "flash" || kind === "trace") v3.set(0, 0, 0);
+      const size = { dust: 1.1, snow: 1, spark: 0.18, flash: 2.2, fire: 6, muzzle: 0.8, paper: 0.12, smoke: 7, trace: 1 }[kind] * sc;
       s.scale.setScalar(size);
       scene.add(s);
-      parts.push({ s, v: v3, size, life: { dust: 2.4, snow: 2, spark: 0.6, flash: 0.35, fire: 2.2, muzzle: 0.08, paper: 3.5, smoke: 7 }[kind] * (0.7 + Math.random() * 0.6) });
+      parts.push({ s, v: v3, size, life: { dust: 2.4, snow: 2, spark: 0.6, flash: 0.35, fire: 2.2, muzzle: 0.08, paper: 3.5, smoke: 7, trace: 0.45 }[kind] * (0.7 + Math.random() * 0.6) });
     }
     live.push({ kind, parts, t: 0 });
   }
@@ -38400,6 +38431,11 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           p.v.multiplyScalar(1 - dt * 1.8);
           if (wind) p.s.position.addScaledVector(wind, dt * 0.6);
           p.v.y += (f.kind === "fire" || f.kind === "smoke" ? 2.5 : 0.1) * dt;
+        }
+        if (f.kind === "trace") {
+          p.s.material.opacity = (1 - k) * 0.4;
+          p.s.scale.setScalar(p.size * (1 + k));
+          continue;
         }
         const grow = f.kind === "flash" ? 1 + k * 3 : f.kind === "fire" ? 1 + k * 2.2 : f.kind === "smoke" ? 1 + k * 3 : 1 + k * 1.6;
         p.s.scale.setScalar(p.size * grow);
@@ -38919,18 +38955,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     roadY[0] = PAD_Y + 0.1;
     roadY[1] = PAD_Y + 0.4;
     const w = baseWorld({
-      haze: "#7f8aa8",
-      sunHaze: "#ff8a40",
-      hazeDensity: 16e-5,
+      haze: "#7d8aae",
+      sunHaze: "#f09060",
+      hazeDensity: 1e-4,
       hazeHeight: 300,
       hazeBase: 0,
       sunEl: 4.5,
       sunAz: 38,
       sunColor: "#ffb27a",
       sunI: 3.2,
-      hemiSky: "#7f96c8",
-      hemiGround: "#3a3440",
-      hemiI: 0.62,
+      hemiSky: "#a4b6e0",
+      hemiGround: "#3a3a44",
+      hemiI: 0.85,
       sky: { zenith: "#26365e", horizon: "#ff9a58", ground: "#8a8aa0", sunColor: "#ffb070", cloudColor: "#ffb27e", cloudShade: "#5a4a6a", cloudCover: 0.6, glow: 1.35, horizonHaze: 0.6 }
     });
     w.height = height;
@@ -38938,9 +38974,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.groundAt = (x, z) => x > 12 && x < 48 && z > -778.2 && z < -763.8 ? DECK : height(x, z);
     const S2 = w.scene;
     const nestY = height(0, 0);
-    w.nest = { pos: new Vector3(0, nestY + 0.42, 0), yaw: -0.02, pitch: -0.18, yawRange: 70 * Math.PI / 180, pitchMin: -0.6, pitchMax: 0.42 };
+    w.nest = { pos: new Vector3(0, nestY + 0.42, 0), yaw: -0.02, pitch: -0.07, yawRange: 70 * Math.PI / 180, pitchMin: -0.6, pitchMax: 0.42 };
     w.windCfg = { dir: 98, speed: 3.6, gust: 0.45, shift: 14, alt: 9e-4, local: 0.22, seed: 11, groundY: 150 };
-    w.tint = { lift: [0, 4e-3, 0.02], gain: [1.1, 0.98, 0.92], sat: 1.18, contrast: 1.18, expo: 1.12 };
+    w.tint = { lift: [0, 4e-3, 0.016], gain: [1.06, 1, 0.96], sat: 1.08, contrast: 1.24, expo: 1 };
     w.bloom = 0.32;
     w.bloomTh = 1.9;
     w.rays = 0.55;
@@ -39016,6 +39052,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (!lofOK(x, z, h, s, sy)) return null;
       return { x, y: h, z, r: rnd() * 6.28, s, sy };
     }, { cast: false, sway: 0.25, isNear: tier.mobile ? (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 170 || -p.z < 260 : (p) => Math.hypot(p.x - 30, (p.z + 790) * 1.2) < 300 || -p.z < 420 }));
+    const rb = mulberry32(77);
+    S2.add(makeForest(pine, Math.floor(520 * tier.trees), () => {
+      const side = rb() < 0.5 ? -1 : 1, x = 15 + side * (45 + Math.pow(rb(), 1.6) * 260), z = -120 - rb() * 380;
+      const h = height(x, z);
+      if (h < 26) return null;
+      if (fbm(x / 90, z / 90, 2, 5) < 0.4) return null;
+      const sl = Math.abs(height(x + 3, z) - h) + Math.abs(height(x, z + 3) - h);
+      if (sl > 4.6) return null;
+      const s = 1.1 + rb() * 0.8, sy = 0.95 + rb() * 0.35;
+      if (!lofOK(x, z, h, s, sy)) return null;
+      return { x, y: h - 0.3, z, r: rb() * 6.28, s, sy };
+    }, { cast: false, sway: 0.25, isNear: tier.mobile ? (p) => -p.z < 260 : () => true }));
     S2.add(makeForest(pine, 60, (i) => {
       const a = rnd() * 6.28, r = 62 + rnd() * 70;
       const x = 30 + Math.cos(a) * r, z = -790 + Math.sin(a) * r * 0.7;
@@ -39027,7 +39075,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     const rockM = mat("#ffffff", { vc: true, rough: 0.95 });
     const nest = [];
     const addRock = (x, y2, z, s, sy = 0.6, seed = 1) => {
-      nest.push([tf(rockGeometry(seed, 3, { topTint: [1, 1.04, 1.1], strata: 0.6 }), x, y2, z, 0, seed, 0, s, s * sy, s), "#6a6870"]);
+      nest.push([tf(rockGeometry(seed, 3, { topTint: [0.96, 0.98, 1], strata: 0.6, rockDark: 0.36 }), x, y2, z, 0, seed, 0, s, s * sy, s), "#f2f5fa"]);
     };
     addRock(-2.2, nestY - 0.2, -1.4, 1.3, 0.5, 2);
     addRock(2.4, nestY - 0.1, -1.8, 1.1, 0.7, 5);
@@ -39277,6 +39325,14 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     C2.push(cylCollider(41, -772, 0.55, DECK, DECK + 2.5, { name: "heater", metal: true }));
     C2.push(boxCollider(-70, height(-70, -808) + 2.5, -808, 5, 3, 4, { name: "cabin" }));
     setupShadow(w, new Vector3(30, PAD_Y, -775), 150, tier);
+    {
+      const FR = [], rr = mulberry32(919);
+      for (const [x, z, sc] of [[-4.2, -2.2, 0.9], [4.6, -2.6, 1.1], [-12, -7, 2.4], [13, -8, 2.6], [-20, -12, 3.4], [22, -13, 3.6], [-7, -5, 1.3], [8, -15, 1.8]]) FR.push([tf(rockGeometry(40 + FR.length, 2, { topTint: [0.96, 0.98, 1], rockDark: 0.34 }), x, height(x, z) + sc * 0.2, z, rr() * 0.3, rr() * 6, 0, sc, sc * 0.7, sc), "#f2f5fa"]);
+      const fm = mergedMesh(FR, { rough: 0.95, wdetail: false });
+      fm.castShadow = false;
+      S2.add(fm);
+      S2.add(glow("#ffb060", 46, 30, PAD_Y + 6, -770, 0.55));
+    }
     w.titleCam = { pos: new Vector3(-1.2, nestY + 1.9, 3.8), look: new Vector3(150, 420, -1500) };
     w.mapInfo = { center: [30, -770], size: 260, label: "VILLA RAVEL \u2014 Sarne Saddle", roads: ROAD };
     return w;
@@ -45838,6 +45894,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 this.lastHit = { text: "MISS \xB7 no impact observed", t: G.time, ok: false };
                 if (M2.kind === "range") M2.miss();
               }
+            }
+            if (!pr.done && pr.traveled > 50 && pr.traveled - (pr.lastTrace || 0) > 22) {
+              pr.lastTrace = pr.traveled;
+              spawnFX("trace", pr.p, { scale: 0.12 + pr.traveled * 16e-4 });
             }
           }
           for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].done) this.projectiles.splice(i, 1);
