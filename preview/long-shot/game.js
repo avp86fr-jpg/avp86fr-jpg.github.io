@@ -33456,7 +33456,7 @@ void main() {
         col = mix(col, uDustCol * (0.9 + 0.1 * nn(uv * 6.0 + uTime * 0.2)), uDust);
         // grading
         col *= uExpo;
-        if (uHdr > 0.5) col = aces(col * 0.95); else col = clamp(col, 0.0, 1.0);
+        col = aces(col * 0.95); // LDR (phone low tier) too: a hard clamp blew snow/lit walls to flat white-pink through the scope
         col = pow(col, vec3(1.0/2.2));
         col = (col - 0.5) * uContrast + 0.5;
         float l = dot(col, vec3(0.299, 0.587, 0.114));
@@ -35559,7 +35559,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       o.stop(t + d + 0.2);
     }
   }
-  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, STEM_TRIM, MUS_RATE, THEME_ALIAS, themeKey, siren;
+  var ctx, master, music, sfx, amb, verb, noiseBuf, A, audio, PHONE, audioState, BANK, LOADING, VOICES, MAXV, decode, now, ambNodes, ECHO, SHOT_SAMPLE, heartT, THEMES, M, mtof, STEM_TRIM, MUS_RATE, OWN_THEMES, themeKey, siren;
   var init_audio = __esm({
     "src/audio/audio.js"() {
       init_state();
@@ -35603,10 +35603,18 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       };
       M = { theme: "menu", I: 0, It: 0, step: 0, next: 0, timer: null, bus: null, stems: {}, pad: [], duck: null };
       mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
-      STEM_TRIM = { menu: { calm: 0.72, tension: 0.91, alarm: 1.07 }, villa: { calm: 0.83, tension: 0.95, alarm: 1.12 }, refinery: { calm: 0.65, tension: 0.88, alarm: 1.11 } };
-      MUS_RATE = { harbour: 0.95, pass: 1.04, neon: 0.93, dam: 0.89 };
-      THEME_ALIAS = { harbour: "villa", pass: "villa", neon: "refinery", dam: "villa" };
-      themeKey = (th) => th === "villa" || th === "refinery" ? th : THEME_ALIAS[th] || "menu";
+      STEM_TRIM = {
+        menu: { calm: 0.72, tension: 0.91, alarm: 1.07 },
+        villa: { calm: 0.83, tension: 0.95, alarm: 1.12 },
+        refinery: { calm: 0.65, tension: 0.88, alarm: 1.11 },
+        harbour: { calm: 0.65, tension: 0.99, alarm: 1.2 },
+        pass: { calm: 0.85, tension: 1.1, alarm: 1.19 },
+        neon: { calm: 0.99, tension: 0.91, alarm: 1.07 },
+        dam: { calm: 0.95, tension: 1.22, alarm: 1.24 }
+      };
+      MUS_RATE = {};
+      OWN_THEMES = /* @__PURE__ */ new Set(["villa", "refinery", "harbour", "pass", "neon", "dam"]);
+      themeKey = (th) => OWN_THEMES.has(th) ? th : "menu";
       siren = null;
     }
   });
@@ -37889,7 +37897,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       if (near2.length) grp.add(makeForest(geo, near2.length, (i) => near2[i], { ...o, isNear: null, tries: 1 }));
       const I = impostorTexture(geo);
       if (I && far.length) {
-        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.3, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff" });
+        const m2 = new MeshStandardMaterial({ map: I.tex, alphaTest: 0.3, side: DoubleSide, roughness: 0.95, color: o.impTint || "#ffffff", emissive: "#26303c", emissiveIntensity: 0.55 });
         hazeify(m2, {});
         const im2 = makeForestMesh(impostorGeometry(I), m2, far.length, (i) => far[i], 1);
         im2.castShadow = false;
@@ -38408,7 +38416,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       let s;
       if (kind === "dust" || kind === "snow" || kind === "smoke") s = sprite(puffTexture(), new Color(o.color || (kind === "snow" ? "#f4f7ff" : kind === "smoke" ? "#3a3633" : "#c9a77c")), false, 0.9);
       else if (kind === "paper") s = sprite(glowTexture(), new Color("#fffaf0"), false, 1);
-      else if (kind === "trace") s = sprite(glowTexture(), new Color("#d6deec").multiplyScalar(0.55), true, 0.4);
+      else if (kind === "trace") s = sprite(glowTexture(), new Color("#e8e4da").multiplyScalar(0.8), true, 0.6);
       else s = sprite(glowTexture(), new Color(kind === "spark" ? "#ffd080" : kind === "fire" ? "#ff8a2a" : "#ffffff").multiplyScalar(kind === "flash" ? 3 : 2), true, 1);
       s.position.copy(pos);
       const sc = o.scale || 1;
@@ -38417,7 +38425,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       const size = { dust: 1.1, snow: 1, spark: 0.18, flash: 2.2, fire: 6, muzzle: 0.8, paper: 0.12, smoke: 7, trace: 1 }[kind] * sc;
       s.scale.setScalar(size);
       scene.add(s);
-      parts.push({ s, v: v3, size, life: { dust: 2.4, snow: 2, spark: 0.6, flash: 0.35, fire: 2.2, muzzle: 0.08, paper: 3.5, smoke: 7, trace: 0.45 }[kind] * (0.7 + Math.random() * 0.6) });
+      parts.push({ s, v: v3, size, life: { dust: 2.4, snow: 2, spark: 0.6, flash: 0.35, fire: 2.2, muzzle: 0.08, paper: 3.5, smoke: 7, trace: 0.6 }[kind] * (0.7 + Math.random() * 0.6) });
     }
     live.push({ kind, parts, t: 0 });
   }
@@ -38441,7 +38449,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           p.v.y += (f.kind === "fire" || f.kind === "smoke" ? 2.5 : 0.1) * dt;
         }
         if (f.kind === "trace") {
-          p.s.material.opacity = (1 - k) * 0.4;
+          p.s.material.opacity = (1 - k) * (1 - k) * 0.6;
           p.s.scale.setScalar(p.size * (1 + k));
           continue;
         }
@@ -39021,6 +39029,10 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
           c.lerp(SHADOW_C, (1 - lit) * 0.55 * smoothstep2(200, 900, Math.hypot(x - 30, z + 400)));
           c.lerp(RIM_C, lit * 0.35 * smoothstep2(300, 1500, h));
         }
+        {
+          const fd = Math.min(fbm(x / 300, z / 300, 3, 21), fbm(x / 70, z / 70, 2, 9));
+          if (fd > 0.44 && h > 26 && h < 900) c.lerp(FOREST_C, smoothstep2(0.44, 0.58, fd) * 0.42 * smoothstep2(350, 900, Math.hypot(x - 15, z)));
+        }
         const nearPad = Math.abs(x - 30) < 150 && Math.abs(z + 768) < 110;
         c.lerp(rk, steep * (nearPad ? 0.15 : 1));
         const r = z < -500 && z > -1e3 && x > 0 ? roadInfo(x, z).d : 99;
@@ -39355,7 +39367,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
     w.mapInfo = { center: [30, -770], size: 260, label: "VILLA RAVEL \u2014 Sarne Saddle", roads: ROAD };
     return w;
   }
-  var PAD_Y, DECK, SUN, SHADOW_C, RIM_C, VILLA, PROF, ROAD, PADS, roadY, NEST0;
+  var PAD_Y, DECK, FOREST_C, SUN, SHADOW_C, RIM_C, VILLA, PROF, ROAD, PADS, roadY, NEST0;
   var init_villa = __esm({
     "src/scene/villa/index.js"() {
       init_three_module();
@@ -39367,6 +39379,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
       init_common();
       PAD_Y = 150;
       DECK = 150.6;
+      FOREST_C = new Color("#41505a");
       SUN = (() => {
         const az = 38 * Math.PI / 180, el2 = 4.5 * Math.PI / 180;
         return [Math.sin(az) * Math.cos(el2), Math.sin(el2), -Math.cos(az) * Math.cos(el2)];
@@ -45913,9 +45926,9 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
                 if (M2.kind === "range") M2.miss();
               }
             }
-            if (!pr.done && pr.traveled > 50 && pr.traveled - (pr.lastTrace || 0) > 22) {
+            if (!pr.done && !pr.bulletCam && pr.traveled > 40 && pr.traveled - (pr.lastTrace || 0) > 12) {
               pr.lastTrace = pr.traveled;
-              spawnFX("trace", pr.p, { scale: 0.12 + pr.traveled * 16e-4 });
+              spawnFX("trace", pr.p, { scale: 0.25 + pr.traveled * 22e-4 });
             }
           }
           for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].done) this.projectiles.splice(i, 1);
@@ -47082,7 +47095,7 @@ float hzFbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<4;i++){ s+=a*hzNoise(p); 
         _sun.copy(w.sunDir).multiplyScalar(5e3).add(cam.position).project(cam);
         const facing = _sun.z < 1 && Math.abs(_sun.x) < 1.2 && Math.abs(_sun.y) < 1.2;
         L.uSun.value.set((_sun.x + 1) / 2, (_sun.y + 1) / 2, facing ? (view === "scope" ? 0.55 : view === "eye" ? 0.25 : 0.35) * (1 - (G.mission?.storm || 0)) * (G.settings.reduceFlash ? 0.4 : 1) : 0);
-        L.uBloom.value = G.quality.bloom ? w.bloom ?? 0.35 : 0;
+        L.uBloom.value = G.quality.bloom ? (w.bloom ?? 0.35) * (view === "scope" ? 0.55 : 1) : 0;
         L.uSunPos.value.set((_sun.x + 1) / 2, (_sun.y + 1) / 2);
         const lim = view === "eye" ? 1.6 : 0.95;
         const onScreen = _sun.z < 1 && Math.abs(_sun.x) < lim && Math.abs(_sun.y) < lim;
