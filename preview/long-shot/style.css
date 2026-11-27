@@ -484,3 +484,29 @@ body.touch .screen, body.touch .panel { padding-left: max(env(safe-area-inset-le
 /* desktop 1080p+: HUD text (clock, objectives, radio, banners, hints) scales with the screen */
 @media (min-width: 1700px) and (min-height: 950px) { body:not(.touch) #ghud > :is(.htop, .hobj, .hradio, .htoast, .hkill, .hhint, .hescape, .hexfil, .hkeys, .hdetect) { zoom: 1.35; } }
 @media (min-width: 2400px) and (min-height: 1350px) { body:not(.touch) #ghud > :is(.htop, .hobj, .hradio, .htoast, .hkill, .hhint, .hescape, .hexfil, .hkeys, .hdetect) { zoom: 1.8; } }
+/* phones in landscape: the whole results card fits one screen, two columns, no scrolling */
+@media (max-height: 520px) and (orientation: landscape) {
+  #results { align-items: center; }
+  .res { width: calc(100vw - 2 * max(14px, env(safe-area-inset-left), env(safe-area-inset-right))); padding: 8px 0; display: grid; grid-template-columns: 1.25fr 1fr; column-gap: 20px; align-items: start; }
+  .res > .rstatus, .res > h2 { grid-column: 1 / -1; }
+  .res h2 { font-size: 22px; margin: 0 0 6px; }
+  .rstatus { font-size: 10px; }
+  .rgrid { display: contents; }
+  .rlines { grid-column: 1; grid-row: 3; }
+  .rright { grid-column: 2; grid-row: 3 / span 2; display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-content: start; }
+  .rright > .rrank { min-height: 0; grid-row: span 2; } .rrank b { font-size: 30px; } .rrank b.stamp { padding: 0 8px; border-width: 3px; }
+  .rtotal b { font-size: 24px; line-height: 1; } .rbest { margin-top: 2px; font-size: 11px; }
+  .rright > .rchk, .rright > .rshare, .rright > .rstars { grid-column: 1 / -1; }
+  .rstars { margin: 4px 0 2px; } .rstars i { font-size: 20px; } .rstars span { font-size: 9px; }
+  .rchk { margin-top: 4px; font-size: 11px; line-height: 1.35; } .rshare { display: none; }
+  .rlines .line { padding: 3px 0; font-size: 12px; } .rlines .line b { font-size: 12px; }
+  .rdebrief { grid-column: 1; grid-row: 4; margin-top: 6px; padding: 6px 10px; font-size: 11px; line-height: 1.35; max-height: 30vh; overflow: hidden; }
+  .rdebrief .dteaser { margin-top: 6px; padding: 6px 10px; } .rdebrief .dteaser b { font-size: 16px; }
+  .rbtns { grid-column: 2; grid-row: 5; margin-top: 6px; } .rbtns button { padding: 9px 14px; }
+}
+/* desktop 1080p+: the timeline scales with the rest of the HUD */
+@media (min-width: 1700px) and (min-height: 950px) { body:not(.touch) #ghud > .htl { zoom: 1.35; top: 46px; } }
+@media (min-width: 2400px) and (min-height: 1350px) { body:not(.touch) #ghud > .htl { zoom: 1.8; top: 46px; } }
+/* kill cam: the banner sits in the lower third so the hit itself stays clear */
+#ghud.bc .hkill { top: 76%; }
+@media (max-height: 520px) and (orientation: landscape) { .rright > .rtotal { align-items: flex-start; } .rright > .rbest { grid-column: 2; } }
