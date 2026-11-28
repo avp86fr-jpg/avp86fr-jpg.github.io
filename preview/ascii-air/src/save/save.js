@@ -14,6 +14,8 @@ export function defaultSave() {
     seenIntro: false,
     lastMode: null,
     lastMission: null,
+    pay: 0,
+    upgrades: { tight: false, guns: false, pace: false },
   };
 }
 
@@ -31,6 +33,8 @@ export function loadSave() {
       stars: d.stars || {},
       records: d.records || {},
       photos: Array.isArray(d.photos) ? d.photos.slice(0, 24) : [],
+      pay: d.pay | 0,
+      upgrades: { tight: false, guns: false, pace: false, ...(d.upgrades || {}) },
     };
   } catch {
     return defaultSave();
@@ -75,4 +79,29 @@ export function savePhoto(save, photo) {
 export function saveSettings(save, settings) {
   save.settings = { ...save.settings, ...settings };
   persist(save);
+}
+
+export function awardPay(save, stars, streak = 0) {
+  const n = Math.max(0, (stars | 0) * 4 + Math.max(0, (streak | 0) - 1));
+  save.pay = (save.pay | 0) + n;
+  persist(save);
+  return n;
+}
+
+export const UPGRADE_COSTS = { tight: 8, guns: 10, pace: 12 };
+export const UPGRADE_INFO = {
+  tight: { name: "Tighter turn", blurb: "Ailerons and elevator answer a little quicker." },
+  guns: { name: "Fitted guns", blurb: "A shorter burst and a firmer hit. They still only break off." },
+  pace: { name: "Mail pace", blurb: "A touch more cruise for the daily run." },
+};
+
+export function buyUpgrade(save, id) {
+  const cost = UPGRADE_COSTS[id];
+  if (!cost) return false;
+  save.upgrades = { tight: false, guns: false, pace: false, ...(save.upgrades || {}) };
+  if (save.upgrades[id] || (save.pay | 0) < cost) return false;
+  save.upgrades[id] = true;
+  save.pay = (save.pay | 0) - cost;
+  persist(save);
+  return true;
 }

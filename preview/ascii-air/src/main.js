@@ -13,7 +13,7 @@ import { createCraft, resetCraft, launchCraft, stepCraft, startTow } from "./fli
 import { createFlightCamera } from "./flight/camera.js";
 import { createInput } from "./input/input.js";
 import { createAudio } from "./audio/audio.js";
-import { loadSave, persist, awardStars, saveSettings, savePhoto, applyUnlocks, totalStars } from "./save/save.js";
+import { loadSave, persist, awardStars, awardPay, buyUpgrade, saveSettings, savePhoto, applyUnlocks, totalStars } from "./save/save.js";
 import { createMissionSystem } from "./missions/runtime.js";
 import { getMission, MISSIONS, DOGFIGHTS } from "./missions/data.js";
 import { createCombat } from "./combat/dogfight.js";
@@ -38,6 +38,13 @@ const ui = createUI(uiRoot, {
   onFreeFlight: () => startFreeFlight(),
   onStartMission: (id) => startMission(id),
   onSelectPlane: (id) => { save.plane = id; persist(save); rebuildPlane(id); },
+  onOnboard: () => startOnboarding(),
+  onBuyUpgrade: (id) => {
+    const ok = buyUpgrade(save, id);
+    if (ok) applyUpgrades(craft);
+    return ok;
+  },
+
   onSettings: (s) => { Object.assign(settings, s); saveSettings(save, s); audio.setVolumes(s); applyVisualSettings(); },
   onToggleGyro: () => toggleGyro(),
   onCamera: () => flyCam.cycle(),
@@ -143,6 +150,25 @@ function rebuildPlane(id) {
   flattenLook(planeMesh);
   scene.add(planeMesh);
   if (craft.id !== id) resetCraft(craft, SPAWN.airport, SPAWN.airport.heading, id);
+  applyUpgrades(craft);
+}
+
+function applyUpgrades(c) {
+  const u = (save && save.upgrades) || {};
+  const base = PLANES[c.id] || PLANES.trainer;
+  const def = { ...base };
+  if (u.tight) {
+    def.rollRate = (base.rollRate || 1.6) * 1.18;
+    def.pitchRate = (base.pitchRate || 1.3) * 1.12;
+    def.yawRate = (base.yawRate || 0.9) * 1.1;
+  }
+  if (u.pace) {
+    def.maxSpeed = (base.maxSpeed || 68) * 1.08;
+    def.maxThrust = (base.maxThrust || 3200) * 1.08;
+    def.cruise = (base.cruise || 46) * 1.06;
+  }
+  c.def = def;
+  c.upgrades = { ...u };
 }
 
 function applyVisualSettings() {
@@ -178,6 +204,19 @@ function markLast(mode, missionId) {
   save.lastMode = mode;
   if (missionId) save.lastMission = missionId;
   persist(save);
+}
+
+function startOnboarding() {
+  const cards = [
+    { who: "Skipper Wren", text: "Welcome to the island run. Hold BOOST or Space and the Courrier will take itself into the air." },
+    { who: "Skipper Wren", text: "Arrows or the stick turn and pitch. The gold pointer marks your next hoop — wind will nudge the rings, so look twice." },
+    { who: "Pip", text: "Keep a streak by threading posts without a long pause. When you are ready, the bag is waiting. I will be on your wing if the Gale turns up." },
+  ];
+  ui.showStory(cards, () => {
+    save.seenIntro = true;
+    persist(save);
+    startMission("rings-b1");
+  });
 }
 
 function startFreeFlight() {
@@ -703,7 +742,10 @@ function step(now) {
       }
       if (st.result && !pendingResult) {
         pendingResult = st.result;
-        if (st.result.stars > 0) awardStars(save, st.active.id, st.result.stars, { time: st.result.time, grade: st.result.grade, line: st.result.line });
+        if (st.result.stars > 0) {
+          awardStars(save, st.active.id, st.result.stars, { time: st.result.time, grade: st.result.grade, line: st.result.line });
+          st.result.pay = awardPay(save, st.result.stars, st.result.bestStreak || 0);
+        }
         if (st.result.photo) {
           try {
             const data = canvas.toDataURL("image/jpeg", 0.7);
@@ -730,7 +772,7 @@ function step(now) {
       if (craft.stalled && !craft.onGround) {
         if (!step._stallT || now - step._stallT > 280) { audio.play("stall", { gain: 0.4 }); step._stallT = now; }
       }
-      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null, combatMarks: combat.active && combat.projectMarks ? combat.projectMarks(camera, window.innerWidth, window.innerHeight) : null });
+      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), hudExtras());
     }
   }
 
@@ -962,6 +1004,34 @@ function stormShot(opts = {}) {
   return pose;
 }
 
+function hudExtras() {
+  const w = window.innerWidth || 1920, h = window.innerHeight || 1080;
+  const aim = missions.state && missions.state.aim;
+  let aimMark = null;
+  if (aim && camera) {
+    const v = new THREE.Vector3(aim.x, aim.y, aim.z).project(camera);
+    aimMark = {
+      x: (v.x * 0.5 + 0.5) * w,
+      y: (-v.y * 0.5 + 0.5) * h,
+      behind: v.z > 1,
+      on: v.z <= 1,
+      wind: !!aim.wind,
+      label: aim.label || (aim.wind ? "WIND RING" : "NEXT"),
+    };
+  }
+  if (weather && missions.setWind) {
+    const ws = weather.state || {};
+    missions.setWind(ws.windDeg || 40, ws.windKt || 6);
+  }
+  return {
+    weather: weather && weather.state,
+    save: Object.assign({}, save, { starsTotal: totalStars(save), pay: save.pay | 0, upgrades: save.upgrades }),
+    combat: combat.active ? combat.getState() : null,
+    combatMarks: combat.active && combat.projectMarks ? combat.projectMarks(camera, w, h) : null,
+    aimMark,
+  };
+}
+
 function exposeAPI() {
   window.ASCII_AIR = {
     version: VERSION,
@@ -1003,6 +1073,7 @@ function exposeAPI() {
     clearLook() { camOverride = null; },
     launch: (spd) => launchCraft(craft, spd, 2),
     setThrottle: (v) => { input.resetThrottleLever?.(v); craft.throttle = v; },
+    setFire: (on) => { input.setDebugFire?.(!!on); },
     faceToward(x, z) {
       const hdg = headingFromXZ(x - craft.pos.x, z - craft.pos.z);
       resetCraft(craft, { x: craft.pos.x, y: craft.pos.y, z: craft.pos.z, heading: hdg }, hdg, craft.id);
@@ -1014,7 +1085,7 @@ function exposeAPI() {
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,
     render: () => {
-      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null, combatMarks: combat.active && combat.projectMarks ? combat.projectMarks(camera, window.innerWidth, window.innerHeight) : null }); } catch {}
+      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), hudExtras()); } catch {}
       syncPlaneMesh();
       renderFrame(performance.now() / 1000, 1 / 60);
     },
@@ -1048,6 +1119,16 @@ function exposeAPI() {
         handleCraftEvents();
         maybeRespawn();
         if (mode === "fly") missions.update(PHYS.dt, i * PHYS.dt, craft, camera, stepInp);
+        if (mode === "fly" && combat.active) {
+          const c = combat.update(PHYS.dt, craft, stepInp);
+          if (c.done && missions.state.active && !missions.state.result) {
+            missions.complete(c.stars, { line: c.line, bestStreak: 0 });
+            if (c.stars > 0) {
+              awardStars(save, missions.state.active.id, c.stars, { time: missions.state.t, line: c.line });
+              missions.state.result.pay = awardPay(save, c.stars, 0);
+            }
+          }
+        }
         flyCam.update(PHYS.dt, craft, ui.isPortrait && ui.isPortrait());
       }
       syncPlaneMesh();

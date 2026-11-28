@@ -1328,3 +1328,40 @@ body.touch-portrait #hud-health { top: 64px; }
 .story-card { max-width: 420px; }
 .story-who { font-family: Itim, "Patrick Hand", cursive; font-size: 18px; margin: 0 0 6px; }
 .story-text { margin: 0 0 14px; line-height: 1.45; }
+
+#hud-streak {
+  position: absolute;
+  left: 12px;
+  top: 78px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  z-index: 8;
+  background: #fffaf0;
+  border: 2px solid #1a140c;
+  box-shadow: 2px 2px 0 #1a140c;
+}
+#hud-banter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 92px;
+  padding: 4px 12px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 8;
+  max-width: 60vw;
+  text-align: center;
+  background: #fffaf0;
+  border: 2px solid #1a140c;
+  box-shadow: 2px 2px 0 #1a140c;
+}
+body.touch-ui #hud-streak { left: 8px; top: 62px; font-size: 10px; padding: 2px 6px; }
+body.touch-ui #hud-banter { bottom: 64px; font-size: 12px; padding: 3px 8px; }
+.result-card { text-align: center; margin: 0 0 12px; }
+.result-card h2 { margin: 0 0 6px; font-family: Itim, "Patrick Hand", cursive; }
+.result-stars { font-size: 36px; letter-spacing: 0.12em; color: #c9a227; margin: 4px 0 8px; }
+.result-line { margin: 0 0 6px; font-size: 18px; }
+.result-meta { margin: 0 0 4px; color: #3a3028; }

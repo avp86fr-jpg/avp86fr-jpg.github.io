@@ -221,6 +221,11 @@ export function createMissionSystem(scene, world, audio) {
     state.mailHasBag = false;
     state.rival = null;
     state.rivalDelta = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    state.comboT = 0;
+    state.timeCredit = 0;
+    state.aim = null;
   }
 
   function add(o) { group.add(o); state.objects.push(o); return o; }
@@ -551,12 +556,34 @@ export function createMissionSystem(scene, world, audio) {
       else if (b.axis === "z") p.z += w * b.amp;
       else p.y += w * b.amp;
     }
+    // Wind-rings: a gentle drift on the breeze, stronger on every other hoop.
+    const idx = mesh.userData.index || 0;
+    const wind = state.wind || { deg: 40, kt: 6 };
+    const rad = ((wind.deg || 40) * Math.PI) / 180;
+    const kt = wind.kt || 6;
+    const amp = (idx % 2 === 1 ? 7.5 : 4.2) + kt * 0.35;
+    p.x += Math.sin(time * 0.55 + idx) * amp + Math.cos(rad) * kt * 0.22;
+    p.z += Math.cos(time * 0.42 + idx * 0.7) * (amp * 0.7) + Math.sin(rad) * kt * 0.22;
+    p.y += Math.sin(time * 0.35 + idx) * (idx % 2 === 1 ? 2.4 : 1.1);
+    mesh.userData.windRing = (idx % 2 === 1);
     return p;
+  }
+
+  function bumpStreak() {
+    if (state.comboT <= 0) state.streak = 0;
+    state.streak += 1;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    state.comboT = 3.2;
+    state.timeCredit = (state.timeCredit || 0) + (state.streak >= 3 ? 1.15 : 0.55);
+  }
+
+  function setWind(deg, kt) {
+    state.wind = { deg: deg ?? 40, kt: kt ?? 6 };
   }
 
   function finish(stars, detail = {}) {
     if (state.result) return;
-    state.result = { stars, ...detail, time: state.t, mission: state.active };
+    state.result = { stars, bestStreak: state.bestStreak || 0, timeCredit: state.timeCredit || 0, ...detail, time: state.t, mission: state.active };
     state.starsAwarded = stars;
     if (stars > 0) audio?.play(stars >= 3 ? "star" : "success");
     state.message = stars > 0
@@ -565,10 +592,11 @@ export function createMissionSystem(scene, world, audio) {
   }
 
   function starsFromTime(m, t) {
+    const adj = Math.max(0, t - (state.timeCredit || 0));
     const lim = m.timeLimits || [120, 90, 70];
-    if (t <= lim[2]) return 3;
-    if (t <= lim[1]) return 2;
-    if (t <= lim[0]) return 1;
+    if (adj <= lim[2]) return 3;
+    if (adj <= lim[1]) return 2;
+    if (adj <= lim[0]) return 1;
     return 0;
   }
 
@@ -632,6 +660,10 @@ export function createMissionSystem(scene, world, audio) {
       return state;
     }
     state.t += dt;
+    if (state.comboT > 0) {
+      state.comboT -= dt;
+      if (state.comboT <= 0) state.streak = 0;
+    }
     if (cam) {
       const curRing = (m.activity === "rings") ? state.objects[state.next]
         : (state.mailStops[state.next] || state.objects[state.next]);
@@ -649,12 +681,14 @@ export function createMissionSystem(scene, world, audio) {
         const tint = (color) => {
           cur.traverse((o) => { if (o.material && o.material.color && o.material.color.set && !o.material.transparent) o.material.color.set(color); });
         };
-        tint(0xffc45a);
+        tint(cur.userData.windRing ? 0x8ec8e8 : 0xffc45a);
+        state.aim = { x: p.x, y: p.y, z: p.z, wind: !!cur.userData.windRing, label: cur.userData.windRing ? "WIND RING" : "NEXT RING" };
         const d = craft.pos.distanceTo(p);
         const rad = (cur.userData.base && cur.userData.base.r) || 18;
         if (d < rad + 5.5) {
           state.next++;
           state.ringsPassed++;
+          bumpStreak();
           audio?.play("ring");
           feelFX?.burstRing(p);
           tint(0x5a2208);
@@ -735,10 +769,12 @@ export function createMissionSystem(scene, world, audio) {
         followMoving(cur);
         cur.rotation.z = time * 0.55;
         const stop = cur.userData.stop;
+        state.aim = { x: cur.position.x, y: cur.position.y, z: cur.position.z, wind: false, label: stop.type === "pickup" ? "PICK UP" : (stop.type === "drop" ? "DROP" : "NEXT") };
         const d = craft.pos.distanceTo(cur.position);
         if (d < stop.r + 6) {
           if (stop.type === "pickup") state.mailHasBag = true;
           state.next++;
+          bumpStreak();
           if (stop.type === "drop") {
             audio?.play("success");
             feelFX?.burstMail(cur.position, true);
@@ -840,7 +876,7 @@ export function createMissionSystem(scene, world, audio) {
       }
     });
   }
-  return { state, group, start, update, clear, abort, complete: finish, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight, setFeelFX };
+  return { state, group, start, update, clear, abort, complete: finish, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight, setFeelFX, setWind };
 
 
 }

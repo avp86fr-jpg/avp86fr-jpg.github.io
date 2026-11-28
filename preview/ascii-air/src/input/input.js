@@ -28,6 +28,7 @@ export function createInput(root) {
     fireHeld: false,
     mouseFire: false,
     touchFire: false,
+    debugFire: false,
   };
 
   let actionWas = false;
@@ -129,7 +130,7 @@ export function createInput(root) {
     const brake = brakeHeld && !boost;
     if (boost) state.throttleLever = Math.max(state.throttleLever, 1);
     const lookBack = any(KEYS.look || []) || !!state.lookHeld;
-    const fireHeld = any(KEYS.fire || []) || !!state.touchFire || !!state.mouseFire || !!(gp && gp.fire);
+    const fireHeld = any(KEYS.fire || []) || !!state.touchFire || !!state.mouseFire || !!state.debugFire || !!(gp && gp.fire);
 
     const out = {
       pitch, roll, yaw, throttle, throttleSet,
@@ -206,5 +207,6 @@ export function createInput(root) {
     state.gyroPitch = 0;
   }
 
-  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setTouchFire, setLookBack, resetThrottleLever, setGyro, disableGyro, calibrateGyro, state, keys };
+  function setDebugFire(v) { state.debugFire = !!v; }
+  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setTouchFire, setDebugFire, setLookBack, resetThrottleLever, setGyro, disableGyro, calibrateGyro, state, keys };
 }

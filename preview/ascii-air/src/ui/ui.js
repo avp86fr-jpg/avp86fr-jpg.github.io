@@ -80,6 +80,8 @@ export function createUI(root, hooks) {
     </div>
     <div class="album-panel" id="hud-mission"></div>
     <div class="album-panel hidden" id="hud-health"><div class="hp-label">HEALTH</div><div class="hp-track"><div class="hp-fill" id="hp-fill"></div></div></div>
+    <div class="album-panel hidden" id="hud-streak"></div>
+    <div class="album-panel hidden" id="hud-banter"></div>
     <canvas id="hud-combat-marks" class="hidden" width="1920" height="1080"></canvas>
     <div class="banner hud-line" id="hud-msg"></div>
     <div class="album-panel hidden" id="hud-minimap"></div>
@@ -140,21 +142,27 @@ export function createUI(root, hooks) {
     title.classList.remove("hidden");
     const stars = totalStars(save);
     const canContinue = !!(save.lastMode || save.lastMission || stars);
-    const items = [
-      {
+    const items = [];
+    if (!save.seenIntro) {
+      items.push({ label: "First Flight", primary: true, fn: () => hooks.onOnboard?.() });
+    } else {
+      items.push({
         label: canContinue ? "Continue" : "PLAY",
         primary: true,
         fn: () => {
           if (canContinue && save.lastMode === "mission" && save.lastMission) hooks.onStartMission?.(save.lastMission);
           else hooks.onFreeFlight?.();
         },
-      },
+      });
+    }
+    items.push(
       { label: "Airmail", fn: () => showMissions(save) },
       { label: "Defend the Mail", fn: () => showDogfights(save) },
       { label: "Free Flight", fn: () => hooks.onFreeFlight?.() },
+      { label: "Workshop", fn: () => showWorkshop(save) },
       { label: "Options", fn: () => showOptions(save, "title") },
       { label: "Credits", fn: () => showCredits(save) },
-    ];
+    );
     renderMenu(title.querySelector("#title-menu"), items, save);
     const hint = title.querySelector("#ios-hint");
     if (iosFullscreenHint()) {
@@ -399,8 +407,39 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         fn: () => { if (un) { hooks.onSelectPlane?.(p.id); closeOverlay(); showTitle(save); } },
       };
     });
+    items.push({ label: "Workshop", fn: () => showWorkshop(save) });
     items.push({ label: "Back", fn: () => showOptions(save, "title") });
     const p = openOverlay(`<div class="album-sheet"><h2>Hangar</h2><div id="mlist" class="album-nav"></div></div>`);
+    renderMenu(p.querySelector("#mlist"), items, save);
+  }
+
+
+  function showWorkshop(save) {
+    const costs = { tight: 8, guns: 10, pace: 12 };
+    const info = {
+      tight: { name: "Tighter turn", blurb: "Ailerons and elevator answer a little quicker." },
+      guns: { name: "Fitted guns", blurb: "A shorter burst and a firmer hit. They still only break off." },
+      pace: { name: "Mail pace", blurb: "A touch more cruise for the daily run." },
+    };
+    const u = save.upgrades || {};
+    const pay = save.pay | 0;
+    const items = Object.keys(costs).map((id) => {
+      const owned = !!u[id];
+      const cost = costs[id];
+      return {
+        label: owned ? (info[id].name + "  ✓") : (info[id].name + "  (" + cost + " pay)"),
+        fn: () => {
+          if (owned) return;
+          if (hooks.onBuyUpgrade?.(id)) showWorkshop(save);
+          else showWorkshop(save);
+        },
+      };
+    });
+    items.push({ label: "Back", fn: () => showHangar(save) });
+    const p = openOverlay(`<div class="album-sheet"><h2>Workshop</h2>
+      <p class="sheet-meta">Mail pay: ${pay}</p>
+      <p class="sheet-brief">Spend earnings from completed runs on modest aircraft work. Stars on the board stay yours.</p>
+      <div id="mlist" class="album-nav"></div></div>`);
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
@@ -542,16 +581,25 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   function showResult(save, result) {
     state.screen = "result";
     const stars = result.stars | 0;
-    const p = openOverlay(`<pre style="margin:0 0 10px">${result.mission?.title || "MISSION"}
-
-${"★".repeat(stars)}${"☆".repeat(3 - stars)}   ${result.line || ""}
-time  ${formatTime(result.time || 0)}
-</pre><div id="mlist"></div>`);
     const isFight = result.mission && result.mission.activity === "dogfight";
+    const streak = result.bestStreak | 0;
+    const pay = result.pay | 0;
+    const bits = [];
+    bits.push(`<div class="result-card"><h2>${result.mission?.title || "MISSION"}</h2>`);
+    bits.push(`<div class="result-stars">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</div>`);
+    bits.push(`<p class="result-line">${result.line || (stars ? "COMPLETE" : "FAILED")}</p>`);
+    bits.push(`<p class="result-meta">Time ${formatTime(result.time || 0)}`);
+    if (streak >= 2) bits.push(` · Streak ×${streak}`);
+    if (pay) bits.push(` · Mail pay +${pay}`);
+    bits.push(`</p>`);
+    if (isFight && stars) bits.push(`<p class="result-meta">The sky is yours. The bag stays on board.</p>`);
+    bits.push(`</div><div id="mlist"></div>`);
+    const p = openOverlay(bits.join(""));
     renderMenu(p.querySelector("#mlist"), [
       { label: "Retry", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
       { label: "Next", primary: true, fn: () => { closeOverlay(); hooks.onNextMission?.(); } },
       { label: isFight ? "Stories" : "Airmail", fn: () => { closeOverlay(); hooks.onQuit?.(); isFight ? showDogfights(save) : showMissions(save); } },
+      { label: "Workshop", fn: () => showWorkshop(save) },
     ], save);
   }
 
@@ -695,6 +743,22 @@ time  ${formatTime(result.time || 0)}
         hpEl.classList.add("hidden");
         hpEl.classList.remove("flash");
       }
+    }
+    const streakEl = hud.querySelector("#hud-streak");
+    if (streakEl) {
+      const st = mission && mission.streak;
+      if (st && st >= 2 && mission && mission.active && !mission.result) {
+        streakEl.classList.remove("hidden");
+        streakEl.textContent = "STREAK ×" + st;
+      } else streakEl.classList.add("hidden");
+    }
+    const banterEl = hud.querySelector("#hud-banter");
+    if (banterEl) {
+      const line = combat && combat.banter;
+      if (line) {
+        banterEl.classList.remove("hidden");
+        banterEl.textContent = line;
+      } else banterEl.classList.add("hidden");
     }
     drawCombatMarks(combat, ctx);
     if (mobile && mobile.setFireVisible) mobile.setFireVisible(!!(combat && combat.active && mission && mission.active && !mission.result));
@@ -1031,11 +1095,42 @@ time  ${formatTime(result.time || 0)}
     const g = c.getContext("2d");
     g.clearRect(0, 0, w, h);
     const marks = (combat && combat.active && ctx && ctx.combatMarks) ? ctx.combatMarks : null;
-    if (!marks || !marks.length) {
+    const aim = ctx && ctx.aimMark;
+    if ((!marks || !marks.length) && !aim) {
       c.classList.add("hidden");
       return;
     }
     c.classList.remove("hidden");
+    if (aim) {
+      let ax = aim.x, ay = aim.y;
+      if (aim.behind) {
+        ax = aim.x < w * 0.5 ? 36 : w - 36;
+        ay = Math.max(70, Math.min(h - 80, ay));
+      } else {
+        ax = Math.max(28, Math.min(w - 28, ax));
+        ay = Math.max(48, Math.min(h - 48, ay));
+      }
+      g.fillStyle = aim.wind ? "#8ec8e8" : "#d4a84a";
+      g.strokeStyle = "#1a140c";
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(ax, ay - 16);
+      g.lineTo(ax + 12, ay + 8);
+      g.lineTo(ax, ay + 2);
+      g.lineTo(ax - 12, ay + 8);
+      g.closePath();
+      g.fill();
+      g.stroke();
+      if (aim.label) {
+        g.font = "11px Itim, Trebuchet MS, sans-serif";
+        g.textAlign = "center";
+        g.lineWidth = 3;
+        g.strokeStyle = "rgba(255,250,240,0.85)";
+        g.strokeText(aim.label, ax, ay + 22);
+        g.fillStyle = "#1a140c";
+        g.fillText(aim.label, ax, ay + 22);
+      }
+    }
     for (const m of marks) {
       if (!m.on) continue;
       const sz = m.boss ? 28 : 22;
@@ -1199,7 +1294,7 @@ time  ${formatTime(result.time || 0)}
   }
 
   return {
-    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showDogfights, showStory, showHangar, showOptions, showAlbum, showBrief, showCredits,
+    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showDogfights, showStory, showHangar, showWorkshop, showOptions, showAlbum, showBrief, showCredits,
     updateHUD, closeOverlay, menuMove, menuOk, isPortrait, setMiniMap, state, wrap, loading, hud, overlay, mobile,
     elements() {
       // all visible interactive + hud boxes for overlap tests

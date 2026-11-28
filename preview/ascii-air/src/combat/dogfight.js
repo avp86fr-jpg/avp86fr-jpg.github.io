@@ -192,7 +192,10 @@ export function createCombat(scene) {
   let done = null;
   let t = 0;
   let hitFlash = 0;
-  const events = { fired: false, hits: 0, broke: null, playerHit: false };
+  const events = { fired: false, hits: 0, broke: null, playerHit: false, banter: null };
+  let banter = "";
+  let banterT = 0;
+  let gunMul = 1;
   const enemies = [];
   const tracers = [];
   const smokes = [];
@@ -271,7 +274,16 @@ export function createCombat(scene) {
     if (first.boss && !list.some((u) => u.boss)) list[0] = { ...list[0], boss: true };
     spawnWave(list, craft);
     syncMeshes();
+    say("PIP: I have your wing.");
+    gunMul = (craft && craft.upgrades && craft.upgrades.guns) ? 1.28 : 1;
     return getState();
+  }
+
+  function say(line) {
+    if (banterT > 0.4 && banter) return;
+    banter = line;
+    banterT = 2.4;
+    events.banter = line;
   }
 
   function end() {
@@ -316,7 +328,7 @@ export function createCombat(scene) {
         FWD.lerp(TMP, 0.42).normalize();
       }
     }
-    cool = 0.11;
+    cool = gunMul > 1 ? 0.08 : 0.11;
     events.fired = true;
     const muzzle = TMP2.copy(craft.pos).addScaledVector(FWD, 6);
     muzzle.y += 0.4;
@@ -330,7 +342,7 @@ export function createCombat(scene) {
       if (along < 4 || along > 280) continue;
       const close = TMP.lengthSq() - along * along;
       if (close < 4.2 * 4.2) {
-        e.hp -= 11;
+        e.hp -= gunMul > 1 ? 14 : 11;
         events.hits++;
         puff(e.x, e.y, e.z, 0.7);
         if (e.hp <= 0) {
@@ -340,6 +352,7 @@ export function createCombat(scene) {
           message = e.boss ? "BARON ROOK BREAKS OFF" : "BANDIT BREAKS OFF";
           msgT = 2.2;
           events.broke = e.boss ? "boss" : "bandit";
+          say(e.boss ? "PIP: The Baron is trailing smoke!" : "PIP: He's breaking — let him go.");
         } else if (e.state === "chase") {
           e.state = "break";
           e.stateT = 0;
@@ -387,7 +400,6 @@ export function createCombat(scene) {
       if (e.state === "chase") {
         const lead = 0.7 + (e.boss ? 0.25 : 0);
         steerToward(e, px + FWD.x * 18 * lead, py + 2, pz + FWD.z * 18 * lead, dt, e.boss ? 1.55 : 1.35);
-        // Occasional warning shots if the player is ahead in the cone
         headingToQuat(e.heading, e.pitch, e.roll, Q);
         forwardFromQuat(Q, TMP);
         TMP2.set(dx, dy, dz).normalize();
@@ -401,9 +413,32 @@ export function createCombat(scene) {
             events.playerHit = true;
             message = "HIT — BREAK OFF";
             msgT = 1.1;
+            say("PIP: Shake him, I am with you.");
           }
         }
         if (e.hp / e.max < 0.32) { e.state = "flee"; e.stateT = 0; }
+        else if (e.stateT > 2.3 + (e.slot % 3) * 0.6) {
+          const pick = (e.slot + Math.floor(t * 3) + Math.floor(e.stateT)) % 5;
+          e.state = pick === 0 ? "yo-yo" : pick === 1 ? "scissor" : pick === 2 ? "split" : "chase";
+          e.stateT = 0;
+        }
+      } else if (e.state === "yo-yo") {
+        steerToward(e, px + 8, py + 58, pz - 8, dt, 1.55);
+        e.pitch = Math.min(0.55, e.pitch + 0.45 * dt);
+        if (e.stateT > 1.05) { e.state = "dive"; e.stateT = 0; }
+      } else if (e.state === "dive") {
+        steerToward(e, px, py - 16, pz, dt, 1.75);
+        e.pitch = Math.max(-0.52, e.pitch - 0.55 * dt);
+        if (e.stateT > 1.35) { e.state = "chase"; e.stateT = 0; }
+      } else if (e.state === "scissor") {
+        e.heading += Math.sin(e.stateT * 4.2) * 2.8 * dt * (e.slot % 2 ? 1 : -1);
+        e.roll = Math.sin(e.stateT * 4.2) * 0.85;
+        steerToward(e, px, py + 8, pz, dt, 0.65);
+        if (e.stateT > 2.15) { e.state = "chase"; e.stateT = 0; }
+      } else if (e.state === "split") {
+        e.heading += (e.slot % 2 ? 1 : -1) * 1.7 * dt;
+        e.pitch = e.stateT < 0.45 ? Math.min(0.42, e.pitch + 0.75 * dt) : Math.max(-0.48, e.pitch - 0.85 * dt);
+        if (e.stateT > 1.75) { e.state = "chase"; e.stateT = 0; }
       } else if (e.state === "break") {
         e.heading += (e.slot % 2 ? 1 : -1) * 2.1 * dt;
         e.pitch = Math.max(-0.25, e.pitch - 0.15 * dt);
@@ -525,8 +560,10 @@ export function createCombat(scene) {
 
   function update(dt, craft, input) {
     if (!active || done) return getState();
-    events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false;
+    events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false; events.banter = null;
     t += dt;
+    if (banterT > 0) banterT -= dt;
+    if (banterT <= 0) banter = "";
     cool = Math.max(0, cool - dt);
     enemyCool = Math.max(0, enemyCool - dt);
     hitFlash = Math.max(0, hitFlash - dt);
@@ -585,6 +622,7 @@ export function createCombat(scene) {
       stars: done ? done.stars : 0,
       line: done ? done.line : "",
       hitFlash,
+      banter: banterT > 0 ? banter : "",
       aim: cool <= 0,
       enemies: enemies.filter((e) => e.live).map((e) => ({
         x: e.x, y: e.y, z: e.z, boss: !!e.boss, state: e.state,
