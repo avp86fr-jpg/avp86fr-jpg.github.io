@@ -76,10 +76,17 @@ void main() {
   vec2 qIsle = (vWorld.xz - vec2(0.0, -200.0)) / vec2(1120.0, 1320.0);
   float sd = length(qIsle) - 1.0;
   float off = sd * 1200.0; // metres-ish
-  // Sister isles — foam hugs their beaches too
-  float sdCay = length((vWorld.xz - vec2(260.0, -2280.0)) / vec2(95.0, 72.0)) - 1.0;
-  float sdCed = length((vWorld.xz - vec2(1980.0, -380.0)) / vec2(130.0, 100.0)) - 1.0;
-  off = min(off, min(sdCay * 140.0, sdCed * 180.0));
+  // Sister isles — wrinkled shoreline so foam follows the coves
+  vec2 dCay = vWorld.xz - vec2(260.0, -2280.0);
+  float aCay = atan(dCay.y, dCay.x);
+  float wrCay = 1.0 + 0.16 * sin(aCay * 3.0 + 0.4) + 0.07 * sin(aCay * 5.0 - 0.8);
+  float sdCay = length(dCay / (vec2(95.0, 72.0) * wrCay)) - 1.0;
+  vec2 dCed = vWorld.xz - vec2(1980.0, -380.0);
+  float aCed = atan(dCed.y, dCed.x);
+  float wrCed = 1.0 + 0.18 * sin(aCed * 2.2 + 0.2) + 0.08 * sin(aCed * 4.1 + 1.1);
+  float west = dCed.x < 0.0 ? 0.86 : 1.12;
+  float sdCed = length(dCed / (vec2(138.0 * west, 108.0) * wrCed)) - 1.0;
+  off = min(off, min(sdCay * 130.0, sdCed * 170.0));
   float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 200.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
   float capeShore = sat(1.0 - length(vWorld.xz - vec2(-150.0, -1270.0)) / 260.0);
   float eastShore = sat(1.0 - length(vWorld.xz - vec2(140.0, -1280.0)) / 240.0);

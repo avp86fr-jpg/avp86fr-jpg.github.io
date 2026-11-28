@@ -3,6 +3,7 @@ import { MAT, QUALITY, LANDMARKS } from "../core/config.js";
 import { retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { triplanarLambert, loadTex } from "../render/textured.js";
 import { fbm } from "./noise.js";
+import { isleHeightAt } from "./isles.js";
 
 const GREENS = [0x3a5228, 0x2a4324, 0x4a5a32, 0x1e3a22, 0x3d4f2c];
 
@@ -334,7 +335,11 @@ function makeMeadow(terrain, quality) {
   const CELL = 3.4;
   const slots = [];
   const occupied = new Set();
-  const state = { x: 1e9, z: 1e9, dummy, radius, nGrass, nFlower, grass, flower, terrain };
+  const sample = {
+    heightAt: (x, z) => terrain && terrain.heightAt ? terrain.heightAt(x, z) : 0,
+    materialAt: (x, z) => terrain && terrain.materialAt ? terrain.materialAt(x, z) : 0,
+  };
+  const state = { x: 1e9, z: 1e9, dummy, radius, nGrass, nFlower, grass, flower, terrain, sample };
   function keyOf(ix, iz) { return ix + "," + iz; }
   function writeMeshes() {
     const t = (typeof performance !== "undefined" ? performance.now() : 0) * 0.001;
@@ -364,8 +369,9 @@ function makeMeadow(terrain, quality) {
   function refill(cx, cz, dt) {
     const R = radius;
     const Rkeep = radius + 18;
-    const H = terrain && terrain.heightAt;
-    const M = terrain && terrain.materialAt;
+    const H = sample.heightAt;
+    const M = sample.materialAt;
+    const cxh = arguments.length > 3 ? arguments[3] : state.camY;
     const next = [];
     occupied.clear();
     for (const s of slots) {
@@ -399,6 +405,9 @@ function makeMeadow(terrain, quality) {
         if (dx * dx + dz * dz > R * R) continue;
         const h = H ? H(x, z) : 0;
         if (!Number.isFinite(h) || h < 1.15 || h > 78) continue;
+        // Isle tufts only when flying low over them — keeps the high chain overview in budget.
+        const ih = isleHeightAt(x, z);
+        if (ih > 0.5 && (cxh == null || cxh > h + 48)) continue;
         const mat = M ? M(x, z) : MAT.GRASS;
         if (mat === MAT.SAND || mat === MAT.SEA || mat === MAT.WATER_DEEP || mat === MAT.RUNWAY || mat === MAT.ROCK) continue;
         const i = slots.length;
@@ -419,13 +428,19 @@ function makeMeadow(terrain, quality) {
     if (!cam) return;
     const dx = cam.position.x - state.x, dz = cam.position.z - state.z;
     const moved = dx * dx + dz * dz >= 16; // ~4 m — add cells ahead, fade the wake
-    if (force || moved) refill(cam.position.x, cam.position.z, force ? 1 : 0.16);
+    state.camY = cam.position.y;
+    if (force || moved) refill(cam.position.x, cam.position.z, force ? 1 : 0.16, cam.position.y);
     else {
       for (const s of slots) s.age = Math.min(1, s.age + 0.08);
       writeMeshes();
     }
   }
-  return { grass, flower, update, refill: (x, z) => refill(x, z, 1), group: [grass, flower] };
+  function setSample(heightAt, materialAt) {
+    if (heightAt) sample.heightAt = heightAt;
+    if (materialAt) sample.materialAt = materialAt;
+  }
+  return { grass, flower, update, setSample, refill: (x, z) => refill(x, z, 1), group: [grass, flower] };
+
 }
 
 function palmTrunkGeo() {
@@ -660,6 +675,7 @@ export function createFlora(scene, terrain, quality = "medium") {
   scene.add(group);
   return {
     group, treeCount: allTrees.length, palmCount: maxP, blobCount: blobs.length,
+    setSample: (h, m) => meadow.setSample && meadow.setSample(h, m),
     update(cam) {
       if (!cam) return;
       for (const lod of lods) tickLod(lod, cam, false);

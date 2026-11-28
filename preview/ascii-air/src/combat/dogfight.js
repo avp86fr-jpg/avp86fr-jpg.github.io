@@ -139,6 +139,23 @@ export function createCombat(scene) {
   inst.castShadow = false;
   group.add(inst);
 
+  const outlineMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+    color: 0x1a140c, side: THREE.BackSide, toneMapped: false, depthWrite: true,
+  }));
+  const outline = new THREE.InstancedMesh(banditGeo, outlineMat, MAX_BANDITS);
+  outline.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  outline.count = 0;
+  outline.frustumCulled = false;
+  outline.name = "bandit-outline";
+  group.add(outline);
+  const bossOutlineMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+    color: 0x1a140c, side: THREE.BackSide, toneMapped: false,
+  }));
+  const bossOutline = new THREE.Mesh(bossGeo, bossOutlineMat);
+  bossOutline.scale.setScalar(1.22 * 1.12);
+  bossOutline.visible = false;
+  group.add(bossOutline);
+
   const bossMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true }));
   const bossMesh = new THREE.Mesh(bossGeo, bossMat);
   bossMesh.visible = false;
@@ -175,15 +192,18 @@ export function createCombat(scene) {
   let done = null;
   let t = 0;
   let hitFlash = 0;
+  const events = { fired: false, hits: 0, broke: null, playerHit: false };
   const enemies = [];
   const tracers = [];
   const smokes = [];
 
   function hideAllInstances() {
     inst.count = 0;
+    outline.count = 0;
     tracersMesh.count = 0;
     smokeMesh.count = 0;
     inst.instanceMatrix.needsUpdate = true;
+    outline.instanceMatrix.needsUpdate = true;
     tracersMesh.instanceMatrix.needsUpdate = true;
     smokeMesh.instanceMatrix.needsUpdate = true;
     bossMesh.visible = false;
@@ -241,6 +261,7 @@ export function createCombat(scene) {
     done = null;
     t = 0;
     hitFlash = 0;
+    events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false;
     enemies.length = 0;
     tracers.length = 0;
     smokes.length = 0;
@@ -296,6 +317,7 @@ export function createCombat(scene) {
       }
     }
     cool = 0.11;
+    events.fired = true;
     const muzzle = TMP2.copy(craft.pos).addScaledVector(FWD, 6);
     muzzle.y += 0.4;
     spawnTracer(muzzle.x, muzzle.y, muzzle.z, FWD.x, FWD.y, FWD.z, 220, "player");
@@ -309,6 +331,7 @@ export function createCombat(scene) {
       const close = TMP.lengthSq() - along * along;
       if (close < 4.2 * 4.2) {
         e.hp -= 11;
+        events.hits++;
         puff(e.x, e.y, e.z, 0.7);
         if (e.hp <= 0) {
           e.state = "flee";
@@ -316,6 +339,7 @@ export function createCombat(scene) {
           e.hp = 0;
           message = e.boss ? "BARON ROOK BREAKS OFF" : "BANDIT BREAKS OFF";
           msgT = 2.2;
+          events.broke = e.boss ? "boss" : "bandit";
         } else if (e.state === "chase") {
           e.state = "break";
           e.stateT = 0;
@@ -373,7 +397,8 @@ export function createCombat(scene) {
           enemyCool = e.boss ? 0.28 : 0.55;
           if (ang < 0.14 && dist < 140) {
             health = Math.max(0, health - (e.boss ? 8 : 6));
-            hitFlash = 0.28;
+            hitFlash = 0.35;
+            events.playerHit = true;
             message = "HIT — BREAK OFF";
             msgT = 1.1;
           }
@@ -427,24 +452,31 @@ export function createCombat(scene) {
     for (const e of enemies) {
       if (!e.live) continue;
       headingToQuat(e.heading, e.pitch, e.roll, Q);
-      S.set(e.boss ? 0.01 : 1.0, e.boss ? 0.01 : 1.0, e.boss ? 0.01 : 1.0); // hide instanced boss (shown as unique mesh)
       if (e.boss) {
         boss = e;
-        // keep a hidden dummy slot so count stays stable? skip instance
         continue;
       }
       M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(1, 1, 1));
-      inst.setMatrixAt(n++, M4);
+      inst.setMatrixAt(n, M4);
+      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(1.16, 1.16, 1.16));
+      outline.setMatrixAt(n, M4);
+      n++;
     }
     inst.count = n;
+    outline.count = n;
     inst.instanceMatrix.needsUpdate = true;
+    outline.instanceMatrix.needsUpdate = true;
     if (boss) {
       headingToQuat(boss.heading, boss.pitch, boss.roll, Q);
       bossMesh.visible = true;
       bossMesh.position.set(boss.x, boss.y, boss.z);
       bossMesh.quaternion.copy(Q);
+      bossOutline.visible = true;
+      bossOutline.position.set(boss.x, boss.y, boss.z);
+      bossOutline.quaternion.copy(Q);
     } else {
       bossMesh.visible = false;
+      bossOutline.visible = false;
     }
 
     let tn = 0;
@@ -493,6 +525,7 @@ export function createCombat(scene) {
 
   function update(dt, craft, input) {
     if (!active || done) return getState();
+    events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false;
     t += dt;
     cool = Math.max(0, cool - dt);
     enemyCool = Math.max(0, enemyCool - dt);
@@ -553,9 +586,43 @@ export function createCombat(scene) {
       line: done ? done.line : "",
       hitFlash,
       aim: cool <= 0,
-      enemies: enemies.filter((e) => e.live).map((e) => ({ x: e.x, y: e.y, z: e.z, boss: !!e.boss, state: e.state })),
+      enemies: enemies.filter((e) => e.live).map((e) => ({
+        x: e.x, y: e.y, z: e.z, boss: !!e.boss, state: e.state,
+        heading: e.heading, speed: e.speed, hp: e.hp, max: e.max,
+      })),
+      events: { fired: events.fired, hits: events.hits, broke: events.broke, playerHit: events.playerHit },
     };
   }
 
-  return { start, end, update, getState, get active() { return active; }, group };
+  const _proj = new THREE.Vector3();
+  function projectMarks(camera, w, h) {
+    const marks = [];
+    if (!active || !camera) return marks;
+    for (const e of enemies) {
+      if (!e.live) continue;
+      _proj.set(e.x, e.y, e.z).project(camera);
+      const behind = _proj.z > 1;
+      const sx = (_proj.x * 0.5 + 0.5) * w;
+      const sy = (-_proj.y * 0.5 + 0.5) * h;
+      const tLead = 0.7;
+      _proj.set(
+        e.x + Math.cos(e.heading) * e.speed * tLead,
+        e.y + Math.sin(e.pitch || 0) * e.speed * tLead,
+        e.z + Math.sin(e.heading) * e.speed * tLead,
+      ).project(camera);
+      const lx = (_proj.x * 0.5 + 0.5) * w;
+      const ly = (-_proj.y * 0.5 + 0.5) * h;
+      marks.push({
+        x: sx, y: sy, lx, ly, behind,
+        on: !behind && _proj.z <= 1 && sx > -40 && sx < w + 40 && sy > -40 && sy < h + 40,
+        hp: e.max ? e.hp / e.max : 1,
+        boss: !!e.boss,
+        state: e.state,
+      });
+    }
+    return marks;
+  }
+
+  return { start, end, update, getState, projectMarks, get active() { return active; }, group };
+
 }

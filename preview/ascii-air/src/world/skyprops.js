@@ -30,10 +30,10 @@ function paintCloudAtlas() {
     ctx.beginPath();
     ctx.rect(x0 + 4, y0 + 4, 504, 504);
     ctx.clip();
-    const sun = [255, 252, 245];
-    const mid = [248, 244, 236];
-    const shade = [222, 230, 242];
-    const lav = [214, 222, 236];
+    const sun = [255, 248, 228];
+    const mid = [232, 228, 218];
+    const shade = [168, 192, 222];
+    const lav = [148, 174, 210];
     // kind 0 wide bank, 1 tall tower, 2 mid puff, 3 anvil
     const stacks = {
       0: [
@@ -157,14 +157,16 @@ function makeCloudMaterial(tex) {
       varying vec2 vUv;
       void main() {
         vec4 t = texture2D(uMap, vUv);
-        float a = smoothstep(0.06, 0.40, t.a);
-        if (a < 0.02) discard;
+        float a = smoothstep(0.05, 0.38, t.a);
+        if (a < 0.016) discard;
         vec3 col = t.rgb;
-        // Keep cores sunlit cream; allow pale lavender in the shade, never dirty grey.
-        col = max(col, vec3(0.82, 0.86, 0.92));
-        col = mix(vec3(0.99, 0.98, 0.95), col, 0.90);
-        col = mix(col, col * vec3(0.72, 0.76, 0.84), uStorm);
-        // Premultiply once in the shader; dest matId is preserved by CustomBlending.
+        // Warm lit tops, soft blue shadows — never floor the shade up to white.
+        float lum = dot(col, vec3(0.25, 0.55, 0.20));
+        vec3 sun = vec3(1.0, 0.96, 0.86);
+        vec3 shade = vec3(0.58, 0.70, 0.86);
+        col = mix(shade, col, smoothstep(0.72, 0.94, lum));
+        col = mix(col, sun, smoothstep(0.90, 1.0, lum) * 0.42);
+        col = mix(col, col * vec3(0.70, 0.75, 0.84), uStorm);
         gl_FragColor = vec4(col * a, a);
       }
     `,

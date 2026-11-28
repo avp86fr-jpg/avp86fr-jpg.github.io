@@ -692,6 +692,11 @@ function step(now) {
       const st = missions.update(dtRaw, now / 1000, craft, camera, inp);
       if (combat.active) {
         const c = combat.update(dtRaw, craft, inp);
+        const ev = c.events || {};
+        if (ev.fired) audio.play("ui_ok", { gain: 0.18, playbackRate: 1.8 });
+        if (ev.hits) { audio.play("balloon_pop", { gain: 0.55, playbackRate: 1.2 }); flyCam.bump(0.22); }
+        if (ev.broke) audio.play(ev.broke === "boss" ? "star" : "success", { gain: 0.7 });
+        if (ev.playerHit) { audio.play("stall", { gain: 0.5 }); flyCam.bump(0.42); }
         if (c.done && !st.result) {
           missions.complete(c.stars, { line: c.line });
         }
@@ -725,7 +730,7 @@ function step(now) {
       if (craft.stalled && !craft.onGround) {
         if (!step._stallT || now - step._stallT > 280) { audio.play("stall", { gain: 0.4 }); step._stallT = now; }
       }
-      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null });
+      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null, combatMarks: combat.active && combat.projectMarks ? combat.projectMarks(camera, window.innerWidth, window.innerHeight) : null });
     }
   }
 
@@ -753,16 +758,17 @@ async function boot() {
   ui.setLoad(0.5, "raising the island…");
   island = createIsland(scene, settings.quality || "medium");
   if (ui.setMiniMap) {
-    const S = 96, world = 3000, data = new Uint8Array(S * S);
+    const S = 128, world = 5000, originX = 200, originZ = -500;
+    const data = new Uint8Array(S * S);
     for (let j = 0; j < S; j++) {
       for (let i = 0; i < S; i++) {
-        const x = (i + 0.5) / S * world - world / 2;
-        const z = world / 2 - (j + 0.5) / S * world;
+        const x = originX + ((i + 0.5) / S - 0.5) * world;
+        const z = originZ + (0.5 - (j + 0.5) / S) * world;
         const h = island.heightAt(x, z);
         data[j * S + i] = h > 0.5 ? Math.min(255, 40 + h) : 0;
       }
     }
-    ui.setMiniMap({ S, world, data });
+    ui.setMiniMap({ S, world, originX, originZ, data, label: "5 km" });
   }
   {
     const meshes = [];
@@ -811,7 +817,7 @@ function hudShot() {
   ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), {
     weather: weather && weather.state,
     save: Object.assign({}, save, { starsTotal: totalStars(save) }),
-    combat: combat.active ? combat.getState() : null,
+    combat: combat.active ? combat.getState() : null, combatMarks: combat.active && combat.projectMarks ? combat.projectMarks(camera, window.innerWidth, window.innerHeight) : null,
   });
 }
 
@@ -1008,7 +1014,7 @@ function exposeAPI() {
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,
     render: () => {
-      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null }); } catch {}
+      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null, combatMarks: combat.active && combat.projectMarks ? combat.projectMarks(camera, window.innerWidth, window.innerHeight) : null }); } catch {}
       syncPlaneMesh();
       renderFrame(performance.now() / 1000, 1 / 60);
     },

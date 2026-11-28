@@ -80,6 +80,7 @@ export function createUI(root, hooks) {
     </div>
     <div class="album-panel" id="hud-mission"></div>
     <div class="album-panel hidden" id="hud-health"><div class="hp-label">HEALTH</div><div class="hp-track"><div class="hp-fill" id="hp-fill"></div></div></div>
+    <canvas id="hud-combat-marks" class="hidden" width="1920" height="1080"></canvas>
     <div class="banner hud-line" id="hud-msg"></div>
     <div class="album-panel hidden" id="hud-minimap"></div>
     <div class="album-panel flight-bar" id="hud-flight">
@@ -681,14 +682,20 @@ time  ${formatTime(result.time || 0)}
       if (combat && combat.active) {
         hpEl.classList.remove("hidden");
         hpEl.classList.toggle("hurt", combat.health < 40);
+        hpEl.classList.toggle("flash", !!(combat.hitFlash && combat.hitFlash > 0.02));
         const fill = hpEl.querySelector("#hp-fill");
         if (fill) fill.style.width = Math.max(0, Math.min(100, combat.health)) + "%";
         const lab = hpEl.querySelector(".hp-label");
         if (lab) lab.textContent = "HEALTH  " + combat.health + (combat.message ? "  ·  " + combat.message : "");
+        const insH = safeInsets();
+        hpEl.style.top = ((touch ? 6 : 8) + insH.top + 46) + "px";
+        hpEl.style.left = "50%";
       } else {
         hpEl.classList.add("hidden");
+        hpEl.classList.remove("flash");
       }
     }
+    drawCombatMarks(combat, ctx);
     if (mobile && mobile.setFireVisible) mobile.setFireVisible(!!(combat && combat.active && mission && mission.active && !mission.result));
 
     miss.style.display = "";
@@ -1013,6 +1020,72 @@ time  ${formatTime(result.time || 0)}
   }
   function clamp01(t) { return t < 0 ? 0 : t > 1 ? 1 : t; }
 
+
+  function drawCombatMarks(combat, ctx) {
+    const c = hud.querySelector("#hud-combat-marks");
+    if (!c) return;
+    const w = window.innerWidth || 1920;
+    const h = window.innerHeight || 1080;
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const g = c.getContext("2d");
+    g.clearRect(0, 0, w, h);
+    const marks = (combat && combat.active && ctx && ctx.combatMarks) ? ctx.combatMarks : null;
+    if (!marks || !marks.length) {
+      c.classList.add("hidden");
+      return;
+    }
+    c.classList.remove("hidden");
+    for (const m of marks) {
+      if (!m.on) continue;
+      const sz = m.boss ? 28 : 22;
+      const col = m.state === "flee" ? "#d4a84a" : (m.boss ? "#c01418" : "#1a140c");
+      g.strokeStyle = col;
+      g.lineWidth = 2.4;
+      g.beginPath();
+      // corner brackets
+      const x = m.x, y = m.y, s = sz;
+      g.moveTo(x - s, y - s + 8); g.lineTo(x - s, y - s); g.lineTo(x - s + 8, y - s);
+      g.moveTo(x + s - 8, y - s); g.lineTo(x + s, y - s); g.lineTo(x + s, y - s + 8);
+      g.moveTo(x - s, y + s - 8); g.lineTo(x - s, y + s); g.lineTo(x - s + 8, y + s);
+      g.moveTo(x + s - 8, y + s); g.lineTo(x + s, y + s); g.lineTo(x + s, y + s - 8);
+      g.stroke();
+      // tiny health pip above the bracket
+      g.fillStyle = "#efe4c8";
+      g.strokeStyle = "#1a140c";
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.rect(x - 16, y - s - 9, 32, 5);
+      g.fill(); g.stroke();
+      g.fillStyle = m.hp < 0.35 ? "#c01418" : "#2a8a5a";
+      g.fillRect(x - 15, y - s - 8, 30 * Math.max(0, Math.min(1, m.hp)), 3);
+      if (m.state === "flee") {
+        g.fillStyle = "#1a140c";
+        g.font = "11px Itim, Trebuchet MS, sans-serif";
+        g.textAlign = "center";
+        g.fillText("BREAKING OFF", x, y + s + 14);
+      }
+      // lead indicator
+      if (m.lx != null && Math.hypot(m.lx - x, m.ly - y) > 8 && Math.hypot(m.lx - x, m.ly - y) < 280) {
+        g.strokeStyle = "#d4a84a";
+        g.fillStyle = "#d4a84a";
+        g.lineWidth = 1.8;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(m.lx, m.ly);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(m.lx, m.ly - 5);
+        g.lineTo(m.lx + 5, m.ly + 4);
+        g.lineTo(m.lx - 5, m.ly + 4);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = "#1a140c";
+        g.lineWidth = 1.2;
+        g.stroke();
+      }
+    }
+  }
+
   let miniSpec = null;
   function setMiniMap(spec) { miniSpec = spec; }
 
@@ -1031,10 +1104,13 @@ time  ${formatTime(result.time || 0)}
       c.setAttribute("aria-label", "Island map");
       const sc = document.createElement("div");
       sc.className = "mini-scale";
-      sc.textContent = "3 km";
+      sc.textContent = (miniSpec && miniSpec.label) || "5 km";
       mmap.appendChild(cap);
       mmap.appendChild(c);
       mmap.appendChild(sc);
+    } else {
+      const sc = mmap.querySelector(".mini-scale");
+      if (sc && miniSpec && miniSpec.label) sc.textContent = miniSpec.label;
     }
     return c;
   }
@@ -1045,6 +1121,8 @@ time  ${formatTime(result.time || 0)}
     const ctx = c.getContext("2d");
     const S = c.width;
     const W = (miniSpec && miniSpec.world) || 3000;
+    const ox = (miniSpec && miniSpec.originX) || 0;
+    const oz = (miniSpec && miniSpec.originZ) || 0;
     const n = (miniSpec && miniSpec.S) || 0;
     const data = miniSpec && miniSpec.data;
     if (data && n) {
@@ -1092,8 +1170,8 @@ time  ${formatTime(result.time || 0)}
     ctx.strokeStyle = "#14100a";
     ctx.lineWidth = 5;
     ctx.strokeRect(2, 2, S - 4, S - 4);
-    const toX = (x) => ((x + W / 2) / W) * S;
-    const toY = (z) => (1 - (z + W / 2) / W) * S;
+    const toX = (x) => ((x - ox) / W + 0.5) * S;
+    const toY = (z) => (0.5 - (z - oz) / W) * S;
     const px = toX(craft.pos.x), py = toY(craft.pos.z);
     const ang = headingToNorth(craft.heading);
     ctx.save();

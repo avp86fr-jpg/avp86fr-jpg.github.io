@@ -1276,20 +1276,33 @@ button.album-btn, button.ascii-btn {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: 10px;
-  min-width: 180px;
-  padding: 6px 12px 8px;
+  top: 52px;
+  min-width: 260px;
+  padding: 6px 14px 8px;
   pointer-events: none;
+  z-index: 8;
+  background: #fffaf0;
+  border: 3px solid #1a140c;
+  box-shadow: 3px 3px 0 #1a140c;
 }
-#hud-health .hp-label { font-size: 12px; letter-spacing: 0.06em; }
+#hud-health .hp-label { font-size: 13px; letter-spacing: 0.08em; font-weight: 700; color: #1a140c; }
 #hud-health .hp-track {
-  height: 8px;
+  height: 14px;
   background: #efe4c8;
   border: 2px solid #1a140c;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 #hud-health .hp-fill { height: 100%; background: #2a8a5a; width: 100%; }
 #hud-health.hurt .hp-fill { background: #c01418; }
+#hud-health.flash { outline: 3px solid #c01418; }
+#hud-combat-marks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+}
 .story-card { max-width: 420px; }
 .story-who { font-family: Itim, "Patrick Hand", cursive; font-size: 18px; margin: 0 0 6px; }
 .story-text { margin: 0 0 14px; line-height: 1.45; }

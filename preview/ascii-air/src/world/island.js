@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LANDMARKS } from "../core/config.js";
+import { LANDMARKS, MAT } from "../core/config.js";
 import { isleHeightAt, isleNormalAt, ISLES } from "./isles.js";
 import { createTerrain } from "./terrain.js";
 import { createWater } from "./water.js";
@@ -40,7 +40,11 @@ export function createIsland(scene, quality = "medium") {
     const hi = isleHeightAt(x, z);
     return hi > h0 ? hi : h0;
   }
-  function materialAt(x, z) { return terrain.materialAt(x, z); }
+  function materialAt(x, z) {
+    const hi = isleHeightAt(x, z);
+    if (hi > terrain.heightAt(x, z) + 0.4) return MAT.GRASS;
+    return terrain.materialAt(x, z);
+  }
   function normalAt(x, z) {
     const hi = isleHeightAt(x, z);
     if (hi > terrain.heightAt(x, z) + 0.4) {
@@ -95,7 +99,7 @@ export function createIsland(scene, quality = "medium") {
     sky.setHour(hour);
     if (typeof sky.tickStars === "function") sky.tickStars(time);
     water.update(time, sky);
-    landmarks.update(dt, time, hour, sky.night);
+    landmarks.update(dt, time, hour, sky.night, camera);
     if (life && life.update) life.update(dt, time, sky.night);
     if (water.setBoats && landmarks && landmarks.boats) {
       const list = landmarks.boats.filter((b) => b && (b.name === "steamer" || b.name === "boat")).map((b) => ({ x: b.position.x, z: b.position.z }));
@@ -121,9 +125,11 @@ export function createIsland(scene, quality = "medium") {
     if (landmarks && typeof landmarks.setWind === "function") landmarks.setWind(windKt, on);
   }
 
+  if (flora && flora.setSample) flora.setSample(heightAt, materialAt);
   return {
     terrain, sky, water, landmarks, flora, life, skyprops, thermals,
-    heightAt, materialAt, normalAt, isWater, landingSurface, thermalAt,
+    heightAt, materialAt, normalAt, isWater, landingSurface, thermalAt, // flora sample hooked below
+
     update, setStorm, LANDMARKS,
   };
 }
