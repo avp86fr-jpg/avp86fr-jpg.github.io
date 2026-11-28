@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { MAT, LANDMARKS, QUALITY } from "../core/config.js";
 import { isleHeightAt, buildIsleGround, ISLES } from "./isles.js";
 import { tagMesh, retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
-import { triplanarLambert, loadTex } from "../render/textured.js";
+import { triplanarLambert, loadTex, terrainLambert } from "../render/textured.js";
 
 const _col = new THREE.Color();
 
@@ -1685,6 +1685,72 @@ function makeHangingKeep() {
 
 
 
+function mergeIsleGround(meshes) {
+  const geos = [];
+  for (const o of meshes) {
+    o.updateMatrixWorld(true);
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    if (!g.getAttribute("normal")) g.computeVertexNormals();
+    geos.push(g);
+  }
+  let n = 0;
+  for (const g of geos) n += g.getAttribute("position").count;
+  const pos = new Float32Array(n * 3);
+  const nrm = new Float32Array(n * 3);
+  const col = new Float32Array(n * 3);
+  const idA = new Float32Array(n * 2);
+  const idx = [];
+  let base = 0;
+  for (const g of geos) {
+    const p = g.getAttribute("position");
+    const nn = g.getAttribute("normal");
+    const cc = g.getAttribute("color");
+    const id = g.getAttribute("aId");
+    for (let i = 0; i < p.count; i++) {
+      pos[(base + i) * 3] = p.getX(i);
+      pos[(base + i) * 3 + 1] = p.getY(i);
+      pos[(base + i) * 3 + 2] = p.getZ(i);
+      if (nn) {
+        nrm[(base + i) * 3] = nn.getX(i);
+        nrm[(base + i) * 3 + 1] = nn.getY(i);
+        nrm[(base + i) * 3 + 2] = nn.getZ(i);
+      }
+      if (cc) {
+        col[(base + i) * 3] = cc.getX(i);
+        col[(base + i) * 3 + 1] = cc.getY(i);
+        col[(base + i) * 3 + 2] = cc.getZ(i);
+      }
+      if (id) {
+        idA[(base + i) * 2] = id.getX(i);
+        idA[(base + i) * 2 + 1] = id.getY(i);
+      } else {
+        idA[(base + i) * 2] = MAT.GRASS;
+      }
+    }
+    if (g.index) {
+      const ia = g.index.array;
+      for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base);
+    } else {
+      for (let i = 0; i < p.count; i++) idx.push(base + i);
+    }
+    base += p.count;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.setAttribute("aId", new THREE.BufferAttribute(idA, 2));
+  geo.setIndex(idx);
+  const mat = terrainLambert();
+  mat.userData.matId = MAT.GRASS;
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.matId = MAT.GRASS;
+  mesh.name = "sister-isle-ground";
+  return mesh;
+}
+
 function mergeIsleDecor(root) {
   const geos = [];
   root.updateMatrixWorld(true);
@@ -1764,8 +1830,10 @@ function makeSisterIsles(H) {
   const root = new THREE.Group();
   root.name = "sister-isles";
   const batch = new THREE.Group();
-  batch.add(buildIsleGround("mailCay", 58));
-  batch.add(buildIsleGround("cedarIsle", 64));
+  const isleGround = mergeIsleGround([
+    buildIsleGround("mailCay", 58),
+    buildIsleGround("cedarIsle", 64),
+  ]);
 
   function palmAt(x, z, s = 1) {
     const y = Math.max(H(x, z), 0.4);
@@ -2084,6 +2152,7 @@ function makeSisterIsles(H) {
     batch.add(sp);
   }
 
+  root.add(isleGround);
   root.add(mergeIsleDecor(batch));
 
   const cardA = new THREE.PlaneGeometry(12.5, 40, 1, 24);
@@ -3683,7 +3752,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
   const sister = makeSisterIsles(H2);
   group.add(sister);
   const isleSheets = sister.userData.sheets || [];
-  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "keep-rock", "arch"]));
+  mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "keep-rock", "arch", "sister-isle-ground"]));
   {
     const cliffs = makeCoastalCliffs(H);
     const west = makeWestCapeCliffs(H);
@@ -3778,6 +3847,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           if (sh.material && sh.material.uniforms && sh.material.uniforms.uTime) {
             sh.material.uniforms.uTime.value = time;
           }
+          // Hide the far veil from the high chain overview so the textured isle ground can stay in the 150-draw cap.
+          if (camera) sh.visible = camera.position.y < 300;
           sh.visible = true;
         }
       }

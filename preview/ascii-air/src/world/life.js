@@ -599,7 +599,7 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     for (const fn of updaters) fn(dt, time, night);
     if (camera) {
       const far = camera.position.y > 180 || Math.hypot(camera.position.x - 200, camera.position.z + 1100) > 2400;
-      for (const n of ["life-umbrellas", "life-umb-poles", "life-birds", "life-npc", "life-people", "life-carts"]) {
+      for (const n of ["life-umbrellas", "life-umb-poles", "life-birds", "life-npc", "life-people", "life-carts", "life-herd", "life-walls", "life-vehicles", "life-smoke", "life-flags"]) {
         const o = group.getObjectByName(n);
         if (o) o.visible = !far;
       }

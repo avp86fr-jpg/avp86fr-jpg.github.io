@@ -590,6 +590,9 @@ function renderFrame(time, camDt = 1 / 60) {
     if (island.life && typeof island.life.update === "function") {
       island.life.update(0, time, (island.sky && island.sky.night) || 0, camera);
     }
+    if (island.landmarks && typeof island.landmarks.update === "function") {
+      island.landmarks.update(0, time, clock.hour, (island.sky && island.sky.night) || 0, camera);
+    }
   }
   syncPlaneMesh();
 

@@ -112,6 +112,7 @@ export function buildIsleGround(kind, segs = 56) {
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   const col = new Float32Array(pos.count * 3);
+  const idA = new Float32Array(pos.count * 2);
   const sand = new THREE.Color(0xf0e2b0);
   const sandWet = new THREE.Color(0xd8c48a);
   const grassA = new THREE.Color(0x6ea84a);
@@ -201,10 +202,17 @@ export function buildIsleGround(kind, segs = 56) {
     col[k * 3] = tmp.r;
     col[k * 3 + 1] = tmp.g;
     col[k * 3 + 2] = tmp.b;
+    let mid = MAT.GRASS;
+    if (h < 0.15) mid = MAT.SAND;
+    else if (h < 2.4 || (h < 4.5 && ny < 0.72)) mid = MAT.SAND;
+    else if (ny < 0.55 && h < 42) mid = MAT.ROCK;
+    else if (path) mid = MAT.DIRT;
+    idA[k * 2] = mid;
+    idA[k * 2 + 1] = 0;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.setAttribute("aId", new THREE.BufferAttribute(idA, 2));
   geo.computeVertexNormals();
-  retagGeometry(geo, MAT.GRASS, 0);
   const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
     vertexColors: true, flatShading: false, vertexColors: true,
   }));
