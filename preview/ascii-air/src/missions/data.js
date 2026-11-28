@@ -797,7 +797,7 @@ export const DOGFIGHTS = [
     id: "df-b1", activity: "dogfight", klass: "beginner", title: "First Pass",
     brief: "A pair of Gilded Gale scouts has been circling the harbour. Wave them off and keep the mail bag on board. Friendly shots, no one gets hurt — they will break off and trail smoke when they have had enough.",
     hour: 16.5, plane: "fighter",
-    start: { x: 80, y: 90, z: -1280, heading: 0.15, speed: 52 },
+    start: { x: 80, y: 130, z: -1280, heading: 0.15, speed: 52 },
     timeLimits: [180, 120, 80],
     bandits: 2,
     waves: [{ n: 2 }],
@@ -810,7 +810,7 @@ export const DOGFIGHTS = [
     id: "df-b2", activity: "dogfight", klass: "beginner", title: "Mail Escort",
     brief: "Two flights of Gale riders try to crowd the mail run. Hold the line, duck when they break, and let a smoking crate flee. Repair on the hangar apron if you take a knock.",
     hour: 11, plane: "fighter",
-    start: { x: 40, y: 100, z: -1200, heading: -0.2, speed: 54 },
+    start: { x: 40, y: 130, z: -1200, heading: -0.2, speed: 54 },
     timeLimits: [210, 150, 100],
     waves: [{ n: 2 }, { n: 3 }],
     story: [
@@ -822,7 +822,7 @@ export const DOGFIGHTS = [
     id: "df-p1", activity: "dogfight", klass: "pro", title: "Cay Ambush",
     brief: "The Gale is waiting over South Mail Cay. Break their surprise, then deal with the second flight that climbs out of the glare.",
     hour: 16.2, plane: "fighter",
-    start: { x: 260, y: 80, z: -2000, heading: -Math.PI / 2, speed: 56 },
+    start: { x: 260, y: 120, z: -2000, heading: -Math.PI / 2, speed: 56 },
     timeLimits: [200, 140, 95],
     waves: [{ n: 3 }, { n: 3 }],
     story: [
@@ -834,7 +834,7 @@ export const DOGFIGHTS = [
     id: "df-p2", activity: "dogfight", klass: "pro", title: "Baron's Ace",
     brief: "Baron Rook himself leads a last flight. His gold-trimmed Swallow is bigger and brasher. Wave the wingmen off, then make the Baron break away trailing smoke. The island stays peaceful when he leaves.",
     hour: 17.0, plane: "fighter", boss: true,
-    start: { x: 400, y: 110, z: -900, heading: 0.4, speed: 56 },
+    start: { x: 400, y: 140, z: -900, heading: 0.4, speed: 56 },
     timeLimits: [240, 170, 120],
     waves: [{ n: 2 }, { n: 2, boss: true }],
     story: [

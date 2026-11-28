@@ -389,6 +389,15 @@ function makeMeadow(terrain, quality) {
     slots.length = 0;
     for (const s of next) slots.push(s);
 
+    // Aerial / combat cameras: tufts punch through cloud billboards as pale stalks.
+    if (cxh != null && cxh > 58) {
+      slots.length = 0;
+      writeMeshes();
+      state.x = cx;
+      state.z = cz;
+      return;
+    }
+
     const ix0 = Math.floor((cx - R) / CELL);
     const ix1 = Math.ceil((cx + R) / CELL);
     const iz0 = Math.floor((cz - R) / CELL);

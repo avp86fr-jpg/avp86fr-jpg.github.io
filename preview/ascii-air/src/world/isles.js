@@ -75,9 +75,14 @@ function cedarHeight(x, z) {
   const nx = lx + 70, nz = lz + 36;
   const notch = Math.exp(-(nx * nx + nz * nz) * 0.00115);
   h -= notch * 11;
-  // Crown flattening for the chapel
-  if (fall > 0.62) h = 46 + (fall - 0.62) * 22 + (n - 0.5) * 1.6;
-  h += (rid - 0.5) * 2.0;
+  // Soft grassy dome on the very crown only — keep the west wall as a cliff.
+  if (fall > 0.68) {
+    const t = Math.min(1, (fall - 0.68) / 0.22);
+    const dome = 50 + t * 8 + (n - 0.5) * 2.0 + (rid - 0.5) * 1.2;
+    const blend = t * t * (3 - 2 * t);
+    h = h * (1 - blend) + dome * blend;
+  }
+  h += (rid - 0.5) * 1.2;
   return Math.max(0.05, h);
 }
 
@@ -112,6 +117,9 @@ export function buildIsleGround(kind, segs = 56) {
   const grassA = new THREE.Color(0x6ea84a);
   const grassB = new THREE.Color(0x4e7c32);
   const grassC = new THREE.Color(0x8ab85a);
+  const grassD = new THREE.Color(0xc2c25a);
+  const grassE = new THREE.Color(0x2f5c24);
+  const grassF = new THREE.Color(0x9bcc68);
   const dirt = new THREE.Color(0x8a6a3a);
   const rockA = new THREE.Color(0xd4cbb8);
   const rockB = new THREE.Color(0xb8aa94);
@@ -148,14 +156,27 @@ export function buildIsleGround(kind, segs = 56) {
     } else if (h < 2.4 || (h < 4.5 && ny < 0.72)) {
       tmp.copy(sand).lerp(sandWet, 1 - Math.min(1, h / 2.4));
       tmp.lerp(grassA, Math.max(0, (h - 1.6) * 0.4));
-    } else if (ny < 0.58) {
-      // Cliff strata — banding by height
+    } else if (ny < 0.55 && h < 42) {
+      // Cliff strata on the wall; grass takes over above ~42 m
       const band = Math.sin(h * 0.85 + n * 4) * 0.5 + 0.5;
       tmp.copy(rockA).lerp(rockB, band);
       if (band > 0.72) tmp.lerp(rockC, 0.45);
+      if (h > 34 && ny > 0.4) tmp.lerp(grassA, (h - 34) / 16);
     } else {
-      tmp.copy(grassA).lerp(grassB, 0.25 + n * 0.85);
-      tmp.lerp(grassC, Math.max(0, plot - 0.42) * 1.7);
+      tmp.copy(grassA).lerp(grassB, 0.2 + n * 0.7);
+      tmp.lerp(grassC, Math.max(0, plot - 0.32) * 1.5);
+      const patch = valueNoise(x * 0.14, z * 0.14, 19);
+      const fine = valueNoise(x * 0.31, z * 0.29, 53);
+      tmp.lerp(grassD, Math.max(0, patch - 0.48) * 1.8);
+      tmp.lerp(grassE, Math.max(0, 0.48 - n) * 1.15);
+      tmp.lerp(grassF, Math.max(0, fine - 0.55) * 1.35);
+      if (kind === "mailCay") {
+        const wide = valueNoise(x * 0.045, z * 0.045, 71);
+        tmp.lerp(grassD, Math.max(0, wide - 0.5) * 1.2);
+        tmp.lerp(grassE, Math.max(0, 0.45 - wide) * 0.9);
+      }
+      // Soft rock lip just below the grass cap
+      if (ny < 0.62 && h > 20) tmp.lerp(rockA, (0.62 - ny) * 0.7);
       if (path) tmp.lerp(dirt, 0.78);
       else if (plot > 0.82) tmp.lerp(dirt, 0.25);
     }

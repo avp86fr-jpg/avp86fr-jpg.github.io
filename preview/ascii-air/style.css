@@ -1274,27 +1274,49 @@ button.album-btn, button.ascii-btn {
 #mobile-layer .fire-btn.lit { filter: brightness(1.2); }
 #hud-health {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 52px;
-  min-width: 260px;
-  padding: 6px 14px 8px;
+  left: 12px;
+  top: 48px;
+  transform: none;
+  width: 188px;
+  min-width: 0;
+  max-width: 42vw;
+  padding: 3px 8px 4px;
   pointer-events: none;
   z-index: 8;
   background: #fffaf0;
-  border: 3px solid #1a140c;
-  box-shadow: 3px 3px 0 #1a140c;
+  border: 2.5px solid #1a140c;
+  box-shadow: 2px 2px 0 #1a140c;
 }
-#hud-health .hp-label { font-size: 13px; letter-spacing: 0.08em; font-weight: 700; color: #1a140c; }
+#hud-health .hp-label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: #1a140c;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #hud-health .hp-track {
-  height: 14px;
+  height: 7px;
   background: #efe4c8;
-  border: 2px solid #1a140c;
-  margin-top: 4px;
+  border: 1.5px solid #1a140c;
+  margin-top: 2px;
 }
 #hud-health .hp-fill { height: 100%; background: #2a8a5a; width: 100%; }
 #hud-health.hurt .hp-fill { background: #c01418; }
-#hud-health.flash { outline: 3px solid #c01418; }
+#hud-health.flash { outline: 2px solid #c01418; }
+body.touch-ui #hud-health {
+  left: 8px;
+  top: 36px;
+  width: 152px;
+  padding: 2px 6px 3px;
+  border-width: 2px;
+  box-shadow: 2px 2px 0 #1a140c;
+}
+body.touch-ui #hud-health .hp-label { font-size: 9px; }
+body.touch-ui #hud-health .hp-track { height: 6px; margin-top: 1px; }
+body.touch-portrait #hud-health { top: 64px; }
 #hud-combat-marks {
   position: absolute;
   inset: 0;

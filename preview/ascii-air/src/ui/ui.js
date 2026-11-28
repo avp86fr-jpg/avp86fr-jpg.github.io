@@ -688,8 +688,9 @@ time  ${formatTime(result.time || 0)}
         const lab = hpEl.querySelector(".hp-label");
         if (lab) lab.textContent = "HEALTH  " + combat.health + (combat.message ? "  ·  " + combat.message : "");
         const insH = safeInsets();
-        hpEl.style.top = ((touch ? 6 : 8) + insH.top + 46) + "px";
-        hpEl.style.left = "50%";
+        hpEl.style.top = ((touch ? 34 : 48) + insH.top) + "px";
+        hpEl.style.left = ((touch ? 8 : 12) + insH.left) + "px";
+        hpEl.style.transform = "none";
       } else {
         hpEl.classList.add("hidden");
         hpEl.classList.remove("flash");
