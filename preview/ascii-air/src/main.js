@@ -256,6 +256,7 @@ function startFreeFlight() {
   syncPlaneMesh();
   markLast("free");
   autoPilotTarget = null;
+  ui.setHideFlyHint(false);
   ui.showHUD();
   audio.setMusic(clock.hour > 19 || clock.hour < 6 ? "music_night" : "music_day", 0.55);
 }
@@ -295,6 +296,7 @@ function startMission(id) {
   flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
   syncPlaneMesh();
   if (flyCam.playIntro) flyCam.playIntro(2.5);
+  ui.setHideFlyHint(true);
   if (holdStory) ui.showStory(m.story, () => { paused = false; ui.showHUD(); });
   else ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
@@ -763,15 +765,31 @@ function step(now) {
         if (ev.hits) { audio.play("balloon_pop", { gain: 0.62, playbackRate: 1.15 }); flyCam.bump(0.34); }
         if (ev.broke) audio.play(ev.broke === "boss" ? "star" : "success", { gain: 0.7 });
         if (ev.playerHit) { audio.play("stall", { gain: 0.5 }); flyCam.bump(0.42); }
+        if (ev.escortHit) audio.play("stall", { gain: 0.45, playbackRate: 0.72 });
+        if (ev.aceIn) audio.play("star", { gain: 0.55, playbackRate: 0.85 });
         if (c.done && !st.result) {
           missions.complete(c.stars, { line: c.line });
         }
       }
       if (st.result && !pendingResult) {
         pendingResult = st.result;
+        const hadSea = !!save.unlocked.seaplane;
+        const hadGlide = !!save.unlocked.glider;
         if (st.result.stars > 0) {
           awardStars(save, st.active.id, st.result.stars, { time: st.result.time, grade: st.result.grade, line: st.result.line });
           st.result.pay = awardPay(save, st.result.stars, st.result.bestStreak || 0);
+        }
+        const newly = [];
+        if (!hadSea && save.unlocked.seaplane) newly.push("The Lagoon Skimmer is ready in the Hangar");
+        if (!hadGlide && save.unlocked.glider) newly.push("The Ridge Whisper is ready in the Hangar");
+        st.result.unlocked = newly;
+        if (st.active && st.active.activity === "dogfight") {
+          const di = DOGFIGHTS.findIndex((d) => d.id === st.active.id);
+          if (di >= 0 && di + 1 < DOGFIGHTS.length) st.result.nextTitle = DOGFIGHTS[di + 1].title;
+        } else if (st.active) {
+          const pool = MISSIONS.filter((d) => d.activity === st.active.activity);
+          const mi = pool.findIndex((d) => d.id === st.active.id);
+          if (mi >= 0 && mi + 1 < pool.length) st.result.nextTitle = pool[mi + 1].title;
         }
         if (st.result.photo) {
           try {
@@ -795,7 +813,14 @@ function step(now) {
         const g = 0.5 + 0.5 * Math.sin(now * 0.007);
         if (g > 0.82) flyCam.bump(0.10 * weather.state.turbulence);
       }
-      audio.updateFlight(craft, settings, coastalAmt(), craft.thermal);
+      audio.updateFlight(craft, settings, coastalAmt(), craft.thermal, weather && weather.state);
+      const cue = missions.state && missions.state.winchCue;
+      if (cue && String(cue).startsWith("WINCHING")) {
+        if (!step._winchT || now - step._winchT > 420) {
+          audio.play("gear", { gain: 0.28, playbackRate: 0.68 });
+          step._winchT = now;
+        }
+      }
       if (craft.stalled && !craft.onGround) {
         if (!step._stallT || now - step._stallT > 280) { audio.play("stall", { gain: 0.4 }); step._stallT = now; }
       }

@@ -289,7 +289,7 @@ export function createCombat(scene) {
   let done = null;
   let t = 0;
   let hitFlash = 0;
-  const events = { fired: false, hits: 0, broke: null, playerHit: false, banter: null };
+  const events = { fired: false, hits: 0, broke: null, playerHit: false, banter: null, escortHit: false, aceIn: false };
   let banter = "";
   let banterT = 0;
   let gunMul = 1;
@@ -522,50 +522,41 @@ export function createCombat(scene) {
     for (const e of enemies) {
       if (!e.live) continue;
       e.stateT += dt;
-      const huntEscort = !!(escort && escort.live && !e.boss && (e.slot % 2 === 0));
-      const tx = huntEscort ? escort.x : px;
-      const ty = huntEscort ? escort.y : py;
-      const tz = huntEscort ? escort.z : pz;
-      const dx = tx - e.x, dy = ty - e.y, dz = tz - e.z;
+      const hunter = !!(escort && escort.live && !e.boss && (e.slot % 2 === 0));
+      headingToQuat(e.heading, e.pitch, e.roll, Q);
+      forwardFromQuat(Q, TMP);
+      const pdx = px - e.x, pdy = py - e.y, pdz = pz - e.z;
+      const pdist = Math.hypot(pdx, pdy, pdz) || 1;
+      const rear = -(TMP.x * pdx + TMP.y * pdy + TMP.z * pdz) / pdist;
+      // A hunter breaks off the bag and covers if the player sits on their tail.
+      if (hunter && e.state === "chase" && pdist < 55 && rear > 0.45) {
+        e.state = "break";
+        e.stateT = 0;
+        e.coverUntil = t + 3.6;
+        say("PIP: One is turning on you!");
+      }
+      const huntEscort = hunter && !(e.coverUntil && t < e.coverUntil);
+      const leadT = huntEscort ? 0.95 : (0.7 + (e.boss ? 0.25 : 0));
+      const tx = huntEscort ? escort.x + Math.cos(escort.heading) * escort.speed * leadT : px + FWD.x * 18 * leadT;
+      const ty = huntEscort ? escort.y + 2 : py + 2;
+      const tz = huntEscort ? escort.z + Math.sin(escort.heading) * escort.speed * leadT : pz + FWD.z * 18 * leadT;
+      const dx = (huntEscort ? escort.x : px) - e.x;
+      const dy = (huntEscort ? escort.y : py) - e.y;
+      const dz = (huntEscort ? escort.z : pz) - e.z;
       const dist = Math.hypot(dx, dy, dz);
       if (e.state === "chase") {
-        const lead = 0.7 + (e.boss ? 0.25 : 0);
-        if (huntEscort) steerToward(e, tx, ty + 2, tz, dt, 1.25);
-        else steerToward(e, px + FWD.x * 18 * lead, py + 2, pz + FWD.z * 18 * lead, dt, e.boss ? 1.55 : 1.35);
-        headingToQuat(e.heading, e.pitch, e.roll, Q);
-        forwardFromQuat(Q, TMP);
-        TMP2.set(dx, dy, dz).normalize();
-        const ang = Math.acos(Math.min(1, Math.max(-1, TMP.dot(TMP2))));
-        if (dist < 170 && ang < 0.22 && enemyCool <= 0) {
-          spawnTracer(e.x, e.y, e.z, TMP.x, TMP.y, TMP.z, 200, "enemy");
-          enemyCool = e.boss ? 0.28 : (huntEscort ? 0.85 : 0.55);
-          if (ang < 0.14 && dist < 140) {
-            if (huntEscort) {
-              escort.hp = Math.max(0, escort.hp - 4);
-              puff(escort.x, escort.y, escort.z, 0.8);
-              message = "THE MAIL PLANE IS HIT";
-              msgT = 1.2;
-              say("PIP: They're on the bag!");
-              if (escort.hp <= 0) {
-                escort.live = false;
-                escort.hp = 0;
-                message = "THE MAIL WAS FORCED DOWN";
-                msgT = 2.4;
-              }
-            } else {
-              health = Math.max(0, health - (e.boss ? 8 : 6));
-              hitFlash = 0.35;
-              events.playerHit = true;
-              message = "HIT — BREAK OFF";
-              msgT = 1.1;
-              say("PIP: Shake him, I am with you.");
-            }
-          }
-        }
+        if (huntEscort) steerToward(e, tx, ty, tz, dt, 1.35);
+        else steerToward(e, tx, ty, tz, dt, e.boss ? 1.55 : 1.35);
+        if (huntEscort && dist < 70 && e.stateT > 1.15) { e.state = "extend"; e.stateT = 0; }
         if (e.hp / e.max < 0.32) { e.state = "flee"; e.stateT = 0; }
-        else if (e.stateT > 2.3 + (e.slot % 3) * 0.6) {
-          const pick = (e.slot + Math.floor(t * 3) + Math.floor(e.stateT)) % 5;
-          e.state = pick === 0 ? "yo-yo" : pick === 1 ? "scissor" : pick === 2 ? "split" : "chase";
+        else if (e.state === "chase" && e.stateT > (e.boss ? 1.7 : 2.3) + (e.slot % 3) * 0.6) {
+          if (e.boss) {
+            const pick = Math.floor(t * 2 + e.stateT * 3) % 5;
+            e.state = pick === 0 ? "immelmann" : pick === 1 ? "zoom" : pick === 2 ? "lag" : pick === 3 ? "split" : "taunt";
+          } else {
+            const pick = (e.slot + Math.floor(t * 3) + Math.floor(e.stateT)) % 5;
+            e.state = pick === 0 ? "yo-yo" : pick === 1 ? "scissor" : pick === 2 ? "split" : pick === 3 ? "extend" : "chase";
+          }
           e.stateT = 0;
         }
       } else if (e.state === "yo-yo") {
@@ -585,6 +576,40 @@ export function createCombat(scene) {
         e.heading += (e.slot % 2 ? 1 : -1) * 1.7 * dt;
         e.pitch = e.stateT < 0.45 ? Math.min(0.42, e.pitch + 0.75 * dt) : Math.max(-0.48, e.pitch - 0.85 * dt);
         if (e.stateT > 1.75) { e.state = "chase"; e.stateT = 0; }
+      } else if (e.state === "immelmann") {
+        if (e.stateT < 0.7) {
+          e.pitch = Math.min(0.72, e.pitch + 0.95 * dt);
+          e.speed = Math.max(44, e.speed - 10 * dt);
+        } else {
+          e.heading += Math.PI * dt / 0.85;
+          e.roll = 0.95;
+          e.pitch = e.stateT < 1.2 ? e.pitch : Math.max(-0.12, e.pitch - 0.85 * dt);
+        }
+        if (e.stateT > 1.95) { e.state = "chase"; e.stateT = 0; e.roll = 0; e.speed = 58; }
+      } else if (e.state === "zoom") {
+        if (e.stateT < 0.9) {
+          steerToward(e, px, py - 22, pz, dt, 1.85);
+          e.pitch = Math.max(-0.58, e.pitch - 0.65 * dt);
+          e.speed = Math.min(78, e.speed + 16 * dt);
+        } else {
+          steerToward(e, px + FWD.x * 40, py + 52, pz + FWD.z * 40, dt, 1.4);
+          e.pitch = Math.min(0.52, e.pitch + 0.75 * dt);
+          e.speed = Math.max(52, e.speed - 8 * dt);
+        }
+        if (e.stateT > 2.15) { e.state = "chase"; e.stateT = 0; e.speed = 58; }
+      } else if (e.state === "lag") {
+        steerToward(e, px - FWD.x * 30, py + 16, pz - FWD.z * 30, dt, 1.75);
+        e.pitch = Math.max(-0.15, Math.min(0.28, e.pitch));
+        if (e.stateT > 2.05) { e.state = "dive"; e.stateT = 0; }
+      } else if (e.state === "taunt") {
+        const side = e.slot % 2 ? 1 : -1;
+        steerToward(e, px + FWD.z * 22 * side, py + 6, pz - FWD.x * 22 * side, dt, 1.65);
+        e.roll = Math.sin(e.stateT * 3.2) * 0.55 * side;
+        if (e.stateT > 1.55) { e.state = "break"; e.stateT = 0; }
+      } else if (e.state === "extend") {
+        steerToward(e, e.x + Math.cos(e.heading) * 90, e.y + 26, e.z + Math.sin(e.heading) * 90, dt, 1.5);
+        e.pitch = Math.min(0.35, e.pitch + 0.28 * dt);
+        if (e.stateT > 1.8) { e.state = "chase"; e.stateT = 0; }
       } else if (e.state === "break") {
         e.heading += (e.slot % 2 ? 1 : -1) * 2.1 * dt;
         e.pitch = Math.max(-0.25, e.pitch - 0.15 * dt);
@@ -596,6 +621,40 @@ export function createCombat(scene) {
         if (e.stateT > 0.2) puff(e.x, e.y - 0.6, e.z, e.boss ? 1.3 : 0.9);
         if (e.stateT > 3.2 || dist > 520) {
           e.live = false;
+        }
+      }
+      const canFire = e.state === "chase" || e.state === "dive" || e.state === "lag" || e.state === "zoom" || e.state === "taunt";
+      if (canFire) {
+        headingToQuat(e.heading, e.pitch, e.roll, Q);
+        forwardFromQuat(Q, TMP);
+        TMP2.set(dx, dy, dz).normalize();
+        const ang = Math.acos(Math.min(1, Math.max(-1, TMP.dot(TMP2))));
+        if (dist < 170 && ang < 0.22 && enemyCool <= 0) {
+          spawnTracer(e.x, e.y, e.z, TMP.x, TMP.y, TMP.z, 200, "enemy");
+          enemyCool = e.boss ? 0.28 : (huntEscort ? 0.85 : 0.55);
+          if (ang < 0.14 && dist < 140) {
+            if (huntEscort) {
+              escort.hp = Math.max(0, escort.hp - 4);
+              puff(escort.x, escort.y, escort.z, 0.8);
+              events.escortHit = true;
+              message = "THE MAIL PLANE IS HIT";
+              msgT = 1.2;
+              say("PIP: They're on the bag!");
+              if (escort.hp <= 0) {
+                escort.live = false;
+                escort.hp = 0;
+                message = "THE MAIL WAS FORCED DOWN";
+                msgT = 2.4;
+              }
+            } else {
+              health = Math.max(0, health - (e.boss ? 8 : 6));
+              hitFlash = 0.35;
+              events.playerHit = true;
+              message = "HIT — BREAK OFF";
+              msgT = 1.1;
+              say("PIP: Shake him, I am with you.");
+            }
+          }
         }
       }
       const fx = Math.cos(e.heading), fz = Math.sin(e.heading);
@@ -781,7 +840,7 @@ export function createCombat(scene) {
   function update(dt, craft, input, camera) {
     if (camera) _cam = camera;
     if (!active || done) return getState();
-    events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false; events.banter = null;
+    events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false; events.banter = null; events.escortHit = false; events.aceIn = false;
     t += dt;
     if (banterT > 0) banterT -= dt;
     if (banterT <= 0) banter = "";
@@ -820,6 +879,7 @@ export function createCombat(scene) {
           spawnWave(list, craft);
           message = w.boss ? "BARON ROOK TAKES THE FIELD" : "BANDITS AHEAD";
           msgT = 2.2;
+          if (w.boss) events.aceIn = true;
         }
       }
     }
@@ -879,7 +939,7 @@ export function createCombat(scene) {
         x: e.x, y: e.y, z: e.z, boss: !!e.boss, kind: e.kind, state: e.state,
         heading: e.heading, speed: e.speed, hp: e.hp, max: e.max,
       })),
-      events: { fired: events.fired, hits: events.hits, broke: events.broke, playerHit: events.playerHit },
+      events: { fired: events.fired, hits: events.hits, broke: events.broke, playerHit: events.playerHit, escortHit: events.escortHit, aceIn: events.aceIn },
       escort: escort ? { live: !!escort.live, hp: escort.hp, max: escort.max, progress: escort.progress, x: escort.x, y: escort.y, z: escort.z } : null,
     };
   }

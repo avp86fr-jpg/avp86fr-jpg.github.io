@@ -121,9 +121,14 @@ export function buildIsleGround(kind, segs = 56) {
   const grassE = new THREE.Color(0x2f5c24);
   const grassF = new THREE.Color(0x9bcc68);
   const dirt = new THREE.Color(0x8a6a3a);
+  const dirtWet = new THREE.Color(0x6a5230);
   const rockA = new THREE.Color(0xd4cbb8);
   const rockB = new THREE.Color(0xb8aa94);
   const rockC = new THREE.Color(0x9a8c78);
+  const bloomY = new THREE.Color(0xe8d46a);
+  const bloomP = new THREE.Color(0xd48a9a);
+  const bloomW = new THREE.Color(0xe8f0c8);
+  const heather = new THREE.Color(0x7a6a4a);
   const tmp = new THREE.Color();
   for (let k = 0; k < pos.count; k++) {
     const lx = pos.getX(k), lz = pos.getZ(k);
@@ -140,16 +145,18 @@ export function buildIsleGround(kind, segs = 56) {
     const ny = nrm.getY(k);
     const n = fbm(x * 0.05, z * 0.05, 4, 7);
     const plot = valueNoise(x * 0.08, z * 0.08, 31);
-    // Dirt track hints
+    // Dirt track hints — jetty to the houses, and a chapel walk on Cedar.
     let path = 0;
     if (kind === "mailCay") {
-      // Jetty (west-north) to the strip, then along the cottages
-      const toJet = Math.abs((z + 2280) - 0.35 * (x - 220)) < 3.2 && x < 280 && x > 200;
-      const along = Math.abs(z + 2258) < 2.4 && Math.abs(x - 260) < 40;
-      if (toJet || along) path = 1;
+      const toJet = Math.abs((z + 2280) - 0.35 * (x - 220)) < 3.4 && x < 280 && x > 200;
+      const along = Math.abs(z + 2258) < 2.6 && Math.abs(x - 260) < 48;
+      const toWell = Math.abs(z + 2260) < 2.0 && x > 240 && x < 270;
+      if (toJet || along || toWell) path = 1;
     } else {
-      const spiral = Math.abs(Math.hypot(x - 1980, z + 380) - 36) < 3.2 && h > 28;
-      if (spiral) path = 1;
+      const spiral = Math.abs(Math.hypot(x - 1980, z + 380) - 36) < 3.4 && h > 28;
+      const toJet = Math.abs((z + 360) - 0.18 * (x - 1986)) < 2.8 && x > 1980 && x < 2090 && h > 4;
+      const toHamlet = Math.abs((z + 392) - 0.4 * (x - 1986)) < 2.4 && x > 1984 && x < 2020 && h > 16;
+      if (spiral || toJet || toHamlet) path = 1;
     }
     if (h < 0.15) {
       tmp.copy(sandWet);
@@ -174,10 +181,21 @@ export function buildIsleGround(kind, segs = 56) {
         const wide = valueNoise(x * 0.045, z * 0.045, 71);
         tmp.lerp(grassD, Math.max(0, wide - 0.5) * 1.2);
         tmp.lerp(grassE, Math.max(0, 0.45 - wide) * 0.9);
+      } else {
+        // Heath and darker turf on the mid slopes
+        const heath = valueNoise(x * 0.06, z * 0.06, 61);
+        tmp.lerp(heather, Math.max(0, heath - 0.55) * 0.9);
+        tmp.lerp(grassE, Math.max(0, 0.42 - heath) * 0.85);
       }
       // Soft rock lip just below the grass cap
       if (ny < 0.62 && h > 20) tmp.lerp(rockA, (0.62 - ny) * 0.7);
-      if (path) tmp.lerp(dirt, 0.78);
+      const bloom = valueNoise(x * 0.42, z * 0.39, 91);
+      if (!path && bloom > 0.72 && ny > 0.78 && h > 3 && h < 46) {
+        if (bloom > 0.90) tmp.lerp(bloomP, 0.38);
+        else if (bloom > 0.82) tmp.lerp(bloomY, 0.42);
+        else tmp.lerp(bloomW, 0.24);
+      }
+      if (path) tmp.lerp(dirt, 0.82).lerp(dirtWet, 0.12);
       else if (plot > 0.82) tmp.lerp(dirt, 0.25);
     }
     col[k * 3] = tmp.r;

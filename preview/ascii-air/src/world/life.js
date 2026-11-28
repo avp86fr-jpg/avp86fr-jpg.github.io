@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { MAT, QUALITY, LANDMARKS as LM } from "../core/config.js";
 import { retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
+import { isleHeightAt } from "./isles.js";
 
 const _dummy = new THREE.Object3D();
 const _col = new THREE.Color();
@@ -61,7 +62,7 @@ function roadPoints() {
 export function createLife(scene, terrain, landmarks, quality = "medium") {
   const q = QUALITY[quality] || QUALITY.medium;
   const k = q.life != null ? q.life : (q.particles || 0.7);
-  const H = (x, z) => terrain.heightAt(x, z);
+  const H = (x, z) => Math.max(terrain.heightAt(x, z), isleHeightAt(x, z));
   const group = new THREE.Group();
   group.name = "life";
   scene.add(group);
@@ -230,6 +231,18 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       if (h < 0.8) continue;
       place.push({ x, y: h + 0.85, z, sx: 0.9, sy: 0.95, sz: 0.9, c: cols[i % cols.length] });
     }
+    // Sister-isle villagers sit in the same instanced batch (no extra draw).
+    const isleSpots = [
+      [250, -2254], [268, -2255], [232, -2256], [278, -2242],
+      [218, -2228], [260, -2270], [248, -2238],
+      [1986, -388], [1998, -374], [2004, -400], [2016, -364],
+      [2024, -396], [2090, -360],
+    ];
+    isleSpots.forEach((p, i) => {
+      const h = H(p[0], p[1]);
+      if (h < 0.8) return;
+      place.push({ x: p[0], y: h + 0.85, z: p[1], sx: 0.95, sy: 1.0, sz: 0.95, c: cols[i % cols.length] });
+    });
     if (place.length) {
       const inst = instanced(new THREE.CapsuleGeometry(0.28, 0.7, 3, 6), lam(0xc45a2a, MAT.PLANE), place);
       inst.name = "life-people";
@@ -263,6 +276,8 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       [LM.church.x - 8, LM.church.z + 6, -0.3],
       [430, -716, 0.2],
       [LM.pier.x - 6, LM.pier.z + 4, 0.8],
+      [248, -2248, 0.3],
+      [2010, -392, -0.4],
     ];
     const place = [];
     for (const [x, z, yaw] of carts) {
@@ -463,29 +478,40 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
   // --- mail planes on lazy circuits (one draw) ---
   if (k > 0.3) {
     const proto = (() => {
-      // Compact mail biplane: fuselage, staggered wings, fin, stab, cowl — reads as a plane, not a bar.
-      const parts = [
-        new THREE.BoxGeometry(1.55, 0.28, 0.28),
-        new THREE.CylinderGeometry(0.16, 0.18, 0.28, 6),
-        new THREE.BoxGeometry(0.16, 0.07, 2.05),
-        new THREE.BoxGeometry(0.15, 0.06, 1.7),
-        new THREE.BoxGeometry(0.05, 0.22, 0.05),
-        new THREE.BoxGeometry(0.05, 0.22, 0.05),
-        new THREE.BoxGeometry(0.28, 0.32, 0.08),
-        new THREE.BoxGeometry(0.08, 0.06, 0.7),
-        new THREE.BoxGeometry(0.04, 0.18, 0.04),
-        new THREE.BoxGeometry(0.04, 0.18, 0.04),
-      ];
-      parts[0].translate(0, 0.04, 0);
-      parts[1].rotateZ(Math.PI / 2); parts[1].translate(0.78, 0.04, 0);
-      parts[2].translate(0.1, 0.28, 0);
-      parts[3].translate(0.05, -0.12, 0);
-      parts[4].translate(0.15, 0.08, 0.45);
-      parts[5].translate(0.15, 0.08, -0.45);
-      parts[6].translate(-0.68, 0.24, 0);
-      parts[7].translate(-0.68, 0.08, 0);
-      parts[8].translate(0.2, -0.22, 0.16);
-      parts[9].translate(0.2, -0.22, -0.16);
+      // Larger mail biplane: cowl, spinner, prop, cabane, gear wheels, windscreen, tail skid.
+      const parts = [];
+      const put = (g, x, y, z) => { g.translate(x, y, z); parts.push(g); };
+      put(new THREE.BoxGeometry(1.85, 0.32, 0.32), 0.05, 0.06, 0);
+      put(new THREE.BoxGeometry(0.55, 0.22, 0.22), -0.85, 0.08, 0);
+      {
+        const cowl = new THREE.CylinderGeometry(0.18, 0.20, 0.32, 7);
+        cowl.rotateZ(Math.PI / 2); put(cowl, 0.95, 0.06, 0);
+      }
+      {
+        const spin = new THREE.ConeGeometry(0.09, 0.16, 6);
+        spin.rotateZ(-Math.PI / 2); put(spin, 1.16, 0.06, 0);
+      }
+      put(new THREE.BoxGeometry(0.03, 0.04, 1.15), 1.12, 0.06, 0);
+      put(new THREE.BoxGeometry(0.36, 0.055, 2.35), 0.18, 0.36, 0);
+      put(new THREE.BoxGeometry(0.34, 0.05, 1.95), 0.12, -0.14, 0);
+      put(new THREE.BoxGeometry(0.035, 0.42, 0.035), 0.22, 0.11, 0.62);
+      put(new THREE.BoxGeometry(0.035, 0.42, 0.035), 0.22, 0.11, -0.62);
+      put(new THREE.BoxGeometry(0.035, 0.42, 0.035), 0.08, 0.11, 0.95);
+      put(new THREE.BoxGeometry(0.035, 0.42, 0.035), 0.08, 0.11, -0.95);
+      put(new THREE.BoxGeometry(0.03, 0.26, 0.03), 0.28, 0.22, 0.12);
+      put(new THREE.BoxGeometry(0.03, 0.26, 0.03), 0.28, 0.22, -0.12);
+      put(new THREE.BoxGeometry(0.32, 0.38, 0.05), -0.95, 0.32, 0);
+      put(new THREE.BoxGeometry(0.22, 0.04, 0.85), -0.92, 0.16, 0);
+      put(new THREE.BoxGeometry(0.12, 0.12, 0.22), 0.35, 0.26, 0);
+      put(new THREE.BoxGeometry(0.04, 0.28, 0.04), 0.28, -0.28, 0.18);
+      put(new THREE.BoxGeometry(0.04, 0.28, 0.04), 0.28, -0.28, -0.18);
+      {
+        const w1 = new THREE.CylinderGeometry(0.09, 0.09, 0.05, 8);
+        w1.rotateX(Math.PI / 2); put(w1, 0.28, -0.42, 0.18);
+        const w2 = new THREE.CylinderGeometry(0.09, 0.09, 0.05, 8);
+        w2.rotateX(Math.PI / 2); put(w2, 0.28, -0.42, -0.18);
+      }
+      put(new THREE.BoxGeometry(0.16, 0.12, 0.03), -0.95, -0.06, 0);
       // stitch
       let nV = 0;
       for (const g of parts) nV += g.attributes.position.count;
@@ -510,11 +536,12 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       geo.computeVertexNormals();
       return geo;
     })();
-    const n = quality === "low" ? 2 : 3;
+    const n = quality === "low" ? 3 : 4;
     const routes = [
       { cx: 80, cz: -1280, cy: 72, rx: 220, rz: 140, spd: 0.12, c: 0xc01418 },
       { cx: 200, cz: -900, cy: 88, rx: 260, rz: 180, spd: 0.09, c: 0x3a7a86 },
       { cx: 260, cz: -1800, cy: 70, rx: 160, rz: 200, spd: 0.11, c: 0xd8c48a },
+      { cx: 1980, cz: -380, cy: 96, rx: 200, rz: 150, spd: 0.10, c: 0xc45a3a },
     ].slice(0, n);
     const planes = routes.map((r, i) => ({ ...r, a: i * 2.1 }));
     const inst = instanced(proto, lam(0xc01418, MAT.PLANE), planes.map((pl) => ({ x: pl.cx, y: pl.cy, z: pl.cz, c: pl.c })));
@@ -527,7 +554,7 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
         const z = pl.cz + Math.sin(pl.a) * pl.rz;
         _dummy.position.set(x, pl.cy + Math.sin(pl.a * 2) * 3, z);
         _dummy.rotation.set(0, -pl.a + Math.PI / 2, Math.sin(pl.a) * 0.12);
-        _dummy.scale.set(7.4, 7.4, 7.4);
+        _dummy.scale.set(11, 11, 11);
         _dummy.updateMatrix();
         inst.setMatrixAt(i, _dummy.matrix);
         _col.setHex(pl.c);

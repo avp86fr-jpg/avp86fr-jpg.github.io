@@ -1,7 +1,7 @@
 import { TITLE, PLANES, STAR_UNLOCKS } from "../core/config.js";
 import { hourToClock, formatTime, pad, isIOS, isStandalone, isMobileUA, safeInsets } from "../core/utils.js";
 import { ACTIVITIES, CLASSES, missionsBy, MISSIONS, MISSION_COUNT, DOGFIGHTS } from "../missions/data.js";
-import { totalStars } from "../save/save.js";
+import { totalStars, UPGRADE_COSTS, UPGRADE_INFO } from "../save/save.js";
 import { createMobileLayer, iosFullscreenHint } from "./mobile.js";
 
 
@@ -9,6 +9,20 @@ function weatherLabel(id) {
   if (id === "storm") return "STORM";
   if (id === "squall") return "RAIN SQUALL";
   return "CLEAR";
+}
+
+function nextUnlockLine(save) {
+  const n = totalStars(save);
+  const pay = save.pay | 0;
+  const bits = [];
+  if (n < STAR_UNLOCKS.seaplane) bits.push((STAR_UNLOCKS.seaplane - n) + " ★ to the Lagoon Skimmer");
+  else if (n < STAR_UNLOCKS.glider) bits.push((STAR_UNLOCKS.glider - n) + " ★ to the Ridge Whisper");
+  const ids = Object.keys(UPGRADE_COSTS || {});
+  const ready = ids.find((id) => !save.upgrades?.[id] && pay >= UPGRADE_COSTS[id]);
+  const next = ids.find((id) => !save.upgrades?.[id] && pay < UPGRADE_COSTS[id]);
+  if (ready && UPGRADE_INFO[ready]) bits.push(UPGRADE_INFO[ready].name + " is ready in the Workshop");
+  else if (next && UPGRADE_INFO[next]) bits.push((UPGRADE_COSTS[next] - pay) + " pay to " + UPGRADE_INFO[next].name);
+  return bits.join(" · ");
 }
 
 
@@ -293,8 +307,11 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         <span class="mission-stars">★ ${got} / ${max}</span>
       </button>`;
     }).join("");
+    const n = totalStars(save);
+    const prog = nextUnlockLine(save);
     const p = openOverlay(`<div class="album-sheet">
       <h2>Mission Map</h2>
+      <p class="sheet-meta">★ ${n} in the book · Mail pay ${save.pay | 0}${prog ? " · " + prog : ""}</p>
       <div class="mission-map">${cards}</div>
       <div id="mlist" class="album-nav"></div>
     </div>`);
@@ -325,16 +342,34 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   function showMissionList(save, activity, klass) {
     state.activity = activity; state.klass = klass;
     const list = missionsBy(activity, klass);
-    const items = list.map((m) => ({
-      label: `${m.title}  ${starsStr(save.stars[m.id] | 0)}`,
-      fn: () => showBrief(save, m),
-    }));
-    items.push({ label: "Back", fn: () => showClass(save, activity) });
+    const got = list.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
+    const max = list.length * 3;
+    const cards = list.map((m) => {
+      const st = save.stars[m.id] | 0;
+      const tag = m.weather === "squall" ? "Rain squall"
+        : (m.mechanic === "winch" || m.winch) ? "Hover winch"
+        : (m.brief || "").slice(0, 72);
+      return `<button type="button" class="mission-card" data-id="${m.id}">
+        <strong>${m.title}</strong>
+        <span class="mission-stars">${starsStr(st)}</span>
+        <span class="hint">${tag}${(m.brief && tag === (m.brief || "").slice(0, 72) && m.brief.length > 72) ? "…" : ""}</span>
+      </button>`;
+    }).join("");
     const p = openOverlay(`<div class="album-sheet">
       <h2>${ACT_FR[activity] || activity} · ${CLASS_FR[klass] || klass}</h2>
+      <p class="sheet-meta">★ ${got} / ${max} · Mail pay ${save.pay | 0}</p>
+      <div class="star-bar" aria-hidden="true"><span style="width:${max ? Math.round(got / max * 100) : 0}%"></span></div>
+      <div class="mission-map">${cards}</div>
       <div id="mlist" class="album-nav"></div>
     </div>`);
-    renderMenu(p.querySelector("#mlist"), items, save);
+    p.querySelectorAll(".mission-card").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const m = list.find((d) => d.id === btn.dataset.id);
+        if (m) showBrief(save, m);
+      });
+    });
+    renderMenu(p.querySelector("#mlist"), [{ label: "Back", fn: () => showClass(save, activity) }], save);
   }
 
 
@@ -342,6 +377,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     state.screen = "missions";
     const got = DOGFIGHTS.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
     const max = DOGFIGHTS.length * 3;
+    const titleOf = (id) => (DOGFIGHTS.find((d) => d.id === id) || {}).title || "the earlier flight";
     const unlocked = (m) => {
       const need = m.requires || [];
       return need.every((id) => (save.stars[id] | 0) > 0);
@@ -349,15 +385,21 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     const cards = DOGFIGHTS.map((m) => {
       const st = save.stars[m.id] | 0;
       const open = unlocked(m);
+      const need = m.requires || [];
+      const lockHint = need.length ? ("Needs a star on " + need.map(titleOf).join(" and ")) : "Finish the earlier flight first";
+      const blurb = (m.brief || "").slice(0, 78);
       return `<button type="button" class="mission-card${open ? "" : " locked"}" data-id="${m.id}" ${open ? "" : "disabled"}>
         <strong>${m.title}</strong>
         <span class="mission-stars">${open ? ("★".repeat(st) + "☆".repeat(3 - st)) : "Locked"}</span>
-        <span class="hint">${open ? ((CLASS_FR[m.klass] || m.klass) + " · Swallowtail S-7") : "Finish the earlier flight first"}</span>
+        <span class="hint">${open ? ((CLASS_FR[m.klass] || m.klass) + " · Swallowtail S-7") : lockHint}</span>
+        ${open && blurb ? `<span class="mission-blurb">${blurb}${(m.brief || "").length > 78 ? "…" : ""}</span>` : ""}
       </button>`;
     }).join("");
+    const prog = nextUnlockLine(save);
     const p = openOverlay(`<div class="album-sheet">
       <h2>Defend the Mail</h2>
-      <p class="sheet-meta">The Gilded Gale has been crowding the airmail. Friendly story flights — they break off and trail smoke. ★ ${got} / ${max}</p>
+      <p class="sheet-meta">The Gilded Gale has been crowding the airmail. Friendly story flights — they break off and trail smoke. ★ ${got} / ${max} · Mail pay ${save.pay | 0}${prog ? " · " + prog : ""}</p>
+      <div class="star-bar" aria-hidden="true"><span style="width:${max ? Math.round(got / max * 100) : 0}%"></span></div>
       <div class="mission-map">${cards}</div>
       <div id="mlist" class="album-nav"></div>
     </div>`);
@@ -412,10 +454,13 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     const lockedPlane = m.plane && m.plane !== "trainer" && !save.unlocked[m.plane];
     const need = STAR_UNLOCKS[m.plane] || 0;
     const planeName = PLANES[m.plane || "trainer"].name;
+    const best = save.stars[m.id] | 0;
+    const prog = nextUnlockLine(save);
     const p = openOverlay(`<div class="album-sheet">
       <h2>${m.title}</h2>
-      <p class="sheet-meta">${CLASS_FR[m.klass] || m.klass} · ${ACT_FR[m.activity] || m.activity} · ${planeName}${lockedPlane ? "  (needs " + need + " ★)" : ""}</p>
+      <p class="sheet-meta">${CLASS_FR[m.klass] || m.klass} · ${ACT_FR[m.activity] || m.activity} · ${planeName}${lockedPlane ? "  (needs " + need + " ★)" : ""} · ${best ? ("Best " + "★".repeat(best) + "☆".repeat(3 - best)) : "Not yet flown"}</p>
       <p class="sheet-brief">${m.brief}</p>
+      <p class="sheet-meta">Clear it for up to 12 mail pay.${prog ? " · " + prog : ""}</p>
       <div id="mlist" class="album-nav"></div>
     </div>`);
     const items = [];
@@ -619,6 +664,13 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     if (pay) bits.push(` · Mail pay +${pay}`);
     bits.push(`</p>`);
     if (isFight && stars) bits.push(`<p class="result-meta">The sky is yours. The bag stays on board.</p>`);
+    if (stars === 3) bits.push(`<p class="result-meta">The run is stamped. Three stars.</p>`);
+    const newly = result.unlocked || [];
+    if (newly.length) bits.push(`<p class="result-unlock">${newly.join(" · ")}</p>`);
+    if (stars && result.nextTitle) bits.push(`<p class="result-meta">Next: ${result.nextTitle}</p>`);
+    const prog = nextUnlockLine(save);
+    if (prog) bits.push(`<p class="result-meta">${prog}. Mail pay now ${save.pay | 0}.</p>`);
+    else if (pay) bits.push(`<p class="result-meta">Mail pay now ${save.pay | 0}.</p>`);
     bits.push(`</div><div id="mlist"></div>`);
     const p = openOverlay(bits.join(""));
     renderMenu(p.querySelector("#mlist"), [
@@ -630,6 +682,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   }
 
   let flyHudAt = 0;
+  function setHideFlyHint(v) { state.hideFlyHint = !!v; }
   function showHUD() {
     hideAll();
     hud.classList.remove("hidden");
@@ -644,6 +697,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   function maybeFlyHint() {
     const h = hud.querySelector("#hud-hint");
     if (!h) return;
+    if (state.hideFlyHint) { h.classList.add("hidden"); return; }
     try { if (localStorage.getItem("apa_flyhint")) return; } catch {}
     h.classList.remove("hidden");
     h.textContent = "Hold BOOST or Space: the plane takes off on its own. Arrow keys (or the stick) turn and pitch. W/S or Shift/Ctrl set the throttle. Right-drag, or drag an empty area, to orbit the camera. V looks back. Release the stick to level out.";
@@ -699,6 +753,12 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     const aux = hud.querySelector("#hud-aux");
     const fsBtn = hud.querySelector("#hud-fs");
     const msg = hud.querySelector("#hud-msg");
+
+    // Keep First Flight coach marks off while a mission is running.
+    if (mission && mission.active) {
+      const hint = hud.querySelector("#hud-hint");
+      if (hint) hint.classList.add("hidden");
+    }
 
     stats.style.top = padT + "px"; stats.style.left = padL + "px";
     comp.style.top = padT + "px";
@@ -1326,7 +1386,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
   }
 
   return {
-    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showDogfights, showStory, showHangar, showWorkshop, showOptions, showAlbum, showBrief, showCredits,
+    setLoad, showTitle, showHUD, setHideFlyHint, showPause, showResult, showMissions, showDogfights, showStory, showHangar, showWorkshop, showOptions, showAlbum, showBrief, showCredits,
     updateHUD, closeOverlay, menuMove, menuOk, isPortrait, setMiniMap, state, wrap, loading, hud, overlay, mobile,
     elements() {
       // all visible interactive + hud boxes for overlap tests

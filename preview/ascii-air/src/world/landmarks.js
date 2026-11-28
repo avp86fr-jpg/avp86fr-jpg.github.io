@@ -49,21 +49,41 @@ function cone(r, h, segs, color, matId) {
 }
 
 function boulder(sx, sy, sz, color, matId, hero = 0) {
-  // Flattened, faceted rock with a cut bottom so it sits in the ground, not a floating egg.
-  const geo = new THREE.SphereGeometry(1, 6, 5);
+  // Angular seated stone: sphere blended toward a box, chipped, moss on the crown, cut bottom.
+  let geo = new THREE.SphereGeometry(1, 7, 5);
   const pos = geo.getAttribute("position");
+  const colA = new Float32Array(pos.count * 3);
+  const base = new THREE.Color(color);
+  const moss = new THREE.Color(0x6a7a4a);
+  const lichen = new THREE.Color(0x8a8a58);
+  const shade = new THREE.Color(0x6a6054);
+  const tmp = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const lump = 0.76 + 0.24 * Math.abs(Math.sin(x * 3.3 + z * 2.1)) + 0.10 * Math.sin(y * 4.1 + x * 1.8);
-    x *= lump;
-    z *= lump * (0.90 + 0.12 * Math.cos(x * 2.9));
-    y *= 0.55 + 0.16 * Math.sin(x * 2.6 + z * 1.9);
-    if (y < 0) y *= 0.18;
+    const ax = Math.abs(x), ay = Math.abs(y), az = Math.abs(z);
+    const m = Math.max(ax, ay, az) || 1;
+    const k = 0.5;
+    x = x * (1 - k) + (x / m) * k;
+    y = y * (1 - k) + (y / m) * k;
+    z = z * (1 - k) + (z / m) * k;
+    const lump = 0.80 + 0.24 * Math.abs(Math.sin(x * 2.5 + z * 1.5)) + 0.10 * Math.sin(y * 3.1 + x * 2.0);
+    const chip = 0.93 + 0.11 * Math.cos(x * 4.8 + z * 3.9);
+    x *= lump * chip;
+    z *= lump * (0.86 + 0.16 * Math.cos(x * 2.2));
+    y *= 0.66 + 0.18 * Math.sin(x * 2.0 + z * 1.6);
+    if (y < 0) y *= 0.28;
     pos.setXYZ(i, x, y, z);
+    tmp.copy(base);
+    if (y > 0.28) tmp.lerp(moss, 0.22);
+    else if (y > 0.08) tmp.lerp(lichen, 0.14);
+    else tmp.lerp(shade, 0.22);
+    colA[i * 3] = tmp.r; colA[i * 3 + 1] = tmp.g; colA[i * 3 + 2] = tmp.b;
   }
   pos.needsUpdate = true;
+  geo.setAttribute("color", new THREE.BufferAttribute(colA, 3));
+  geo = geo.toNonIndexed();
   geo.computeVertexNormals();
-  geo.scale(sx * 0.5, sy, sz * 0.5);
+  geo.scale(sx * 0.62, sy * 1.12, sz * 0.62);
   return mesh(geo, color, matId, hero);
 }
 
@@ -1781,6 +1801,51 @@ function makeSisterIsles(H) {
       batch.add(m);
     }
   }
+  function bushAt(x, z, s = 1, col = 0x4e7a32) {
+    const y = Math.max(H(x, z), 0.3);
+    const pal = [col, 0x3a6a28, 0x5c8a3a, 0x6a7a32];
+    for (const [ox, oy, oz, ss, c] of [
+      [0, 0.55, 0, 1.0, pal[0]], [0.55, 0.40, 0.18, 0.68, pal[1]],
+      [-0.48, 0.38, -0.16, 0.62, pal[2]], [0.15, 0.62, -0.48, 0.52, pal[3]],
+    ]) {
+      const m = mesh(retagGeometry(new THREE.SphereGeometry(ss * s, 5, 4), MAT.FOLIAGE), c, MAT.FOLIAGE);
+      m.position.set(x + ox * s, y + oy * s, z + oz * s);
+      m.scale.set(1.05, 0.68, 1.0);
+      batch.add(m);
+    }
+  }
+  function flowerBed(x, z, w = 3.2, d = 2.2) {
+    const y = Math.max(H(x, z), 0.3) + 0.08;
+    add(batch, box(w, 0.1, d, 0x5a6a32, MAT.FOLIAGE), x, y, z);
+    const cols = [0xe8c84a, 0xd46a7a, 0xf4f0e0, 0xc45a3a, 0x7aaa46];
+    for (let i = 0; i < 7; i++) {
+      const fx = x + ((i % 4) - 1.5) * (w * 0.22);
+      const fz = z + (Math.floor(i / 4) - 0.4) * (d * 0.45);
+      add(batch, box(0.22, 0.22, 0.22, cols[i % cols.length], MAT.FOLIAGE), fx, y + 0.18, fz);
+    }
+  }
+  function wellAt(x, z) {
+    const y = Math.max(H(x, z), 0.3);
+    add(batch, cyl(0.85, 0.95, 0.7, 8, 0xc8bca8, MAT.ROCK), x, y + 0.35, z);
+    add(batch, box(0.08, 1.4, 0.08, 0x5a3a22, MAT.WOOD), x - 0.7, y + 1.2, z);
+    add(batch, box(0.08, 1.4, 0.08, 0x5a3a22, MAT.WOOD), x + 0.7, y + 1.2, z);
+    add(batch, box(1.7, 0.08, 0.16, 0x5a3a22, MAT.WOOD), x, y + 1.9, z);
+    add(batch, cone(1.15, 0.7, 4, 0xa8422c, MAT.ROOF), x, y + 2.25, z);
+  }
+  function stallAt(x, z, ry = 0) {
+    const y = Math.max(H(x, z), 0.3);
+    const g = new THREE.Group();
+    g.add(mesh(retagGeometry(new THREE.BoxGeometry(0.12, 1.8, 0.12), MAT.WOOD), 0x5a3a22, MAT.WOOD));
+    const p2 = mesh(retagGeometry(new THREE.BoxGeometry(0.12, 1.8, 0.12), MAT.WOOD), 0x5a3a22, MAT.WOOD);
+    p2.position.set(2.2, 0, 0); g.add(p2);
+    const roof = mesh(retagGeometry(new THREE.BoxGeometry(2.8, 0.1, 1.6), MAT.ROOF), 0xc45a3a, MAT.ROOF);
+    roof.position.set(1.1, 1.1, 0); roof.rotation.z = -0.12; g.add(roof);
+    const board = mesh(retagGeometry(new THREE.BoxGeometry(2.2, 0.7, 1.1), MAT.WOOD), 0x7a5a32, MAT.WOOD);
+    board.position.set(1.1, 0.2, 0); g.add(board);
+    g.position.set(x, y + 0.9, z);
+    g.rotation.y = ry;
+    batch.add(g);
+  }
   function fence(x0, z0, x1, z1, posts = 5) {
     const len = Math.hypot(x1 - x0, z1 - z0) || 1;
     for (let i = 0; i <= posts; i++) {
@@ -1866,6 +1931,44 @@ function makeSisterIsles(H) {
   add(batch, box(10.2, 0.7, 0.06, 0xf4f0e6, MAT.ROOF), cay.x + 9, H(cay.x + 9, cay.z + 32.5) + 1.55, cay.z + 32.5);
   add(batch, box(6.5, 0.12, 4.2, 0x5a7a32, MAT.FOLIAGE), cay.x - 16, H(cay.x - 16, cay.z + 20) + 0.08, cay.z + 20);
 
+  // Extra cottages, well, stall, garden and rim plants — still merged, no new draw.
+  const extraCay = [
+    [cay.x + 36, cay.z + 14, -0.3],
+    [cay.x - 38, cay.z + 30, 0.25],
+  ];
+  extraCay.forEach(([x, z, ry], i) => {
+    const hs = house(6.4, 5.6, 4.1, 2.0, cayWalls[(i + 3) % cayWalls.length], cayRoofs[(i + 2) % cayRoofs.length], true, (i + 2) % 4);
+    hs.position.set(x, H(x, z), z);
+    hs.rotation.y = ry;
+    batch.add(hs);
+  });
+  wellAt(cay.x - 2, cay.z + 20);
+  stallAt(cay.x - 30, cay.z + 46, 0.5);
+  flowerBed(cay.x + 6, cay.z + 20, 3.6, 2.4);
+  flowerBed(cay.x - 24, cay.z + 20, 3.0, 2.0);
+  add(batch, box(5.4, 0.12, 3.4, 0x4e6a2c, MAT.FOLIAGE), cay.x + 22, H(cay.x + 22, cay.z + 18) + 0.08, cay.z + 18);
+  // Coop and barrels by the north cottages
+  const coop = house(3.2, 2.6, 2.0, 1.1, 0xf2ead8, 0x8a3a22, true, 3);
+  coop.position.set(cay.x + 12, H(cay.x + 12, cay.z + 16), cay.z + 16);
+  coop.rotation.y = 0.2;
+  batch.add(coop);
+  add(batch, cyl(0.45, 0.45, 0.8, 8, 0x6a4a28, MAT.WOOD), cay.x - 32, H(cay.x - 32, cay.z + 44) + 0.5, cay.z + 44);
+  add(batch, cyl(0.4, 0.4, 0.7, 8, 0x5a3a20, MAT.WOOD), cay.x - 31, H(cay.x - 31, cay.z + 45.2) + 0.45, cay.z + 45.2);
+  // Bench and nets on the jetty
+  add(batch, box(1.8, 0.12, 0.45, 0x6a4a28, MAT.WOOD), jx, 2.0, jz + 6);
+  add(batch, box(0.12, 0.45, 0.12, 0x5a3a22, MAT.WOOD), jx - 0.7, 1.75, jz + 6);
+  add(batch, box(0.12, 0.45, 0.12, 0x5a3a22, MAT.WOOD), jx + 0.7, 1.75, jz + 6);
+  add(batch, box(0.08, 1.3, 1.8, 0x3a4a3a, MAT.WOOD), jx + 2.2, 2.6, jz + 2);
+  for (const [ox, oz, s] of [
+    [44, -28, 0.9], [-40, -28, 1.0], [70, 8, 0.8], [-70, 16, 0.95], [20, 52, 0.75],
+  ]) palmAt(cay.x + ox, cay.z + oz, s);
+  for (const [ox, oz, s] of [[-32, 8, 0.8], [28, 10, 0.85], [4, 44, 0.7], [-14, 8, 0.75]]) oliveAt(cay.x + ox, cay.z + oz, s);
+  for (const [ox, oz, s, c] of [
+    [-36, 16, 0.95, 0x3a6a28], [32, 16, 1.05, 0x4e7a32], [-8, 16, 0.8, 0x5c8a3a],
+    [14, 44, 0.7, 0x4a6e2c], [40, 30, 0.85, 0x3a6a28], [-44, 40, 0.9, 0x4e7a32],
+    [52, -8, 0.75, 0x5c8a3a], [-54, -18, 0.8, 0x3a6a28], [0, -32, 0.7, 0x4e7a32],
+  ]) bushAt(cay.x + ox, cay.z + oz, s, c);
+
   // ----- Cedar Isle: grove, chapel, west cliffs, falls -----
   const ced = ISLES.cedarIsle;
   // Rock outcrops on the west slope — flatter seated stones, nudged inland so they do not hang in the air.
@@ -1877,9 +1980,13 @@ function makeSisterIsles(H) {
     [-58, -8, 6.2, 2.3, 5.2, 0x9a8c78, 0.7],
     [-84, 16, 5.4, 2.0, 4.6, 0xc4b8a4, 0.2],
     [-76, -6, 5.0, 1.9, 4.4, 0xaea090, -0.75],
+    [-70, -26, 8.6, 3.8, 6.8, 0xd4cbb8, 0.35],
+    [-78, -18, 7.4, 3.4, 6.2, 0xc8bca8, -0.4],
+    [-62, -22, 6.6, 3.0, 5.6, 0xb8aa94, 0.55],
+    [-84, -30, 6.0, 2.6, 5.0, 0x9a8c78, 0.15],
   ]) {
     const x = ced.x + ox, z = ced.z + oz;
-    add(batch, boulder(sx, sy, sz, col, MAT.ROCK), x, seatOnTerrain(H, x, z, sy * 0.12), z, 0.18, ry, 0.10);
+    add(batch, boulder(sx, sy, sz, col, MAT.ROCK), x, seatOnTerrain(H, x, z, sy * 0.32), z, 0.18, ry, 0.10);
   }
   const chap = house(8.5, 7.2, 6.2, 3.4, 0xf6f0e4, 0xb84a32, true, 1);
   const cx = ced.x + 6, cz = ced.z - 8;
@@ -1922,12 +2029,54 @@ function makeSisterIsles(H) {
   shed.rotation.y = 0.4;
   batch.add(shed);
 
+  // Hamlet, orchard, garden and mid-slope plants — still inside the merge.
+  const hamlet = [
+    [ced.x + 24, ced.z - 20, 0.2, 0xf6f0e4, 0x8a3a22],
+    [ced.x + 36, ced.z - 12, -0.15, 0xf2ead8, 0xb84a32],
+    [ced.x + 22, ced.z + 16, 0.55, 0xf8f4ea, 0x8a3a22],
+  ];
+  hamlet.forEach(([x, z, ry, wall, roof], i) => {
+    const hs = house(6.2, 5.4, 4.0 + (i % 2) * 0.4, 2.0, wall, roof, true, i + 1);
+    hs.position.set(x, H(x, z) - 0.35, z);
+    hs.rotation.y = ry;
+    batch.add(hs);
+  });
+  wellAt(ced.x + 14, ced.z - 16);
+  flowerBed(cx + 6, cz + 6, 3.2, 2.2);
+  flowerBed(ced.x + 30, ced.z - 18, 2.8, 1.8);
+  add(batch, box(0.08, 1.5, 0.08, 0x5a3a22, MAT.WOOD), ced.x + 28, H(ced.x + 28, ced.z - 8) + 0.75, ced.z - 8);
+  add(batch, box(0.08, 1.5, 0.08, 0x5a3a22, MAT.WOOD), ced.x + 36, H(ced.x + 36, ced.z - 7) + 0.75, ced.z - 7);
+  add(batch, box(8.2, 0.55, 0.06, 0xf4f0e6, MAT.ROOF), ced.x + 32, H(ced.x + 32, ced.z - 7.5) + 1.5, ced.z - 7.5);
+  // Stone cross by the chapel
+  add(batch, box(0.28, 2.4, 0.28, 0xd4cbb8, MAT.ROCK), cx - 8, H(cx - 8, cz + 6) + 1.2, cz + 6);
+  add(batch, box(1.3, 0.28, 0.28, 0xd4cbb8, MAT.ROCK), cx - 8, H(cx - 8, cz + 6) + 2.0, cz + 6);
+  // Orchard on the east terrace
+  for (const [ox, oz, s] of [
+    [48, 6, 0.85], [58, 8, 0.95], [68, 6, 0.8], [52, -4, 0.9],
+    [62, -2, 0.85], [72, -4, 0.95], [56, 16, 0.8], [66, 14, 0.9],
+  ]) oliveAt(ced.x + ox, ced.z + oz, s);
+  // Mid-slope pines filling the south and north flanks
+  for (const [ox, oz, s] of [
+    [8, 48, 1.15], [-16, 44, 1.0], [28, 40, 1.2], [-30, 36, 0.95],
+    [12, -48, 1.1], [-20, -46, 1.05], [32, -40, 0.9], [-40, 8, 1.15],
+  ]) {
+    const x = ced.x + ox, z = ced.z + oz;
+    if (H(x, z) < 10) continue;
+    pineAt(x, z, s);
+  }
+  for (const [ox, oz, s, c] of [
+    [38, 14, 0.95, 0x3a6a28], [44, 20, 0.8, 0x4e7a32], [20, -24, 0.85, 0x5c8a3a],
+    [10, -16, 0.7, 0x3a6a28], [30, 8, 0.9, 0x4e7a32], [-20, 20, 0.85, 0x3a6a28],
+    [50, -10, 0.75, 0x5c8a3a], [16, 20, 0.8, 0x4e7a32], [-10, -24, 0.9, 0x3a6a28],
+    [80, 12, 0.7, 0x4e7a32],
+  ]) bushAt(ced.x + ox, ced.z + oz, s, c);
+
   // Waterfall chute on the NW notch — lips merge, crossed veil reads from every heading
   const fx = ced.x - 88, fz = ced.z - 40;
   const fy = Math.max(H(ced.x - 58, ced.z - 26), 30);
-  add(batch, boulder(6.4, 2.4, 4.0, 0xd4cbb8, MAT.ROCK), ced.x - 58, seatOnTerrain(H, ced.x - 58, ced.z - 26, 0.35), ced.z - 26, 0.15, 0.2, 0.05);
-  add(batch, boulder(5.0, 2.2, 3.4, 0xb8aa94, MAT.ROCK), ced.x - 66, seatOnTerrain(H, ced.x - 66, ced.z - 32, 0.3), ced.z - 32, 0.1, -0.18, 0.08);
-  add(batch, boulder(4.2, 2.0, 3.0, 0x9a8c78, MAT.ROCK), ced.x - 74, seatOnTerrain(H, ced.x - 74, ced.z - 36, 0.28), ced.z - 36, 0.12, 0.14, 0.04);
+  add(batch, boulder(6.4, 2.8, 4.0, 0xd4cbb8, MAT.ROCK), ced.x - 58, seatOnTerrain(H, ced.x - 58, ced.z - 26, 0.7), ced.z - 26, 0.15, 0.2, 0.05);
+  add(batch, boulder(5.0, 2.6, 3.4, 0xb8aa94, MAT.ROCK), ced.x - 66, seatOnTerrain(H, ced.x - 66, ced.z - 32, 0.65), ced.z - 32, 0.1, -0.18, 0.08);
+  add(batch, boulder(4.2, 2.4, 3.0, 0x9a8c78, MAT.ROCK), ced.x - 74, seatOnTerrain(H, ced.x - 74, ced.z - 36, 0.6), ced.z - 36, 0.12, 0.14, 0.04);
   for (const [ox, oz, s] of [[-2, 8, 2.1], [2, 10, 1.7], [-5, 9, 1.5], [0, 12, 1.8]]) {
     const sp = mesh(retagGeometry(new THREE.SphereGeometry(s, 6, 5), MAT.FOAM), 0xf2f7fc, MAT.FOAM);
     sp.position.set(fx + ox, 1.6, fz + oz);

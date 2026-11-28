@@ -108,7 +108,7 @@ export function createAudio() {
     sfxG.gain.value = clamp(settings.sfxVol ?? 0.7, 0, 1);
   }
 
-  function updateFlight(craft, settings, nearCoast = 0, inThermal = 0) {
+  function updateFlight(craft, settings, nearCoast = 0, inThermal = 0, weather = null) {
     if (!unlocked) return;
     const def = craft.def;
     if (def.engine && !craft.crashed) {
@@ -119,9 +119,10 @@ export function createAudio() {
       const L = loops.get(def.engineSound);
       if (L) L.gain.gain.setTargetAtTime(0, ac.currentTime, 0.1);
     }
-    // wind
+    // wind — a little more body in a squall or storm
     const w = clamp((craft.airspeed - 8) / 62, 0, 1);
-    loop("wind", { gain: 0.06 + w * 0.62, playbackRate: 0.82 + w * 0.42 });
+    const wet = weather && (weather.id === "squall" || weather.id === "storm") ? 0.22 : 0;
+    loop("wind", { gain: 0.06 + w * 0.62 + wet, playbackRate: 0.82 + w * 0.42 + (wet ? 0.08 : 0) });
     loop("waves", { gain: nearCoast * 0.35, playbackRate: 1 });
     if (inThermal > 2) loop("thermal", { gain: clamp(inThermal / 20, 0, 0.25) });
     else {

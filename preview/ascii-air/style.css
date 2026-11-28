@@ -993,6 +993,10 @@ body.touch-portrait #hud-mission { top: 36px; }
 .mission-card { display: flex; flex-direction: column; gap: 2px; }
 .mission-card:hover, .opt-row:hover { background: #ffe08a; }
 .mission-stars { font-size: 14px; }
+.mission-blurb { font-size: 12px; opacity: 0.82; line-height: 1.3; }
+.star-bar { height: 6px; background: rgba(42, 36, 28, 0.12); border-radius: 99px; overflow: hidden; margin: 0 0 10px; border: 1px solid rgba(42, 36, 28, 0.18); }
+.star-bar > span { display: block; height: 100%; background: #c9a227; }
+.result-unlock { font-size: 18px; color: #8a5a12; margin: 8px 0 4px; }
 .opt-groups { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px; }
 .opt-list { display: flex; flex-direction: column; gap: 6px; }
 .opt-row { display: flex; justify-content: space-between; gap: 12px; width: 100%; align-items: center; }
