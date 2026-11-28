@@ -485,7 +485,8 @@ function syncPlaneMesh() {
     const dx = camera.position.x - craft.pos.x;
     const dy = camera.position.y - craft.pos.y;
     const dz = camera.position.z - craft.pos.z;
-    ink.visible = (dx * dx + dy * dy + dz * dz) < 200 * 200;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    ink.visible = d2 >= 22 * 22 && d2 < 200 * 200;
   }
 }
 
@@ -747,7 +748,7 @@ function step(now) {
     if (mode === "fly") {
       const st = missions.update(dtRaw, now / 1000, craft, camera, inp);
       if (combat.active) {
-        const c = combat.update(dtRaw, craft, inp);
+        const c = combat.update(dtRaw, craft, inp, camera);
         const ev = c.events || {};
         if (ev.fired) audio.play("ui_ok", { gain: 0.18, playbackRate: 1.8 });
         if (ev.hits) { audio.play("balloon_pop", { gain: 0.62, playbackRate: 1.15 }); flyCam.bump(0.34); }
@@ -1091,6 +1092,7 @@ function exposeAPI() {
     launch: (spd) => launchCraft(craft, spd, 2),
     setThrottle: (v) => { input.resetThrottleLever?.(v); craft.throttle = v; },
     setFire: (on) => { input.setDebugFire?.(!!on); },
+    forceWave: (i) => combat.forceWave && combat.forceWave(i, craft),
     faceToward(x, z) {
       const hdg = headingFromXZ(x - craft.pos.x, z - craft.pos.z);
       resetCraft(craft, { x: craft.pos.x, y: craft.pos.y, z: craft.pos.z, heading: hdg }, hdg, craft.id);
@@ -1137,7 +1139,7 @@ function exposeAPI() {
         maybeRespawn();
         if (mode === "fly") missions.update(PHYS.dt, i * PHYS.dt, craft, camera, stepInp);
         if (mode === "fly" && combat.active) {
-          const c = combat.update(PHYS.dt, craft, stepInp);
+          const c = combat.update(PHYS.dt, craft, stepInp, camera);
           if (c.done && missions.state.active && !missions.state.result) {
             missions.complete(c.stars, { line: c.line, bestStreak: 0 });
             if (c.stars > 0) {

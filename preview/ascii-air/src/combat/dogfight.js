@@ -75,6 +75,7 @@ function mergeGroup(root) {
   geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.setIndex(idx);
+  geo.computeVertexNormals();
   retagGeometry(geo, MAT.PLANE, 1);
   return geo;
 }
@@ -83,8 +84,8 @@ function buildBanditProto(kind = "scout") {
   const g = new THREE.Group();
   const ace = kind === "ace";
   const raider = kind === "raider";
-  const bodyCol = ace ? 0x2a4a3c : raider ? 0x4a3024 : 0x8a5a32;
-  const trimCol = ace ? 0xf0e6c8 : raider ? 0x8a2020 : 0xc4a056;
+  const bodyCol = ace ? 0x4e8a68 : raider ? 0x8a5340 : 0x8a5a32;
+  const trimCol = ace ? 0xf0e6c8 : raider ? 0xd43828 : 0xc4a056;
   const rust = new THREE.MeshLambertMaterial({ color: bodyCol });
   const gold = new THREE.MeshLambertMaterial({ color: trimCol });
   const dark = new THREE.MeshLambertMaterial({ color: 0x2a2420 });
@@ -190,7 +191,7 @@ export function createCombat(scene) {
   group.add(raiderInst);
 
   const outlineMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x1a140c, side: THREE.BackSide, toneMapped: false, depthWrite: true,
+    color: 0x1a140c, side: THREE.BackSide, toneMapped: false, depthWrite: false,
   }));
   const outline = new THREE.InstancedMesh(banditGeo, outlineMat, MAX_BANDITS);
   outline.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -205,10 +206,10 @@ export function createCombat(scene) {
   raiderOutline.visible = false;
   group.add(raiderOutline);
   const bossOutlineMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-    color: 0x1a140c, side: THREE.BackSide, toneMapped: false,
+    color: 0x1a140c, side: THREE.BackSide, toneMapped: false, depthWrite: false,
   }));
   const bossOutline = new THREE.Mesh(bossGeo, bossOutlineMat);
-  bossOutline.scale.setScalar(1.22 * 1.12);
+  bossOutline.scale.setScalar(1.22 * 1.03);
   bossOutline.visible = false;
   group.add(bossOutline);
 
@@ -252,6 +253,7 @@ export function createCombat(scene) {
   let banter = "";
   let banterT = 0;
   let gunMul = 1;
+  let _cam = null;
   const enemies = [];
   const tracers = [];
   const smokes = [];
@@ -553,9 +555,15 @@ export function createCombat(scene) {
       const slot = raider ? nr : n;
       const mesh = raider ? raiderInst : inst;
       const ink = raider ? raiderOutline : outline;
-      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(raider ? 1.12 : 1, raider ? 1.12 : 1, raider ? 1.12 : 1));
+      const bodyS = raider ? 1.12 : 1;
+      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(bodyS, bodyS, bodyS));
       mesh.setMatrixAt(slot, M4);
-      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(raider ? 1.28 : 1.16, raider ? 1.28 : 1.16, raider ? 1.28 : 1.16));
+      let inkS = bodyS * 1.03;
+      if (_cam) {
+        const d = Math.hypot(_cam.position.x - e.x, _cam.position.y - e.y, _cam.position.z - e.z);
+        if (d < 22 || d > 180) inkS = 0.001;
+      }
+      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(inkS, inkS, inkS));
       ink.setMatrixAt(slot, M4);
       if (raider) nr++; else n++;
     }
@@ -574,7 +582,12 @@ export function createCombat(scene) {
       bossMesh.visible = true;
       bossMesh.position.set(boss.x, boss.y, boss.z);
       bossMesh.quaternion.copy(Q);
-      bossOutline.visible = true;
+      let showInk = true;
+      if (_cam) {
+        const d = Math.hypot(_cam.position.x - boss.x, _cam.position.y - boss.y, _cam.position.z - boss.z);
+        showInk = d >= 22 && d <= 180;
+      }
+      bossOutline.visible = showInk;
       bossOutline.position.set(boss.x, boss.y, boss.z);
       bossOutline.quaternion.copy(Q);
     } else {
@@ -626,7 +639,8 @@ export function createCombat(scene) {
     }
   }
 
-  function update(dt, craft, input) {
+  function update(dt, craft, input, camera) {
+    if (camera) _cam = camera;
     if (!active || done) return getState();
     events.fired = false; events.hits = 0; events.broke = null; events.playerHit = false; events.banter = null;
     t += dt;
@@ -656,7 +670,7 @@ export function createCombat(scene) {
         const waves = mission.waves || [];
         const w = waves[wave];
         if (w) {
-          const list = w.units || Array.from({ length: w.n || 2 }, () => ({ boss: !!w.boss, kind: w.kind }));
+          const list = w.units || Array.from({ length: w.n || 2 }, (_, i) => ({ boss: !!w.boss && i === 0, kind: w.kind }));
           if (w.boss && !list.some((u) => u.boss)) list[0] = { ...list[0], boss: true };
           spawnWave(list, craft);
           message = w.boss ? "BARON ROOK TAKES THE FIELD" : "BANDITS AHEAD";
@@ -678,6 +692,24 @@ export function createCombat(scene) {
     return getState();
   }
 
+  function forceWave(index, craft) {
+    if (!active || !mission) return getState();
+    for (const e of enemies) e.live = false;
+    const waves = mission.waves || [{ n: mission.bandits || 2 }];
+    wave = Math.max(0, Math.min(waves.length - 1, index | 0));
+    waveWait = 0;
+    const w = waves[wave];
+    if (w) {
+      const list = w.units || Array.from({ length: w.n || 2 }, (_, i) => ({ boss: !!w.boss && i === 0, kind: w.kind }));
+      if (w.boss && !list.some((u) => u.boss)) list[0] = { ...list[0], boss: true };
+      spawnWave(list, craft);
+      message = w.boss ? "BARON ROOK TAKES THE FIELD" : "BANDITS AHEAD";
+      msgT = 2.2;
+    }
+    syncMeshes();
+    return getState();
+  }
+
   function getState() {
     const left = living().length;
     return {
@@ -693,7 +725,7 @@ export function createCombat(scene) {
       banter: banterT > 0 ? banter : "",
       aim: cool <= 0,
       enemies: enemies.filter((e) => e.live).map((e) => ({
-        x: e.x, y: e.y, z: e.z, boss: !!e.boss, state: e.state,
+        x: e.x, y: e.y, z: e.z, boss: !!e.boss, kind: e.kind, state: e.state,
         heading: e.heading, speed: e.speed, hp: e.hp, max: e.max,
       })),
       events: { fired: events.fired, hits: events.hits, broke: events.broke, playerHit: events.playerHit },
@@ -729,6 +761,6 @@ export function createCombat(scene) {
     return marks;
   }
 
-  return { start, end, update, getState, projectMarks, get active() { return active; }, group };
+  return { start, end, update, getState, forceWave, projectMarks, get active() { return active; }, group };
 
 }

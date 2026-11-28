@@ -445,38 +445,42 @@ function buildFighter(s) {
   add(g, new THREE.BoxGeometry(0.10, 0.10, 1.15), dark, MAT.METAL, -0.28, 0.68, 2.15);
 
   // Cockpit
-  add(g, new THREE.TorusGeometry(0.36, 0.05, 6, 12), dark, MAT.METAL, 0, 0.86, 0.55, Math.PI / 2);
-  add(g, new THREE.BoxGeometry(0.55, 0.07, 0.18), cream, MAT.PLANE, 0, 1.00, 0.95, 0.35, 0, 0);
-  add(g, new THREE.BoxGeometry(0.50, 0.30, 0.04), cream, MAT.PLANE, 0, 1.10, 0.78, 0.55, 0, 0);
+  add(g, new THREE.TorusGeometry(0.36, 0.05, 6, 12), dark, MAT.METAL, 0, 0.72, 0.55, Math.PI / 2);
+  add(g, new THREE.BoxGeometry(0.55, 0.07, 0.18), cream, MAT.PLANE, 0, 0.86, 0.95, 0.35, 0, 0);
+  add(g, new THREE.BoxGeometry(0.50, 0.26, 0.04), cream, MAT.PLANE, 0, 0.94, 0.78, 0.55, 0, 0);
 
-  // Staggered biplane wings, cream with teal tips
+  // Staggered biplane wings, cream with teal tips.
+  // Gap is about one chord — compact 1930s fighter, not a tall cabane.
   const zU = 0.55, zL = -0.05;
-  add(g, new THREE.BoxGeometry(9.6, 0.08, 1.55), cream, MAT.PLANE, 0, 1.62, zU);
-  add(g, new THREE.BoxGeometry(0.95, 0.07, 1.45), teal, MAT.PLANE,  4.30, 1.70, zU);
-  add(g, new THREE.BoxGeometry(0.95, 0.07, 1.45), teal, MAT.PLANE, -4.30, 1.70, zU);
-  add(g, new THREE.BoxGeometry(8.6, 0.07, 1.35), cream, MAT.PLANE, 0, 0.06, zL);
-  add(g, new THREE.BoxGeometry(0.85, 0.06, 1.25), teal, MAT.PLANE,  3.85, 0.12, zL);
-  add(g, new THREE.BoxGeometry(0.85, 0.06, 1.25), teal, MAT.PLANE, -3.85, 0.12, zL);
+  const yU = 1.18, yL = 0.10;
+  add(g, new THREE.BoxGeometry(9.6, 0.09, 1.55), cream, MAT.PLANE, 0, yU, zU);
+  add(g, new THREE.BoxGeometry(0.95, 0.08, 1.45), teal, MAT.PLANE,  4.30, yU + 0.08, zU);
+  add(g, new THREE.BoxGeometry(0.95, 0.08, 1.45), teal, MAT.PLANE, -4.30, yU + 0.08, zU);
+  add(g, new THREE.BoxGeometry(8.6, 0.08, 1.35), cream, MAT.PLANE, 0, yL, zL);
+  add(g, new THREE.BoxGeometry(0.85, 0.07, 1.25), teal, MAT.PLANE,  3.85, yL + 0.06, zL);
+  add(g, new THREE.BoxGeometry(0.85, 0.07, 1.25), teal, MAT.PLANE, -3.85, yL + 0.06, zL);
   // Swallow-tail chevron decal (not a national mark)
-  add(g, new THREE.BoxGeometry(0.70, 0.06, 0.55), teal, MAT.PLANE,  1.85, 1.72, zU);
-  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE,  1.85, 1.74, zU - 0.10, 0, 0,  0.55);
-  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE,  1.85, 1.74, zU - 0.10, 0, 0, -0.55);
-  add(g, new THREE.BoxGeometry(0.70, 0.06, 0.55), teal, MAT.PLANE, -1.85, 1.72, zU);
-  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE, -1.85, 1.74, zU - 0.10, 0, 0,  0.55);
-  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE, -1.85, 1.74, zU - 0.10, 0, 0, -0.55);
+  add(g, new THREE.BoxGeometry(0.70, 0.06, 0.55), teal, MAT.PLANE,  1.85, yU + 0.10, zU);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE,  1.85, yU + 0.12, zU - 0.10, 0, 0,  0.55);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE,  1.85, yU + 0.12, zU - 0.10, 0, 0, -0.55);
+  add(g, new THREE.BoxGeometry(0.70, 0.06, 0.55), teal, MAT.PLANE, -1.85, yU + 0.10, zU);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE, -1.85, yU + 0.12, zU - 0.10, 0, 0,  0.55);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE, -1.85, yU + 0.12, zU - 0.10, 0, 0, -0.55);
 
-  const ailL = add(g, new THREE.BoxGeometry(1.8, 0.07, 0.34), teal, MAT.PLANE,  2.2, 0.06, zL - 0.82);
-  const ailR = add(g, new THREE.BoxGeometry(1.8, 0.07, 0.34), teal, MAT.PLANE, -2.2, 0.06, zL - 0.82);
+  const ailL = add(g, new THREE.BoxGeometry(1.8, 0.07, 0.34), teal, MAT.PLANE,  2.2, yL, zL - 0.82);
+  const ailR = add(g, new THREE.BoxGeometry(1.8, 0.07, 0.34), teal, MAT.PLANE, -2.2, yL, zL - 0.82);
 
+  const strutH = yU - yL;
+  const strutY = (yU + yL) / 2;
   for (const side of [1, -1]) {
-    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 2.05, 0.84, 0.35);
-    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 2.05, 0.84, -0.05);
-    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 3.45, 0.84, 0.35);
-    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 3.45, 0.84, -0.05);
-    add(g, new THREE.BoxGeometry(0.07, 1.05, 0.07), dark, MAT.WOOD, side * 0.42, 1.10, 0.50, 0, 0, side * 0.28);
-    wire(g, dark, side * 2.00, 1.54, 0.70, side * 3.40, 0.10, -0.40);
-    wire(g, dark, side * 3.40, 1.54, 0.70, side * 2.00, 0.10, -0.40);
-    wire(g, dark, side * 0.42, 0.36, -4.10, side * 0.42, 0.08, -0.10);
+    add(g, new THREE.BoxGeometry(0.12, strutH, 0.12), dark, MAT.WOOD, side * 2.05, strutY, 0.35);
+    add(g, new THREE.BoxGeometry(0.12, strutH, 0.12), dark, MAT.WOOD, side * 2.05, strutY, -0.05);
+    add(g, new THREE.BoxGeometry(0.12, strutH, 0.12), dark, MAT.WOOD, side * 3.45, strutY, 0.35);
+    add(g, new THREE.BoxGeometry(0.12, strutH, 0.12), dark, MAT.WOOD, side * 3.45, strutY, -0.05);
+    add(g, new THREE.BoxGeometry(0.10, 0.72, 0.10), dark, MAT.WOOD, side * 0.42, 0.86, 0.48, 0, 0, side * 0.22);
+    wire(g, dark, side * 2.00, yU - 0.06, 0.70, side * 3.40, yL + 0.04, -0.40);
+    wire(g, dark, side * 3.40, yU - 0.06, 0.70, side * 2.00, yL + 0.04, -0.40);
+    wire(g, dark, side * 0.42, 0.36, -4.10, side * 0.42, yL, -0.10);
   }
 
   // Swallow-tail: forked horizontal stab + modest raked fin
@@ -490,13 +494,13 @@ function buildFighter(s) {
   const rudder = add(g, new THREE.BoxGeometry(0.08, 1.15, 0.42), teal, MAT.PLANE, 0, 1.00, -4.72);
   rudder.name = "tail-rudder";
 
-  // Spatted undercarriage
-  add(g, new THREE.BoxGeometry(0.08, 1.05, 0.08), dark, MAT.METAL,  0.95, -0.20, 0.45, 0, 0,  0.22);
-  add(g, new THREE.BoxGeometry(0.08, 1.05, 0.08), dark, MAT.METAL, -0.95, -0.20, 0.45, 0, 0, -0.22);
-  add(g, new THREE.SphereGeometry(0.28, 8, 6), teal, MAT.PLANE,  1.15, -0.72, 0.55, 0, 0, 0, 0.7, 1.15, 1.4);
-  add(g, new THREE.SphereGeometry(0.28, 8, 6), teal, MAT.PLANE, -1.15, -0.72, 0.55, 0, 0, 0, 0.7, 1.15, 1.4);
-  const wL = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.16, 10), dark, MAT.METAL,  1.15, -0.82, 0.55, 0, 0, Math.PI / 2);
-  const wR = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.16, 10), dark, MAT.METAL, -1.15, -0.82, 0.55, 0, 0, Math.PI / 2);
+  // Spatted undercarriage — short, stout legs
+  add(g, new THREE.BoxGeometry(0.10, 0.78, 0.10), dark, MAT.METAL,  0.95, -0.12, 0.45, 0, 0,  0.22);
+  add(g, new THREE.BoxGeometry(0.10, 0.78, 0.10), dark, MAT.METAL, -0.95, -0.12, 0.45, 0, 0, -0.22);
+  add(g, new THREE.SphereGeometry(0.28, 8, 6), teal, MAT.PLANE,  1.15, -0.52, 0.55, 0, 0, 0, 0.75, 1.05, 1.35);
+  add(g, new THREE.SphereGeometry(0.28, 8, 6), teal, MAT.PLANE, -1.15, -0.52, 0.55, 0, 0, 0, 0.75, 1.05, 1.35);
+  const wL = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.16, 10), dark, MAT.METAL,  1.15, -0.62, 0.55, 0, 0, Math.PI / 2);
+  const wR = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.16, 10), dark, MAT.METAL, -1.15, -0.62, 0.55, 0, 0, Math.PI / 2);
   const wT = add(g, new THREE.CylinderGeometry(0.10, 0.10, 0.08, 8), dark, MAT.METAL, 0, -0.18, -4.15, 0, 0, Math.PI / 2);
 
   const prop = new THREE.Group();
@@ -535,7 +539,7 @@ function buildFighter(s) {
   g.add(prop);
 
   const pilot = seatPilot(g);
-  pilot.position.set(0, 1.10, 0.45);
+  pilot.position.set(0, 0.88, 0.45);
   pilot.scale.setScalar(1.0);
   pilot.name = "pilot";
 
@@ -606,10 +610,10 @@ export function createPlaneMesh(id, colors) {
       inkGeo.setIndex(idx);
       inkGeo.computeVertexNormals();
       const ink = new THREE.Mesh(inkGeo, patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
-        color: 0x1a140c, side: THREE.BackSide, toneMapped: false,
+        color: 0x1a140c, side: THREE.BackSide, toneMapped: false, depthWrite: false,
       })));
       ink.name = "plane-ink";
-      ink.scale.setScalar(1.04);
+      ink.scale.setScalar(1.03);
       visual.add(ink);
       g.userData.ink = ink;
     }
