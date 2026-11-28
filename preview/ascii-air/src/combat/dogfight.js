@@ -553,6 +553,7 @@ export function createCombat(scene) {
       line: done ? done.line : "",
       hitFlash,
       aim: cool <= 0,
+      enemies: enemies.filter((e) => e.live).map((e) => ({ x: e.x, y: e.y, z: e.z, boss: !!e.boss, state: e.state })),
     };
   }
 

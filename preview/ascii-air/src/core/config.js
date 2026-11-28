@@ -187,7 +187,7 @@ export const PLANES = {
     gearHeight: 1.05,
     waterCapable: false,
     engine: true,
-    color: "#1e3a44",
+    color: "#3a7a86",
     accent: "#e8d4a8",
     engineSound: "engine_trainer",
   },

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { MAT, LANDMARKS, QUALITY } from "../core/config.js";
+import { isleHeightAt } from "./isles.js";
 import { tagMesh, retagGeometry, patchMaterialIdAlpha } from "../render/idMaterial.js";
 import { triplanarLambert, loadTex } from "../render/textured.js";
 
@@ -3368,7 +3369,8 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       group.add(pne);
     }
   }
-  group.add(makeSisterIsles(H));
+  const H2 = (x, z) => Math.max(H(x, z), isleHeightAt(x, z));
+  group.add(makeSisterIsles(H2));
   mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "keep-rock", "arch"]));
   {
     const cliffs = makeCoastalCliffs(H);
