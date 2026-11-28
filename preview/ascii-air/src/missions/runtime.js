@@ -193,6 +193,10 @@ export function createMissionSystem(scene, world, audio) {
     starsAwarded: 0,
     mailStops: [],
     mailHasBag: false,
+    winchT: 0,
+    winchCue: "",
+    cable: null,
+    parcel: null,
   };
 
   function clear() {
@@ -219,6 +223,10 @@ export function createMissionSystem(scene, world, audio) {
     state.starsAwarded = 0;
     state.mailStops = [];
     state.mailHasBag = false;
+    state.winchT = 0;
+    state.winchCue = "";
+    state.cable = null;
+    state.parcel = null;
     state.rival = null;
     state.rivalDelta = 0;
     state.streak = 0;
@@ -229,6 +237,54 @@ export function createMissionSystem(scene, world, audio) {
   }
 
   function add(o) { group.add(o); state.objects.push(o); return o; }
+
+  function makeParcelCrate() {
+    const g = new THREE.Group();
+    const wood = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0xc4a06a, flatShading: true }));
+    const strap = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x5a3a22, flatShading: true }));
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.9, 0.9), wood);
+    const s1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 0.18), strap);
+    const s2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.95), strap);
+    g.add(box, s1, s2);
+    g.traverse((o) => { if (o.isMesh) o.userData.matId = 12; });
+    g.name = "parcel-crate";
+    return g;
+  }
+
+  function ensureWinchGear() {
+    if (!state.cable) {
+      const mat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0x2a2420, toneMapped: false }));
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1, 5), mat);
+      cable.name = "winch-cable";
+      cable.visible = false;
+      add(cable);
+      state.cable = cable;
+    }
+    if (!state.parcel) {
+      const crate = makeParcelCrate();
+      crate.visible = false;
+      add(crate);
+      state.parcel = crate;
+    }
+    return state.cable;
+  }
+
+  const _winchFrom = new THREE.Vector3();
+  const _winchTo = new THREE.Vector3();
+  const _winchUp = new THREE.Vector3(0, 1, 0);
+  function placeCable(from, to, visible) {
+    const cable = ensureWinchGear();
+    if (!visible) {
+      cable.visible = false;
+      return;
+    }
+    const len = Math.max(0.4, from.distanceTo(to));
+    cable.position.lerpVectors(from, to, 0.5);
+    cable.quaternion.setFromUnitVectors(_winchUp, _winchTo.copy(to).sub(from).normalize());
+    cable.scale.set(1, len, 1);
+    cable.visible = true;
+  }
+
 
   function plantFlares(m) {
     let cx, cz;
@@ -769,13 +825,34 @@ export function createMissionSystem(scene, world, audio) {
         followMoving(cur);
         cur.rotation.z = time * 0.55;
         const stop = cur.userData.stop;
-        state.aim = { x: cur.position.x, y: cur.position.y, z: cur.position.z, wind: false, label: stop.type === "pickup" ? "PICK UP" : (stop.type === "drop" ? "DROP" : "NEXT") };
+        const winchStop = !!(stop.winch || m.mechanic === "winch" && (stop.type === "pickup" || stop.type === "drop" || stop.type === "raft" || stop.type === "parcel"));
+        state.aim = { x: cur.position.x, y: cur.position.y, z: cur.position.z, wind: false, label: winchStop ? (stop.type === "pickup" ? "WINCH" : "HOVER DROP") : (stop.type === "pickup" ? "PICK UP" : (stop.type === "drop" ? "DROP" : "NEXT")) };
+        const dHoriz = Math.hypot(craft.pos.x - cur.position.x, craft.pos.z - cur.position.z);
         const d = craft.pos.distanceTo(cur.position);
-        if (d < stop.r + 6) {
+        const spd = craft.airspeed || 0;
+        const dy = craft.pos.y - cur.position.y;
+
+        // Hanging crate under the plane once the parcel is on the hook.
+        ensureWinchGear();
+        if (state.parcel) {
+          const carry = !!state.mailHasBag && stop.type !== "pickup";
+          state.parcel.visible = carry;
+          if (carry) {
+            const hang = (winchStop && dHoriz < stop.r + 12 && state.winchT > 0) ? Math.min(8, 1.6 + state.winchT * 3.4) : 1.6;
+            state.parcel.position.set(craft.pos.x, craft.pos.y - hang, craft.pos.z);
+            state.parcel.rotation.y = (craft.heading || 0);
+          }
+        }
+
+        const finishStop = () => {
           if (stop.type === "pickup") state.mailHasBag = true;
+          if (stop.type === "drop" || stop.type === "raft" || stop.type === "parcel") state.mailHasBag = false;
           state.next++;
+          state.winchT = 0;
+          state.winchCue = "";
+          placeCable(_winchFrom, _winchTo, false);
           bumpStreak();
-          if (stop.type === "drop") {
+          if (stop.type === "drop" || stop.type === "raft" || stop.type === "parcel") {
             audio?.play("success");
             feelFX?.burstMail(cur.position, true);
           } else if (stop.type === "pickup") {
@@ -791,6 +868,31 @@ export function createMissionSystem(scene, world, audio) {
             const stars = starsFromTime(m, state.t);
             finish(stars, { line: stars ? formatTime(state.t) : "OVER TIME" });
           }
+        };
+
+        if (winchStop) {
+          const inHole = dHoriz < stop.r + 8;
+          const slow = spd < 34;
+          const window = dy > -4 && dy < 28;
+          if (inHole && slow && window) {
+            state.winchT += dt;
+            const pct = Math.min(100, Math.round((state.winchT / 1.7) * 100));
+            state.winchCue = (stop.type === "pickup" ? "WINCHING " : "LOW DROP ") + pct + "%";
+            _winchFrom.set(craft.pos.x, craft.pos.y - 0.6, craft.pos.z);
+            _winchTo.set(cur.position.x, Math.min(craft.pos.y - 1.2, cur.position.y), cur.position.z);
+            placeCable(_winchFrom, _winchTo, true);
+            if (state.winchT >= 1.7) finishStop();
+          } else {
+            state.winchT = Math.max(0, state.winchT - dt * 0.7);
+            placeCable(_winchFrom, _winchTo, false);
+            if (inHole && !slow) state.winchCue = "TOO FAST — CUT SPEED FOR THE WINCH";
+            else if (inHole && !window) state.winchCue = dy >= 28 ? "TOO HIGH — DESCEND TO DROP" : "TOO LOW — CLIMB A LITTLE";
+            else state.winchCue = state.winchT > 0.05 ? "HOLD THE HOVER" : "";
+          }
+        } else {
+          state.winchCue = "";
+          placeCable(_winchFrom, _winchTo, false);
+          if (d < stop.r + 6) finishStop();
         }
       } else if (m.activity === "storm" && m.target && state.next >= state.mailStops.length) {
         if (craft.crashed) finish(0, { line: "CRASHED" });

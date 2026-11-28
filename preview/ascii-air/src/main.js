@@ -562,6 +562,8 @@ function renderFrame(time, camDt = 1 / 60) {
   }
 
   look.uniforms.uTime.value = time;
+  if (weather && look.uniforms.uRain) look.uniforms.uRain.value = weather.state.rain;
+  if (weather && look.uniforms.uFlash) look.uniforms.uFlash.value = weather.state.flash || 0;
   if (look.uniforms.uSpeed) {
     const k = Math.max(0, Math.min(1, ((craft.airspeed || 0) - 28) / 32));
     look.uniforms.uSpeed.value = (mode === "fly" && !paused && !flyCam.state.hero && !camOverride) ? k : 0;
@@ -740,7 +742,7 @@ function step(now) {
       look.uniforms.uRain.value = weather.state.rain;
       look.uniforms.uFlash.value = weather.state.flash;
       if (island.sky && typeof island.sky.applyFlash === "function") island.sky.applyFlash(weather.state.flash);
-      if (typeof island.setStorm === "function") island.setStorm(weather.state.id === "storm", weather.state.windKt);
+      if (typeof island.setStorm === "function") island.setStorm(weather.state.id === "storm" || weather.state.id === "squall", weather.state.windKt);
     }
 
     syncPlaneMesh();

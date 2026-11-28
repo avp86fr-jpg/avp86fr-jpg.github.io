@@ -424,13 +424,13 @@ export const MISSIONS = [
   },
   {
     id: "mail-b6", activity: "mail", klass: "beginner", title: "Quay Parcel",
-    brief: "A fat parcel for the quay. Pick it up at the hangar and drop it on the pier — watch the masts and keep the bag dry.",
-    hour: 11, plane: "trainer",
+    brief: "A fat parcel for the quay, in a rain squall. Hover low and slow over the hangar to winch it up, then hover-drop it on the pier — watch the masts and the gusts, and keep the bag dry.",
+    hour: 11, plane: "trainer", weather: "squall", mechanic: "winch",
     start: { x: -80, y: 36, z: -1100, heading: 0.2, speed: 44 },
-    timeLimits: [80, 62, 48],
+    timeLimits: [100, 78, 58],
     stops: [
-      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
-      { type: "drop", name: "Harbour Pier", x: L.pier.x, z: L.pier.z, r: 22 },
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 22, winch: true },
+      { type: "drop", name: "Harbour Pier", x: L.pier.x, z: L.pier.z, r: 24, winch: true },
     ],
   },
   // ---------- MAIL PRO ----------
@@ -680,13 +680,13 @@ export const MISSIONS = [
   },
   {
     id: "res-b5", activity: "rescue", klass: "beginner", title: "Wreck Parcel",
-    brief: "A sealed parcel and a raft for the shallow wreck. Mark the hull, then drop both through the rings before the tide turns.",
-    hour: 9.5, plane: "seaplane", mode: "rescue",
+    brief: "Mark the shallow wreck, then hover low and slow to winch a sealed parcel down to the raft. Do not just dive the ring — cut speed and hold the hook over the drop.",
+    hour: 9.5, plane: "seaplane", mode: "rescue", mechanic: "winch",
     start: { x: -640, y: 38, z: -1480, heading: -2.30, speed: 40 },
-    timeLimits: [100, 78, 58],
+    timeLimits: [110, 86, 64],
     stops: [
       { type: "mark", name: "Shallow Wreck", x: L.wreck.x, z: L.wreck.z, r: 24, y: 22 },
-      { type: "raft", name: "Parcel drop", x: L.wreck.x + 12, z: L.wreck.z - 28, r: 18, y: 16 },
+      { type: "raft", name: "Parcel drop", x: L.wreck.x + 12, z: L.wreck.z - 28, r: 20, y: 16, winch: true },
     ],
   },
   {
@@ -867,8 +867,8 @@ export const DOGFIGHTS = [
   },
   {
     id: "df-b3", activity: "dogfight", klass: "beginner", title: "Harbour Escort",
-    brief: "A mail crate is leaving the harbour. Stay between it and two flights of Gale scouts until the bag is clear of the cape. Friendly shots — they break off and trail smoke.",
-    hour: 10.5, plane: "fighter",
+    brief: "A mail crate is leaving the harbour. Stay between the escorted plane and two flights of Gale scouts until the bag is clear of the cape. If the mail plane is forced down, the bag is lost. Friendly shots — they break off and trail smoke.",
+    hour: 10.5, plane: "fighter", escort: true,
     start: { x: 40, y: 125, z: -1220, heading: 0.1, speed: 54 },
     timeLimits: [200, 140, 95],
     waves: [{ n: 2, kind: "scout" }, { n: 2, kind: "scout" }],

@@ -5,6 +5,13 @@ import { totalStars } from "../save/save.js";
 import { createMobileLayer, iosFullscreenHint } from "./mobile.js";
 
 
+function weatherLabel(id) {
+  if (id === "storm") return "STORM";
+  if (id === "squall") return "RAIN SQUALL";
+  return "CLEAR";
+}
+
+
 function pilotSvg() {
   // Original airmail pilot (Tess): short dark curls, tan cap, teal scarf. Not any licensed character.
   return `<svg class="pilot-mark" viewBox="0 0 80 96" width="92" height="110" aria-hidden="true">
@@ -725,7 +732,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     stats.classList.toggle("is-settled", !!settled);
     paintCompassTape(craft.heading);
 
-    const wx = weather.id === "storm" ? "STORM" : "CLEAR";
+    const wx = weatherLabel(weather.id);
     const windKmh = Math.round((weather.windKt || 0) * 1.852);
     const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° at " + windKmh + " km/h";
 
@@ -788,7 +795,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         const best = (save.best && save.best[m.id]) ? formatTime(save.best[m.id]) : "—";
         lines.push("> Best: " + best);
         lines.push("> Wind: " + windLine);
-        if (m.weather || weather.id === "storm") lines.push("> Weather: " + (weather.id === "storm" ? "STORM" : "CLEAR"));
+        if (m.weather || weather.id === "storm" || weather.id === "squall") lines.push("> Weather: " + weatherLabel(weather.id));
       } else if (m.activity === "landing" || (m.activity === "night" && m.target && !m.stops)) {
         const rwy = (m.target && m.target.heading > 2) ? "27" : "09";
         const typ = (m.target && m.target.type === "runway") ? rwy : String((m.target && m.target.type) || "").toUpperCase();
@@ -820,14 +827,15 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         const drops = stops.filter((s) => s.type === "drop").length;
         lines.push((m.activity === "night" ? "NIGHT MAIL" : "MAIL LINE") + "  (" + (klass || "PRO") + ")");
         if (!mission.mailHasBag && cur && cur.type === "pickup") {
-          lines.push("> Pick up the bag at the " + cur.name);
+          lines.push((cur.winch ? "> Hover-winch the parcel at the " : "> Pick up the bag at the ") + cur.name);
         } else if (cur && cur.moving === "steamer") {
           lines.push("> Drop the bag on the moving steamer");
         } else if (cur) {
-          lines.push("> Drop at " + cur.name);
+          lines.push((cur.winch ? "> Hover-drop the parcel at " : "> Drop at ") + cur.name);
         }
         lines.push("> Drops: " + Math.max(0, done) + " / " + drops);
         lines.push("> Time: " + formatTime(mission.t));
+        if (mission.winchCue) lines.push("> " + mission.winchCue);
         if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
         else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
@@ -850,18 +858,23 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         const cur = stops[mission.next];
         const done = mission.next || 0;
         lines.push((m.mode === "race" ? "CAPE RACE" : "RESCUE") + "  (" + (klass || "PRO") + ")");
-        if (cur) lines.push("> " + (cur.type === "raft" ? "Drop a raft at " : "Pylon: ") + cur.name);
+        if (cur) {
+          const verb = cur.winch ? "Winch the parcel at " : (cur.type === "raft" ? "Drop a raft at " : (cur.type === "mark" ? "Mark " : "Pylon: "));
+          lines.push("> " + verb + cur.name);
+        }
         lines.push("> Marks: " + done + " / " + stops.length);
         lines.push("> Time: " + formatTime(mission.t));
         if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
         else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
+        if (mission.winchCue) lines.push("> " + mission.winchCue);
       } else if (m.activity === "dogfight") {
         const c = combat || {};
         lines.push("DEFEND THE MAIL");
         lines.push("> " + (m.title || ""));
         lines.push("> Bandits: " + (c.left != null ? c.left : "—"));
         lines.push("> Health: " + (c.health != null ? c.health : 100));
+        if (c.escort) lines.push("> Mail plane: " + Math.max(0, Math.round(c.escort.hp)) + " / " + (c.escort.max || 70) + (c.escort.live === false ? "  — forced down" : ""));
         if (c.message) lines.push("> " + c.message);
         lines.push("> Time: " + formatTime(mission.t));
         lines.push("> Fire: R  or  click  or  FIRE");
@@ -902,13 +915,13 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     } else if (mission && mission.result) {
       miss.textContent = mission.message || "";
     } else if (touch) {
-      miss.textContent = weather.id === "storm" ? "Free Flight · Storm" : "Free Flight";
+      miss.textContent = weather.id === "storm" ? "Free Flight · Storm" : weather.id === "squall" ? "Free Flight · Squall" : "Free Flight";
     } else {
-      miss.textContent = "FREE FLIGHT\n> " + hourToClock(hour) + "\n> Wind: " + windLine + "\n> Weather: " + (weather.id === "storm" ? "STORM" : "CLEAR");
+      miss.textContent = "FREE FLIGHT\n> " + hourToClock(hour) + "\n> Wind: " + windLine + "\n> Weather: " + weatherLabel(weather.id);
     }
 
     const landing = mission && mission.active && (mission.active.activity === "landing" || (mission.active.activity === "night" && mission.active.target && !mission.active.stops) || (mission.active.activity === "storm" && mission.active.target && mission.next >= (mission.active.stops || []).length)) && !mission.result;
-    const stormy = weather.id === "storm" || (mission && mission.active && mission.active.weather === "storm");
+    const stormy = weather.id === "storm" || weather.id === "squall" || (mission && mission.active && (mission.active.weather === "storm" || mission.active.weather === "squall"));
     const vitEl = flight.querySelector("#g-vit");
     const altEl = flight.querySelector("#g-alt");
     const vsEl = flight.querySelector("#g-vs");
@@ -960,7 +973,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       aux.classList.remove("hidden");
       const turb = weather.turbulence > 0.55 ? "high" : weather.turbulence > 0.2 ? "medium" : "light";
       const rain = weather.rain > 0.6 ? "heavy" : weather.rain > 0.2 ? "light" : "none";
-      aux.textContent = "WEATHER: STORM\n> Rain: " + rain + "\n> Visibility: " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence: " + turb;
+      aux.textContent = "WEATHER: " + weatherLabel(weather.id) + "\n> Rain: " + rain + "\n> Visibility: " + Number(weather.visibility).toFixed(1) + " km\n> Turbulence: " + turb;
     } else {
       photo.classList.add("hidden");
       aux.classList.add("hidden");

@@ -155,6 +155,38 @@ function buildBanditProto(kind = "scout") {
   return geo;
 }
 
+function buildEscortProto() {
+  const g = new THREE.Group();
+  const red = new THREE.MeshLambertMaterial({ color: 0xc01418 });
+  const cream = new THREE.MeshLambertMaterial({ color: 0xf0e6d2 });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x2a2420 });
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.rotation.set(rx, ry, rz);
+    g.add(m);
+  };
+  // +Z nose, mail-red fuselage, cream wings — reads as a friendly crate, not a Gale bandit.
+  add(new THREE.CylinderGeometry(0.40, 0.26, 3.6, 8), red, 0, 0.18, 0, Math.PI / 2);
+  add(new THREE.SphereGeometry(0.40, 8, 6), red, 0, 0.18, 1.8);
+  add(new THREE.ConeGeometry(0.26, 1.3, 8), red, 0, 0.2, -2.4, -Math.PI / 2);
+  add(new THREE.BoxGeometry(6.4, 0.09, 1.2), cream, 0, 1.05, 0.15);
+  add(new THREE.BoxGeometry(5.6, 0.08, 1.05), cream, 0, -0.02, -0.1);
+  add(new THREE.BoxGeometry(0.7, 0.08, 1.1), red, 2.7, 1.12, 0.15);
+  add(new THREE.BoxGeometry(0.7, 0.08, 1.1), red, -2.7, 1.12, 0.15);
+  for (const s of [1, -1]) {
+    add(new THREE.BoxGeometry(0.09, 1.05, 0.09), dark, s * 1.55, 0.52, 0.15);
+    add(new THREE.BoxGeometry(0.09, 1.05, 0.09), dark, s * 2.45, 0.52, 0.15);
+  }
+  add(new THREE.BoxGeometry(2.0, 0.07, 0.7), cream, 0, 0.22, -2.45);
+  add(new THREE.BoxGeometry(0.09, 0.9, 0.55), red, 0, 0.72, -2.4);
+  add(new THREE.CylinderGeometry(0.48, 0.48, 0.28, 10), dark, 0, 0.18, 2.05, Math.PI / 2);
+  add(new THREE.BoxGeometry(0.7, 0.45, 0.9), cream, 0, 0.55, 0.15); // bag / cabin
+  const geo = mergeGroup(g);
+  red.dispose(); cream.dispose(); dark.dispose();
+  return geo;
+}
+
 function headingToQuat(heading, pitch, roll, out) {
   // Same convention as the player craft: yaw = -heading - PI/2, forward is -Z.
   EULER.set(pitch || 0, -heading - Math.PI / 2, roll || 0, "YXZ");
@@ -219,6 +251,14 @@ export function createCombat(scene) {
   bossMesh.scale.setScalar(1.22);
   group.add(bossMesh);
 
+  const escortGeo = buildEscortProto();
+  const escortMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const escortMesh = new THREE.Mesh(escortGeo, escortMat);
+  escortMesh.name = "escort-mail";
+  escortMesh.visible = false;
+  escortMesh.scale.setScalar(1.08);
+  group.add(escortMesh);
+
   const tracerGeo = new THREE.BoxGeometry(0.08, 0.08, 4.2);
   const tracerMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({ color: 0xffe29a, toneMapped: false }));
   const tracersMesh = new THREE.InstancedMesh(tracerGeo, tracerMat, MAX_TRACERS);
@@ -254,11 +294,13 @@ export function createCombat(scene) {
   let banterT = 0;
   let gunMul = 1;
   let _cam = null;
+  let escort = null;
   const enemies = [];
   const tracers = [];
   const smokes = [];
 
   function hideAllInstances() {
+    escortMesh.visible = false;
     inst.count = 0;
     outline.count = 0;
     tracersMesh.count = 0;
@@ -333,8 +375,32 @@ export function createCombat(scene) {
     const list = first.units || Array.from({ length: first.n || 2 }, (_, i) => ({ boss: !!first.boss && i === 0, kind: first.kind }));
     if (first.boss && !list.some((u) => u.boss)) list[0] = { ...list[0], boss: true };
     spawnWave(list, craft);
+    escort = null;
+    if (m.escort) {
+      escort = {
+        live: true,
+        hp: 90,
+        max: 90,
+        x: 90, y: 92, z: -1188,
+        heading: Math.atan2(-1168 - (-1188), -20 - 90),
+        pitch: 0,
+        roll: 0,
+        speed: 26,
+        pathI: 0,
+        progress: 0,
+        path: [
+          { x: 90, y: 92, z: -1188 },
+          { x: -20, y: 98, z: -1168 },
+          { x: -170, y: 104, z: -1210 },
+          { x: -280, y: 112, z: -1360 },
+          { x: -380, y: 120, z: -1540 },
+        ],
+      };
+      message = "STAY WITH THE MAIL PLANE";
+      msgT = 2.6;
+    }
     syncMeshes();
-    say("PIP: I have your wing.");
+    say(m.escort ? "PIP: Stay between the bag and the scouts." : "PIP: I have your wing.");
     gunMul = (craft && craft.upgrades && craft.upgrades.guns) ? 1.28 : 1;
     return getState();
   }
@@ -353,6 +419,7 @@ export function createCombat(scene) {
     enemies.length = 0;
     tracers.length = 0;
     smokes.length = 0;
+    escort = null;
     hideAllInstances();
     done = null;
   }
@@ -455,25 +522,44 @@ export function createCombat(scene) {
     for (const e of enemies) {
       if (!e.live) continue;
       e.stateT += dt;
-      const dx = px - e.x, dy = py - e.y, dz = pz - e.z;
+      const huntEscort = !!(escort && escort.live && !e.boss && (e.slot % 2 === 0));
+      const tx = huntEscort ? escort.x : px;
+      const ty = huntEscort ? escort.y : py;
+      const tz = huntEscort ? escort.z : pz;
+      const dx = tx - e.x, dy = ty - e.y, dz = tz - e.z;
       const dist = Math.hypot(dx, dy, dz);
       if (e.state === "chase") {
         const lead = 0.7 + (e.boss ? 0.25 : 0);
-        steerToward(e, px + FWD.x * 18 * lead, py + 2, pz + FWD.z * 18 * lead, dt, e.boss ? 1.55 : 1.35);
+        if (huntEscort) steerToward(e, tx, ty + 2, tz, dt, 1.25);
+        else steerToward(e, px + FWD.x * 18 * lead, py + 2, pz + FWD.z * 18 * lead, dt, e.boss ? 1.55 : 1.35);
         headingToQuat(e.heading, e.pitch, e.roll, Q);
         forwardFromQuat(Q, TMP);
         TMP2.set(dx, dy, dz).normalize();
         const ang = Math.acos(Math.min(1, Math.max(-1, TMP.dot(TMP2))));
         if (dist < 170 && ang < 0.22 && enemyCool <= 0) {
           spawnTracer(e.x, e.y, e.z, TMP.x, TMP.y, TMP.z, 200, "enemy");
-          enemyCool = e.boss ? 0.28 : 0.55;
+          enemyCool = e.boss ? 0.28 : (huntEscort ? 0.85 : 0.55);
           if (ang < 0.14 && dist < 140) {
-            health = Math.max(0, health - (e.boss ? 8 : 6));
-            hitFlash = 0.35;
-            events.playerHit = true;
-            message = "HIT — BREAK OFF";
-            msgT = 1.1;
-            say("PIP: Shake him, I am with you.");
+            if (huntEscort) {
+              escort.hp = Math.max(0, escort.hp - 4);
+              puff(escort.x, escort.y, escort.z, 0.8);
+              message = "THE MAIL PLANE IS HIT";
+              msgT = 1.2;
+              say("PIP: They're on the bag!");
+              if (escort.hp <= 0) {
+                escort.live = false;
+                escort.hp = 0;
+                message = "THE MAIL WAS FORCED DOWN";
+                msgT = 2.4;
+              }
+            } else {
+              health = Math.max(0, health - (e.boss ? 8 : 6));
+              hitFlash = 0.35;
+              events.playerHit = true;
+              message = "HIT — BREAK OFF";
+              msgT = 1.1;
+              say("PIP: Shake him, I am with you.");
+            }
           }
         }
         if (e.hp / e.max < 0.32) { e.state = "flee"; e.stateT = 0; }
@@ -594,6 +680,14 @@ export function createCombat(scene) {
       bossMesh.visible = false;
       bossOutline.visible = false;
     }
+    if (escort) {
+      headingToQuat(escort.heading, escort.pitch, escort.roll, Q);
+      escortMesh.visible = !!escort.live || escort.y > 14;
+      escortMesh.position.set(escort.x, escort.y, escort.z);
+      escortMesh.quaternion.copy(Q);
+    } else {
+      escortMesh.visible = false;
+    }
 
     let tn = 0;
     for (const tr of tracers) {
@@ -617,6 +711,44 @@ export function createCombat(scene) {
     smokeMesh.instanceMatrix.needsUpdate = true;
   }
 
+  function tickEscort(dt) {
+    if (!escort) return;
+    headingToQuat(escort.heading, escort.pitch, escort.roll, Q);
+    escortMesh.position.set(escort.x, escort.y, escort.z);
+    escortMesh.quaternion.copy(Q);
+    escortMesh.visible = !!escort.live;
+    if (!escort.live) {
+      // Settle toward the water without a crash spectacle
+      escort.y = Math.max(14, escort.y - 8 * dt);
+      escort.pitch = Math.max(-0.35, escort.pitch - 0.2 * dt);
+      return;
+    }
+    const path = escort.path;
+    const i = Math.min(escort.pathI, path.length - 1);
+    const a = path[i];
+    const b = path[Math.min(i + 1, path.length - 1)];
+    steerToward(escort, b.x, b.y, b.z, dt, 0.85);
+    const fx = Math.cos(escort.heading), fz = Math.sin(escort.heading);
+    escort.x += fx * escort.speed * dt;
+    escort.z += fz * escort.speed * dt;
+    escort.y += Math.sin(escort.pitch) * escort.speed * dt;
+    const d = Math.hypot(escort.x - b.x, escort.z - b.z);
+    if (d < 52 && escort.pathI < path.length - 1) escort.pathI += 1;
+    // 0..1 along the remaining polyline
+    let total = 0, remain = 0;
+    for (let k = 0; k < path.length - 1; k++) {
+      const leg = Math.hypot(path[k + 1].x - path[k].x, path[k + 1].z - path[k].z);
+      total += leg;
+      if (k > escort.pathI) remain += leg;
+      else if (k === escort.pathI) remain += Math.hypot(escort.x - path[k + 1].x, escort.z - path[k + 1].z);
+    }
+    escort.progress = total > 0 ? Math.max(0, Math.min(1, 1 - remain / total)) : 1;
+    if (escort.progress >= 0.99) {
+      escort.progress = 1;
+      escort.speed = Math.max(18, escort.speed - 4 * dt);
+    }
+  }
+
   function maybeNextWave(craft) {
     if (living().length) return;
     const waves = mission.waves || [{ n: mission.bandits || 2 }];
@@ -628,13 +760,20 @@ export function createCombat(scene) {
       }
       return;
     }
+    if (escort && escort.live && escort.progress < 1) return;
+    if (escort && !escort.live) {
+      if (!done) done = { stars: 0, line: "BAG LOST" };
+      return;
+    }
     if (!done) {
       const stars = health > 70 && t < ((mission.timeLimits && mission.timeLimits[2]) || 90) ? 3
         : health > 40 && t < ((mission.timeLimits && mission.timeLimits[1]) || 140) ? 2
         : 1;
-      const line = mission.boss || (mission.waves && mission.waves.some((w) => w.boss))
-        ? "THE SKY IS CLEAR"
-        : "MAIL IS SAFE";
+      const line = escort
+        ? "BAG IS CLEAR OF THE CAPE"
+        : (mission.boss || (mission.waves && mission.waves.some((w) => w.boss))
+          ? "THE SKY IS CLEAR"
+          : "MAIL IS SAFE");
       done = { stars, line };
     }
   }
@@ -661,8 +800,14 @@ export function createCombat(scene) {
     }
     firePlayer(craft, input);
     tickAI(dt, craft);
+    tickEscort(dt);
     tickTracers(dt);
     tickSmoke(dt);
+    if (escort && !escort.live && !done) {
+      done = { stars: 0, line: "BAG LOST" };
+      message = "THE MAIL WAS FORCED DOWN";
+      msgT = 2.4;
+    }
     if (waveWait > 0) {
       waveWait -= dt;
       if (waveWait <= 0) {
@@ -686,7 +831,13 @@ export function createCombat(scene) {
     }
     const lim = mission.timeLimits && mission.timeLimits[0];
     if (lim && t > lim + 8 && !done) {
-      done = { stars: living().length ? 0 : 1, line: living().length ? "OVER TIME" : "MAIL IS SAFE" };
+      if (escort && escort.live && escort.progress >= 1 && !living().length) {
+        done = { stars: 1, line: "BAG IS CLEAR OF THE CAPE" };
+      } else if (escort && !(escort.live && escort.progress >= 1)) {
+        done = { stars: 0, line: "OVER TIME" };
+      } else {
+        done = { stars: living().length ? 0 : 1, line: living().length ? "OVER TIME" : "MAIL IS SAFE" };
+      }
     }
     syncMeshes();
     return getState();
@@ -729,6 +880,7 @@ export function createCombat(scene) {
         heading: e.heading, speed: e.speed, hp: e.hp, max: e.max,
       })),
       events: { fired: events.fired, hits: events.hits, broke: events.broke, playerHit: events.playerHit },
+      escort: escort ? { live: !!escort.live, hp: escort.hp, max: escort.max, progress: escort.progress, x: escort.x, y: escort.y, z: escort.z } : null,
     };
   }
 

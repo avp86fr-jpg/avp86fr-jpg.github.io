@@ -48,6 +48,22 @@ function cone(r, h, segs, color, matId) {
   return mesh(new THREE.ConeGeometry(r, h, segs), color, matId);
 }
 
+function boulder(sx, sy, sz, color, matId, hero = 0) {
+  const geo = new THREE.SphereGeometry(1, 7, 5);
+  geo.scale(sx * 0.5, sy * 0.5, sz * 0.5);
+  // Pull a few verts so the silhouette is lumpy, not a clean egg.
+  const pos = geo.getAttribute("position");
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const n = 0.86 + 0.18 * Math.sin(x * 2.1 + z * 1.7) * Math.cos(y * 1.4);
+    pos.setXYZ(i, x * n, y * (0.92 + 0.08 * Math.sin(z * 2.4)), z * n);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  return mesh(geo, color, matId, hero);
+}
+
+
 function add(parent, m, x, y, z, rx = 0, ry = 0, rz = 0) {
   m.position.set(x, y, z);
   m.rotation.set(rx, ry, rz);
@@ -1839,16 +1855,18 @@ function makeSisterIsles(H) {
 
   // ----- Cedar Isle: grove, chapel, west cliffs, falls -----
   const ced = ISLES.cedarIsle;
-  // Rock outcrops seated on the west cliff, not floating cubes
-  for (const [ox, oz, sx, sy, sz, col] of [
-    [-92, 8, 14, 10, 11, 0xd4cbb8],
-    [-84, -16, 11, 8, 9, 0xc8bca8],
-    [-100, -4, 10, 8, 9, 0xb8aa94],
-    [-76, 20, 9, 7, 8, 0xd0c6b4],
-    [-68, -8, 7, 6, 7, 0x9a8c78],
+  // Rock outcrops seated on the west cliff — lumpy boulders, not cubic blocks
+  for (const [ox, oz, sx, sy, sz, col, ry] of [
+    [-92, 8, 16, 9, 13, 0xd4cbb8, 0.35],
+    [-84, -16, 13, 7.5, 11, 0xc8bca8, -0.4],
+    [-100, -4, 12, 7, 11, 0xb8aa94, 0.7],
+    [-76, 20, 11, 6.5, 9, 0xd0c6b4, -0.25],
+    [-68, -8, 8.5, 5.5, 8, 0x9a8c78, 0.55],
+    [-96, 18, 7, 4.2, 6.5, 0xc4b8a4, 0.15],
+    [-88, -6, 6.2, 3.6, 5.8, 0xaea090, -0.6],
   ]) {
     const x = ced.x + ox, z = ced.z + oz;
-    add(batch, box(sx, sy, sz, col, MAT.ROCK), x, H(x, z) + sy * 0.15, z, 0.08, 0.18, 0.04);
+    add(batch, boulder(sx, sy, sz, col, MAT.ROCK), x, H(x, z) + sy * 0.18, z, 0.12, ry, 0.08);
   }
   const chap = house(8.5, 7.2, 6.2, 3.4, 0xf6f0e4, 0xb84a32, true, 1);
   const cx = ced.x + 6, cz = ced.z - 8;
@@ -1894,9 +1912,9 @@ function makeSisterIsles(H) {
   // Waterfall chute on the NW notch — lips merge, crossed veil reads from every heading
   const fx = ced.x - 88, fz = ced.z - 40;
   const fy = Math.max(H(ced.x - 58, ced.z - 26), 30);
-  add(batch, box(6.4, 2.8, 3.6, 0xd4cbb8, MAT.ROCK), ced.x - 58, fy - 0.2, ced.z - 26, 0.1, 0.15, 0);
-  add(batch, box(4.2, 4.2, 3.0, 0xb8aa94, MAT.ROCK), ced.x - 66, fy - 3.6, ced.z - 32, 0.05, -0.12, 0.06);
-  add(batch, box(3.4, 5.0, 2.6, 0x9a8c78, MAT.ROCK), ced.x - 74, fy - 8.0, ced.z - 36, 0.08, 0.1, 0);
+  add(batch, boulder(7.2, 3.2, 4.4, 0xd4cbb8, MAT.ROCK), ced.x - 58, fy - 0.4, ced.z - 26, 0.15, 0.2, 0.05);
+  add(batch, boulder(5.0, 4.4, 3.6, 0xb8aa94, MAT.ROCK), ced.x - 66, fy - 3.4, ced.z - 32, 0.1, -0.18, 0.08);
+  add(batch, boulder(4.0, 5.2, 3.2, 0x9a8c78, MAT.ROCK), ced.x - 74, fy - 7.6, ced.z - 36, 0.12, 0.14, 0.04);
   for (const [ox, oz, s] of [[-2, 8, 2.1], [2, 10, 1.7], [-5, 9, 1.5], [0, 12, 1.8]]) {
     const sp = mesh(retagGeometry(new THREE.SphereGeometry(s, 6, 5), MAT.FOAM), 0xf2f7fc, MAT.FOAM);
     sp.position.set(fx + ox, 1.6, fz + oz);

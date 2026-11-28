@@ -463,16 +463,29 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
   // --- mail planes on lazy circuits (one draw) ---
   if (k > 0.3) {
     const proto = (() => {
+      // Compact mail biplane: fuselage, staggered wings, fin, stab, cowl — reads as a plane, not a bar.
       const parts = [
-        new THREE.BoxGeometry(1.0, 0.28, 0.28),
-        new THREE.BoxGeometry(0.15, 0.08, 1.6),
-        new THREE.BoxGeometry(0.12, 0.07, 1.3),
-        new THREE.BoxGeometry(0.22, 0.28, 0.08),
+        new THREE.BoxGeometry(1.55, 0.28, 0.28),
+        new THREE.CylinderGeometry(0.16, 0.18, 0.28, 6),
+        new THREE.BoxGeometry(0.16, 0.07, 2.05),
+        new THREE.BoxGeometry(0.15, 0.06, 1.7),
+        new THREE.BoxGeometry(0.05, 0.22, 0.05),
+        new THREE.BoxGeometry(0.05, 0.22, 0.05),
+        new THREE.BoxGeometry(0.28, 0.32, 0.08),
+        new THREE.BoxGeometry(0.08, 0.06, 0.7),
+        new THREE.BoxGeometry(0.04, 0.18, 0.04),
+        new THREE.BoxGeometry(0.04, 0.18, 0.04),
       ];
-      parts[0].translate(0, 0.05, 0);
-      parts[1].translate(0, 0.18, 0.05);
-      parts[2].translate(0, -0.08, -0.05);
-      parts[3].translate(-0.42, 0.22, 0);
+      parts[0].translate(0, 0.04, 0);
+      parts[1].rotateZ(Math.PI / 2); parts[1].translate(0.78, 0.04, 0);
+      parts[2].translate(0.1, 0.28, 0);
+      parts[3].translate(0.05, -0.12, 0);
+      parts[4].translate(0.15, 0.08, 0.45);
+      parts[5].translate(0.15, 0.08, -0.45);
+      parts[6].translate(-0.68, 0.24, 0);
+      parts[7].translate(-0.68, 0.08, 0);
+      parts[8].translate(0.2, -0.22, 0.16);
+      parts[9].translate(0.2, -0.22, -0.16);
       // stitch
       let nV = 0;
       for (const g of parts) nV += g.attributes.position.count;
@@ -514,7 +527,7 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
         const z = pl.cz + Math.sin(pl.a) * pl.rz;
         _dummy.position.set(x, pl.cy + Math.sin(pl.a * 2) * 3, z);
         _dummy.rotation.set(0, -pl.a + Math.PI / 2, Math.sin(pl.a) * 0.12);
-        _dummy.scale.set(6.2, 6.2, 6.2);
+        _dummy.scale.set(7.4, 7.4, 7.4);
         _dummy.updateMatrix();
         inst.setMatrixAt(i, _dummy.matrix);
         _col.setHex(pl.c);

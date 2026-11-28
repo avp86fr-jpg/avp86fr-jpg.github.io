@@ -33,15 +33,27 @@ export function createWeather(scene, sky, water) {
   let nextBolt = 2 + Math.random() * 3;
 
   function set(id = "clear", opts = {}) {
-    state.id = id === "storm" ? "storm" : "clear";
-    if (state.id === "storm") {
+    if (id === "storm") {
+      state.id = "storm";
       state.windDeg = opts.windDeg ?? 270;
       state.windKt = opts.windKt ?? 24;
       state.visibility = opts.visibility ?? 4.2;
       state.turbulence = opts.turbulence ?? 0.7;
       state.rain = opts.instant === false ? state.rain : 1;
       applyStormSky(true);
+    } else if (id === "squall") {
+      // Rain squall: gusty crosswind in cells, rain, no lightning.
+      state.id = "squall";
+      state.windDeg = opts.windDeg ?? 300;
+      state.windKt = opts.windKt ?? 20;
+      state.visibility = opts.visibility ?? 6.2;
+      state.turbulence = opts.turbulence ?? 0.85;
+      state.flash = 0;
+      state.rain = opts.instant === false ? state.rain : 0.75;
+      bolt.visible = false;
+      applyStormSky(true);
     } else {
+      state.id = "clear";
       state.windDeg = opts.windDeg ?? 40;
       state.windKt = opts.windKt ?? 6;
       state.visibility = opts.visibility ?? 12;
@@ -73,7 +85,7 @@ export function createWeather(scene, sky, water) {
   }
 
   function update(dt, time, focus) {
-    const wantRain = state.id === "storm" ? 1 : 0;
+    const wantRain = state.id === "storm" ? 1 : state.id === "squall" ? 0.75 : 0;
     state.rain += (wantRain - state.rain) * Math.min(1, dt * 1.8);
     if (state.id !== "storm") {
       state.flash *= Math.max(0, 1 - dt * 6);
@@ -103,13 +115,15 @@ export function createWeather(scene, sky, water) {
   }
 
   function applyToCraft(craft, dt) {
-    if (!craft || state.id !== "storm") return;
+    if (!craft || (state.id !== "storm" && state.id !== "squall")) return;
     const t = state.turbulence;
     const at = craft.airTime || 0;
-    // Gentle gust envelope (fair) in the wind direction, plus light turbulence
-    const gust = 0.55 + 0.45 * Math.sin(at * 0.55) * Math.sin(at * 0.17 + 1.2);
+    // Storm: a steady gust. Squall: cells that punch then ease, so the plane yaws and drifts.
+    const gust = state.id === "squall"
+      ? 0.25 + 0.75 * Math.max(0, Math.sin(at * 0.72) * Math.sin(at * 0.21 + 0.4))
+      : 0.55 + 0.45 * Math.sin(at * 0.55) * Math.sin(at * 0.17 + 1.2);
     const rad = ((state.windDeg || 270) * Math.PI) / 180;
-    const push = (state.windKt || 20) * 0.085 * gust;
+    const push = (state.windKt || 20) * (state.id === "squall" ? 0.125 : 0.085) * gust;
     if (craft.vel) {
       craft.vel.x += Math.cos(rad) * push * dt;
       craft.vel.z += Math.sin(rad) * push * dt;
@@ -121,6 +135,7 @@ export function createWeather(scene, sky, water) {
         if (craft.angVel) {
           craft.angVel.x += (n - 0.1) * t * 0.45 * dt;
           craft.angVel.z += n2 * t * 0.5 * dt;
+          if (state.id === "squall") craft.angVel.y += n2 * t * 0.55 * dt;
         }
       }
     }
