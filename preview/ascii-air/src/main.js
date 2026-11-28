@@ -15,7 +15,8 @@ import { createInput } from "./input/input.js";
 import { createAudio } from "./audio/audio.js";
 import { loadSave, persist, awardStars, saveSettings, savePhoto, applyUnlocks, totalStars } from "./save/save.js";
 import { createMissionSystem } from "./missions/runtime.js";
-import { getMission, MISSIONS } from "./missions/data.js";
+import { getMission, MISSIONS, DOGFIGHTS } from "./missions/data.js";
+import { createCombat } from "./combat/dogfight.js";
 import { createUI } from "./ui/ui.js";
 import { createDebug, autopilot } from "./debug/debug.js";
 import { createClock } from "./time/cycle.js";
@@ -81,6 +82,7 @@ renderer.setClearColor(0x8ed7f5, 1);
 const backend = renderer.capabilities.isWebGL2 ? "WebGL2" : "WebGL1";
 
 const scene = new THREE.Scene();
+const combat = createCombat(scene);
 const camera = new THREE.PerspectiveCamera(CAM.fov, 16 / 9, CAM.near, CAM.far);
 const flyCam = createFlightCamera(camera);
 
@@ -182,6 +184,7 @@ function startFreeFlight() {
   audio.unlock();
   currentMissionId = null;
   missions.clear();
+  combat.end();
   const id = save.unlocked[save.plane] ? save.plane : "trainer";
   const base = SPAWN.free || SPAWN.airport;
   const x = base.x, z = base.z;
@@ -228,6 +231,9 @@ function startMission(id) {
   rebuildPlane(pid);
   if (m.start) launchCraft(craft, m.start.speed || 40, 0);
   missions.start(m, craft);
+  if (m.activity === "dogfight") combat.start(m, craft);
+  else combat.end();
+  const holdStory = !!(m.activity === "dogfight" && m.story && m.story.length);
   autoPilotOn = false;
   autoPilotTarget = null;
   clock.set(m.hour ?? 10);
@@ -239,14 +245,15 @@ function startMission(id) {
   if (weather) weather.set(m.weather || "clear");
   if (m.activity === "landing") { craft.flaps = 1; }
   mode = "fly";
-  paused = false;
+  paused = holdStory;
   pendingResult = null;
   markLast("mission", id);
   input.resetThrottleLever?.(0.75);
   flyCam.hardSnap ? flyCam.hardSnap(craft, ui.isPortrait()) : flyCam.snap(craft, ui.isPortrait());
   syncPlaneMesh();
   if (flyCam.playIntro) flyCam.playIntro(2.5);
-  ui.showHUD();
+  if (holdStory) ui.showStory(m.story, () => { paused = false; ui.showHUD(); });
+  else ui.showHUD();
   audio.setMusic(m.hour >= 19 || m.hour < 6 ? "music_night" : "music_day", 0.5);
 }
 
@@ -257,6 +264,11 @@ function restartCurrent() {
 
 function nextMission() {
   if (!currentMissionId) { backToTitle(); return; }
+  const di = DOGFIGHTS.findIndex((m) => m.id === currentMissionId);
+  if (di >= 0) {
+    startMission(DOGFIGHTS[(di + 1) % DOGFIGHTS.length].id);
+    return;
+  }
   const i = MISSIONS.findIndex((m) => m.id === currentMissionId);
   const n = MISSIONS[(i + 1) % MISSIONS.length];
   startMission(n.id);
@@ -265,6 +277,7 @@ function nextMission() {
 function backToTitle() {
   camOverride = null;
   missions.clear();
+  combat.end();
   currentMissionId = null;
   pendingResult = null;
   paused = false;
@@ -677,6 +690,12 @@ function step(now) {
 
     if (mode === "fly") {
       const st = missions.update(dtRaw, now / 1000, craft, camera, inp);
+      if (combat.active) {
+        const c = combat.update(dtRaw, craft, inp);
+        if (c.done && !st.result) {
+          missions.complete(c.stars, { line: c.line });
+        }
+      }
       if (st.result && !pendingResult) {
         pendingResult = st.result;
         if (st.result.stars > 0) awardStars(save, st.active.id, st.result.stars, { time: st.result.time, grade: st.result.grade, line: st.result.line });
@@ -706,7 +725,7 @@ function step(now) {
       if (craft.stalled && !craft.onGround) {
         if (!step._stallT || now - step._stallT > 280) { audio.play("stall", { gain: 0.4 }); step._stallT = now; }
       }
-      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }) });
+      ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null });
     }
   }
 
@@ -792,6 +811,7 @@ function hudShot() {
   ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), {
     weather: weather && weather.state,
     save: Object.assign({}, save, { starsTotal: totalStars(save) }),
+    combat: combat.active ? combat.getState() : null,
   });
 }
 
@@ -941,7 +961,7 @@ function exposeAPI() {
     version: VERSION,
     ready: true,
     backend,
-    settings, save, craft, camera, scene, renderer, island, missions, audio, ui, clock, weather,
+    settings, save, craft, camera, scene, renderer, island, missions, audio, ui, clock, weather, combat,
     getPerf() {
       return {
         fps, frameMs, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
@@ -988,7 +1008,7 @@ function exposeAPI() {
     setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
     getPaused: () => paused,
     render: () => {
-      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }) }); } catch {}
+      try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), { weather: weather && weather.state, save: Object.assign({}, save, { starsTotal: totalStars(save) }), combat: combat.active ? combat.getState() : null }); } catch {}
       syncPlaneMesh();
       renderFrame(performance.now() / 1000, 1 / 60);
     },
@@ -1038,6 +1058,7 @@ function exposeAPI() {
     getUIBounds: () => ui.elements(),
     toggleFullscreen, toggleGyro,
     listMissions: () => MISSIONS.map((m) => m.id),
+    listDogfights: () => DOGFIGHTS.map((m) => m.id),
     getMission,
     simulate(seconds, inputFn) {
       const inp = { pitch: 0, roll: 0, yaw: 0, throttle: 0, throttleSet: null, boost: false, brake: false, actionPressed: false, actionHeld: false, gearToggle: false };

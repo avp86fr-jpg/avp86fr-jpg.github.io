@@ -1260,3 +1260,36 @@ button.album-btn, button.ascii-btn {
 #overlay .album-panel {
   background: rgba(255, 246, 232, 0.96);
 }
+
+
+#mobile-layer .fire-btn {
+  background: #1e3a44;
+  color: #fffaf0;
+  font-family: Itim, "Patrick Hand", cursive;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  border: 3px solid #1a140c;
+  box-shadow: 3px 3px 0 #1a140c;
+}
+#mobile-layer .fire-btn.lit { filter: brightness(1.2); }
+#hud-health {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 10px;
+  min-width: 180px;
+  padding: 6px 12px 8px;
+  pointer-events: none;
+}
+#hud-health .hp-label { font-size: 12px; letter-spacing: 0.06em; }
+#hud-health .hp-track {
+  height: 8px;
+  background: #efe4c8;
+  border: 2px solid #1a140c;
+  margin-top: 3px;
+}
+#hud-health .hp-fill { height: 100%; background: #2a8a5a; width: 100%; }
+#hud-health.hurt .hp-fill { background: #c01418; }
+.story-card { max-width: 420px; }
+.story-who { font-family: Itim, "Patrick Hand", cursive; font-size: 18px; margin: 0 0 6px; }
+.story-text { margin: 0 0 14px; line-height: 1.45; }

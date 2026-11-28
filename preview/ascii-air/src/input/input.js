@@ -25,6 +25,9 @@ export function createInput(root) {
     stick: { x: 0, y: 0, active: false },
     throttleLever: 0,
     lookBack: false,
+    fireHeld: false,
+    mouseFire: false,
+    touchFire: false,
   };
 
   let actionWas = false;
@@ -49,6 +52,15 @@ export function createInput(root) {
   window.addEventListener("keydown", (e) => onKey(e, true), { passive: false });
   window.addEventListener("keyup", (e) => onKey(e, false));
   window.addEventListener("blur", () => keys.clear());
+  window.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    const t = e.target;
+    if (t && t.closest && t.closest("button, input, textarea, select, a, #title-screen, #overlay, #mobile-layer, .album-sheet, .album-cta, .album-btn")) return;
+    state.mouseFire = true;
+  });
+  window.addEventListener("pointerup", () => { state.mouseFire = false; });
+  window.addEventListener("pointercancel", () => { state.mouseFire = false; });
+
 
   // Gamepad polled in update
   function readGamepad() {
@@ -63,6 +75,7 @@ export function createInput(root) {
       yaw: (p.buttons[4]?.pressed ? -1 : 0) + (p.buttons[5]?.pressed ? 1 : 0),
       throttleSet: (p.buttons[7] && p.buttons[7].value > 0.06) ? p.buttons[7].value : null,
       action: !!(p.buttons[0]?.pressed),
+      fire: !!(p.buttons[1]?.pressed),
       camera: !!(p.buttons[3]?.pressed && !p._cam),
     };
   }
@@ -116,6 +129,7 @@ export function createInput(root) {
     const brake = brakeHeld && !boost;
     if (boost) state.throttleLever = Math.max(state.throttleLever, 1);
     const lookBack = any(KEYS.look || []) || !!state.lookHeld;
+    const fireHeld = any(KEYS.fire || []) || !!state.touchFire || !!state.mouseFire || !!(gp && gp.fire);
 
     const out = {
       pitch, roll, yaw, throttle, throttleSet,
@@ -131,6 +145,8 @@ export function createInput(root) {
       debug: pulses.debug,
       confirm: pulses.confirm,
       lookBack,
+      fire: fireHeld,
+      fireHeld,
       autoThrottle: settings?.autoThrottle,
     };
     pulses.camera = pulses.pause = pulses.gearToggle = pulses.map = pulses.fullscreen = pulses.debug = pulses.confirm = false;
@@ -150,6 +166,7 @@ export function createInput(root) {
   function setTouchAction(v) { state.touchAction = v; }
   function setTouchBoost(v) { state.touchBoost = v; }
   function setTouchBrake(v) { state.touchBrake = v; }
+  function setTouchFire(v) { state.touchFire = v; }
   function setLookBack(v) { state.lookHeld = !!v; }
   function resetThrottleLever(v = 0) { state.throttleLever = v; state.throttleSlider = v == null ? null : v; }
 
@@ -189,5 +206,5 @@ export function createInput(root) {
     state.gyroPitch = 0;
   }
 
-  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setLookBack, resetThrottleLever, setGyro, disableGyro, calibrateGyro, state, keys };
+  return { update, setStick, setThrottleSlider, setTouchAction, setTouchBoost, setTouchBrake, setTouchFire, setLookBack, resetThrottleLever, setGyro, disableGyro, calibrateGyro, state, keys };
 }

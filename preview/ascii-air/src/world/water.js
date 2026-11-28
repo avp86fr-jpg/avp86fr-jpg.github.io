@@ -76,6 +76,10 @@ void main() {
   vec2 qIsle = (vWorld.xz - vec2(0.0, -200.0)) / vec2(1120.0, 1320.0);
   float sd = length(qIsle) - 1.0;
   float off = sd * 1200.0; // metres-ish
+  // Sister isles — foam hugs their beaches too
+  float sdCay = length((vWorld.xz - vec2(260.0, -2280.0)) / vec2(95.0, 72.0)) - 1.0;
+  float sdCed = length((vWorld.xz - vec2(1980.0, -380.0)) / vec2(130.0, 100.0)) - 1.0;
+  off = min(off, min(sdCay * 140.0, sdCed * 180.0));
   float southShore = sat(1.0 - abs(vWorld.z + 1260.0) / 200.0) * sat(1.0 - abs(vWorld.x) / 1100.0);
   float capeShore = sat(1.0 - length(vWorld.xz - vec2(-150.0, -1270.0)) / 260.0);
   float eastShore = sat(1.0 - length(vWorld.xz - vec2(140.0, -1280.0)) / 240.0);
@@ -171,7 +175,7 @@ void main() {
 `;
 
 export function createWater() {
-  const geo = new THREE.PlaneGeometry(WORLD.size * 1.6, WORLD.size * 1.6, 160, 160);
+  const geo = new THREE.PlaneGeometry(WORLD.size * 2.8, WORLD.size * 2.8, 168, 168);
   geo.rotateX(-Math.PI / 2);
   retagGeometry(geo, MAT.SEA, 0);
   // deep water further out: we still use SEA id; color shader handles it

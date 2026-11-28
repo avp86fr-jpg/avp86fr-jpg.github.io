@@ -26,7 +26,7 @@ export const CAM = {
   fov: 56,
   fovPortrait: 62,
   near: 0.8,
-  far: 6200,
+  far: 7400,
   chaseDist: 30,
   chaseHeight: 12.4,
   chaseSide: 6.2,
@@ -85,6 +85,7 @@ export const QUALITY = {
 export const STAR_UNLOCKS = {
   seaplane: 6,
   glider: 14,
+  fighter: 0,
   colorSchemes: 4,
   timeControl: 10,
 };
@@ -165,6 +166,31 @@ export const PLANES = {
     accent: "#ef8b2c",
     engineSound: null,
   },
+  fighter: {
+    id: "fighter",
+    name: "SWALLOWTAIL S-7",
+    unlocked: true,
+    mass: 610,
+    wingArea: 14.8,
+    wingspan: 9.4,
+    maxThrust: 3900,
+    cd0: 0.026,
+    kInduced: 0.044,
+    clMax: 1.48,
+    stallAoA: 0.25,
+    rollRate: 2.25,
+    pitchRate: 1.7,
+    yawRate: 1.15,
+    cruise: 54,
+    stallSpeed: 24,
+    maxSpeed: 84,
+    gearHeight: 1.05,
+    waterCapable: false,
+    engine: true,
+    color: "#1e3a44",
+    accent: "#e8d4a8",
+    engineSound: "engine_trainer",
+  },
 };
 
 export const LANDING = {
@@ -217,6 +243,7 @@ export const KEYS = {
   fullscreen: ["KeyF"],
   look: ["KeyV"],
   debug: ["Backquote"],
+  fire: ["KeyR"],
 };
 
 export const HERO_VIEW = {
@@ -269,6 +296,8 @@ export const LANDMARKS = {
   hangingKeep:  { x: 440,  z: -280,  name: "The Hanging Keep" },
   eastCove:     { x: 520,  z: -1480, name: "East Cove" },
   northGrove:   { x: -420, z:  520,  name: "Ridge Grove" },
+  mailCay:      { x: 260,  z: -2280, name: "South Mail Cay" },
+  cedarIsle:    { x: 1980, z: -380,  name: "Cedar Isle" },
 };
 
 export const AUDIO_FILES = [

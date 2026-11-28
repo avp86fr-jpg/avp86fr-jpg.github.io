@@ -176,7 +176,7 @@ export function createSky(scene) {
   moonLit.position.copy(moon.position);
   scene.add(skyMesh, hemi, sun, amb, fill, stars, moon, moonLit);
 
-  const fog = new THREE.Fog(0xa4c8e4, 800, 3200);
+  const fog = new THREE.Fog(0xa4c8e4, 1100, 5600);
   scene.fog = fog;
 
   const state = {
@@ -261,8 +261,8 @@ export function createSky(scene) {
     moonLit.color.set(0xd4e0f4);
 
     fog.color.copy(pal.fog);
-    fog.near = night > 0.6 ? 1400 : 800;
-    fog.far = night > 0.6 ? 3800 : 3200;
+    fog.near = night > 0.6 ? 1600 : 1100;
+    fog.far = night > 0.6 ? 4400 : 5600;
     scene.fog = fog;
 
     stars.material.opacity = saturate((night - 0.2) * 1.8);
@@ -298,8 +298,8 @@ export function createSky(scene) {
     sun.intensity = 0.42;
     amb.intensity = 0.50;
     fog.color.setHex(0x5a7284);
-    fog.near = 900;
-    fog.far = 3400;
+    fog.near = 1200;
+    fog.far = 5000;
     stars.material.opacity = 0;
     stars.visible = false;
     moon.visible = false;

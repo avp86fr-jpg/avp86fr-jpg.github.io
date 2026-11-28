@@ -342,6 +342,7 @@ export function createMissionSystem(scene, world, audio) {
     if (m.activity === "storm") setupStorm(m);
     if (m.activity === "night") setupNight(m);
     if (m.activity === "rescue") setupRescue(m);
+    // dogfight world objects live in combat/dogfight.js (on-demand)
     return m;
   }
 
@@ -839,7 +840,7 @@ export function createMissionSystem(scene, world, audio) {
       }
     });
   }
-  return { state, group, start, update, clear, abort, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight, setFeelFX };
+  return { state, group, start, update, clear, abort, complete: finish, photoQuality, getMission, MISSIONS, spawnDemoRing, spawnDemoChain, applyRingNight, setFeelFX };
 
 
 }

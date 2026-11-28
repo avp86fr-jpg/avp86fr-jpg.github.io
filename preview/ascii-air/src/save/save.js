@@ -6,7 +6,7 @@ export function defaultSave() {
   return {
     stars: {},          // missionId -> 0-3
     records: {},        // missionId -> { time, grade, score }
-    unlocked: { trainer: true, seaplane: false, glider: false },
+    unlocked: { trainer: true, seaplane: false, glider: false, fighter: true },
     photos: [],         // { id, title, data, when }
     settings: { ...DEFAULT_SETTINGS },
     totalStars: 0,
@@ -52,6 +52,7 @@ export function applyUnlocks(save) {
   const n = totalStars(save);
   if (n >= STAR_UNLOCKS.seaplane) save.unlocked.seaplane = true;
   if (n >= STAR_UNLOCKS.glider) save.unlocked.glider = true;
+  save.unlocked.fighter = true;
   return n;
 }
 

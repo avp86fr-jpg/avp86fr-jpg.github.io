@@ -1,6 +1,6 @@
 import { TITLE, PLANES, STAR_UNLOCKS } from "../core/config.js";
 import { hourToClock, formatTime, pad, isIOS, isStandalone, isMobileUA, safeInsets } from "../core/utils.js";
-import { ACTIVITIES, CLASSES, missionsBy, MISSIONS, MISSION_COUNT } from "../missions/data.js";
+import { ACTIVITIES, CLASSES, missionsBy, MISSIONS, MISSION_COUNT, DOGFIGHTS } from "../missions/data.js";
 import { totalStars } from "../save/save.js";
 import { createMobileLayer, iosFullscreenHint } from "./mobile.js";
 
@@ -79,6 +79,7 @@ export function createUI(root, hooks) {
       <div class="compass-window"><canvas id="compass-tape" width="640" height="56"></canvas></div>
     </div>
     <div class="album-panel" id="hud-mission"></div>
+    <div class="album-panel hidden" id="hud-health"><div class="hp-label">HEALTH</div><div class="hp-track"><div class="hp-fill" id="hp-fill"></div></div></div>
     <div class="banner hud-line" id="hud-msg"></div>
     <div class="album-panel hidden" id="hud-minimap"></div>
     <div class="album-panel flight-bar" id="hud-flight">
@@ -147,7 +148,8 @@ export function createUI(root, hooks) {
           else hooks.onFreeFlight?.();
         },
       },
-      { label: "Missions", fn: () => showMissions(save) },
+      { label: "Airmail", fn: () => showMissions(save) },
+      { label: "Defend the Mail", fn: () => showDogfights(save) },
       { label: "Free Flight", fn: () => hooks.onFreeFlight?.() },
       { label: "Options", fn: () => showOptions(save, "title") },
       { label: "Credits", fn: () => showCredits(save) },
@@ -257,7 +259,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     state.menuItems = [];
   }
 
-  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail", storm: "Storm", night: "Night Mail", rescue: "Rescue" };
+  const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail", storm: "Storm", night: "Night Mail", rescue: "Rescue", dogfight: "Defend the Mail" };
   const CLASS_FR = { beginner: "Beginner", pro: "Pro", ace: "Ace" };
 
   function showMissions(save) {
@@ -315,9 +317,65 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
+
+  function showDogfights(save) {
+    state.screen = "missions";
+    const got = DOGFIGHTS.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
+    const max = DOGFIGHTS.length * 3;
+    const cards = DOGFIGHTS.map((m) => {
+      const st = save.stars[m.id] | 0;
+      return `<button type="button" class="mission-card" data-id="${m.id}">
+        <strong>${m.title}</strong>
+        <span class="mission-stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</span>
+        <span class="hint">${CLASS_FR[m.klass] || m.klass} · Swallowtail S-7</span>
+      </button>`;
+    }).join("");
+    const p = openOverlay(`<div class="album-sheet">
+      <h2>Defend the Mail</h2>
+      <p class="sheet-meta">The Gilded Gale has been crowding the airmail. Friendly story flights — they break off and trail smoke. ★ ${got} / ${max}</p>
+      <div class="mission-map">${cards}</div>
+      <div id="mlist" class="album-nav"></div>
+    </div>`);
+    p.querySelectorAll(".mission-card").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const m = DOGFIGHTS.find((d) => d.id === btn.dataset.id);
+        if (m) showBrief(save, m);
+      });
+    });
+    renderMenu(p.querySelector("#mlist"), [{ label: "Back", fn: () => { closeOverlay(); showTitle(save); } }], save);
+  }
+
+  function showStory(pages, onDone) {
+    pages = pages || [];
+    if (!pages.length) { onDone?.(); return; }
+    let i = 0;
+    const paint = () => {
+      const pg = pages[i];
+      const last = i >= pages.length - 1;
+      const p = openOverlay(`<div class="album-sheet story-card">
+        <p class="story-who">${pg.who || ""}</p>
+        <p class="story-text">${pg.text || ""}</p>
+        <div id="mlist" class="album-nav"></div>
+      </div>`);
+      const items = [];
+      items.push({
+        label: last ? "Take off!" : "Next",
+        primary: true,
+        fn: () => {
+          if (last) { closeOverlay(); onDone?.(); }
+          else { i += 1; paint(); }
+        },
+      });
+      if (!last) items.push({ label: "Skip", fn: () => { closeOverlay(); onDone?.(); } });
+      renderMenu(p.querySelector("#mlist"), items, { stars: {} }, { hideHint: true });
+    };
+    paint();
+  }
+
   function showBrief(save, m) {
     const lockedPlane = m.plane && m.plane !== "trainer" && !save.unlocked[m.plane];
-    const need = m.plane === "seaplane" ? STAR_UNLOCKS.seaplane : STAR_UNLOCKS.glider;
+    const need = STAR_UNLOCKS[m.plane] || 0;
     const planeName = PLANES[m.plane || "trainer"].name;
     const p = openOverlay(`<div class="album-sheet">
       <h2>${m.title}</h2>
@@ -327,12 +385,12 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     </div>`);
     const items = [];
     if (!lockedPlane) items.push({ label: "Take off!", primary: true, fn: () => { closeOverlay(); hooks.onStartMission?.(m.id); } });
-    items.push({ label: "Back", fn: () => showMissionList(save, m.activity, m.klass) });
+    items.push({ label: "Back", fn: () => m.activity === "dogfight" ? showDogfights(save) : showMissionList(save, m.activity, m.klass) });
     renderMenu(p.querySelector("#mlist"), items, save);
   }
 
   function showHangar(save) {
-    const items = Object.values(PLANES).filter((p) => ["trainer", "seaplane", "glider"].includes(p.id)).map((p) => {
+    const items = Object.values(PLANES).filter((p) => ["trainer", "seaplane", "glider", "fighter"].includes(p.id)).map((p) => {
       const un = save.unlocked[p.id];
       const need = STAR_UNLOCKS[p.id] || 0;
       return {
@@ -488,10 +546,11 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
 ${"★".repeat(stars)}${"☆".repeat(3 - stars)}   ${result.line || ""}
 time  ${formatTime(result.time || 0)}
 </pre><div id="mlist"></div>`);
+    const isFight = result.mission && result.mission.activity === "dogfight";
     renderMenu(p.querySelector("#mlist"), [
       { label: "Retry", fn: () => { closeOverlay(); hooks.onRestart?.(); } },
       { label: "Next", primary: true, fn: () => { closeOverlay(); hooks.onNextMission?.(); } },
-      { label: "Missions", fn: () => { closeOverlay(); hooks.onQuit?.(); showMissions(save); } },
+      { label: isFight ? "Stories" : "Airmail", fn: () => { closeOverlay(); hooks.onQuit?.(); isFight ? showDogfights(save) : showMissions(save); } },
     ], save);
   }
 
@@ -582,7 +641,7 @@ time  ${formatTime(result.time || 0)}
     const vsS = (vs >= 0 ? "+" : "") + vs.toFixed(1);
     const hdg = ((Math.round((headingToNorth(craft.heading) * 180 / Math.PI) + 360) % 360));
     const flapN = (craft.flaps || 0) > 0.66 ? 3 : (craft.flaps || 0) > 0.33 ? 2 : (craft.flaps || 0) > 0.1 ? 1 : 0;
-    const starMax = MISSION_COUNT * 3;
+    const starMax = (MISSION_COUNT + DOGFIGHTS.length) * 3;
     const stars = (typeof save.starsTotal === "number") ? save.starsTotal : (typeof save.stars === "number" ? save.stars : 0);
     const photos = (save.photos && save.photos.length) || 0;
     const planeName = (craft.def && craft.def.name) || (craft.id || "TRAINER").toUpperCase();
@@ -615,6 +674,22 @@ time  ${formatTime(result.time || 0)}
     const wx = weather.id === "storm" ? "STORM" : "CLEAR";
     const windKmh = Math.round((weather.windKt || 0) * 1.852);
     const windLine = String(Math.round(weather.windDeg) % 360).padStart(3, "0") + "° at " + windKmh + " km/h";
+
+    const hpEl = hud.querySelector("#hud-health");
+    const combat = ctx.combat;
+    if (hpEl) {
+      if (combat && combat.active) {
+        hpEl.classList.remove("hidden");
+        hpEl.classList.toggle("hurt", combat.health < 40);
+        const fill = hpEl.querySelector("#hp-fill");
+        if (fill) fill.style.width = Math.max(0, Math.min(100, combat.health)) + "%";
+        const lab = hpEl.querySelector(".hp-label");
+        if (lab) lab.textContent = "HEALTH  " + combat.health + (combat.message ? "  ·  " + combat.message : "");
+      } else {
+        hpEl.classList.add("hidden");
+      }
+    }
+    if (mobile && mobile.setFireVisible) mobile.setFireVisible(!!(combat && combat.active && mission && mission.active && !mission.result));
 
     miss.style.display = "";
     if (mission && mission.active && !mission.result) {
@@ -704,6 +779,15 @@ time  ${formatTime(result.time || 0)}
         if (m.timeLimits && m.timeLimits.length >= 3) lines.push("> Stars: ★3 " + formatTime(m.timeLimits[2]) + "  ★2 " + formatTime(m.timeLimits[1]) + "  ★1 " + formatTime(m.timeLimits[0]));
         else if (m.timeLimits && m.timeLimits[0]) lines.push("> Target time: " + formatTime(m.timeLimits[0]));
         lines.push("> Wind: " + windLine);
+      } else if (m.activity === "dogfight") {
+        const c = combat || {};
+        lines.push("DEFEND THE MAIL");
+        lines.push("> " + (m.title || ""));
+        lines.push("> Bandits: " + (c.left != null ? c.left : "—"));
+        lines.push("> Health: " + (c.health != null ? c.health : 100));
+        if (c.message) lines.push("> " + c.message);
+        lines.push("> Time: " + formatTime(mission.t));
+        lines.push("> Fire: R  or  click  or  FIRE");
       } else {
         lines.push(m.title);
       }
@@ -735,6 +819,7 @@ time  ${formatTime(result.time || 0)}
           const cur = (m.stops || [])[mission.next];
           miss.textContent = cur ? ((cur.type === "raft" ? "Raft: " : (m.mode === "race" || cur.type === "pylon" ? "Pylon: " : "Mark: ")) + cur.name) : "Rescue";
         }
+        else if (m.activity === "dogfight") miss.textContent = (m.title || "Defend") + "  " + ((ctx.combat && ctx.combat.left) != null ? ctx.combat.left + " left" : "");
         else miss.textContent = m.title || "Mission";
       } else miss.textContent = lines.join("\n");
     } else if (mission && mission.result) {
@@ -1035,7 +1120,7 @@ time  ${formatTime(result.time || 0)}
   }
 
   return {
-    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showHangar, showOptions, showAlbum, showBrief, showCredits,
+    setLoad, showTitle, showHUD, showPause, showResult, showMissions, showDogfights, showStory, showHangar, showOptions, showAlbum, showBrief, showCredits,
     updateHUD, closeOverlay, menuMove, menuOk, isPortrait, setMiniMap, state, wrap, loading, hud, overlay, mobile,
     elements() {
       // all visible interactive + hud boxes for overlap tests

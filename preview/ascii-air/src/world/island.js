@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { LANDMARKS } from "../core/config.js";
+import { isleHeightAt, isleNormalAt, ISLES } from "./isles.js";
 import { createTerrain } from "./terrain.js";
 import { createWater } from "./water.js";
 import { createSky } from "./sky.js";
@@ -34,9 +35,20 @@ export function createIsland(scene, quality = "medium") {
   scene.add(backdrop);
   const thermals = createThermals(scene, THERMAL_FIELDS);
 
-  function heightAt(x, z) { return terrain.heightAt(x, z); }
+  function heightAt(x, z) {
+    const h0 = terrain.heightAt(x, z);
+    const hi = isleHeightAt(x, z);
+    return hi > h0 ? hi : h0;
+  }
   function materialAt(x, z) { return terrain.materialAt(x, z); }
-  function normalAt(x, z) { return terrain.normalAt(x, z); }
+  function normalAt(x, z) {
+    const hi = isleHeightAt(x, z);
+    if (hi > terrain.heightAt(x, z) + 0.4) {
+      const n = isleNormalAt(x, z);
+      if (n) return n;
+    }
+    return terrain.normalAt(x, z);
+  }
 
   function isWater(x, z) {
     return heightAt(x, z) < 0.35;
@@ -47,6 +59,7 @@ export function createIsland(scene, quality = "medium") {
     const h = heightAt(x, z);
     if (Math.abs(z + 1100) < 30 && Math.abs(x) < 450 && h > 1.5 && h < 12) return "runway";
     if (Math.abs(z - 1120) < 18 && Math.abs(x + 820) < 150 && h > 80) return "grass";
+    if (Math.abs(z + 2280) < 16 && Math.abs(x - 260) < 70 && h > 6 && h < 20) return "grass";
     const dLag = Math.hypot(x + 740, z + 1120);
     const dSunny = Math.hypot(x - 40, z + 1220);
     const dCape = Math.hypot(x - LANDMARKS.lighthouse.x, z - LANDMARKS.lighthouse.z);

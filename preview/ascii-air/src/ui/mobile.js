@@ -22,6 +22,7 @@ export function createMobileLayer(root, input, hooks) {
       <div class="ctrl-label">THROTTLE</div>
     </div>
     <button type="button" class="album-btn boost-btn" id="btn-action">BOOST</button>
+    <button type="button" class="album-btn fire-btn hidden" id="btn-fire">FIRE</button>
     <button type="button" class="album-btn pause-btn" id="btn-pause">II</button>
   `;
   root.appendChild(el);
@@ -32,6 +33,7 @@ export function createMobileLayer(root, input, hooks) {
   const thrKnob = el.querySelector("#thr-knob");
   const btnAction = el.querySelector("#btn-action");
   const btnPause = el.querySelector("#btn-pause");
+  const btnFire = el.querySelector("#btn-fire");
   const rotate = el.querySelector("#rotate-prompt");
 
   let stickId = null;
@@ -41,7 +43,7 @@ export function createMobileLayer(root, input, hooks) {
   const opts = { passive: false };
 
   function isControl(t) {
-    return !!(t && t.closest && t.closest("#stick, #thr, #btn-action, #btn-pause, #rotate-prompt, button, .album-cta, .album-btn"));
+    return !!(t && t.closest && t.closest("#stick, #thr, #btn-action, #btn-fire, #btn-pause, #rotate-prompt, button, .album-cta, .album-btn"));
   }
 
   function stickAt(cx, cy) {
@@ -126,6 +128,25 @@ export function createMobileLayer(root, input, hooks) {
   btnAction.addEventListener("touchstart", downBoost, opts);
   btnAction.addEventListener("touchend", endBoost, opts);
 
+  function downFire(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    input.setTouchFire?.(true);
+    btnFire.classList.add("lit");
+  }
+  function endFire(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    input.setTouchFire?.(false);
+    btnFire.classList.remove("lit");
+  }
+  btnFire.addEventListener("pointerdown", downFire, opts);
+  btnFire.addEventListener("pointerup", endFire, opts);
+  btnFire.addEventListener("pointercancel", endFire, opts);
+  btnFire.addEventListener("touchstart", downFire, opts);
+  btnFire.addEventListener("touchend", endFire, opts);
+
+
   btnPause.addEventListener("pointerdown", (e) => { hooks.onPause?.(); e.preventDefault(); e.stopPropagation(); }, opts);
 
   // Orbit: one finger on empty centre / right, outside the flight controls.
@@ -198,6 +219,7 @@ export function createMobileLayer(root, input, hooks) {
       const thrH = Math.min(180, Math.max(120, Math.floor(h * 0.22)));
       thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + 64}px;width:40px;height:${thrH}px;`;
       btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:56px;height:56px;border-radius:50%;font-size:11px;`;
+      btnFire.style.cssText = `position:absolute;right:${padR + 64}px;bottom:${padB}px;width:56px;height:56px;border-radius:50%;font-size:11px;`;
       btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT + 36}px;min-width:44px;min-height:44px;`;
     } else {
       const stickN = Math.min(120, Math.max(96, Math.floor(Math.min(h * 0.38, w * 0.16))));
@@ -205,6 +227,7 @@ export function createMobileLayer(root, input, hooks) {
       stick.style.cssText = `position:absolute;left:${padL}px;bottom:${padB}px;width:${stickN}px;height:${stickN}px;`;
       thr.style.cssText = `position:absolute;right:${padR}px;bottom:${padB}px;width:36px;height:${thrH}px;`;
       btnAction.style.cssText = `position:absolute;right:${padR}px;bottom:${padB + thrH + 26}px;width:52px;height:52px;border-radius:50%;font-size:11px;z-index:6;`;
+      btnFire.style.cssText = `position:absolute;right:${padR + 60}px;bottom:${padB + thrH + 26}px;width:52px;height:52px;border-radius:50%;font-size:11px;z-index:6;`;
       btnPause.style.cssText = `position:absolute;right:${padR}px;top:${padT}px;min-width:44px;min-height:44px;z-index:7;`;
     }
   }
@@ -215,9 +238,13 @@ export function createMobileLayer(root, input, hooks) {
     paintThr(v);
   }
 
+  function setFireVisible(on) {
+    btnFire.classList.toggle("hidden", !on);
+  }
+
   return {
-    el, layout, setThrottle, isTouchUI, paintThr,
-    buttons: { btnAction, btnPause, thr },
+    el, layout, setThrottle, setFireVisible, isTouchUI, paintThr,
+    buttons: { btnAction, btnFire, btnPause, thr },
   };
 }
 

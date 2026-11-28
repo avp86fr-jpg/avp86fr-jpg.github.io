@@ -408,7 +408,121 @@ function mergePlaneStatic(root, keep = []) {
   return root;
 }
 
-const BUILDERS = { trainer: buildTrainer, seaplane: buildSeaplane, glider: buildGlider };
+
+/** Original 1930s fighter — SWALLOWTAIL S-7 (no real type, no insignia). */
+function buildFighter(s) {
+  const g = new THREE.Group();
+  const teal = s.body, cream = s.accent, dark = s.dark;
+  const open = false;
+  // Compact tapered fuselage, nose at +Z
+  add(g, new THREE.CylinderGeometry(0.62, 0.48, 2.2, 12, 1, open), teal, MAT.PLANE, 0, 0.30, 1.55, Math.PI / 2);
+  add(g, new THREE.SphereGeometry(0.62, 10, 8), teal, MAT.PLANE, 0, 0.30, 2.62);
+  add(g, new THREE.CylinderGeometry(0.48, 0.20, 2.6, 12, 1, open), teal, MAT.PLANE, 0, 0.32, -0.70, Math.PI / 2);
+  const boom = add(g, new THREE.CylinderGeometry(0.20, 0.05, 2.6, 10, 1, open), teal, MAT.PLANE, 0, 0.34, -3.20, Math.PI / 2);
+  boom.name = "tail-boom";
+  const cone = add(g, new THREE.ConeGeometry(0.08, 0.46, 8), teal, MAT.PLANE, 0, 0.34, -4.62, -Math.PI / 2);
+  cone.name = "tail-cone";
+  // Cream belly stripe
+  add(g, new THREE.BoxGeometry(0.48, 0.08, 4.2), cream, MAT.PLANE, 0, -0.06, 0.10);
+
+  // Radial cowl
+  add(g, new THREE.CylinderGeometry(0.78, 0.78, 0.22, 14), dark, MAT.METAL, 0, 0.30, 2.72, Math.PI / 2);
+  add(g, new THREE.TorusGeometry(0.64, 0.05, 6, 14), dark, MAT.METAL, 0, 0.30, 2.62, Math.PI / 2);
+  add(g, new THREE.CylinderGeometry(0.58, 0.58, 0.55, 12), dark, MAT.METAL, 0, 0.30, 2.88, Math.PI / 2);
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2;
+    add(g, new THREE.CylinderGeometry(0.13, 0.13, 0.42, 6), dark, MAT.METAL,
+      Math.cos(a) * 0.50, 0.30 + Math.sin(a) * 0.50, 2.88, 0, 0, Math.PI / 2 - a);
+  }
+  add(g, new THREE.SphereGeometry(0.28, 8, 6), dark, MAT.METAL, 0, 0.30, 2.98);
+
+  // Gun troughs (simple boxes, no real type)
+  add(g, new THREE.BoxGeometry(0.10, 0.10, 1.15), dark, MAT.METAL,  0.28, 0.68, 2.15);
+  add(g, new THREE.BoxGeometry(0.10, 0.10, 1.15), dark, MAT.METAL, -0.28, 0.68, 2.15);
+
+  // Cockpit
+  add(g, new THREE.TorusGeometry(0.36, 0.05, 6, 12), dark, MAT.METAL, 0, 0.86, 0.55, Math.PI / 2);
+  add(g, new THREE.BoxGeometry(0.55, 0.07, 0.18), cream, MAT.PLANE, 0, 1.00, 0.95, 0.35, 0, 0);
+
+  // Staggered biplane wings, cream with teal tips
+  const zU = 0.55, zL = -0.05;
+  add(g, new THREE.BoxGeometry(9.6, 0.08, 1.55), cream, MAT.PLANE, 0, 1.62, zU);
+  add(g, new THREE.BoxGeometry(0.95, 0.07, 1.45), teal, MAT.PLANE,  4.30, 1.70, zU);
+  add(g, new THREE.BoxGeometry(0.95, 0.07, 1.45), teal, MAT.PLANE, -4.30, 1.70, zU);
+  add(g, new THREE.BoxGeometry(8.6, 0.07, 1.35), cream, MAT.PLANE, 0, 0.06, zL);
+  add(g, new THREE.BoxGeometry(0.85, 0.06, 1.25), teal, MAT.PLANE,  3.85, 0.12, zL);
+  add(g, new THREE.BoxGeometry(0.85, 0.06, 1.25), teal, MAT.PLANE, -3.85, 0.12, zL);
+  // Swallow-tail chevron decal (not a national mark)
+  add(g, new THREE.BoxGeometry(0.70, 0.06, 0.55), teal, MAT.PLANE,  1.85, 1.72, zU);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE,  1.85, 1.74, zU - 0.10, 0, 0,  0.55);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE,  1.85, 1.74, zU - 0.10, 0, 0, -0.55);
+  add(g, new THREE.BoxGeometry(0.70, 0.06, 0.55), teal, MAT.PLANE, -1.85, 1.72, zU);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE, -1.85, 1.74, zU - 0.10, 0, 0,  0.55);
+  add(g, new THREE.BoxGeometry(0.22, 0.07, 0.70), teal, MAT.PLANE, -1.85, 1.74, zU - 0.10, 0, 0, -0.55);
+
+  const ailL = add(g, new THREE.BoxGeometry(1.8, 0.07, 0.34), teal, MAT.PLANE,  2.2, 0.06, zL - 0.82);
+  const ailR = add(g, new THREE.BoxGeometry(1.8, 0.07, 0.34), teal, MAT.PLANE, -2.2, 0.06, zL - 0.82);
+
+  for (const side of [1, -1]) {
+    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 2.05, 0.84, 0.35);
+    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 2.05, 0.84, -0.05);
+    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 3.45, 0.84, 0.35);
+    add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 3.45, 0.84, -0.05);
+  }
+
+  // Swallow-tail: forked horizontal stab + modest raked fin
+  const stab = add(g, new THREE.BoxGeometry(3.4, 0.07, 0.85), cream, MAT.PLANE, 0, 0.34, -4.15);
+  stab.name = "tail-stab";
+  add(g, new THREE.BoxGeometry(1.05, 0.07, 0.85), cream, MAT.PLANE,  1.55, 0.34, -4.45, 0,  0.35, 0);
+  add(g, new THREE.BoxGeometry(1.05, 0.07, 0.85), cream, MAT.PLANE, -1.55, 0.34, -4.45, 0, -0.35, 0);
+  const elev = add(g, new THREE.BoxGeometry(2.6, 0.06, 0.32), teal, MAT.PLANE, 0, 0.34, -4.62);
+  const fin = add(g, new THREE.BoxGeometry(0.10, 1.35, 0.85), cream, MAT.PLANE, 0, 1.00, -4.25);
+  fin.name = "tail-fin";
+  const rudder = add(g, new THREE.BoxGeometry(0.08, 1.15, 0.42), teal, MAT.PLANE, 0, 1.00, -4.72);
+  rudder.name = "tail-rudder";
+
+  // Spatted undercarriage
+  add(g, new THREE.BoxGeometry(0.08, 1.05, 0.08), dark, MAT.METAL,  0.95, -0.20, 0.45, 0, 0,  0.22);
+  add(g, new THREE.BoxGeometry(0.08, 1.05, 0.08), dark, MAT.METAL, -0.95, -0.20, 0.45, 0, 0, -0.22);
+  add(g, new THREE.SphereGeometry(0.28, 8, 6), teal, MAT.PLANE,  1.15, -0.72, 0.55, 0, 0, 0, 0.7, 1.15, 1.4);
+  add(g, new THREE.SphereGeometry(0.28, 8, 6), teal, MAT.PLANE, -1.15, -0.72, 0.55, 0, 0, 0, 0.7, 1.15, 1.4);
+  const wL = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.16, 10), dark, MAT.METAL,  1.15, -0.82, 0.55, 0, 0, Math.PI / 2);
+  const wR = add(g, new THREE.CylinderGeometry(0.22, 0.22, 0.16, 10), dark, MAT.METAL, -1.15, -0.82, 0.55, 0, 0, Math.PI / 2);
+  const wT = add(g, new THREE.CylinderGeometry(0.10, 0.10, 0.08, 8), dark, MAT.METAL, 0, -0.18, -4.15, 0, 0, Math.PI / 2);
+
+  const prop = new THREE.Group();
+  prop.name = "prop";
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.16, 8), dark);
+  hub.rotation.x = Math.PI / 2;
+  prop.add(hub);
+  const bladeMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x4a3424 }));
+  const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.2, 0.04), bladeMat);
+  const b2 = b1.clone();
+  b2.rotation.z = Math.PI / 2;
+  prop.add(b1, b2);
+  prop.position.set(0, 0.30, 3.28);
+  g.add(prop);
+
+  const pilot = seatPilot(g);
+  pilot.position.set(0, 1.10, 0.45);
+  pilot.scale.setScalar(1.0);
+  pilot.name = "pilot";
+
+  g.userData.prop = prop;
+  g.userData.propBlades = [b1, b2];
+  g.userData.wheels = [wL, wR, wT];
+  g.userData.elevator = elev;
+  g.userData.rudder = rudder;
+  g.userData.fin = fin;
+  g.userData.cone = cone;
+  g.userData.stab = stab;
+  g.userData.boom = boom;
+  g.userData.ailL = ailL;
+  g.userData.ailR = ailR;
+  return g;
+}
+
+const BUILDERS = { trainer: buildTrainer, seaplane: buildSeaplane, glider: buildGlider, fighter: buildFighter };
 
 export function createPlaneMesh(id, colors) {
   const def = PLANES[id];

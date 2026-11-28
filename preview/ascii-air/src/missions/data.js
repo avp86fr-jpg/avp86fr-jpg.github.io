@@ -69,6 +69,18 @@ export const MISSIONS = [
       [-560, 50, -1180, 15], [-420, 50, -1200, 15], [-480, 45, -1320, 15],
     ], 15),
   },
+  {
+    id: "rings-b5", activity: "rings", klass: "beginner", title: "Isle Hop",
+    brief: "A sunny hop from the harbour out to South Mail Cay, then across the water to Cedar Isle and home along the east shore.",
+    hour: 16.5, plane: "trainer",
+    start: { x: 80, y: 50, z: -1180, heading: -0.5, speed: 44 },
+    timeLimits: [160, 125, 95],
+    rings: pathRings([
+      [80, 45, -1400, 16], [180, 40, -1880, 15], [260, 32, -2280, 16],
+      [800, 50, -1400, 16], [1600, 60, -700, 16], [1980, 70, -380, 16],
+      [1200, 55, -900, 16], [400, 45, -1100, 16],
+    ], 16),
+  },
   // ---------- RINGS PRO ----------
   {
     id: "rings-p1", activity: "rings", klass: "pro", title: "Volcano Climb",
@@ -157,6 +169,13 @@ export const MISSIONS = [
     hour: 11, plane: "seaplane",
     start: { x: -1100, y: 60, z: -900, heading: 0.6, speed: 38 },
     target: { type: "lagoon", x: -740, z: -1120, heading: 0.4, len: 200, wid: 80 },
+  },
+  {
+    id: "land-b5", activity: "landing", klass: "beginner", title: "Cay Strip",
+    brief: "Settle onto the short grass strip on South Mail Cay. East-to-west, easy flare, stop before the cottages.",
+    hour: 16.5, plane: "trainer",
+    start: { x: -40, y: 55, z: -2280, heading: 0, speed: 40 },
+    target: { type: "grass", x: 260, z: -2280, heading: 0, len: 140, wid: 18 },
   },
   // ---------- LANDINGS PRO ----------
   {
@@ -392,6 +411,17 @@ export const MISSIONS = [
       { type: "drop", name: "Cliff Ruins", x: L.castle.x, z: L.castle.z, r: 26 },
     ],
   },
+  {
+    id: "mail-b5", activity: "mail", klass: "beginner", title: "Cay Letter",
+    brief: "A bag for the new post on South Mail Cay. Pick up at the hangar, hop south over the water, and drop it by the flag.",
+    hour: 10, plane: "trainer",
+    start: { x: -80, y: 36, z: -1100, heading: -0.4, speed: 44 },
+    timeLimits: [130, 100, 75],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
+      { type: "drop", name: "South Mail Cay", x: L.mailCay.x, z: L.mailCay.z, r: 28 },
+    ],
+  },
   // ---------- MAIL PRO ----------
   {
     id: "mail-p1", activity: "mail", klass: "pro", title: "Town and Mills",
@@ -440,6 +470,18 @@ export const MISSIONS = [
       { type: "drop", name: "Mill Hills", x: L.windmills.x, z: L.windmills.z, r: 22 },
       { type: "drop", name: "Cinder Cape Light", x: L.lighthouse.x, z: L.lighthouse.z, r: 22 },
       { type: "drop", name: "Cliff Ruins", x: L.castle.x, z: L.castle.z, r: 24 },
+    ],
+  },
+  {
+    id: "mail-p6", activity: "mail", klass: "pro", title: "Isle Express",
+    brief: "A fast bag from the hangar to South Mail Cay, then across the water to Cedar Isle. Tight times — climb early.",
+    hour: 16.5, plane: "trainer",
+    start: { x: -80, y: 40, z: -1100, heading: 0, speed: 46 },
+    timeLimits: [150, 115, 88],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 18 },
+      { type: "drop", name: "South Mail Cay", x: L.mailCay.x, z: L.mailCay.z, r: 24 },
+      { type: "drop", name: "Cedar Isle", x: L.cedarIsle.x, z: L.cedarIsle.z, r: 28 },
     ],
   },
 
@@ -745,7 +787,60 @@ export function missionsBy(activity, klass) {
 }
 
 export function getMission(id) {
-  return MISSIONS.find((m) => m.id === id);
+  return MISSIONS.find((m) => m.id === id) || DOGFIGHTS.find((m) => m.id === id);
 }
 
 export const MISSION_COUNT = MISSIONS.length;
+
+export const DOGFIGHTS = [
+  {
+    id: "df-b1", activity: "dogfight", klass: "beginner", title: "First Pass",
+    brief: "A pair of Gilded Gale scouts has been circling the harbour. Wave them off and keep the mail bag on board. Friendly shots, no one gets hurt — they will break off and trail smoke when they have had enough.",
+    hour: 16.5, plane: "fighter",
+    start: { x: 80, y: 90, z: -1280, heading: 0.15, speed: 52 },
+    timeLimits: [180, 120, 80],
+    bandits: 2,
+    waves: [{ n: 2 }],
+    story: [
+      { who: "Skipper Wren", text: "Bag is sealed. A couple of painted crates have been hanging over the harbour — belong to the Gilded Gale. See them off, then come home for tea." },
+      { who: "You", text: "If they eye the bag, I will give them a polite nudge." },
+    ],
+  },
+  {
+    id: "df-b2", activity: "dogfight", klass: "beginner", title: "Mail Escort",
+    brief: "Two flights of Gale riders try to crowd the mail run. Hold the line, duck when they break, and let a smoking crate flee. Repair on the hangar apron if you take a knock.",
+    hour: 11, plane: "fighter",
+    start: { x: 40, y: 100, z: -1200, heading: -0.2, speed: 54 },
+    timeLimits: [210, 150, 100],
+    waves: [{ n: 2 }, { n: 3 }],
+    story: [
+      { who: "Skipper Wren", text: "Second bag of the morning, and the Gale is getting cheeky. Escort it past the cape. If they come in waves, be patient." },
+      { who: "Tess", text: "I will keep the wings between them and the harbour." },
+    ],
+  },
+  {
+    id: "df-p1", activity: "dogfight", klass: "pro", title: "Cay Ambush",
+    brief: "The Gale is waiting over South Mail Cay. Break their surprise, then deal with the second flight that climbs out of the glare.",
+    hour: 16.2, plane: "fighter",
+    start: { x: 260, y: 80, z: -2000, heading: -Math.PI / 2, speed: 56 },
+    timeLimits: [200, 140, 95],
+    waves: [{ n: 3 }, { n: 3 }],
+    story: [
+      { who: "Skipper Wren", text: "Cay says they have visitors — gold-trimmed crates, hanging in the afternoon light. Do not let them sit on the strip." },
+      { who: "You", text: "I will clear the air over the cay." },
+    ],
+  },
+  {
+    id: "df-p2", activity: "dogfight", klass: "pro", title: "Baron's Ace",
+    brief: "Baron Rook himself leads a last flight. His gold-trimmed Swallow is bigger and brasher. Wave the wingmen off, then make the Baron break away trailing smoke. The island stays peaceful when he leaves.",
+    hour: 17.0, plane: "fighter", boss: true,
+    start: { x: 400, y: 110, z: -900, heading: 0.4, speed: 56 },
+    timeLimits: [240, 170, 120],
+    waves: [{ n: 2 }, { n: 2, boss: true }],
+    story: [
+      { who: "Baron Rook", text: "Little mail bird. The Gilded Gale claims this sky. Fold your wings, or I shall fold them for you." },
+      { who: "You", text: "The bag stays on board, Baron. After you." },
+      { who: "Skipper Wren", text: "Bring yourself home in one piece. The tea will wait." },
+    ],
+  },
+];

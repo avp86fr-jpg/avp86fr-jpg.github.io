@@ -1617,6 +1617,178 @@ function makeHangingKeep() {
   return g;
 }
 
+
+
+function mergeIsleDecor(root) {
+  const geos = [];
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isMesh || !o.geometry) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    if (!g.getAttribute("normal")) g.computeVertexNormals();
+    const pos = g.getAttribute("position");
+    const col = new Float32Array(pos.count * 3);
+    const existing = g.getAttribute("color");
+    const mc = o.material && o.material.color ? o.material.color : null;
+    for (let i = 0; i < pos.count; i++) {
+      if (existing) {
+        col[i * 3] = existing.getX(i);
+        col[i * 3 + 1] = existing.getY(i);
+        col[i * 3 + 2] = existing.getZ(i);
+      } else if (mc) {
+        col[i * 3] = mc.r; col[i * 3 + 1] = mc.g; col[i * 3 + 2] = mc.b;
+      } else {
+        col[i * 3] = 0.45; col[i * 3 + 1] = 0.55; col[i * 3 + 2] = 0.32;
+      }
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    geos.push(g);
+  });
+  let n = 0;
+  for (const g of geos) n += g.getAttribute("position").count;
+  const pos = new Float32Array(n * 3);
+  const nrm = new Float32Array(n * 3);
+  const col = new Float32Array(n * 3);
+  const idx = [];
+  let base = 0;
+  for (const g of geos) {
+    const p = g.getAttribute("position");
+    const nn = g.getAttribute("normal");
+    const cc = g.getAttribute("color");
+    for (let i = 0; i < p.count; i++) {
+      pos[(base + i) * 3] = p.getX(i);
+      pos[(base + i) * 3 + 1] = p.getY(i);
+      pos[(base + i) * 3 + 2] = p.getZ(i);
+      if (nn) {
+        nrm[(base + i) * 3] = nn.getX(i);
+        nrm[(base + i) * 3 + 1] = nn.getY(i);
+        nrm[(base + i) * 3 + 2] = nn.getZ(i);
+      }
+      if (cc) {
+        col[(base + i) * 3] = cc.getX(i);
+        col[(base + i) * 3 + 1] = cc.getY(i);
+        col[(base + i) * 3 + 2] = cc.getZ(i);
+      }
+    }
+    if (g.index) {
+      const ia = g.index.array;
+      for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base);
+    } else {
+      for (let i = 0; i < p.count; i++) idx.push(base + i);
+    }
+    base += p.count;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(nrm, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  retagGeometry(geo, MAT.GRASS, 0);
+  const mat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false }));
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.userData.matId = MAT.GRASS;
+  mesh.name = "sister-isles";
+  return mesh;
+}
+
+function makeSisterIsles(H) {
+  const g = new THREE.Group();
+  g.name = "sister-isles";
+
+  function mound(rx, rz, h, segs, rings, sand, grass) {
+    const geo = new THREE.SphereGeometry(1, segs, rings, 0, Math.PI * 2, 0, Math.PI * 0.52);
+    const pos = geo.attributes.position;
+    const col = new Float32Array(pos.count * 3);
+    const sc = new THREE.Color(sand), gc = new THREE.Color(grass);
+    for (let i = 0; i < pos.count; i++) {
+      let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      pos.setXYZ(i, x * rx, y * h, z * rz);
+      const k = Math.min(1, Math.max(0, (y - 0.08) / 0.45));
+      col[i * 3] = sc.r + (gc.r - sc.r) * k;
+      col[i * 3 + 1] = sc.g + (gc.g - sc.g) * k;
+      col[i * 3 + 2] = sc.b + (gc.b - sc.b) * k;
+    }
+    geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    geo.computeVertexNormals();
+    retagGeometry(geo, MAT.GRASS, 0);
+    const m = new THREE.Mesh(geo, patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false })));
+    m.userData.matId = MAT.GRASS;
+    return m;
+  }
+
+  // ----- South Mail Cay: sandy crown, grass strip, a few houses, a jetty -----
+  const cay = LANDMARKS.mailCay;
+  const cayMesh = mound(95, 72, 15, 22, 10, 0xf0e2b0, 0x6ea84a);
+  cayMesh.position.set(cay.x, 0.05, cay.z);
+  g.add(cayMesh);
+  // Grass strip (east-west)
+  add(g, box(110, 0.28, 14, 0x7a8a48, MAT.DIRT), cay.x, 12.6, cay.z);
+  add(g, box(108, 0.06, 0.35, 0xf4ead0, MAT.ROAD), cay.x, 12.78, cay.z - 4.4);
+  add(g, box(108, 0.06, 0.35, 0xf4ead0, MAT.ROAD), cay.x, 12.78, cay.z + 4.4);
+  // Colourful cottages facing the water
+  const cayWalls = [0xfbf6ea, 0xf2c14e, 0xd4e4f0, 0xf4c4b0];
+  const cayRoofs = [0xc45a3a, 0xa8422c, 0x8a3a22, 0xcc6a44];
+  for (let i = 0; i < 4; i++) {
+    const x = cay.x - 28 + i * 18, z = cay.z + 22;
+    const hs = house(7.2, 6.2, 4.6 + (i % 2) * 0.6, 2.2, cayWalls[i], cayRoofs[i], true, i % 4);
+    hs.position.set(x, Math.max(H(x, z), 11.2), z);
+    hs.rotation.y = 0;
+    g.add(hs);
+  }
+  // Mail post + flag
+  add(g, cyl(0.14, 0.16, 6.2, 6, 0x3a2a1a, MAT.WOOD), cay.x + 8, 16.0, cay.z + 10);
+  add(g, box(1.6, 0.9, 0.08, 0xc01418, MAT.ROOF), cay.x + 8.85, 18.4, cay.z + 10);
+  // Jetty north into the channel
+  add(g, box(5.4, 0.9, 28, 0x7a5a32, MAT.WOOD), cay.x - 40, 1.4, cay.z + 48);
+  for (let k = 0; k < 3; k++) {
+    add(g, box(0.35, 2.2, 0.35, 0x5a4020, MAT.WOOD), cay.x - 42, 0.5, cay.z + 38 + k * 8);
+    add(g, box(0.35, 2.2, 0.35, 0x5a4020, MAT.WOOD), cay.x - 38, 0.5, cay.z + 38 + k * 8);
+  }
+  // Palms / leafy clumps along the rim
+  for (const [ox, oz, s] of [[-50, -10, 1.2], [48, 8, 1.1], [30, -28, 1.0], [-20, -32, 1.15], [55, 24, 0.95]]) {
+    add(g, cyl(0.22 * s, 0.3 * s, 4.8 * s, 5, 0x5a3a22, MAT.WOOD), cay.x + ox, 14 + 2.2 * s, cay.z + oz);
+    const leaf = new THREE.SphereGeometry(2.4 * s, 6, 5);
+    leaf.scale(1.15, 0.45, 1.15);
+    const lf = mesh(retagGeometry(leaf.clone ? leaf.clone() : leaf, MAT.FOLIAGE), 0x4e8c34, MAT.FOLIAGE);
+    lf.position.set(cay.x + ox, 14 + 5.4 * s, cay.z + oz);
+    g.add(lf);
+  }
+
+  // ----- Cedar Isle: taller forested hill, a chapel, pale cliffs -----
+  const ced = LANDMARKS.cedarIsle;
+  const cedMesh = mound(130, 100, 54, 24, 12, 0xe2d6b4, 0x5a8c38);
+  cedMesh.position.set(ced.x, 0.05, ced.z);
+  g.add(cedMesh);
+  // Cliff facets on the west face
+  for (const [ox, oy, oz, sx, sy, sz] of [
+    [-90, 18, 10, 22, 28, 16], [-70, 28, -20, 18, 22, 14], [-100, 12, -8, 16, 20, 12],
+  ]) {
+    add(g, box(sx, sy, sz, 0xd4cbb8, MAT.ROCK), ced.x + ox, oy, ced.z + oz, 0, 0.2, 0.08);
+  }
+  const chap = house(8.5, 7.2, 6.2, 3.4, 0xf6f0e4, 0xb84a32, true, 1);
+  chap.position.set(ced.x + 8, Math.max(H(ced.x + 8, ced.z - 6), 42), ced.z - 6);
+  chap.rotation.y = -0.4;
+  g.add(chap);
+  add(g, cyl(0.8, 0.9, 7.5, 8, 0xf6f0e4, MAT.BUILDING), ced.x + 8, 50, ced.z - 6);
+  add(g, cone(2.4, 2.8, 4, 0xb84a32, MAT.ROOF), ced.x + 8, 55.2, ced.z - 6);
+  // Forest clumps
+  for (let i = 0; i < 18; i++) {
+    const a = i * 0.7 + 0.2, r = 28 + (i % 5) * 12;
+    const x = ced.x + Math.cos(a) * r, z = ced.z + Math.sin(a) * r * 0.75;
+    const y = Math.max(H(x, z), 20);
+    if (y < 8) continue;
+    const s = 1.1 + (i % 4) * 0.25;
+    add(g, cyl(0.28 * s, 0.4 * s, 6.2 * s, 5, 0x4a3020, MAT.WOOD), x, y + 3.0 * s, z);
+    const sg = new THREE.ConeGeometry(2.8 * s, 7.2 * s, 6);
+    const cn = mesh(retagGeometry(sg, MAT.FOLIAGE), (i % 2) ? 0x3a6e28 : 0x4a8a32, MAT.FOLIAGE);
+    cn.position.set(x, y + 7.4 * s, z);
+    g.add(cn);
+  }
+  return mergeIsleDecor(g);
+}
+
 function makeRoad(from, to, width = 8, H = null) {
   const dx = to.x - from.x, dz = to.z - from.z;
   const len = Math.hypot(dx, dz);
@@ -3196,6 +3368,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
       group.add(pne);
     }
   }
+  group.add(makeSisterIsles(H));
   mergeStatic(group, new Set(["blades", "beam", "mist", "falls", "foam", "flag", "lantern", "smoke", "lava", "sock", "steamer", "boat", "winlight", "hangar-roof", "rwyLamp", "rwyGlow", "far-house", "laundry", "garden", "hanging-keep", "keep-merged", "keep-rock", "arch"]));
   {
     const cliffs = makeCoastalCliffs(H);
