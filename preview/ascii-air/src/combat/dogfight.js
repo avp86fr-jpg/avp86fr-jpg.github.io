@@ -84,7 +84,7 @@ function buildBanditProto(kind = "scout") {
   const g = new THREE.Group();
   const ace = kind === "ace";
   const raider = kind === "raider";
-  const bodyCol = ace ? 0x4e8a68 : raider ? 0x8a5340 : 0x8a5a32;
+  const bodyCol = ace ? 0x6fb887 : raider ? 0x8a5340 : 0x8a5a32;
   const trimCol = ace ? 0xf0e6c8 : raider ? 0xd43828 : 0xc4a056;
   const rust = new THREE.MeshLambertMaterial({ color: bodyCol });
   const gold = new THREE.MeshLambertMaterial({ color: trimCol });

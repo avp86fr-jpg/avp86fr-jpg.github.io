@@ -282,6 +282,10 @@ function startMission(id) {
   camOverride = null;
   flyCam.orbitReset();
   if (weather) weather.set(m.weather || "clear");
+  if (island && island.sky && typeof island.sky.setHour === "function") island.sky.setHour(clock.hour);
+  const wet = !!(weather && (weather.state.id === "storm" || weather.state.id === "squall"));
+  if (island && typeof island.setStorm === "function") island.setStorm(wet, weather && weather.state.windKt);
+  if (island && typeof island.update === "function") island.update(0, performance.now() / 1000, clock.hour, camera);
   if (m.activity === "landing") { craft.flaps = 1; }
   mode = "fly";
   paused = holdStory;
@@ -576,7 +580,10 @@ function renderFrame(time, camDt = 1 / 60) {
 
   // Apply distance lod after the camera is placed so a high chain view
   // does not pay close-up life, meadow, or plane-ink draws.
+  // Also tick sky/water so a paused lookFrom after a squall/storm still has daytime water.
   if (island) {
+    if (island.sky && typeof island.sky.setHour === "function") island.sky.setHour(clock.hour);
+    if (island.water && typeof island.water.update === "function") island.water.update(time, island.sky);
     if (island.flora && typeof island.flora.update === "function") island.flora.update(camera);
     if (island.life && typeof island.life.update === "function") {
       island.life.update(0, time, (island.sky && island.sky.night) || 0, camera);
@@ -1103,7 +1110,7 @@ function exposeAPI() {
       syncPlaneMesh();
     },
     setAutopilot: (on, target, opts) => { autoPilotOn = !!on; autoPilotTarget = target; autoPilotOpts = opts || {}; },
-    setPaused: (v) => { paused = !!v; if (!paused) ui.closeOverlay(); },
+    setPaused: (v) => { paused = !!v; if (!paused) { ui.closeOverlay(); if (mode === "fly") ui.showHUD(); } },
     getPaused: () => paused,
     render: () => {
       try { ui.updateHUD(craft, missions.state, clock.hour, ui.isPortrait(), hudExtras()); } catch {}

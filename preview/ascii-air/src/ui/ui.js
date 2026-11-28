@@ -270,9 +270,13 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     return p;
   }
   function closeOverlay() {
+    const finishStory = (state.screen === "story") ? state._storyDone : null;
+    state._storyDone = null;
+    if (state.screen === "story") state.screen = "fly";
     overlay.classList.add("hidden");
     document.body.classList.remove("menu-open");
     state.menuItems = [];
+    if (finishStory) finishStory();
   }
 
   const ACT_FR = { rings: "Rings", landing: "Landings", balloons: "Balloons", photo: "Photos", mail: "Mail", storm: "Storm", night: "Night Mail", rescue: "Rescue", dogfight: "Defend the Mail" };
@@ -371,6 +375,15 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     pages = pages || [];
     if (!pages.length) { onDone?.(); return; }
     let i = 0;
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      state._storyDone = null;
+      onDone?.();
+    };
+    state.screen = "story";
+    state._storyDone = finish;
     const paint = () => {
       const pg = pages[i];
       const last = i >= pages.length - 1;
@@ -379,16 +392,17 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
         <p class="story-text">${pg.text || ""}</p>
         <div id="mlist" class="album-nav"></div>
       </div>`);
+      state.screen = "story";
       const items = [];
       items.push({
         label: last ? "Take off!" : "Next",
         primary: true,
         fn: () => {
-          if (last) { closeOverlay(); onDone?.(); }
+          if (last) closeOverlay();
           else { i += 1; paint(); }
         },
       });
-      if (!last) items.push({ label: "Skip", fn: () => { closeOverlay(); onDone?.(); } });
+      if (!last) items.push({ label: "Skip", fn: () => { closeOverlay(); } });
       renderMenu(p.querySelector("#mlist"), items, { stars: {} }, { hideHint: true });
     };
     paint();

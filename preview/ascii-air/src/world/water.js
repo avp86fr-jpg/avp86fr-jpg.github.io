@@ -248,9 +248,18 @@ export function createWater() {
         mat.uniforms.uShallow.value.setHex(0x3a6274);
         mat.uniforms.uSky.value.setHex(0x5e7588);
         mat.uniforms.uSunCol.value.setHex(0x7a8ea0);
+      } else {
+        // Restore the day palette at once so a paused cut from squall/storm
+        // does not leave a black sea until the next update tick.
+        if (!this._deepDay) {
+          this._deepDay = new THREE.Color(0x1578a0);
+          this._shalDay = new THREE.Color(0x3ec8c4);
+        }
+        mat.uniforms.uDeep.value.copy(this._deepDay);
+        mat.uniforms.uShallow.value.copy(this._shalDay);
+        mat.uniforms.uSky.value.setHex(0xa4c8e4);
+        mat.uniforms.uSunCol.value.setHex(0xffe8b8);
       }
-      // When leaving a storm, do not snap back to day cyan — update() applies the
-      // time-of-day (incl. moonlit navy) palette on the next tick.
     },
     setBoats(list) {
       const u = [mat.uniforms.uBoat0, mat.uniforms.uBoat1, mat.uniforms.uBoat2, mat.uniforms.uBoat3];

@@ -681,12 +681,12 @@ export const MISSIONS = [
   {
     id: "res-b5", activity: "rescue", klass: "beginner", title: "Wreck Parcel",
     brief: "Mark the shallow wreck, then hover low and slow to winch a sealed parcel down to the raft. Do not just dive the ring — cut speed and hold the hook over the drop.",
-    hour: 9.5, plane: "seaplane", mode: "rescue", mechanic: "winch",
+    hour: 11, plane: "seaplane", mode: "rescue", mechanic: "winch",
     start: { x: -640, y: 38, z: -1480, heading: -2.30, speed: 40 },
     timeLimits: [110, 86, 64],
     stops: [
-      { type: "mark", name: "Shallow Wreck", x: L.wreck.x, z: L.wreck.z, r: 24, y: 22 },
-      { type: "raft", name: "Parcel drop", x: L.wreck.x + 12, z: L.wreck.z - 28, r: 20, y: 16, winch: true },
+      { type: "mark", name: "Shallow Wreck", x: L.wreck.x, z: L.wreck.z, r: 12, y: 18 },
+      { type: "raft", name: "Parcel drop", x: L.wreck.x + 12, z: L.wreck.z - 28, r: 11, y: 14, winch: true },
     ],
   },
   {

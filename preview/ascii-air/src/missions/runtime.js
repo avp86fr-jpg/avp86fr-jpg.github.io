@@ -566,7 +566,8 @@ export function createMissionSystem(scene, world, audio) {
     (m.stops || []).forEach((s, i) => {
       const ground = world.heightAt(s.x, s.z);
       const y = s.y != null ? s.y : ground + (s.type === "raft" ? 16 : 26);
-      const mesh = ringMesh(s.r || 20);
+      const visR = Math.min(s.r || 16, 13);
+      const mesh = ringMesh(visR);
       const col = s.type === "raft" ? 0xffe14a : (m.mode === "race" ? 0xff7a3a : 0x7ad0ff);
       mesh.traverse((o) => {
         if (o.material && o.material.color && !o.material.transparent) o.material.color.set(col);

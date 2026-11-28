@@ -49,18 +49,31 @@ function cone(r, h, segs, color, matId) {
 }
 
 function boulder(sx, sy, sz, color, matId, hero = 0) {
-  const geo = new THREE.SphereGeometry(1, 7, 5);
-  geo.scale(sx * 0.5, sy * 0.5, sz * 0.5);
-  // Pull a few verts so the silhouette is lumpy, not a clean egg.
+  // Flattened, faceted rock with a cut bottom so it sits in the ground, not a floating egg.
+  const geo = new THREE.SphereGeometry(1, 6, 5);
   const pos = geo.getAttribute("position");
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const n = 0.86 + 0.18 * Math.sin(x * 2.1 + z * 1.7) * Math.cos(y * 1.4);
-    pos.setXYZ(i, x * n, y * (0.92 + 0.08 * Math.sin(z * 2.4)), z * n);
+    let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const lump = 0.76 + 0.24 * Math.abs(Math.sin(x * 3.3 + z * 2.1)) + 0.10 * Math.sin(y * 4.1 + x * 1.8);
+    x *= lump;
+    z *= lump * (0.90 + 0.12 * Math.cos(x * 2.9));
+    y *= 0.55 + 0.16 * Math.sin(x * 2.6 + z * 1.9);
+    if (y < 0) y *= 0.18;
+    pos.setXYZ(i, x, y, z);
   }
   pos.needsUpdate = true;
   geo.computeVertexNormals();
+  geo.scale(sx * 0.5, sy, sz * 0.5);
   return mesh(geo, color, matId, hero);
+}
+
+function seatOnTerrain(H, x, z, lift = 0.35) {
+  let h = H(x, z);
+  for (const [dx, dz] of [[5, 0], [-5, 0], [0, 5], [0, -5], [4, 4], [-4, 4], [4, -4], [-4, -4]]) {
+    const hh = H(x + dx, z + dz);
+    if (Number.isFinite(hh)) h = Math.min(h, hh);
+  }
+  return (Number.isFinite(h) ? h : 0) + lift;
 }
 
 
@@ -1855,18 +1868,18 @@ function makeSisterIsles(H) {
 
   // ----- Cedar Isle: grove, chapel, west cliffs, falls -----
   const ced = ISLES.cedarIsle;
-  // Rock outcrops seated on the west cliff — lumpy boulders, not cubic blocks
+  // Rock outcrops on the west slope — flatter seated stones, nudged inland so they do not hang in the air.
   for (const [ox, oz, sx, sy, sz, col, ry] of [
-    [-92, 8, 16, 9, 13, 0xd4cbb8, 0.35],
-    [-84, -16, 13, 7.5, 11, 0xc8bca8, -0.4],
-    [-100, -4, 12, 7, 11, 0xb8aa94, 0.7],
-    [-76, 20, 11, 6.5, 9, 0xd0c6b4, -0.25],
-    [-68, -8, 8.5, 5.5, 8, 0x9a8c78, 0.55],
-    [-96, 18, 7, 4.2, 6.5, 0xc4b8a4, 0.15],
-    [-88, -6, 6.2, 3.6, 5.8, 0xaea090, -0.6],
+    [-80, 6, 9.2, 3.4, 7.4, 0xd4cbb8, 0.45],
+    [-72, -14, 8.0, 3.0, 6.6, 0xc8bca8, -0.55],
+    [-88, -2, 7.4, 2.8, 6.2, 0xb8aa94, 0.85],
+    [-64, 18, 7.0, 2.6, 5.8, 0xd0c6b4, -0.3],
+    [-58, -8, 6.2, 2.3, 5.2, 0x9a8c78, 0.7],
+    [-84, 16, 5.4, 2.0, 4.6, 0xc4b8a4, 0.2],
+    [-76, -6, 5.0, 1.9, 4.4, 0xaea090, -0.75],
   ]) {
     const x = ced.x + ox, z = ced.z + oz;
-    add(batch, boulder(sx, sy, sz, col, MAT.ROCK), x, H(x, z) + sy * 0.18, z, 0.12, ry, 0.08);
+    add(batch, boulder(sx, sy, sz, col, MAT.ROCK), x, seatOnTerrain(H, x, z, sy * 0.12), z, 0.18, ry, 0.10);
   }
   const chap = house(8.5, 7.2, 6.2, 3.4, 0xf6f0e4, 0xb84a32, true, 1);
   const cx = ced.x + 6, cz = ced.z - 8;
@@ -1912,9 +1925,9 @@ function makeSisterIsles(H) {
   // Waterfall chute on the NW notch — lips merge, crossed veil reads from every heading
   const fx = ced.x - 88, fz = ced.z - 40;
   const fy = Math.max(H(ced.x - 58, ced.z - 26), 30);
-  add(batch, boulder(7.2, 3.2, 4.4, 0xd4cbb8, MAT.ROCK), ced.x - 58, fy - 0.4, ced.z - 26, 0.15, 0.2, 0.05);
-  add(batch, boulder(5.0, 4.4, 3.6, 0xb8aa94, MAT.ROCK), ced.x - 66, fy - 3.4, ced.z - 32, 0.1, -0.18, 0.08);
-  add(batch, boulder(4.0, 5.2, 3.2, 0x9a8c78, MAT.ROCK), ced.x - 74, fy - 7.6, ced.z - 36, 0.12, 0.14, 0.04);
+  add(batch, boulder(6.4, 2.4, 4.0, 0xd4cbb8, MAT.ROCK), ced.x - 58, seatOnTerrain(H, ced.x - 58, ced.z - 26, 0.35), ced.z - 26, 0.15, 0.2, 0.05);
+  add(batch, boulder(5.0, 2.2, 3.4, 0xb8aa94, MAT.ROCK), ced.x - 66, seatOnTerrain(H, ced.x - 66, ced.z - 32, 0.3), ced.z - 32, 0.1, -0.18, 0.08);
+  add(batch, boulder(4.2, 2.0, 3.0, 0x9a8c78, MAT.ROCK), ced.x - 74, seatOnTerrain(H, ced.x - 74, ced.z - 36, 0.28), ced.z - 36, 0.12, 0.14, 0.04);
   for (const [ox, oz, s] of [[-2, 8, 2.1], [2, 10, 1.7], [-5, 9, 1.5], [0, 12, 1.8]]) {
     const sp = mesh(retagGeometry(new THREE.SphereGeometry(s, 6, 5), MAT.FOAM), 0xf2f7fc, MAT.FOAM);
     sp.position.set(fx + ox, 1.6, fz + oz);
