@@ -132,6 +132,12 @@ function house(w, d, h, roofH, wall, roofCol, detailed = true, style = 0) {
       g.add(dr);
       add(g, box(0.55, 0.55, 0.12, 0x2a3540, MAT.METAL), -w * 0.12, h + 0.7, d * 0.15 + 0.58);
     }
+    if (style === 4 || style % 5 === 4) {
+      add(g, box(w * 0.42, h * 0.55, d * 0.55, wall, MAT.BUILDING), w * 0.62, h * 0.28, 0);
+      const lean = mesh(gableRoofGeo(w * 0.50, d * 0.62, roofH * 0.55), roofCol, MAT.ROOF);
+      lean.position.set(w * 0.62, h * 0.55, 0);
+      g.add(lean);
+    }
   }
   return g;
 }
@@ -299,6 +305,12 @@ function makeLighthouse() {
   g.userData.glow = glow;
   add(g, cone(4.0, 3.0, 8, red, MAT.ROOF), 0, 47.0, 0);
   add(g, cyl(0.28, 0.28, 1.6, 6, 0x2a2a2a, MAT.METAL), 0, 49.0, 0);
+  // Door and a small keeper cottage so the base is not a bare cylinder
+  add(g, box(1.6, 3.2, 0.35, 0x3a2a1a, MAT.WOOD), 0, 1.7, 4.2);
+  add(g, box(0.7, 1.1, 0.2, 0x1a2230, MAT.METAL), 0, 2.6, 4.35);
+  add(g, box(6.4, 3.6, 5.2, 0xf4efe4, MAT.BUILDING), 7.2, 1.8, 1.2);
+  add(g, box(7.0, 2.2, 5.8, 0xd01418, MAT.ROOF), 7.2, 4.4, 1.2);
+  add(g, box(0.9, 1.1, 0.2, 0x1a2230, MAT.METAL), 7.2, 2.2, 3.9);
 
   // Beam — long thin box / cone that we rotate
   const beamGeo = new THREE.ConeGeometry(18, 220, 8, 1, true);
@@ -641,6 +653,10 @@ function makeWindmill() {
   const g = new THREE.Group();
   add(g, cyl(5, 6.5, 16, 8, 0xf7f1e4, MAT.BUILDING), 0, 8, 0);
   add(g, cone(6.4, 5, 8, 0x8a3a2a, MAT.ROOF), 0, 18.5, 0);
+  add(g, box(1.5, 3.2, 0.3, 0x3a2a1a, MAT.WOOD), 0, 1.7, 5.2);
+  add(g, box(0.9, 1.15, 0.18, 0x1a2230, MAT.METAL), -2.2, 7.2, 4.6);
+  add(g, box(0.9, 1.15, 0.18, 0x1a2230, MAT.METAL),  2.2, 7.2, 4.6);
+  add(g, cyl(6.2, 6.2, 0.28, 10, 0xcfc6b6, MAT.ROCK), 0, 14.2, 0);
   const hub = new THREE.Group();
   hub.position.set(0, 14, 5.2);
   hub.name = "blades";
@@ -1763,6 +1779,8 @@ function makeSisterIsles(H) {
     [cay.x + 8,  cay.z + 25, -0.06],
     [cay.x + 26, cay.z + 23, 0.12],
     [cay.x - 8,  cay.z + 38, 0.4],
+    [cay.x + 18, cay.z + 38, -0.2],
+    [cay.x - 22, cay.z + 12, 0.15],
   ];
   cottages.forEach(([x, z, ry], i) => {
     const hs = house(7.0, 6.0, 4.4 + (i % 2) * 0.5, 2.15, cayWalls[i], cayRoofs[i], true, i % 4);
@@ -1813,6 +1831,11 @@ function makeSisterIsles(H) {
   // Crates / nets on the quay
   add(batch, box(1.4, 1.1, 1.4, 0x8a6238, MAT.WOOD), jx + 1.6, 2.3, jz - 4);
   add(batch, box(1.2, 0.9, 1.2, 0x7a5a32, MAT.WOOD), jx - 1.2, 2.2, jz - 5.2);
+  // Clothesline and a vegetable patch near the cottages
+  add(batch, box(0.08, 1.6, 0.08, 0x5a3a22, MAT.WOOD), cay.x + 4, H(cay.x + 4, cay.z + 32) + 0.8, cay.z + 32);
+  add(batch, box(0.08, 1.6, 0.08, 0x5a3a22, MAT.WOOD), cay.x + 14, H(cay.x + 14, cay.z + 33) + 0.8, cay.z + 33);
+  add(batch, box(10.2, 0.7, 0.06, 0xf4f0e6, MAT.ROOF), cay.x + 9, H(cay.x + 9, cay.z + 32.5) + 1.55, cay.z + 32.5);
+  add(batch, box(6.5, 0.12, 4.2, 0x5a7a32, MAT.FOLIAGE), cay.x - 16, H(cay.x - 16, cay.z + 20) + 0.08, cay.z + 20);
 
   // ----- Cedar Isle: grove, chapel, west cliffs, falls -----
   const ced = ISLES.cedarIsle;
@@ -1858,26 +1881,39 @@ function makeSisterIsles(H) {
     const x = ced.x + 40 + i * 6, z = ced.z + 18;
     add(batch, box(5.4, 0.85, 0.55, 0xc8bca8, MAT.ROCK), x, H(x, z) + 0.4, z);
   }
+  // Stone stair down the east apron and a small shed by the chapel
+  for (let i = 0; i < 6; i++) {
+    const x = ced.x + 28 + i * 4.2, z = ced.z + 4 + i * 1.6;
+    add(batch, box(3.6, 0.35, 1.6, 0xc8bca8, MAT.ROCK), x, H(x, z) + 0.12, z);
+  }
+  const shed = house(5.4, 4.8, 3.4, 1.8, 0xf2ead8, 0x8a3a22, true, 4);
+  shed.position.set(ced.x + 18, H(ced.x + 18, ced.z + 6), ced.z + 6);
+  shed.rotation.y = 0.4;
+  batch.add(shed);
 
-  // Waterfall chute on the NW notch — lips merge, veil hangs in front of the west face
-  const fx = ced.x - 96, fz = ced.z - 44;
+  // Waterfall chute on the NW notch — lips merge, crossed veil reads from every heading
+  const fx = ced.x - 88, fz = ced.z - 40;
   const fy = Math.max(H(ced.x - 58, ced.z - 26), 30);
-  add(batch, box(5.2, 2.4, 3.2, 0xd4cbb8, MAT.ROCK), ced.x - 60, fy - 0.2, ced.z - 28, 0.1, 0.15, 0);
-  add(batch, box(3.6, 3.6, 2.6, 0xb8aa94, MAT.ROCK), ced.x - 66, fy - 3.4, ced.z - 32, 0.05, -0.12, 0.06);
-  for (const [ox, oz, s] of [[-2, 6, 1.5], [1, 8, 1.2], [-4, 7, 1.1]]) {
+  add(batch, box(6.4, 2.8, 3.6, 0xd4cbb8, MAT.ROCK), ced.x - 58, fy - 0.2, ced.z - 26, 0.1, 0.15, 0);
+  add(batch, box(4.2, 4.2, 3.0, 0xb8aa94, MAT.ROCK), ced.x - 66, fy - 3.6, ced.z - 32, 0.05, -0.12, 0.06);
+  add(batch, box(3.4, 5.0, 2.6, 0x9a8c78, MAT.ROCK), ced.x - 74, fy - 8.0, ced.z - 36, 0.08, 0.1, 0);
+  for (const [ox, oz, s] of [[-2, 8, 2.1], [2, 10, 1.7], [-5, 9, 1.5], [0, 12, 1.8]]) {
     const sp = mesh(retagGeometry(new THREE.SphereGeometry(s, 6, 5), MAT.FOAM), 0xf2f7fc, MAT.FOAM);
-    sp.position.set(fx + ox, 1.5, fz + oz);
+    sp.position.set(fx + ox, 1.6, fz + oz);
     sp.scale.set(1, 0.45, 1);
     batch.add(sp);
   }
 
   root.add(mergeIsleDecor(batch));
 
-  const sheetGeo = new THREE.PlaneGeometry(8.8, 32, 1, 22);
+  const cardA = new THREE.PlaneGeometry(12.5, 40, 1, 24);
+  const cardB = cardA.clone();
+  cardB.rotateY(Math.PI / 2);
+  const sheetGeo = mergeGeos([cardA, cardB], MAT.WATERFALL);
   retagGeometry(sheetGeo, MAT.WATERFALL, 1);
   const sheet = new THREE.Mesh(sheetGeo, makeFallsMat());
   sheet.name = "falls";
-  sheet.position.set(fx, fy - 13, fz);
+  sheet.position.set(fx, fy - 16, fz);
   sheet.rotation.y = -Math.PI * 0.72;
   root.add(sheet);
   root.userData.sheets = [sheet];
@@ -3562,10 +3598,7 @@ export function createLandmarks(scene, terrain, sky, quality = "medium") {
           if (sh.material && sh.material.uniforms && sh.material.uniforms.uTime) {
             sh.material.uniforms.uTime.value = time;
           }
-          if (camera) {
-            const d = Math.hypot(camera.position.x - sh.position.x, camera.position.z - sh.position.z);
-            sh.visible = d < 520;
-          }
+          sh.visible = true;
         }
       }
       if (falls.userData.foam && falls.userData.foam.isInstancedMesh) {

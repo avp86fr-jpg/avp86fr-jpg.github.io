@@ -234,6 +234,21 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
       const inst = instanced(new THREE.CapsuleGeometry(0.28, 0.7, 3, 6), lam(0xc45a2a, MAT.PLANE), place);
       inst.name = "life-people";
       group.add(inst);
+      place.forEach((p) => { p.ox = p.x; p.oz = p.z; p.a = Math.random() * 6; p.spd = 0.25 + Math.random() * 0.35; });
+      updaters.push((dt, time) => {
+        place.forEach((p, i) => {
+          p.a += dt * p.spd;
+          const x = p.ox + Math.cos(p.a) * 1.6;
+          const z = p.oz + Math.sin(p.a) * 1.2;
+          const y = Math.max(H(x, z), p.y - 0.85) + 0.85;
+          _dummy.position.set(x, y, z);
+          _dummy.rotation.set(0, -p.a, 0);
+          _dummy.scale.set(p.sx, p.sy, p.sz);
+          _dummy.updateMatrix();
+          inst.setMatrixAt(i, _dummy.matrix);
+        });
+        inst.instanceMatrix.needsUpdate = true;
+      });
     }
   }
 
@@ -401,6 +416,115 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     });
   }
 
+  // --- gulls and small birds (one draw) ---
+  {
+    const birds = [];
+    for (let i = 0; i < Math.max(8, Math.round(18 * k)); i++) {
+      birds.push({
+        cx: LM.harbor.x + (i % 5) * 18 - 36,
+        cz: LM.harbor.z - 20 - (i % 4) * 14,
+        cy: 16 + (i % 6) * 3.5,
+        r: 18 + (i % 5) * 8,
+        a: i * 0.7,
+        spd: 0.55 + (i % 4) * 0.12,
+        gull: i < 12,
+        c: i < 12 ? 0xf2f0ea : 0x3a3a38,
+      });
+    }
+    for (let i = 0; i < Math.max(4, Math.round(8 * k)); i++) {
+      birds.push({
+        cx: 200 + (i % 4) * 30, cz: -900 - i * 20, cy: 22 + (i % 3) * 4,
+        r: 10 + i, a: i * 1.1, spd: 0.8, gull: false, c: 0x4a3a2a,
+      });
+    }
+    const inst = instanced(new THREE.BoxGeometry(1, 0.12, 0.35), lam(0xf2f0ea, MAT.PLANE), birds.map((b) => ({ x: b.cx, y: b.cy, z: b.cz, c: b.c })));
+    inst.name = "life-birds";
+    group.add(inst);
+    updaters.push((dt, time) => {
+      birds.forEach((b, i) => {
+        b.a += dt * b.spd;
+        const x = b.cx + Math.cos(b.a) * b.r;
+        const z = b.cz + Math.sin(b.a) * b.r * 0.7;
+        const y = b.cy + Math.sin(time * 1.4 + i) * 1.4;
+        const flap = 1 + Math.sin(time * (b.gull ? 8 : 14) + i) * 0.45;
+        _dummy.position.set(x, y, z);
+        _dummy.rotation.set(0, -b.a + Math.PI / 2, Math.sin(b.a) * 0.15);
+        _dummy.scale.set((b.gull ? 1.6 : 0.9) * flap, b.gull ? 1 : 0.7, b.gull ? 1.1 : 0.7);
+        _dummy.updateMatrix();
+        inst.setMatrixAt(i, _dummy.matrix);
+        _col.setHex(b.c);
+        if (inst.instanceColor) inst.instanceColor.setXYZ(i, _col.r, _col.g, _col.b);
+      });
+      inst.instanceMatrix.needsUpdate = true;
+      if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    });
+  }
+
+  // --- mail planes on lazy circuits (one draw) ---
+  if (k > 0.3) {
+    const proto = (() => {
+      const parts = [
+        new THREE.BoxGeometry(1.0, 0.28, 0.28),
+        new THREE.BoxGeometry(0.15, 0.08, 1.6),
+        new THREE.BoxGeometry(0.12, 0.07, 1.3),
+        new THREE.BoxGeometry(0.22, 0.28, 0.08),
+      ];
+      parts[0].translate(0, 0.05, 0);
+      parts[1].translate(0, 0.18, 0.05);
+      parts[2].translate(0, -0.08, -0.05);
+      parts[3].translate(-0.42, 0.22, 0);
+      // stitch
+      let nV = 0;
+      for (const g of parts) nV += g.attributes.position.count;
+      const pos = new Float32Array(nV * 3);
+      const idx = [];
+      let base = 0;
+      for (const g of parts) {
+        const pr = g.attributes.position;
+        for (let i = 0; i < pr.count; i++) {
+          pos[(base + i) * 3] = pr.getX(i);
+          pos[(base + i) * 3 + 1] = pr.getY(i);
+          pos[(base + i) * 3 + 2] = pr.getZ(i);
+        }
+        const ia = g.index ? g.index.array : null;
+        if (ia) { for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base); }
+        else { for (let i = 0; i < pr.count; i++) idx.push(base + i); }
+        base += pr.count;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      return geo;
+    })();
+    const n = quality === "low" ? 2 : 3;
+    const routes = [
+      { cx: 80, cz: -1280, cy: 72, rx: 220, rz: 140, spd: 0.12, c: 0xc01418 },
+      { cx: 200, cz: -900, cy: 88, rx: 260, rz: 180, spd: 0.09, c: 0x3a7a86 },
+      { cx: 260, cz: -1800, cy: 70, rx: 160, rz: 200, spd: 0.11, c: 0xd8c48a },
+    ].slice(0, n);
+    const planes = routes.map((r, i) => ({ ...r, a: i * 2.1 }));
+    const inst = instanced(proto, lam(0xc01418, MAT.PLANE), planes.map((pl) => ({ x: pl.cx, y: pl.cy, z: pl.cz, c: pl.c })));
+    inst.name = "life-npc";
+    group.add(inst);
+    updaters.push((dt) => {
+      planes.forEach((pl, i) => {
+        pl.a += dt * pl.spd;
+        const x = pl.cx + Math.cos(pl.a) * pl.rx;
+        const z = pl.cz + Math.sin(pl.a) * pl.rz;
+        _dummy.position.set(x, pl.cy + Math.sin(pl.a * 2) * 3, z);
+        _dummy.rotation.set(0, -pl.a + Math.PI / 2, Math.sin(pl.a) * 0.12);
+        _dummy.scale.set(6.2, 6.2, 6.2);
+        _dummy.updateMatrix();
+        inst.setMatrixAt(i, _dummy.matrix);
+        _col.setHex(pl.c);
+        if (inst.instanceColor) inst.instanceColor.setXYZ(i, _col.r, _col.g, _col.b);
+      });
+      inst.instanceMatrix.needsUpdate = true;
+      if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    });
+  }
+
   // --- night lanterns (town square, quay, pier) ---
   {
     const spots = [
@@ -431,8 +555,15 @@ export function createLife(scene, terrain, landmarks, quality = "medium") {
     }
   }
 
-  function update(dt, time, night) {
+  function update(dt, time, night, camera) {
     for (const fn of updaters) fn(dt, time, night);
+    if (camera) {
+      const far = camera.position.y > 180 || Math.hypot(camera.position.x - 200, camera.position.z + 1100) > 2400;
+      for (const n of ["life-umbrellas", "life-umb-poles", "life-birds", "life-npc", "life-people", "life-carts"]) {
+        const o = group.getObjectByName(n);
+        if (o) o.visible = !far;
+      }
+    }
   }
 
   function setVisible(on) {

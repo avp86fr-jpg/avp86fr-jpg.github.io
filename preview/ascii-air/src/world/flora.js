@@ -393,10 +393,14 @@ function makeMeadow(terrain, quality) {
     if (cxh != null && cxh > 58) {
       slots.length = 0;
       writeMeshes();
+      grass.visible = false;
+      flower.visible = false;
       state.x = cx;
       state.z = cz;
       return;
     }
+    grass.visible = true;
+    flower.visible = true;
 
     const ix0 = Math.floor((cx - R) / CELL);
     const ix1 = Math.ceil((cx + R) / CELL);

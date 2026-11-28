@@ -422,6 +422,17 @@ export const MISSIONS = [
       { type: "drop", name: "South Mail Cay", x: L.mailCay.x, z: L.mailCay.z, r: 28 },
     ],
   },
+  {
+    id: "mail-b6", activity: "mail", klass: "beginner", title: "Quay Parcel",
+    brief: "A fat parcel for the quay. Pick it up at the hangar and drop it on the pier — watch the masts and keep the bag dry.",
+    hour: 11, plane: "trainer",
+    start: { x: -80, y: 36, z: -1100, heading: 0.2, speed: 44 },
+    timeLimits: [80, 62, 48],
+    stops: [
+      { type: "pickup", name: "Hangar", x: L.hangar.x, z: L.hangar.z, r: 20 },
+      { type: "drop", name: "Harbour Pier", x: L.pier.x, z: L.pier.z, r: 22 },
+    ],
+  },
   // ---------- MAIL PRO ----------
   {
     id: "mail-p1", activity: "mail", klass: "pro", title: "Town and Mills",
@@ -668,6 +679,17 @@ export const MISSIONS = [
     ],
   },
   {
+    id: "res-b5", activity: "rescue", klass: "beginner", title: "Wreck Parcel",
+    brief: "A sealed parcel and a raft for the shallow wreck. Mark the hull, then drop both through the rings before the tide turns.",
+    hour: 9.5, plane: "seaplane", mode: "rescue",
+    start: { x: -640, y: 38, z: -1480, heading: -2.30, speed: 40 },
+    timeLimits: [100, 78, 58],
+    stops: [
+      { type: "mark", name: "Shallow Wreck", x: L.wreck.x, z: L.wreck.z, r: 24, y: 22 },
+      { type: "raft", name: "Parcel drop", x: L.wreck.x + 12, z: L.wreck.z - 28, r: 18, y: 16 },
+    ],
+  },
+  {
     id: "res-p1", activity: "rescue", klass: "pro", title: "Cape Race",
     brief: "Pylons around the cape: beach, lighthouse, sea arch and back to the harbor.",
     hour: 14, plane: "trainer", mode: "race",
@@ -841,6 +863,32 @@ export const DOGFIGHTS = [
       { who: "Baron Rook", text: "Little mail bird. The Gilded Gale claims this sky. Fold your wings, or I shall fold them for you." },
       { who: "You", text: "The bag stays on board, Baron. After you." },
       { who: "Skipper Wren", text: "Bring yourself home in one piece. The tea will wait." },
+    ],
+  },
+  {
+    id: "df-b3", activity: "dogfight", klass: "beginner", title: "Harbour Escort",
+    brief: "A mail crate is leaving the harbour. Stay between it and two flights of Gale scouts until the bag is clear of the cape. Friendly shots — they break off and trail smoke.",
+    hour: 10.5, plane: "fighter",
+    start: { x: 40, y: 125, z: -1220, heading: 0.1, speed: 54 },
+    timeLimits: [200, 140, 95],
+    waves: [{ n: 2, kind: "scout" }, { n: 2, kind: "scout" }],
+    requires: ["df-b1"],
+    story: [
+      { who: "Skipper Wren", text: "The morning bag is already in the air. Keep the scouts off her tail until she clears the cape, then come home." },
+      { who: "Pip", text: "I will call the turns. Stay close, and do not chase a crate that has already broken off." },
+    ],
+  },
+  {
+    id: "df-p3", activity: "dogfight", klass: "pro", title: "Heavy Lift",
+    brief: "The Gale is hauling a heavy lift over the east water. Their raiders are slower and stouter than the scouts. Wave them off, then meet the Baron's second if he comes up from the glare.",
+    hour: 15.5, plane: "fighter",
+    start: { x: 900, y: 140, z: -700, heading: 0.6, speed: 56 },
+    timeLimits: [220, 160, 110],
+    waves: [{ n: 2, kind: "raider" }, { n: 2, kind: "raider" }, { n: 1, boss: true }],
+    requires: ["df-p1", "df-b3"],
+    story: [
+      { who: "Skipper Wren", text: "Look east — a heavier crate than usual, rust-red wings, hanging over the water. Do not let them sit on the mail route." },
+      { who: "Pip", text: "They will not turn as tight as the scouts. Take a longer lead, and I will watch your back." },
     ],
   },
 ];

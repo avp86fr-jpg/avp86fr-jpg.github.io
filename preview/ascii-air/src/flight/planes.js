@@ -133,6 +133,9 @@ function buildTrainer(s) {
   // Cockpit rim behind the engine; pilot sits here
   add(g, new THREE.TorusGeometry(0.42, 0.055, 6, 14), dark, MAT.METAL, 0, 0.92, 0.85, Math.PI / 2, 0, 0);
   add(g, new THREE.BoxGeometry(0.7, 0.08, 0.22), cream, MAT.PLANE, 0, 1.08, 1.35, 0.35, 0, 0);
+  add(g, new THREE.BoxGeometry(0.62, 0.36, 0.05), cream, MAT.PLANE, 0, 1.18, 1.12, 0.55, 0, 0);
+  wire(g, dark, 0.55, 0.40, -4.6, 0.55, 0.08, -0.2);
+  wire(g, dark, -0.55, 0.40, -4.6, -0.55, 0.08, -0.2);
 
   // Stagger: UPPER wing slightly AHEAD of the lower wing (classic biplane).
   // Flat, thin, straight panels — no dihedral curl, no bulbous tips.
@@ -428,6 +431,7 @@ function buildFighter(s) {
   // Radial cowl
   add(g, new THREE.CylinderGeometry(0.78, 0.78, 0.22, 14), dark, MAT.METAL, 0, 0.30, 2.72, Math.PI / 2);
   add(g, new THREE.TorusGeometry(0.64, 0.05, 6, 14), dark, MAT.METAL, 0, 0.30, 2.62, Math.PI / 2);
+  add(g, new THREE.TorusGeometry(0.70, 0.045, 6, 14), dark, MAT.METAL, 0, 0.30, 2.82, Math.PI / 2);
   add(g, new THREE.CylinderGeometry(0.58, 0.58, 0.55, 12), dark, MAT.METAL, 0, 0.30, 2.88, Math.PI / 2);
   for (let i = 0; i < 7; i++) {
     const a = (i / 7) * Math.PI * 2;
@@ -443,6 +447,7 @@ function buildFighter(s) {
   // Cockpit
   add(g, new THREE.TorusGeometry(0.36, 0.05, 6, 12), dark, MAT.METAL, 0, 0.86, 0.55, Math.PI / 2);
   add(g, new THREE.BoxGeometry(0.55, 0.07, 0.18), cream, MAT.PLANE, 0, 1.00, 0.95, 0.35, 0, 0);
+  add(g, new THREE.BoxGeometry(0.50, 0.30, 0.04), cream, MAT.PLANE, 0, 1.10, 0.78, 0.55, 0, 0);
 
   // Staggered biplane wings, cream with teal tips
   const zU = 0.55, zL = -0.05;
@@ -468,6 +473,10 @@ function buildFighter(s) {
     add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 2.05, 0.84, -0.05);
     add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 3.45, 0.84, 0.35);
     add(g, new THREE.BoxGeometry(0.08, 1.58, 0.08), dark, MAT.WOOD, side * 3.45, 0.84, -0.05);
+    add(g, new THREE.BoxGeometry(0.07, 1.05, 0.07), dark, MAT.WOOD, side * 0.42, 1.10, 0.50, 0, 0, side * 0.28);
+    wire(g, dark, side * 2.00, 1.54, 0.70, side * 3.40, 0.10, -0.40);
+    wire(g, dark, side * 3.40, 1.54, 0.70, side * 2.00, 0.10, -0.40);
+    wire(g, dark, side * 0.42, 0.36, -4.10, side * 0.42, 0.08, -0.10);
   }
 
   // Swallow-tail: forked horizontal stab + modest raked fin
@@ -492,10 +501,32 @@ function buildFighter(s) {
 
   const prop = new THREE.Group();
   prop.name = "prop";
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.16, 8), dark);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.22, 8), dark);
   hub.rotation.x = Math.PI / 2;
   prop.add(hub);
-  const bladeMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ color: 0x4a3424 }));
+  const spinner = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), cream);
+  spinner.position.z = 0.18;
+  prop.add(spinner);
+  const discMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+    map: makePropDiscTex(),
+    transparent: true, opacity: 0.88, side: THREE.DoubleSide,
+    depthWrite: false, toneMapped: false,
+  }));
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.18, 28), discMat);
+  disc.name = "prop-blur";
+  disc.renderOrder = 2;
+  prop.add(disc);
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(1.16, 0.025, 5, 24),
+    patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+      color: 0x1a1410, transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false,
+    }))
+  );
+  rim.name = "prop-rim";
+  prop.add(rim);
+  const bladeMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({
+    color: 0x4a3424, transparent: true, opacity: 0.55, depthWrite: false,
+  }));
   const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.2, 0.04), bladeMat);
   const b2 = b1.clone();
   b2.rotation.z = Math.PI / 2;
@@ -539,6 +570,50 @@ export function createPlaneMesh(id, colors) {
   const ud = visual.userData || {};
   g.userData = ud;
   mergePlaneStatic(visual, [ud.prop, ud.elevator, ud.rudder, ud.ailL, ud.ailR, ud.fin, ud.cone, ud.stab, ud.boom]);
+  const body = visual.getObjectByName("plane-body");
+  if (body) {
+    const geos = [];
+    body.updateMatrixWorld(true);
+    body.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return;
+      const gg = o.geometry.clone();
+      gg.applyMatrix4(o.matrix);
+      geos.push(gg);
+    });
+    if (geos.length) {
+      let n = 0;
+      for (const gg of geos) n += gg.getAttribute("position").count;
+      const pos = new Float32Array(n * 3);
+      const idx = [];
+      let base = 0;
+      for (const gg of geos) {
+        const pp = gg.getAttribute("position");
+        for (let i = 0; i < pp.count; i++) {
+          pos[(base + i) * 3] = pp.getX(i);
+          pos[(base + i) * 3 + 1] = pp.getY(i);
+          pos[(base + i) * 3 + 2] = pp.getZ(i);
+        }
+        if (gg.index) {
+          const ia = gg.index.array;
+          for (let i = 0; i < ia.length; i++) idx.push(ia[i] + base);
+        } else {
+          for (let i = 0; i < pp.count; i++) idx.push(base + i);
+        }
+        base += pp.count;
+      }
+      const inkGeo = new THREE.BufferGeometry();
+      inkGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      inkGeo.setIndex(idx);
+      inkGeo.computeVertexNormals();
+      const ink = new THREE.Mesh(inkGeo, patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
+        color: 0x1a140c, side: THREE.BackSide, toneMapped: false,
+      })));
+      ink.name = "plane-ink";
+      ink.scale.setScalar(1.04);
+      visual.add(ink);
+      g.userData.ink = ink;
+    }
+  }
   visual.rotation.y = Math.PI;
   visual.scale.setScalar(1.32);
   tagMesh(g, MAT.PLANE, 1);

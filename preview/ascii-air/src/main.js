@@ -480,6 +480,13 @@ function syncPlaneMesh() {
     groundShadow.material.opacity = 0.28 * (1 / (1 + agl * 0.045));
     groundShadow.visible = !craft.crashed;
   }
+  const ink = planeMesh.userData && planeMesh.userData.ink;
+  if (ink && camera) {
+    const dx = camera.position.x - craft.pos.x;
+    const dy = camera.position.y - craft.pos.y;
+    const dz = camera.position.z - craft.pos.z;
+    ink.visible = (dx * dx + dy * dy + dz * dz) < 200 * 200;
+  }
 }
 
 function coastalAmt() {
@@ -563,6 +570,16 @@ function renderFrame(time, camDt = 1 / 60) {
     const cur = look.uniforms.uBoost.value || 0;
     look.uniforms.uBoost.value = on ? 1 : Math.max(0, cur - camDt * 2.4);
   }
+
+  // Apply distance lod after the camera is placed so a high chain view
+  // does not pay close-up life, meadow, or plane-ink draws.
+  if (island) {
+    if (island.flora && typeof island.flora.update === "function") island.flora.update(camera);
+    if (island.life && typeof island.life.update === "function") {
+      island.life.update(0, time, (island.sky && island.sky.night) || 0, camera);
+    }
+  }
+  syncPlaneMesh();
 
   renderer.setRenderTarget(colorRT);
   renderer.clear();
@@ -733,7 +750,7 @@ function step(now) {
         const c = combat.update(dtRaw, craft, inp);
         const ev = c.events || {};
         if (ev.fired) audio.play("ui_ok", { gain: 0.18, playbackRate: 1.8 });
-        if (ev.hits) { audio.play("balloon_pop", { gain: 0.55, playbackRate: 1.2 }); flyCam.bump(0.22); }
+        if (ev.hits) { audio.play("balloon_pop", { gain: 0.62, playbackRate: 1.15 }); flyCam.bump(0.34); }
         if (ev.broke) audio.play(ev.broke === "boss" ? "star" : "success", { gain: 0.7 });
         if (ev.playerHit) { audio.play("stall", { gain: 0.5 }); flyCam.bump(0.42); }
         if (c.done && !st.result) {

@@ -331,12 +331,17 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
     state.screen = "missions";
     const got = DOGFIGHTS.reduce((s, m) => s + (save.stars[m.id] | 0), 0);
     const max = DOGFIGHTS.length * 3;
+    const unlocked = (m) => {
+      const need = m.requires || [];
+      return need.every((id) => (save.stars[id] | 0) > 0);
+    };
     const cards = DOGFIGHTS.map((m) => {
       const st = save.stars[m.id] | 0;
-      return `<button type="button" class="mission-card" data-id="${m.id}">
+      const open = unlocked(m);
+      return `<button type="button" class="mission-card${open ? "" : " locked"}" data-id="${m.id}" ${open ? "" : "disabled"}>
         <strong>${m.title}</strong>
-        <span class="mission-stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</span>
-        <span class="hint">${CLASS_FR[m.klass] || m.klass} · Swallowtail S-7</span>
+        <span class="mission-stars">${open ? ("★".repeat(st) + "☆".repeat(3 - st)) : "Locked"}</span>
+        <span class="hint">${open ? ((CLASS_FR[m.klass] || m.klass) + " · Swallowtail S-7") : "Finish the earlier flight first"}</span>
       </button>`;
     }).join("");
     const p = openOverlay(`<div class="album-sheet">
@@ -349,7 +354,7 @@ ${footer ? "├" + line + "┤\n│ " + footer.padEnd(w - 4) + " │\n" : ""}└
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         const m = DOGFIGHTS.find((d) => d.id === btn.dataset.id);
-        if (m) showBrief(save, m);
+        if (m && unlocked(m)) showBrief(save, m);
       });
     });
     renderMenu(p.querySelector("#mlist"), [{ label: "Back", fn: () => { closeOverlay(); showTitle(save); } }], save);

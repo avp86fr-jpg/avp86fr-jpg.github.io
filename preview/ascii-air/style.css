@@ -1365,3 +1365,9 @@ body.touch-ui #hud-banter { bottom: 64px; font-size: 12px; padding: 3px 8px; }
 .result-stars { font-size: 36px; letter-spacing: 0.12em; color: #c9a227; margin: 4px 0 8px; }
 .result-line { margin: 0 0 6px; font-size: 18px; }
 .result-meta { margin: 0 0 4px; color: #3a3028; }
+
+.mission-card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.35);
+  cursor: default;
+}

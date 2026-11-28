@@ -100,7 +100,7 @@ export function createIsland(scene, quality = "medium") {
     if (typeof sky.tickStars === "function") sky.tickStars(time);
     water.update(time, sky);
     landmarks.update(dt, time, hour, sky.night, camera);
-    if (life && life.update) life.update(dt, time, sky.night);
+    if (life && life.update) life.update(dt, time, sky.night, camera);
     if (water.setBoats && landmarks && landmarks.boats) {
       const list = landmarks.boats.filter((b) => b && (b.name === "steamer" || b.name === "boat")).map((b) => ({ x: b.position.x, z: b.position.z }));
       water.setBoats(list);

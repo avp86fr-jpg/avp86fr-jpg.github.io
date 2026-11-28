@@ -79,11 +79,16 @@ function mergeGroup(root) {
   return geo;
 }
 
-function buildBanditProto(goldTrim) {
+function buildBanditProto(kind = "scout") {
   const g = new THREE.Group();
-  const rust = new THREE.MeshLambertMaterial({ color: 0x8a5a32 });
-  const gold = new THREE.MeshLambertMaterial({ color: goldTrim ? 0xd4a84a : 0xc4a056 });
+  const ace = kind === "ace";
+  const raider = kind === "raider";
+  const bodyCol = ace ? 0x2a4a3c : raider ? 0x4a3024 : 0x8a5a32;
+  const trimCol = ace ? 0xf0e6c8 : raider ? 0x8a2020 : 0xc4a056;
+  const rust = new THREE.MeshLambertMaterial({ color: bodyCol });
+  const gold = new THREE.MeshLambertMaterial({ color: trimCol });
   const dark = new THREE.MeshLambertMaterial({ color: 0x2a2420 });
+  const cream = new THREE.MeshLambertMaterial({ color: 0xefe6d2 });
   const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
@@ -92,22 +97,60 @@ function buildBanditProto(goldTrim) {
     g.add(m);
   };
   // Builder space: +Z nose, later heading aims -Z world via quat
-  add(new THREE.CylinderGeometry(0.42, 0.28, 3.4, 8), rust, 0, 0.2, 0, Math.PI / 2);
-  add(new THREE.SphereGeometry(0.42, 8, 6), rust, 0, 0.2, 1.7);
-  add(new THREE.ConeGeometry(0.28, 1.6, 8), rust, 0, 0.22, -2.4, -Math.PI / 2);
-  add(new THREE.BoxGeometry(6.8, 0.08, 1.15), rust, 0, 1.15, 0.2);
-  add(new THREE.BoxGeometry(6.2, 0.07, 1.0), rust, 0, -0.05, -0.1);
-  add(new THREE.BoxGeometry(0.7, 0.08, 1.05), gold, 2.9, 1.22, 0.2);
-  add(new THREE.BoxGeometry(0.7, 0.08, 1.05), gold, -2.9, 1.22, 0.2);
-  add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, 1.6, 0.55, 0.15);
-  add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, -1.6, 0.55, 0.15);
-  add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, 2.5, 0.55, 0.15);
-  add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, -2.5, 0.55, 0.15);
-  add(new THREE.BoxGeometry(2.2, 0.07, 0.7), rust, 0, 0.25, -2.5);
-  add(new THREE.BoxGeometry(0.08, 0.95, 0.6), gold, 0, 0.8, -2.45);
-  add(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 10), dark, 0, 0.2, 1.95, Math.PI / 2);
+  if (raider) {
+    // Heavier, blunt-nosed sesquiplane — a distinct silhouette from the scouts.
+    add(new THREE.CylinderGeometry(0.55, 0.38, 4.2, 8), rust, 0, 0.22, 0.1, Math.PI / 2);
+    add(new THREE.SphereGeometry(0.55, 8, 6), rust, 0, 0.22, 2.15);
+    add(new THREE.ConeGeometry(0.38, 1.4, 8), rust, 0, 0.24, -2.6, -Math.PI / 2);
+    add(new THREE.BoxGeometry(8.4, 0.10, 1.45), rust, 0, 1.35, 0.15);
+    add(new THREE.BoxGeometry(4.6, 0.08, 1.05), rust, 0, -0.05, -0.15);
+    add(new THREE.BoxGeometry(0.9, 0.09, 1.35), gold, 3.6, 1.42, 0.15);
+    add(new THREE.BoxGeometry(0.9, 0.09, 1.35), gold, -3.6, 1.42, 0.15);
+    for (const s of [1, -1]) {
+      add(new THREE.BoxGeometry(0.09, 1.35, 0.09), dark, s * 1.8, 0.65, 0.2);
+      add(new THREE.BoxGeometry(0.09, 1.35, 0.09), dark, s * 3.1, 0.65, 0.2);
+    }
+    add(new THREE.BoxGeometry(2.6, 0.08, 0.9), rust, 0, 0.28, -2.7);
+    add(new THREE.BoxGeometry(0.12, 1.35, 0.85), gold, 0, 0.95, -2.65);
+    add(new THREE.CylinderGeometry(0.62, 0.62, 0.38, 10), dark, 0, 0.22, 2.4, Math.PI / 2);
+  } else if (ace) {
+    // Baron Rook — longer, cream belly, forked tail, gold chevrons.
+    add(new THREE.CylinderGeometry(0.46, 0.26, 4.2, 10), rust, 0, 0.22, 0.05, Math.PI / 2);
+    add(new THREE.SphereGeometry(0.46, 8, 6), rust, 0, 0.22, 2.1);
+    add(new THREE.ConeGeometry(0.26, 1.8, 8), rust, 0, 0.24, -2.85, -Math.PI / 2);
+    add(new THREE.BoxGeometry(0.42, 0.08, 4.4), cream, 0, -0.08, 0.05);
+    add(new THREE.BoxGeometry(7.4, 0.08, 1.2), cream, 0, 1.22, 0.25);
+    add(new THREE.BoxGeometry(6.6, 0.07, 1.05), cream, 0, -0.02, -0.05);
+    add(new THREE.BoxGeometry(0.85, 0.08, 1.15), gold, 3.15, 1.30, 0.25);
+    add(new THREE.BoxGeometry(0.85, 0.08, 1.15), gold, -3.15, 1.30, 0.25);
+    add(new THREE.BoxGeometry(0.55, 0.07, 0.55), gold, 1.6, 1.30, 0.25);
+    add(new THREE.BoxGeometry(0.55, 0.07, 0.55), gold, -1.6, 1.30, 0.25);
+    for (const s of [1, -1]) {
+      add(new THREE.BoxGeometry(0.08, 1.22, 0.08), dark, s * 1.7, 0.6, 0.2);
+      add(new THREE.BoxGeometry(0.08, 1.22, 0.08), dark, s * 2.7, 0.6, 0.2);
+    }
+    add(new THREE.BoxGeometry(1.2, 0.07, 0.85), cream,  1.5, 0.26, -2.85, 0,  0.4, 0);
+    add(new THREE.BoxGeometry(1.2, 0.07, 0.85), cream, -1.5, 0.26, -2.85, 0, -0.4, 0);
+    add(new THREE.BoxGeometry(0.10, 1.15, 0.7), gold, 0, 0.9, -2.85);
+    add(new THREE.CylinderGeometry(0.55, 0.55, 0.32, 10), dark, 0, 0.22, 2.35, Math.PI / 2);
+  } else {
+    add(new THREE.CylinderGeometry(0.42, 0.28, 3.4, 8), rust, 0, 0.2, 0, Math.PI / 2);
+    add(new THREE.SphereGeometry(0.42, 8, 6), rust, 0, 0.2, 1.7);
+    add(new THREE.ConeGeometry(0.28, 1.6, 8), rust, 0, 0.22, -2.4, -Math.PI / 2);
+    add(new THREE.BoxGeometry(6.8, 0.08, 1.15), rust, 0, 1.15, 0.2);
+    add(new THREE.BoxGeometry(6.2, 0.07, 1.0), rust, 0, -0.05, -0.1);
+    add(new THREE.BoxGeometry(0.7, 0.08, 1.05), gold, 2.9, 1.22, 0.2);
+    add(new THREE.BoxGeometry(0.7, 0.08, 1.05), gold, -2.9, 1.22, 0.2);
+    add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, 1.6, 0.55, 0.15);
+    add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, -1.6, 0.55, 0.15);
+    add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, 2.5, 0.55, 0.15);
+    add(new THREE.BoxGeometry(0.08, 1.15, 0.08), dark, -2.5, 0.55, 0.15);
+    add(new THREE.BoxGeometry(2.2, 0.07, 0.7), rust, 0, 0.25, -2.5);
+    add(new THREE.BoxGeometry(0.08, 0.95, 0.6), gold, 0, 0.8, -2.45);
+    add(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 10), dark, 0, 0.2, 1.95, Math.PI / 2);
+  }
   const geo = mergeGroup(g);
-  rust.dispose(); gold.dispose(); dark.dispose();
+  rust.dispose(); gold.dispose(); dark.dispose(); cream.dispose();
   return geo;
 }
 
@@ -129,8 +172,9 @@ export function createCombat(scene) {
   group.visible = false;
   scene.add(group);
 
-  const banditGeo = buildBanditProto(false);
-  const bossGeo = buildBanditProto(true);
+  const banditGeo = buildBanditProto("scout");
+  const raiderGeo = buildBanditProto("raider");
+  const bossGeo = buildBanditProto("ace");
   const banditMat = patchMaterialIdAlpha(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: false }));
   const inst = new THREE.InstancedMesh(banditGeo, banditMat, MAX_BANDITS);
   inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -138,6 +182,12 @@ export function createCombat(scene) {
   inst.frustumCulled = false;
   inst.castShadow = false;
   group.add(inst);
+  const raiderInst = new THREE.InstancedMesh(raiderGeo, banditMat, MAX_BANDITS);
+  raiderInst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  raiderInst.count = 0;
+  raiderInst.frustumCulled = false;
+  raiderInst.visible = false;
+  group.add(raiderInst);
 
   const outlineMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
     color: 0x1a140c, side: THREE.BackSide, toneMapped: false, depthWrite: true,
@@ -148,6 +198,12 @@ export function createCombat(scene) {
   outline.frustumCulled = false;
   outline.name = "bandit-outline";
   group.add(outline);
+  const raiderOutline = new THREE.InstancedMesh(raiderGeo, outlineMat, MAX_BANDITS);
+  raiderOutline.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  raiderOutline.count = 0;
+  raiderOutline.frustumCulled = false;
+  raiderOutline.visible = false;
+  group.add(raiderOutline);
   const bossOutlineMat = patchMaterialIdAlpha(new THREE.MeshBasicMaterial({
     color: 0x1a140c, side: THREE.BackSide, toneMapped: false,
   }));
@@ -216,13 +272,14 @@ export function createCombat(scene) {
     const e = {
       live: true,
       boss: !!spec.boss,
-      hp: spec.boss ? 90 : 32,
-      max: spec.boss ? 90 : 32,
+      kind: spec.boss ? "ace" : (spec.kind || "scout"),
+      hp: spec.boss ? 90 : (spec.kind === "raider" ? 48 : 32),
+      max: spec.boss ? 90 : (spec.kind === "raider" ? 48 : 32),
       x: spec.x, y: spec.y, z: spec.z,
       heading: spec.heading || 0,
       pitch: 0,
       roll: 0,
-      speed: spec.speed || (spec.boss ? 58 : 52),
+      speed: spec.speed || (spec.boss ? 58 : (spec.kind === "raider" ? 44 : 52)),
       state: "chase",
       stateT: 0,
       slot: enemies.length,
@@ -240,6 +297,7 @@ export function createCombat(scene) {
       const ahead = s.ahead != null ? s.ahead : 220 + i * 30;
       spawnEnemy({
         boss: !!s.boss,
+        kind: s.kind,
         x: s.x != null ? s.x : origin.x + fx * ahead + (-fz) * side,
         y: s.y != null ? s.y : (origin.y || 90) + 8 + (i % 3) * 10,
         z: s.z != null ? s.z : origin.z + fz * ahead + fx * side,
@@ -270,7 +328,7 @@ export function createCombat(scene) {
     smokes.length = 0;
     const waves = m.waves || [{ n: m.bandits || 2 }];
     const first = waves[0];
-    const list = first.units || Array.from({ length: first.n || 2 }, (_, i) => ({ boss: !!first.boss && i === 0 }));
+    const list = first.units || Array.from({ length: first.n || 2 }, (_, i) => ({ boss: !!first.boss && i === 0, kind: first.kind }));
     if (first.boss && !list.some((u) => u.boss)) list[0] = { ...list[0], boss: true };
     spawnWave(list, craft);
     syncMeshes();
@@ -482,7 +540,7 @@ export function createCombat(scene) {
   }
 
   function syncMeshes() {
-    let n = 0;
+    let n = 0, nr = 0;
     let boss = null;
     for (const e of enemies) {
       if (!e.live) continue;
@@ -491,16 +549,26 @@ export function createCombat(scene) {
         boss = e;
         continue;
       }
-      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(1, 1, 1));
-      inst.setMatrixAt(n, M4);
-      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(1.16, 1.16, 1.16));
-      outline.setMatrixAt(n, M4);
-      n++;
+      const raider = e.kind === "raider";
+      const slot = raider ? nr : n;
+      const mesh = raider ? raiderInst : inst;
+      const ink = raider ? raiderOutline : outline;
+      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(raider ? 1.12 : 1, raider ? 1.12 : 1, raider ? 1.12 : 1));
+      mesh.setMatrixAt(slot, M4);
+      M4.compose(TMP.set(e.x, e.y, e.z), Q, S.set(raider ? 1.28 : 1.16, raider ? 1.28 : 1.16, raider ? 1.28 : 1.16));
+      ink.setMatrixAt(slot, M4);
+      if (raider) nr++; else n++;
     }
     inst.count = n;
     outline.count = n;
+    raiderInst.count = nr;
+    raiderOutline.count = nr;
+    raiderInst.visible = nr > 0;
+    raiderOutline.visible = nr > 0;
     inst.instanceMatrix.needsUpdate = true;
     outline.instanceMatrix.needsUpdate = true;
+    raiderInst.instanceMatrix.needsUpdate = true;
+    raiderOutline.instanceMatrix.needsUpdate = true;
     if (boss) {
       headingToQuat(boss.heading, boss.pitch, boss.roll, Q);
       bossMesh.visible = true;
@@ -588,7 +656,7 @@ export function createCombat(scene) {
         const waves = mission.waves || [];
         const w = waves[wave];
         if (w) {
-          const list = w.units || Array.from({ length: w.n || 2 }, () => ({ boss: !!w.boss }));
+          const list = w.units || Array.from({ length: w.n || 2 }, () => ({ boss: !!w.boss, kind: w.kind }));
           if (w.boss && !list.some((u) => u.boss)) list[0] = { ...list[0], boss: true };
           spawnWave(list, craft);
           message = w.boss ? "BARON ROOK TAKES THE FIELD" : "BANDITS AHEAD";
